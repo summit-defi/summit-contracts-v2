@@ -13,11 +13,7 @@ interface ISubCart {
 
     function rollover() external;
 
-    function rewards(address _token, address _userAdd) external view returns (uint256, uint256, uint256, uint256);
-    function hypotheticalRewards(address _token, address _userAdd) external view returns (uint256, uint256);
-
     function switchTotem(uint8 _totem, address _userAdd) external;
-    function isTotemSelected(address _userAdd) external view returns (bool);
     
     function harvestElevation(bool _crossCompound, address _userAdd) external returns (uint256);
     function deposit(address _token, uint256 _amount, address _userAdd) external returns (uint256);
@@ -26,7 +22,7 @@ interface ISubCart {
     function withdraw(address _token, uint256 _amount, address _userAdd) external returns (uint256);
     function elevateWithdraw(address _token, uint256 _amount, address _userAdd) external returns (uint256);
  
-    function supply(address) external view returns (uint256);
-    function isEarning(address) external view returns (bool);
-    function selectedTotem(address) external view returns (uint8);
+    function supply(address _token) external view returns (uint256);
+    function selectedTotem(address _userAdd) external view returns (uint8);
+    function isTotemSelected(address _userAdd) external view returns (bool);
 }

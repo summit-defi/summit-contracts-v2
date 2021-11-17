@@ -179,7 +179,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
 
 
-    
+
 
 
 
@@ -199,7 +199,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
 
     /// @dev Set address of ElevationHelper during initialization
-    function initialize(uint8 _elevation, address _ElevationHelper, address _summitTokenAddress, address)
+    function initialize(uint8 _elevation, address _ElevationHelper, address _summitTokenAddress)
         external override
         initializer onlyCartographer
     {
@@ -282,9 +282,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
     function supply(address _token) external view override returns (uint256) {
         return poolInfo[_token].supply;
-    }
-    function isEarning(address _token) external view override returns (bool) {
-        return poolInfo[_token].live && poolInfo[_token].launched;
     }
     function _getUserTotem(address _userAdd) internal view returns (uint8) {
         return userElevationInfo[_userAdd].totem;
@@ -372,15 +369,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     // --   P O O L   M A N A G E M E N T
     // ---------------------------------------
 
-
-    /// @dev Registers pool everywhere needed
-    /// @param _token Token to register pool for
-    function registerPool(address _token)
-        internal
-    {
-        poolTokens.add(_token);
-    }
-
     function _markPoolActive(ElevationPoolInfo storage pool, bool _active)
         internal
     {
@@ -405,8 +393,8 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         external override
         onlyCartographer nonDuplicated(_token)
     {
-        // Register pool in state variables
-        registerPool(_token);
+        // Register pool token
+        poolTokens.add(_token);
 
         // Create the initial state of the elevation pool
         poolInfo[_token] = ElevationPoolInfo({
@@ -522,7 +510,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     ///     vestingDuration - Time remaining until all winnings are vested
     /// )
     function rewards(address _token, address _userAdd)
-        external view override
+        public view
         onlyCartographer poolExists(_token) validUserAdd(_userAdd)
         returns (uint256, uint256, uint256, uint256)
     {
@@ -549,7 +537,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     ///         . staking yield of the entire pool over the round
     /// )
     function hypotheticalRewards(address _token, address _userAdd)
-        external view override
+        public view
         poolExists(_token) validUserAdd(_userAdd)
         returns (uint256, uint256)
     {
@@ -1043,13 +1031,13 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
 
     /// @dev Increments or decrements user's pools at elevation staked, and adds to  / removes from users list of staked pools
-    function _markUserInteractingWithPool(ElevationPoolInfo storage pool, UserElevationInfo storage userElevInfo, bool _interacting) internal {
-        require(!_interacting || userInteractingPools[userElevInfo.userAdd].length() < 12, "Staked pool cap (12) reached");
+    function _markUserInteractingWithPool(address _token, address _userAdd, bool _interacting) internal {
+        require(!_interacting || userInteractingPools[_userAdd].length() < 12, "Staked pool cap (12) reached");
 
         if (_interacting) {
-            userInteractingPools[userElevInfo.userAdd].add(pool.token);
+            userInteractingPools[_userAdd].add(_token);
         } else {
-            userInteractingPools[userElevInfo.userAdd].remove(pool.token);
+            userInteractingPools[_userAdd].remove(_token);
         }
     }
     
@@ -1262,10 +1250,8 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         // Update / create users interaction with the pool
         _updateUserRoundInteraction(pool, user, totem, amountAfterFee, true);
 
-
-        // If the user's interacting status has changed, update it in the users active pools list
-        bool interactingWithPoolFinal = _userInteractingWithPool(user);
-        _markUserInteractingWithPool(pool, userElevationInfo[_userAdd], interactingWithPoolFinal);
+        // Update users pool interaction status
+        _markUserInteractingWithPool(pool.token, _userAdd, _userInteractingWithPool(user));
 
         // Return true amount deposited in pool
         return amountAfterFee;
@@ -1343,9 +1329,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         updatePool(pool.token);
         uint8 totem = _getUserTotem(_userAdd);
 
-        // If the user is interacting with this pool at the beginning of the txn
-        bool interactingWithPoolInit = _userInteractingWithPool(user);
-
         // Amount to attempt to withdraw
         uint256 amount = _amount; 
 
@@ -1372,15 +1355,13 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         if (!_isInternalTransfer) {
             amountAfterFee = cartographer.withdrawalTokenManagement(_userAdd, pool.token, amount);
         }
-        
 
         // Remove withdrawn amount from pool's running supply accumulators
         pool.totemSupplies[totem] -= amount;
         pool.supply -= amount;
 
         // If the user is interacting with this pool after the meat of the transaction completes
-        bool interactingWithPoolFinal = _userInteractingWithPool(user);
-        _markUserInteractingWithPool(pool, userElevationInfo[_userAdd], interactingWithPoolFinal);
+        _markUserInteractingWithPool(pool.token, _userAdd, _userInteractingWithPool(user));
 
         // Return amount withdraw
         return amountAfterFee;

@@ -10,6 +10,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
 
 
 /*
@@ -43,7 +45,7 @@ The OASIS does not have totems in the contract, however in the frontend funds st
 */
 contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard {
     using SafeERC20 for IERC20;
-    
+    using EnumerableSet for EnumerableSet.AddressSet;
 
 
     // ---------------------------------------
@@ -52,29 +54,30 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
 
     Cartographer cartographer;
     uint256 public launchTimestamp = 1641028149;                        // 2022-1-1, will be updated when summit ecosystem switched on
+    uint8 constant OASIS = 0;                                           // Named constant to make reusable elevation functions easier to parse visually
+    address public summitTokenAddress;
     
     struct UserInfo {
         uint256 debt;                                                   // Debt is (accSummitPerShare * staked) at time of staking and is used in the calculation of yield.
         uint256 staked;                                                 // The amount a user invests in an OASIS pool
     }
 
+    mapping(address => EnumerableSet.AddressSet) userInteractingPools;
+
     struct OasisPoolInfo {
-        uint16 pid;                                                     // Pool identifier
-        IERC20 token;                                                   // Reward token yielded by the pool
+        address token;                                                   // Reward token yielded by the pool
+
         uint256 supply;                                                 // Running total of the amount of tokens staked in the pool
         bool live;                                                      // Turns on and off the pool
         uint256 lastRewardTimestamp;                                    // Latest timestamp that SUMMIT distribution occurred
         uint256 accSummitPerShare;                                      // Accumulated SUMMIT per share, raised to 1e12
-        uint16 feeBP;                                                   // Fee of the pool, 1% taken on withdraw, remainder on deposit
     }
 
+    EnumerableSet.AddressSet private poolTokens;
+    EnumerableSet.AddressSet private activePools;
 
-    uint8 constant OASIS = 0;                                           // Named constant to make reusable elevation functions easier to parse visually
-    uint16[] public oasisPIDs;                                          // List of all pools in the oasis
-    mapping(uint16 => bool) public pidExistence;                        // Whether a specific pool identifier exists in the oasis
-    mapping(IERC20 => bool) public poolExistence;                       // Whether a pool exists for a token at the oasis
-    mapping(uint16 => OasisPoolInfo) public oasisPoolInfo;              // Pool info for each oasis pool
-    mapping(uint16 => mapping(address => UserInfo)) public userInfo;    // Users running staking information
+    mapping(address => OasisPoolInfo) public poolInfo;              // Pool info for each oasis pool
+    mapping(address => mapping(address => UserInfo)) public userInfo;    // Users running staking information
     
     
 
@@ -89,14 +92,19 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
 
     /// @dev Constructor simply setting address of the cartographer
     constructor(address _Cartographer)
-        public
     {
         require(_Cartographer != address(0), "Cartographer required");
         cartographer = Cartographer(_Cartographer);
     }
 
     /// @dev Unused initializer as part of the SubCartographer interface
-    function initialize(address _ElevationHelper, address, address) external override initializer onlyCartographer {}
+    function initialize(uint8, address, address _summitTokenAddress)
+        external override
+        initializer onlyCartographer
+    {
+        require(_summitTokenAddress != address(0), "SummitToken is zero");
+        summitTokenAddress = _summitTokenAddress;
+    }
 
     /// @dev Enables the Summit ecosystem with a timestamp, called by the Cartographer
     function enable(uint256 _launchTimestamp)
@@ -123,12 +131,12 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         require(userAdd != address(0), "User not 0");
         _;
     }
-    modifier nonDuplicated(uint16 _pid, IERC20 _token) {
-        require(pidExistence[_pid] == false && poolExistence[_token] == false, "duplicated!");
+    modifier nonDuplicated(address _token) {
+        require(!poolTokens.contains(_token), "duplicated!");
         _;
     }
-    modifier poolExists(uint16 _pid) {
-        require(pidExistence[_pid], "Pool doesnt exist");
+    modifier poolExists(address _token) {
+        require(poolTokens.contains(_token), "Pool doesnt exist");
         _;
     }
     
@@ -141,20 +149,14 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     // ---------------------------------------
     
 
-    function supply(uint16 _pid) external view override returns (uint256) {
-        return oasisPoolInfo[_pid].supply;
+    function supply(address _token) external view override returns (uint256) {
+        return poolInfo[_token].supply;
     }
-    function token(uint16 _pid, bool) external view override returns (IERC20) {
-        return oasisPoolInfo[_pid].token;
-    }
-    function depositFee(uint16 _pid) external view override returns (uint256) {
-        return oasisPoolInfo[_pid].feeBP;
-    }
-    function isEarning(uint16 _pid) external view override returns (bool) {
-        return oasisPoolInfo[_pid].live;
-    }
-    function selectedTotem(uint8, address) external view override returns (uint8) {
+    function selectedTotem(address) external view override returns (uint8) {
         return 0;
+    }
+    function isTotemSelected(address) external view override returns (bool) {
+        return true;
     }
 
 
@@ -165,70 +167,54 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
 
 
     /// @dev Registers pool everywhere needed
-    /// @param _pid Pool identifier
     /// @param _token Token to register with
     /// @param _live Whether pool is enabled at time of creation
-    function registerPool(uint16 _pid, IERC20 _token, bool _live) internal {
+    function registerPool(address _token, bool _live) internal {
         // Marks token as enabled at elevation, and adds token allocation to token's shared allocation and total allocation
         if (_live) cartographer.setIsTokenEarningAtElevation(_token, OASIS, true);
 
-        // Add pid to lookup list for iterative functions
-        oasisPIDs.push(_pid);
-
-        // Prevent duplicate pools for a single token
-        poolExistence[_token] = true;
-
-        // Used to verify if pool exists in other functions
-        pidExistence[_pid] = true;
+        // Add token to poolTokens
+        poolTokens.add(_token);
     }
 
 
     /// @dev Creates a pool at the oasis
-    /// @param _pid Pool identifier selected by cartographer
+    /// @param _token Pool token
     /// @param _live Whether the pool is enabled initially
-    /// @param _token Token yielded by pool
-    /// @param _feeBP Deposit fee taken
-    function add(uint16 _pid, uint8,  bool _live, IERC20 _token, uint16 _feeBP)
+    function add(address _token,  bool _live)
         external override
-        onlyCartographer nonDuplicated(_pid, _token)
+        onlyCartographer nonDuplicated(_token)
     {
         // Register pid and token where needed
-        registerPool(_pid, _token, _live);
+        registerPool(_token, _live);
 
         // Create the initial state of the pool
-        oasisPoolInfo[_pid] = OasisPoolInfo({
-            pid: _pid,
+        poolInfo[_token] = OasisPoolInfo({
             token: _token,
+
             supply: 0,
             live: _live,
             accSummitPerShare: 0,
-            lastRewardTimestamp: block.timestamp,
-            feeBP: _feeBP
+            lastRewardTimestamp: block.timestamp
         });
     }
 
     
-    /// @dev Unused expedition functionality
-    function addExpedition(uint16, bool, uint256, IERC20, uint256, uint256) external override onlyCartographer {}
-
-    
     /// @dev Update a given pools deposit or live status
-    /// @param _pid Pool identifier
+    /// @param _token Pool token identifier
     /// @param _live If pool is available for staking
-    /// @param _feeBP Deposit fee of pool
-    function set(uint16 _pid, bool _live, uint16 _feeBP)
+    function set(address _token, bool _live)
         external override
-        onlyCartographer poolExists(_pid)
+        onlyCartographer poolExists(_token)
     {
-        OasisPoolInfo storage pool = oasisPoolInfo[_pid];
-        updatePool(_pid);
+        OasisPoolInfo storage pool = poolInfo[_token];
+        updatePool(_token);
 
         // If live status of pool changes, update cartographer allocations
         if (pool.live != _live) cartographer.setIsTokenEarningAtElevation(pool.token, OASIS, _live);
 
         // Update internal pool states
         pool.live = _live;
-        pool.feeBP = _feeBP;
     }
 
 
@@ -237,19 +223,19 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         external override
         onlyCartographer
     {
-        for (uint16 i = 0; i < oasisPIDs.length; i++) {
-            updatePool(oasisPIDs[i]);
+        for (uint16 index = 0; index < poolTokens.length(); index++) {
+            updatePool(poolTokens.at(index));
         }
     }
     
 
     /// @dev Bring reward variables of given pool current
-    /// @param _pid Pool identifier to update
-    function updatePool(uint16 _pid)
+    /// @param _token Pool identifier to update
+    function updatePool(address _token)
         public
-        poolExists(_pid)
+        poolExists(_token)
     {
-        OasisPoolInfo storage pool = oasisPoolInfo[_pid];
+        OasisPoolInfo storage pool = poolInfo[_token];
 
         // Early exit if pool already current
         if (pool.lastRewardTimestamp == block.timestamp) { return; }
@@ -286,7 +272,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
 
 
     /// @dev Fetch guaranteed yield rewards of the pool
-    /// @param _pid Pool to fetch rewards from
+    /// @param _token Pool to fetch rewards from
     /// @param _userAdd User requesting rewards info
     /// @return (
     ///     harvestableRewards - Amount of Summit available to harvest
@@ -294,12 +280,12 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     ///     vestingDuration - Not applicable in OASIS
     ///     vestingStart - Not applicable in OASIS
     /// )
-    function rewards(uint16 _pid, address _userAdd)
-        external view override
-        poolExists(_pid) validUserAdd(_userAdd)
+    function rewards(address _token, address _userAdd)
+        public view
+        poolExists(_token) validUserAdd(_userAdd)
     returns (uint256, uint256, uint256, uint256) {
-        OasisPoolInfo storage pool = oasisPoolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][_userAdd];
+        OasisPoolInfo storage pool = poolInfo[_token];
+        UserInfo storage user = userInfo[_token][_userAdd];
 
         // Temporary accSummitPerShare to bring rewards current if last reward timestamp is behind current timestamp
         uint256 accSummitPerShare = pool.accSummitPerShare;
@@ -331,11 +317,9 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     // ------------------------------------------------------------------
     
 
-    function hypotheticalRewards(uint16, address) external view override returns (uint256, uint256) { return (uint256(0), 0); }
-    function rollover(uint8) external override {}
-    function switchTotem(uint8, uint8, address) external override {}
-    function isTotemInUse(uint8, address) external view override returns (bool) {}
-
+    function hypotheticalRewards(uint16, address) public view returns (uint256, uint256) { return (uint256(0), 0); }
+    function rollover() external override {}
+    function switchTotem(uint8, address) external override {}
 
 
 
@@ -345,68 +329,85 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     // -----------------------------------------------------
 
 
-    /// @dev Harvest any available rewards, and return that amount to be deposited in SUMMIT pool at same elevation
-    /// @param _harvestPid Pool to harvest and cross compound rewards from
-    /// @param _summitPid Pool to cross compound from
-    /// @param _userAdd User requesting cross compound
-    /// @return Amount cross compounded
-    function crossCompound(uint16 _harvestPid, uint16 _summitPid, uint8, address _userAdd)
-        external override
-        nonReentrant onlyCartographer poolExists(_harvestPid) poolExists(_summitPid) validUserAdd(_userAdd)
-        returns (uint256)
-    {
-        // HARVEST REWARDS
-        OasisPoolInfo storage harvestPool = oasisPoolInfo[_harvestPid];
-        OasisPoolInfo storage summitPool = oasisPoolInfo[_summitPid];
-        UserInfo storage harvestUser = userInfo[_harvestPid][_userAdd];
-        UserInfo storage summitUser = userInfo[_summitPid][_userAdd];
-        
-        updatePool(harvestPool.pid);
+    /// @dev Increments or decrements user's pools at elevation staked, and adds to  / removes from users list of staked pools
+    function _markUserInteractingWithPool(address _token, address _userAdd, bool _interacting) internal {
+        require(!_interacting || userInteractingPools[_userAdd].length() < 12, "Staked pool cap (12) reached");
 
-        // Calculate harvestable rewards
-        uint256 harvestable = ((harvestUser.staked * harvestPool.accSummitPerShare) / 1e12) - harvestUser.debt;
-        require(harvestable > 0, "Nothing to cross compound");
-
-        // Update users debt to prevent double dipping
-        harvestUser.debt = harvestUser.staked * harvestPool.accSummitPerShare / 1e12;
-
-        // Deposit harvestable into summit pool at this elevation
-        return unifiedDeposit(summitPool, summitUser, harvestable, _userAdd, true);
+        if (_interacting) {
+            userInteractingPools[_userAdd].add(_token);
+        } else {
+            userInteractingPools[_userAdd].remove(_token);
+        }
     }
 
-    /// @dev Stub for oasis (can have more than 12 active pools at oasis so no way to harvest all)
-    function harvestElevation(uint8, uint16, address) external override returns (uint256) {}
+    /// @dev Harvest an entire elevation (or cross compound)
+    /// @param _crossCompound Whether to cross compound earnings
+    /// @param _userAdd User harvesting
+    function harvestElevation(bool _crossCompound, address _userAdd)
+        external override
+        validUserAdd(_userAdd) onlyCartographer
+        returns (uint256)
+    {
+        require(!_crossCompound || poolTokens.contains(summitTokenAddress), "No SUMMIT farm to CrossCompound into");
+
+        // Harvest rewards of users active pools
+        uint256 harvestable = 0;
+        OasisPoolInfo storage pool;
+        UserInfo storage user;
+
+        // Iterate through pools the user is interacting, get harvestable amount, update pool
+        for (uint8 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
+            pool = poolInfo[userInteractingPools[_userAdd].at(index)];
+            user = userInfo[userInteractingPools[_userAdd].at(index)][_userAdd];
+
+            // Harvest winnings
+            updatePool(pool.token);
+            harvestable += (user.staked * pool.accSummitPerShare / 1e12) - user.debt;
+            user.debt = user.staked * pool.accSummitPerShare / 1e12;
+        }
+
+        // Cross compound, else harvest to user
+        if (harvestable > 0) {
+            if (_crossCompound){
+                unifiedDeposit(poolInfo[summitTokenAddress], userInfo[summitTokenAddress][_userAdd], harvestable, _userAdd, true);
+            } else {
+                cartographer.redeemRewards(_userAdd, harvestable);
+            }
+        }
+        
+        return harvestable;
+    }
 
     /// @dev Stake funds in an OASIS pool
-    /// @param _pid Pool to stake in
+    /// @param _token Pool to stake in
     /// @param _amount Amount to stake
     /// @param _userAdd User wanting to stake
     /// @return Amount deposited after deposit fee taken
-    function deposit(uint16 _pid, uint256 _amount, uint256, uint8, address _userAdd)
+    function deposit(address _token, uint256 _amount, address _userAdd)
         external override
-        nonReentrant onlyCartographer poolExists(_pid) validUserAdd(_userAdd)
-        returns (uint256, uint256)
+        nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
+        returns (uint256)
     {
-        OasisPoolInfo storage pool = oasisPoolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][_userAdd];
+        OasisPoolInfo storage pool = poolInfo[_token];
+        UserInfo storage user = userInfo[_token][_userAdd];
 
         // Used shared deposit functionality with elevateDeposit
-        return (unifiedDeposit(pool, user, _amount, _userAdd, false), 0);
+        return unifiedDeposit(pool, user, _amount, _userAdd, false);
     }
 
 
     /// @dev Elevate funds to the OASIS through the elevate pipeline
-    /// @param _pid Pool to deposit funds in
+    /// @param _token Pool to deposit funds in
     /// @param _amount Amount to elevate to OASIS
     /// @param _userAdd User elevating funds
     /// @return Amount deposited after fee taken
-    function elevateDeposit(uint16 _pid, uint256 _amount, address, uint8, address _userAdd)
+    function elevateDeposit(address _token, uint256 _amount, address _userAdd)
         external override
-        nonReentrant onlyCartographer poolExists(_pid) validUserAdd(_userAdd)
+        nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
         returns (uint256)
     {
-        OasisPoolInfo storage pool = oasisPoolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][_userAdd];   
+        OasisPoolInfo storage pool = poolInfo[_token];
+        UserInfo storage user = userInfo[_token][_userAdd];   
 
         // Use shared deposit functionality with standard deposit 
         return unifiedDeposit(pool, user, _amount, _userAdd, true);
@@ -424,7 +425,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         internal
         returns (uint256)
     {
-        updatePool(pool.pid);
+        updatePool(pool.token);
 
         // If user has previous amount staked, then harvest the rewards of that staked amount
         if (user.staked > 0) {
@@ -443,7 +444,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
 
             // Only move tokens (and take fee) on external transactions
             if (!_isInternalTransfer) {
-                amountAfterFee = cartographer.depositTokenManagement(_userAdd, pool.token, pool.feeBP, _amount, 0);
+                amountAfterFee = cartographer.depositTokenManagement(_userAdd, pool.token, _amount);
             }
             
             // Increment running pool supply with amount after fee taken
@@ -454,50 +455,71 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         user.staked += amountAfterFee;
         user.debt = user.staked * pool.accSummitPerShare / 1e12;
 
+        // If the user is interacting with this pool after the meat of the transaction completes
+        _markUserInteractingWithPool(pool.token, _userAdd, user.staked > 0);
+
         // Return amount staked after fee        
         return amountAfterFee;
     }
 
 
+    /// @dev Emergency withdraw without rewards
+    /// @param _token Pool to emergency withdraw from
+    /// @param _userAdd User emergency withdrawing
+    /// @return Amount emergency withdrawn
+    function emergencyWithdraw(address _token, address _userAdd)
+        external override
+        nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
+        returns (uint256)
+    {
+        UserInfo storage user = userInfo[_token][_userAdd];
+        OasisPoolInfo storage pool = poolInfo[_token];
+
+        // Shared withdraw functionality
+        return unifiedWithdraw(pool, user, 0, _userAdd, false, true);
+    }
+
+
+
     /// @dev Withdraw staked funds from pool
-    /// @param _pid Pool to withdraw from
+    /// @param _token Pool to withdraw from
     /// @param _amount Amount to withdraw
     /// @param _userAdd User withdrawing
     /// @return True amount withdrawn
-    function withdraw(uint16 _pid, uint256 _amount, uint256, address _userAdd)
+    function withdraw(address _token, uint256 _amount, address _userAdd)
         external override
-        nonReentrant onlyCartographer poolExists(_pid) validUserAdd(_userAdd)
-        returns (uint256, uint256)
+        nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
+        returns (uint256)
     {
-        UserInfo storage user = userInfo[_pid][_userAdd];
-        OasisPoolInfo storage pool = oasisPoolInfo[_pid];
+        UserInfo storage user = userInfo[_token][_userAdd];
+        OasisPoolInfo storage pool = poolInfo[_token];
 
         // Validate amount attempting to withdraw
         require(_amount > 0 && user.staked >= _amount, "Bad withdrawal");
         
         // Shared functionality withdraw with elevateWithdraw
-        return (unifiedWithdraw(pool,  user, _amount, _userAdd, false), 0);
+        return unifiedWithdraw(pool,  user, _amount, _userAdd, false, false);
     }
 
 
     /// @dev Withdraw staked funds to elevate them to another elevation
-    /// @param _pid Pool to elevate funds from
+    /// @param _token Pool to elevate funds from
     /// @param _amount Amount of funds to elevate
     /// @param _userAdd User elevating
     /// @return Amount withdrawn to be elevated
-    function elevateWithdraw(uint16 _pid, uint256 _amount, address, address _userAdd)
+    function elevateWithdraw(address _token, uint256 _amount, address _userAdd)
         external override
-        nonReentrant onlyCartographer poolExists(_pid) validUserAdd(_userAdd)
+        nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
         returns (uint256)
     {
-        UserInfo storage user = userInfo[_pid][_userAdd];       
-        OasisPoolInfo storage pool = oasisPoolInfo[_pid];
+        UserInfo storage user = userInfo[_token][_userAdd];       
+        OasisPoolInfo storage pool = poolInfo[_token];
 
         // Validate the amount to elevate
         require(_amount > 0 && user.staked >= _amount, "Bad transfer");
 
         // Shared withdraw functionality with standard withdraw
-        return unifiedWithdraw(pool, user, _amount, _userAdd, true);
+        return unifiedWithdraw(pool, user, _amount, _userAdd, true, false);
     }
 
     
@@ -507,33 +529,48 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     /// @param _amount Amount to withdraw
     /// @param _userAdd User address
     /// @param _isInternalTransfer Flag to switch off certain functionality for elevate withdraw
+    /// @param _isEmergencyWithdraw Flag to bypass emissions
     /// @return Amount withdrawn
-    function unifiedWithdraw(OasisPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer)
+    function unifiedWithdraw(OasisPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer, bool _isEmergencyWithdraw)
         internal
         returns (uint256)
     {
-        updatePool(pool.pid);
+        updatePool(pool.token);
 
-        // Check harvestable rewards and withdraw if applicable
-        uint256 harvestable = (user.staked * pool.accSummitPerShare / 1e12) - user.debt;
-        if (harvestable > 0) {
-            cartographer.redeemRewards(_userAdd, harvestable);
+        // Amount to attempt to withdraw
+        uint256 amount = _amount;
+
+        if (_isEmergencyWithdraw) {
+            // Withdraw full staked balance
+            amount = user.staked;
+
+            // Reset user back to base state
+            user.staked = 0;
+            user.debt = 0;
+        } else {
+            // Check harvestable rewards and withdraw if applicable
+            uint256 harvestable = (user.staked * pool.accSummitPerShare / 1e12) - user.debt;
+            if (harvestable > 0) {
+                cartographer.redeemRewards(_userAdd, harvestable);
+            }
+
+            // Update user's staked and debt     
+            user.staked -= _amount;
+            user.debt = user.staked * pool.accSummitPerShare / 1e12;
         }
 
         // Update pool running supply total with amount withdrawn
-        pool.supply -= _amount;   
-
-        // Update user's staked and debt     
-        user.staked -= _amount;
-        user.debt = user.staked * pool.accSummitPerShare / 1e12;
-        
+        pool.supply -= _amount;
 
         // Signal cartographer to perform withdrawal function if not elevating funds
         // Elevated funds remain in the cartographer, or in the passthrough target, so no need to withdraw from anywhere as they would be immediately re-deposited
         uint256 amountAfterFee = _amount;
         if (!_isInternalTransfer) {
-            amountAfterFee = cartographer.withdrawalTokenManagement(_userAdd, pool.token, pool.feeBP, _amount, 0);
+            amountAfterFee = cartographer.withdrawalTokenManagement(_userAdd, pool.token, _amount);
         }
+
+        // If the user is interacting with this pool after the meat of the transaction completes
+        _markUserInteractingWithPool(pool.token, _userAdd, user.staked > 0);
 
         // Return amount withdrawn
         return amountAfterFee;
