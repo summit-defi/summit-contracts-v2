@@ -786,12 +786,11 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     
     
     /// @dev Calculation of round rewards of the first round interacted
-    /// @param pool Pool info
     /// @param user Users staking info
     /// @param round Passed in instead of used inline in this function to prevent stack too deep error
     /// @param _totem Totem to determine if round was won and winnings warranted
     /// @return Winnings from round
-    function userFirstInteractedRoundWinnings(ElevationPoolInfo storage pool, UserInfo storage user, RoundInfo memory round, uint8 _totem)
+    function userFirstInteractedRoundWinnings(UserInfo storage user, RoundInfo memory round, uint8 _totem)
         internal view
         returns (uint256)
     {
@@ -815,7 +814,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         uint8 totem = _getUserTotem(_userAdd);
 
         return user.prevInteractedRound == _roundIndex ?
-            userFirstInteractedRoundWinnings(pool, user, poolRoundInfo[pool.token][_roundIndex], totem) :
+            userFirstInteractedRoundWinnings(user, poolRoundInfo[pool.token][_roundIndex], totem) :
             user.staked * totemPrecomputedMultForRound(pool, totem, _roundIndex) / 1e12;
     } 
 
@@ -843,10 +842,10 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         // Exit early with vesting if user interacted in previous round
         uint8 totem = _getUserTotem(_userAdd);
         if (user.prevInteractedRound == currRound - 1)
-            return harvestable + innateVestedRoundWinnings(userFirstInteractedRoundWinnings(pool, user, poolRoundInfo[pool.token][user.prevInteractedRound], totem));
+            return harvestable + innateVestedRoundWinnings(userFirstInteractedRoundWinnings(user, poolRoundInfo[pool.token][user.prevInteractedRound], totem));
 
         // Get winnings from first user interacted round if it was won
-        harvestable += userFirstInteractedRoundWinnings(pool, user, poolRoundInfo[pool.token][user.prevInteractedRound], totem);
+        harvestable += userFirstInteractedRoundWinnings(user, poolRoundInfo[pool.token][user.prevInteractedRound], totem);
 
         // Add Vesting from most recent completed round if it was won
         harvestable += innateVestedRoundWinnings(user.staked * totemPrecomputedMultForRound(pool, totem, currRound - 1) / 1e12);
