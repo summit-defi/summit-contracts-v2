@@ -9,14 +9,14 @@ contract SummitReferrals {
     SummitToken public summit;
     address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
     
-    constructor(address _cartographer) public {
+    constructor(address _cartographer) {
         require(_cartographer != address(0), "Cart required");
         cartographer = _cartographer;
     }
     
     function enable(address _summit) external onlyCartographer {
         summit = SummitToken(_summit);
-        summit.approve(burnAdd, 1e50);
+        summit.approve(burnAdd, type(uint256).max);
     }
 
     // REFERRALS
@@ -46,7 +46,7 @@ contract SummitReferrals {
     }
     function addReferralRewardsIfNecessary(address referee, uint256 amount) external onlyCartographer {
         if (referrerOf[referee] == address(0)) { return; }
-        uint256 additionalReward = amount.div(100);
+        uint256 additionalReward = amount / 100;
         pendingReferralRewards[roundIndex][referrerOf[referee]] += additionalReward;
         pendingReferralRewards[roundIndex][referee] += additionalReward;
         totalReferralRewards[referrerOf[referee]] += additionalReward;

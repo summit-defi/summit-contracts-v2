@@ -5,31 +5,28 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 interface ISubCart {
-    function initialize(address, address, address) external;
-    function enable(uint256) external;
-    function add(uint16, uint8, bool, IERC20, uint16) external;
-    function addExpedition(uint16, bool, uint256, IERC20, uint256, uint256) external;
-    function set(uint16, bool, uint16) external;
+    function initialize(uint8 _elevation, address _elevationHelper, address _summit) external;
+    function enable(uint256 _launchTimestamp) external;
+    function add(address _token, bool _live) external;
+    function set(address _token, bool _live) external;
     function massUpdatePools() external;
 
-    function rollover(uint8) external;
+    function rollover() external;
 
-    function rewards(uint16, address) external view returns (uint256, uint256, uint256, uint256);
-    function hypotheticalRewards(uint16, address) external view returns (uint256, uint256);
+    function rewards(address _token, address _userAdd) external view returns (uint256, uint256, uint256, uint256);
+    function hypotheticalRewards(address _token, address _userAdd) external view returns (uint256, uint256);
 
-    function switchTotem(uint8, uint8, address) external;
-    function isTotemSelected(uint8, address) external view returns (bool);
+    function switchTotem(uint8 _totem, address _userAdd) external;
+    function isTotemSelected(address _userAdd) external view returns (bool);
     
-    function deposit(uint16, uint256, address) external returns (uint256);
-    function harvestElevation(uint8, uint16, address) external returns (uint256);
-    function elevateDeposit(uint16, uint256, address) external returns (uint256);
-    function emergencyWithdraw(uint16, address) external returns (uint256);
-    function withdraw(uint16, uint256, address) external returns (uint256);
-    function elevateWithdraw(uint16, uint256, address, address) external returns (uint256);
+    function harvestElevation(bool _crossCompound, address _userAdd) external returns (uint256);
+    function deposit(address _token, uint256 _amount, address _userAdd) external returns (uint256);
+    function elevateDeposit(address _token, uint256, address) external returns (uint256);
+    function emergencyWithdraw(address _token, address) external returns (uint256);
+    function withdraw(address _token, uint256 _amount, address _userAdd) external returns (uint256);
+    function elevateWithdraw(address _token, uint256 _amount, address _userAdd) external returns (uint256);
  
-    function supply(uint16) external view returns (uint256);
-    function token(uint16) external view returns (IERC20);
-    function depositFee(uint16) external view returns (uint256);
-    function isEarning(uint16) external view returns (bool);
-    function selectedTotem(uint8, address) external view returns (uint8);
+    function supply(address) external view returns (uint256);
+    function isEarning(address) external view returns (bool);
+    function selectedTotem(address) external view returns (uint8);
 }

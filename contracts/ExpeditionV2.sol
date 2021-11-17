@@ -133,6 +133,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
 
         uint8 deity;
         bool deitySelected;
+        uint256 deitySelectionRound;
         uint8 safetyFactor;
         bool safetyFactorSelected;
     }
@@ -154,10 +155,11 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     mapping(address => UserEverestInfo) public userEverestInfo;
 
     struct ExpeditionInfo {
+        IERC20 token;                                       // Address of Reward token to be distributed.
+
         bool launched;                                      // If the start round of the pool has passed and it is open for betting
         bool live;                                          // If the pool is manually enabled / disabled
         bool active;                                        // Whether the pool should be rolled over at end of round
-        IERC20 token;                                       // Address of Reward token to be distributed.
         uint256 roundEmission;                              // The amount of Reward token for each round
         uint256 totalRoundsCount;                           // Number of rounds of this expedition to run.
         uint256 totalRewardAmount;                          // Total amount of reward token to be distributed over 7 days.
@@ -173,16 +175,12 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         uint256[2] deityWinningsMult;                // Running winnings per share for each deity, increased at round end with snapshot of SUMMIT LP incentive multiplier and SUMMIT token to SUMMIT LP ratio
     }
 
+    EnumerableSet.AddressSet private expeditionTokens;
+    EnumerableSet.AddressSet private activeExpeds;
 
-    address[] public expeditionTokens;                                         // List of all expeditions for indexing
-    mapping(address => bool) public expeditionExistence;                           // If an expedition exists for a reward token
     mapping(address => ExpeditionInfo) public expeditionInfo;        // Expedition info
     mapping(address => mapping(address => UserExpeditionInfo)) public userExpeditionInfo;        // Users running staked information
 
-    // An expedition becomes active as soon as it becomes live (whether it is launched or not)
-    // However when an expedition is turned off, it will only be marked as inactive at the end of the current round so that it is still included in end of round rollover
-    uint256 public activeExpedsCount;    // Number Expeds active at an elevation (only concerned about expedition.live, not launched)
-    EnumerableSet.AddressSet private activeExpeds;
 
 
 
@@ -270,7 +268,6 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         _;
     }
     modifier validEverestAmountToBurn(uint256 _everestAmount) {
-        console.log("Valid Everest Amount", _everestAmount, _everestAmount > 0, _everestAmount <= userEverestInfo[msg.sender].everestOwned);
         require (_everestAmount > 0 && _everestAmount <= userEverestInfo[msg.sender].everestOwned, "Bad withdraw");
         _;
     }
@@ -286,19 +283,18 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         _;
     }
     modifier nonDuplicated(address _token) {
-        require(!expeditionExistence[_token], "Duplicated");
+        require(!expeditionTokens.contains(_token), "Duplicated");
         _;
     }
     function _expeditionExists(address _token) internal view {
-        require(expeditionExistence[_token], "Pool doesnt exist");
+        require(expeditionTokens.contains(_token), "Pool doesnt exist");
     }
     modifier expeditionExists(address _token) {
         _expeditionExists(_token);
         _;
     }
     modifier expeditionExistsAndActive(address _token) {
-        console.log("Expedition Exists", _token, expeditionExistence[_token]);
-        require(expeditionExistence[_token], "Expedition doesnt exist");
+        require(expeditionTokens.contains(_token), "Expedition doesnt exist");
         require(expeditionInfo[_token].launched, "Expedition not active");
         _;
     }
@@ -333,8 +329,9 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         public view
         returns (uint256)
     {
-        return expeditionTokens.length;
+        return expeditionTokens.length();
     }
+
     function supply(address _token)
         public view
         expeditionExists(_token)
@@ -347,6 +344,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
             expeditionInfo[_token].deitySupply[1]
         );
     }
+    
     function selectedDeity(address _userAdd)
         public view
         returns (uint8)
@@ -397,8 +395,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     function _registerExpedition(address _token)
         internal
     {
-        expeditionExistence[_token] = true;
-        expeditionTokens.push(_token);
+        expeditionTokens.add(_token);
     }
 
     function _markExpeditionActive(ExpeditionInfo storage pool, bool _active)
@@ -991,6 +988,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         // Update user deity in state
         everestInfo.deity = _deity;
         everestInfo.deitySelected = true;
+        everestInfo.deitySelectionRound = elevationHelper.roundNumber(EXPEDITION);
     }
 
 
