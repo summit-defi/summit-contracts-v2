@@ -317,7 +317,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     // ------------------------------------------------------------------
     
 
-    function hypotheticalRewards(uint16, address) public view returns (uint256, uint256) { return (uint256(0), 0); }
+    function hypotheticalRewards(uint16, address) public pure returns (uint256, uint256) { return (uint256(0), 0); }
     function rollover() external override {}
     function switchTotem(uint8, address) external override {}
 
@@ -341,9 +341,9 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     }
 
     /// @dev Harvest an entire elevation (or cross compound)
-    /// @param _crossCompound Whether to cross compound earnings
     /// @param _userAdd User harvesting
-    function harvestElevation(bool _crossCompound, address _userAdd)
+    /// @param _crossCompound Whether to cross compound earnings
+    function harvestElevation(address _userAdd, bool _crossCompound)
         external override
         validUserAdd(_userAdd) onlyCartographer
         returns (uint256)
@@ -352,24 +352,29 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
 
         // Harvest rewards of users active pools
         uint256 harvestable = 0;
-        OasisPoolInfo storage pool;
-        UserInfo storage user;
 
         // Iterate through pools the user is interacting, get harvestable amount, update pool
         for (uint8 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
-            pool = poolInfo[userInteractingPools[_userAdd].at(index)];
-            user = userInfo[userInteractingPools[_userAdd].at(index)][_userAdd];
-
             // Harvest winnings
-            updatePool(pool.token);
-            harvestable += (user.staked * pool.accSummitPerShare / 1e12) - user.debt;
-            user.debt = user.staked * pool.accSummitPerShare / 1e12;
+            harvestable += _unifiedHarvest(
+                poolInfo[userInteractingPools[_userAdd].at(index)],
+                userInfo[userInteractingPools[_userAdd].at(index)][_userAdd],
+                _userAdd,
+                _crossCompound
+            );
         }
 
         // Cross compound, else harvest to user
         if (harvestable > 0) {
-            if (_crossCompound){
-                unifiedDeposit(poolInfo[summitTokenAddress], userInfo[summitTokenAddress][_userAdd], harvestable, _userAdd, true);
+            if (_crossCompound) {
+                // If the user is interacting with the SUMMIT pool, its rewards will already have been harvested above, so can deposit directly
+                _unifiedDeposit(
+                    poolInfo[summitTokenAddress],
+                    userInfo[summitTokenAddress][_userAdd],
+                    harvestable,
+                    _userAdd,
+                    true
+                );
             } else {
                 cartographer.redeemRewards(_userAdd, harvestable);
             }
@@ -382,35 +387,156 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     /// @param _token Pool to stake in
     /// @param _amount Amount to stake
     /// @param _userAdd User wanting to stake
+    /// @param _crossCompound Whether to cross compound earnings
+    /// @param _isElevate Whether this is the deposit half of an elevate tx
     /// @return Amount deposited after deposit fee taken
-    function deposit(address _token, uint256 _amount, address _userAdd)
+    function deposit(address _token, uint256 _amount, address _userAdd, bool _crossCompound, bool _isElevate)
         external override
         nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
         returns (uint256)
     {
-        OasisPoolInfo storage pool = poolInfo[_token];
-        UserInfo storage user = userInfo[_token][_userAdd];
+        // Harvest earnings from pool, cross compound if necessary
+        _harvestOrCrossCompoundPool(
+            poolInfo[_token],
+            userInfo[_token][_userAdd],
+            _userAdd,
+            _crossCompound
+        );
 
-        // Used shared deposit functionality with elevateDeposit
-        return unifiedDeposit(pool, user, _amount, _userAdd, false);
+        // Deposit amount into pool
+        return _unifiedDeposit(
+            poolInfo[_token],
+            userInfo[_token][_userAdd],
+            _amount,
+            _userAdd,
+            _isElevate
+        );
     }
 
 
-    /// @dev Elevate funds to the OASIS through the elevate pipeline
-    /// @param _token Pool to deposit funds in
-    /// @param _amount Amount to elevate to OASIS
-    /// @param _userAdd User elevating funds
-    /// @return Amount deposited after fee taken
-    function elevateDeposit(address _token, uint256 _amount, address _userAdd)
+    /// @dev Emergency withdraw without rewards
+    /// @param _token Pool to emergency withdraw from
+    /// @param _userAdd User emergency withdrawing
+    /// @return Amount emergency withdrawn
+    function emergencyWithdraw(address _token, address _userAdd)
         external override
         nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
         returns (uint256)
     {
-        OasisPoolInfo storage pool = poolInfo[_token];
-        UserInfo storage user = userInfo[_token][_userAdd];   
+        return _unifiedWithdraw(
+            poolInfo[_token],
+            userInfo[_token][_userAdd],
+            userInfo[_token][_userAdd].staked,
+            _userAdd,
+            false
+        );
+    }
 
-        // Use shared deposit functionality with standard deposit 
-        return unifiedDeposit(pool, user, _amount, _userAdd, true);
+
+
+    /// @dev Withdraw staked funds from pool
+    /// @param _token Pool to withdraw from
+    /// @param _amount Amount to withdraw
+    /// @param _userAdd User withdrawing
+    /// @param _crossCompound Whether to cross compound earnings
+    /// @param _isElevate Whether this is the deposit half of an elevate tx
+    /// @return True amount withdrawn
+    function withdraw(address _token, uint256 _amount, address _userAdd, bool _crossCompound, bool _isElevate)
+        external override
+        nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
+        returns (uint256)
+    {
+        UserInfo storage user = userInfo[_token][_userAdd];
+        OasisPoolInfo storage pool = poolInfo[_token];
+
+        // Validate amount attempting to withdraw
+        require(_amount > 0 && user.staked >= _amount, "Bad withdrawal");
+
+        // Harvest earnings from pool, cross compound if necessary
+        _harvestOrCrossCompoundPool(
+            poolInfo[_token],
+            userInfo[_token][_userAdd],
+            _userAdd,
+            _crossCompound
+        );
+
+        // Withdraw amount from pool
+        return _unifiedWithdraw(
+            poolInfo[_token],
+            userInfo[_token][_userAdd],
+            _amount,
+            _userAdd,
+            _isElevate
+        );
+    }
+
+
+
+    /// @dev Helper function to harvest / cross compound a farm
+    /// @param pool OasisPoolInfo of pool to withdraw from
+    /// @param user UserInfo of withdrawing user
+    /// @param _userAdd User address
+    /// @param _crossCompound Whether to prevent sending these harvested winnings to the user
+    function _harvestOrCrossCompoundPool(OasisPoolInfo storage pool, UserInfo storage user, address _userAdd, bool _crossCompound)
+        internal
+    {
+        // Harvest / Get harvestable from withdrawing pool
+        // If {_crossCompound} is false, these harvestable funds will be sent to the user
+        // Else the amount to be harvested is returned, and deposited into the summit farm below
+        uint256 harvestable = _unifiedHarvest(
+            poolInfo[pool.token],
+            userInfo[pool.token][_userAdd],
+            _userAdd,
+            _crossCompound
+        );
+
+        // If cross compound, get harvestable from summit pool and deposit total harvestable into summit pool
+        if (_crossCompound) {
+            require(summitTokenAddress != address(0), "No SUMMIT farm to cross compound into");
+
+            harvestable += _unifiedHarvest(
+                poolInfo[summitTokenAddress],
+                userInfo[summitTokenAddress][_userAdd],
+                _userAdd,
+                _crossCompound
+            );
+
+            _unifiedDeposit(
+                poolInfo[summitTokenAddress],
+                userInfo[summitTokenAddress][_userAdd],
+                harvestable,
+                _userAdd,
+                true
+            );
+        }
+    }
+
+
+
+
+    /// @dev Shared harvest functionality with cross compounding built in
+    /// @param pool OasisPoolInfo of pool to withdraw from
+    /// @param user UserInfo of withdrawing user
+    /// @param _userAdd User address
+    /// @param _crossCompound Whether to prevent sending these harvested winnings to the user
+    /// @return Amount harvestable
+    function _unifiedHarvest(OasisPoolInfo storage pool, UserInfo storage user, address _userAdd, bool _crossCompound)
+        internal
+        returns (uint256)
+    {
+        updatePool(pool.token);
+
+        // Check harvestable rewards and withdraw if applicable
+        uint256 harvestable = (user.staked * pool.accSummitPerShare / 1e12) - user.debt;
+        if (harvestable > 0 && !_crossCompound) {
+            cartographer.redeemRewards(_userAdd, harvestable);
+        }
+
+        // Set debt, may be overwritten in subsequent deposit / withdraw, but may not so it needs to be set here
+        user.debt = user.staked * pool.accSummitPerShare / 1e12;
+
+        // Return amount harvested / harvestable
+        return harvestable;
     }
 
 
@@ -421,21 +547,11 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     /// @param _userAdd User address
     /// @param _isInternalTransfer Flag to switch off certain functionality if transfer is exclusively within summit ecosystem
     /// @return Amount deposited after fee taken
-    function unifiedDeposit(OasisPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer)
+    function _unifiedDeposit(OasisPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer)
         internal
         returns (uint256)
     {
         updatePool(pool.token);
-
-        // If user has previous amount staked, then harvest the rewards of that staked amount
-        if (user.staked > 0) {
-            // Calculate pending rewards for user
-            uint256 harvestable = (user.staked * pool.accSummitPerShare / 1e12) - user.debt;
-            // If user has harvestable rewards, redeem them
-            if (harvestable > 0) {
-                cartographer.redeemRewards(_userAdd, harvestable);
-            }
-        }
 
         uint256 amountAfterFee = _amount;
 
@@ -462,66 +578,6 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         return amountAfterFee;
     }
 
-
-    /// @dev Emergency withdraw without rewards
-    /// @param _token Pool to emergency withdraw from
-    /// @param _userAdd User emergency withdrawing
-    /// @return Amount emergency withdrawn
-    function emergencyWithdraw(address _token, address _userAdd)
-        external override
-        nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
-        returns (uint256)
-    {
-        UserInfo storage user = userInfo[_token][_userAdd];
-        OasisPoolInfo storage pool = poolInfo[_token];
-
-        // Shared withdraw functionality
-        return unifiedWithdraw(pool, user, 0, _userAdd, false, true);
-    }
-
-
-
-    /// @dev Withdraw staked funds from pool
-    /// @param _token Pool to withdraw from
-    /// @param _amount Amount to withdraw
-    /// @param _userAdd User withdrawing
-    /// @return True amount withdrawn
-    function withdraw(address _token, uint256 _amount, address _userAdd)
-        external override
-        nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
-        returns (uint256)
-    {
-        UserInfo storage user = userInfo[_token][_userAdd];
-        OasisPoolInfo storage pool = poolInfo[_token];
-
-        // Validate amount attempting to withdraw
-        require(_amount > 0 && user.staked >= _amount, "Bad withdrawal");
-        
-        // Shared functionality withdraw with elevateWithdraw
-        return unifiedWithdraw(pool,  user, _amount, _userAdd, false, false);
-    }
-
-
-    /// @dev Withdraw staked funds to elevate them to another elevation
-    /// @param _token Pool to elevate funds from
-    /// @param _amount Amount of funds to elevate
-    /// @param _userAdd User elevating
-    /// @return Amount withdrawn to be elevated
-    function elevateWithdraw(address _token, uint256 _amount, address _userAdd)
-        external override
-        nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
-        returns (uint256)
-    {
-        UserInfo storage user = userInfo[_token][_userAdd];       
-        OasisPoolInfo storage pool = poolInfo[_token];
-
-        // Validate the amount to elevate
-        require(_amount > 0 && user.staked >= _amount, "Bad transfer");
-
-        // Shared withdraw functionality with standard withdraw
-        return unifiedWithdraw(pool, user, _amount, _userAdd, true, false);
-    }
-
     
     /// @dev Withdraw functionality shared between standardWithdraw and elevateWithdraw
     /// @param pool OasisPoolInfo of pool to withdraw from
@@ -529,38 +585,12 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     /// @param _amount Amount to withdraw
     /// @param _userAdd User address
     /// @param _isInternalTransfer Flag to switch off certain functionality for elevate withdraw
-    /// @param _isEmergencyWithdraw Flag to bypass emissions
     /// @return Amount withdrawn
-    function unifiedWithdraw(OasisPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer, bool _isEmergencyWithdraw)
+    function _unifiedWithdraw(OasisPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer)
         internal
         returns (uint256)
     {
         updatePool(pool.token);
-
-        // Amount to attempt to withdraw
-        uint256 amount = _amount;
-
-        if (_isEmergencyWithdraw) {
-            // Withdraw full staked balance
-            amount = user.staked;
-
-            // Reset user back to base state
-            user.staked = 0;
-            user.debt = 0;
-        } else {
-            // Check harvestable rewards and withdraw if applicable
-            uint256 harvestable = (user.staked * pool.accSummitPerShare / 1e12) - user.debt;
-            if (harvestable > 0) {
-                cartographer.redeemRewards(_userAdd, harvestable);
-            }
-
-            // Update user's staked and debt     
-            user.staked -= _amount;
-            user.debt = user.staked * pool.accSummitPerShare / 1e12;
-        }
-
-        // Update pool running supply total with amount withdrawn
-        pool.supply -= _amount;
 
         // Signal cartographer to perform withdrawal function if not elevating funds
         // Elevated funds remain in the cartographer, or in the passthrough target, so no need to withdraw from anywhere as they would be immediately re-deposited
@@ -568,6 +598,13 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         if (!_isInternalTransfer) {
             amountAfterFee = cartographer.withdrawalTokenManagement(_userAdd, pool.token, _amount);
         }
+
+        // Update pool running supply total with amount withdrawn
+        pool.supply -= _amount;
+
+        // Update user's staked and debt     
+        user.staked -= _amount;
+        user.debt = user.staked * pool.accSummitPerShare / 1e12;
 
         // If the user is interacting with this pool after the meat of the transaction completes
         _markUserInteractingWithPool(pool.token, _userAdd, user.staked > 0);

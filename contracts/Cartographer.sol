@@ -803,12 +803,20 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Stake funds with a pool, is also used to harvest with a deposit of 0
     /// (@param _token, @param _elevation) Pool identifier
     /// @param _amount Amount to stake
-    function deposit(address _token, uint8 _elevation, uint256 _amount)
+    /// @param _crossCompound Whether to cross compound earnings from this pool
+    function deposit(address _token, uint8 _elevation, uint256 _amount, bool _crossCompound)
         public
         nonReentrant poolExists(_token, _elevation)
     {
         // Executes the deposit in the sub cartographer
-        uint256 amountAfterFee = subCartographer(_elevation).deposit(_token, _amount, msg.sender);
+        uint256 amountAfterFee = subCartographer(_elevation)
+            .deposit(
+                _token,
+                _amount,
+                msg.sender,
+                _crossCompound,
+                false
+            );
 
         emit Deposit(msg.sender, _token, _elevation, amountAfterFee);
     }
@@ -822,7 +830,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         nonReentrant isElevation(_elevation)
     {
         // Harvest across an elevation, return total amount harvested
-        uint256 totalHarvested = subCartographer(_elevation).harvestElevation(_crossCompound, msg.sender);
+        uint256 totalHarvested = subCartographer(_elevation).harvestElevation(msg.sender, _crossCompound);
         
         emit HarvestElevation(msg.sender, _elevation, _crossCompound, totalHarvested);
     }
@@ -831,12 +839,20 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Withdraw staked funds from a pool
     /// (@param _token, @param _elevation) Pool identifier
     /// @param _amount Amount to withdraw, must be > 0 and <= staked amount
-    function withdraw(address _token, uint8 _elevation, uint256 _amount)
+    /// @param _crossCompound Whether to cross compound during this withdraw
+    function withdraw(address _token, uint8 _elevation, uint256 _amount, bool _crossCompound)
         public
         nonReentrant poolExists(_token, _elevation)
     {
         // Executes the withdrawal in the sub cartographer
-        uint256 amountAfterFee = subCartographer(_elevation).withdraw(_token, _amount, msg.sender);
+        uint256 amountAfterFee = subCartographer(_elevation)
+            .withdraw(
+                _token,
+                _amount,
+                msg.sender,
+                _crossCompound,
+                false
+            );
 
         emit Withdraw(msg.sender, _token, _elevation, amountAfterFee);
     }
@@ -866,25 +882,30 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _sourceElevation Elevation to withdraw from
     /// @param _targetElevation Elevation to deposit into
     /// @param _amount Amount to elevate
-    function elevate(address _token, uint8 _sourceElevation, uint8 _targetElevation, uint256 _amount)
+    /// @param _crossCompound Whether to compound earnings from the source and target pools
+    function elevate(address _token, uint8 _sourceElevation, uint8 _targetElevation, uint256 _amount, bool _crossCompound)
         public
     {
         validateElevate(_token, _sourceElevation, _targetElevation, _amount);
 
         // Withdraw {_amount} of {_token} from {_sourceElevation} pool
         uint256 elevatedAmount = subCartographer(_sourceElevation)
-            .elevateWithdraw(
+            .withdraw(
                 _token,
                 _amount,
-                msg.sender
+                msg.sender,
+                _crossCompound,
+                true
             );
         
         // Deposit withdrawn amount of {_token} from source pool {elevatedAmount} into {_targetPid} pool
         elevatedAmount = subCartographer(_targetElevation)
-            .elevateDeposit(
+            .deposit(
                 _token,
                 elevatedAmount,
-                msg.sender
+                msg.sender,
+                _crossCompound,
+                true
             );
 
         emit Elevate(msg.sender, _token, _sourceElevation, _targetElevation, elevatedAmount);
