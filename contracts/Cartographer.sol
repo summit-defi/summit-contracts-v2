@@ -778,7 +778,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev All funds at an elevation share a totem. This function allows switching staked funds from one totem to another
     /// @param _elevation Elevation to switch totem on
     /// @param _totem New target totem
-    function switchTotem(uint8 _elevation, uint8 _totem)
+    /// @param _crossCompound Whether to cross compound earnings from active pools that would be harvested during this tx
+    function switchTotem(uint8 _elevation, uint8 _totem, bool _crossCompound)
         public
         nonReentrant isElevation(_elevation)
     {
@@ -786,7 +787,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         require(_totem < elevationHelper.totemCount(_elevation), "Invalid totem");
 
         // Executes the totem switch in the correct subcartographer
-        subCartographer(_elevation).switchTotem(_totem, msg.sender);
+        subCartographer(_elevation).switchTotem(_totem, msg.sender, _crossCompound);
 
         emit SwitchTotem(msg.sender, _elevation, _totem);
     }

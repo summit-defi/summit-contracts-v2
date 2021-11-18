@@ -319,7 +319,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
 
     function hypotheticalRewards(uint16, address) public pure returns (uint256, uint256) { return (uint256(0), 0); }
     function rollover() external override {}
-    function switchTotem(uint8, address) external override {}
+    function switchTotem(uint8, address, bool) external override {}
 
 
 
@@ -398,7 +398,6 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         // Harvest earnings from pool, cross compound if necessary
         _harvestOrCrossCompoundPool(
             poolInfo[_token],
-            userInfo[_token][_userAdd],
             _userAdd,
             _crossCompound
         );
@@ -439,7 +438,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     /// @param _amount Amount to withdraw
     /// @param _userAdd User withdrawing
     /// @param _crossCompound Whether to cross compound earnings
-    /// @param _isElevate Whether this is the deposit half of an elevate tx
+    /// @param _isElevate Whether this is the withdraw half of an elevate tx
     /// @return True amount withdrawn
     function withdraw(address _token, uint256 _amount, address _userAdd, bool _crossCompound, bool _isElevate)
         external override
@@ -449,13 +448,9 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         UserInfo storage user = userInfo[_token][_userAdd];
         OasisPoolInfo storage pool = poolInfo[_token];
 
-        // Validate amount attempting to withdraw
-        require(_amount > 0 && user.staked >= _amount, "Bad withdrawal");
-
         // Harvest earnings from pool, cross compound if necessary
         _harvestOrCrossCompoundPool(
             poolInfo[_token],
-            userInfo[_token][_userAdd],
             _userAdd,
             _crossCompound
         );
@@ -473,11 +468,10 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
 
 
     /// @dev Helper function to harvest / cross compound a farm
-    /// @param pool OasisPoolInfo of pool to withdraw from
-    /// @param user UserInfo of withdrawing user
+    /// @param pool OasisPoolInfo of pool to harvest
     /// @param _userAdd User address
     /// @param _crossCompound Whether to prevent sending these harvested winnings to the user
-    function _harvestOrCrossCompoundPool(OasisPoolInfo storage pool, UserInfo storage user, address _userAdd, bool _crossCompound)
+    function _harvestOrCrossCompoundPool(OasisPoolInfo storage pool, address _userAdd, bool _crossCompound)
         internal
     {
         // Harvest / Get harvestable from withdrawing pool
@@ -492,7 +486,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
 
         // If cross compound, get harvestable from summit pool and deposit total harvestable into summit pool
         if (_crossCompound) {
-            require(summitTokenAddress != address(0), "No SUMMIT farm to cross compound into");
+            require(poolTokens.contains(summitTokenAddress), "No SUMMIT farm to CrossCompound into");
 
             harvestable += _unifiedHarvest(
                 poolInfo[summitTokenAddress],
@@ -590,6 +584,9 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         internal
         returns (uint256)
     {
+        // Validate amount attempting to withdraw
+        require(_amount > 0 && user.staked >= _amount, "Bad withdrawal");
+
         updatePool(pool.token);
 
         // Signal cartographer to perform withdrawal function if not elevating funds

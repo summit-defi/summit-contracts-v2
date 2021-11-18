@@ -13,8 +13,7 @@ interface ISubCart {
 
     function rollover() external;
 
-    function switchTotem(uint8 _totem, address _userAdd) external;
-    
+    function switchTotem(uint8 _totem, address _userAdd, bool _crossCompound) external;
     function harvestElevation(address _userAdd, bool _crossCompound) external returns (uint256);
     function deposit(address _token, uint256 _amount, address _userAdd, bool _crossCompound, bool _isElevate) external returns (uint256);
     function emergencyWithdraw(address _token, address _userAdd) external returns (uint256);

@@ -935,6 +935,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param _userAdd USer's address used for redeeming rewards and checking for if rounds won
     function _harvest(ElevationPoolInfo storage pool, UserInfo storage user, address _userAdd)
         internal
+        returns (uint256)
     {
         // Get user's winnings available for harvest
         uint256 harvestable = _harvestableWinnings(pool, user, _userAdd);
@@ -943,6 +944,8 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         if (harvestable > 0) {
             cartographer.redeemRewards(_userAdd, harvestable);
         }
+
+        return harvestable;
     }
 
     /// @dev Vest or ReVest any winnings currently vesting but not yet vested
@@ -1044,24 +1047,40 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @dev All funds at an elevation share a totem. This function allows switching staked funds from one totem to another
     /// @param _totem New target totem
     /// @param _userAdd User requesting switch
-    function switchTotem(uint8 _totem, address _userAdd)
+    /// @param _crossCompound Whether to cross compound any harvested winnings during totem switch
+    function switchTotem(uint8 _totem, address _userAdd, bool _crossCompound)
         external override
         nonReentrant onlyCartographer validTotem(_totem) validUserAdd(_userAdd) elevationInteractionsAvailable
     {
+        // Early exit if cross compound will fail
+        require(!_crossCompound || poolTokens.contains(summitTokenAddress), "No SUMMIT farm to CrossCompound into");
+
         uint8 prevTotem = _getUserTotem(_userAdd);
 
         // Early exit if totem is same as current
-        require(prevTotem != _totem, "Totem must be different");
+        require(!_totemSelected(_userAdd) || prevTotem != _totem, "Totem must be different");
 
         // Iterate through pools the user is interacting with and update totem
+        uint256 harvestable = 0;
         for (uint8 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
-            switchTotemForPool(userInteractingPools[_userAdd].at(index), prevTotem, _totem, _userAdd);
+            harvestable += switchTotemForPool(userInteractingPools[_userAdd].at(index), prevTotem, _totem, _userAdd, _crossCompound);
         }
 
         // Update user's totem in state
         userElevationInfo[_userAdd].totem = _totem;
         userElevationInfo[_userAdd].totemSelected = true;
         userElevationInfo[_userAdd].totemSelectionRound = elevationHelper.roundNumber(elevation);
+
+        // If cross compounding, deposit the combined harvestable amount from all user's pools into the SUMMIT pool
+        if (_crossCompound) {
+            _unifiedDeposit(
+                poolInfo[summitTokenAddress],
+                userInfo[summitTokenAddress][_userAdd],
+                harvestable,
+                _userAdd,
+                true
+            );
+        }
     }
 
 
@@ -1070,26 +1089,28 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param _prevTotem Totem the user is leaving
     /// @param _newTotem Totem the user is moving to
     /// @param _userAdd User doing the switch
-    function switchTotemForPool(address _token, uint8 _prevTotem, uint8 _newTotem, address _userAdd)
+    /// @param _crossCompound Whether to cross compound these winnings
+    function switchTotemForPool(address _token, uint8 _prevTotem, uint8 _newTotem, address _userAdd, bool _crossCompound)
         internal
+        returns (uint256)
     {
         UserInfo storage user = userInfo[_token][_userAdd];
         ElevationPoolInfo storage pool = poolInfo[_token];
 
-        // Harvest any available funds in this pool        
-        _harvest(pool, user, _userAdd);
-
-        // Vest or reVest any winnings yet to become available
-        _vest(pool, user, _userAdd);
-
-        // Update the users interaction in this pool
-        _updateUserRoundInteraction(pool, user, _newTotem, 0, true);
+        uint256 harvestable = _unifiedHarvest(
+            pool,
+            user,
+            _userAdd,
+            _crossCompound
+        );
 
         // Transfer supply and round rewards from previous totem to new totem
         pool.totemSupplies[_prevTotem] -= user.staked;
         pool.totemSupplies[_newTotem] += user.staked;
         pool.totemRoundRewards[_prevTotem] -= user.roundRew;
         pool.totemRoundRewards[_newTotem] += user.roundRew;
+
+        return harvestable;
     }
     
 
@@ -1099,99 +1120,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     // ------------------------------------------------------------
     // --   P O O L   I N T E R A C T I O N S
     // ------------------------------------------------------------
-
-    /// @dev Harvest an entire elevation (or cross compound)
-    /// @param _crossCompound Whether to cross compound earnings
-    /// @param _userAdd User harvesting
-    function harvestElevation(bool _crossCompound, address _userAdd)
-        external override
-        validUserAdd(_userAdd) elevationInteractionsAvailable onlyCartographer
-        returns (uint256)
-    {
-        require(!_crossCompound || poolTokens.contains(summitTokenAddress), "No SUMMIT farm to CrossCompound into");
-
-        // Harvest rewards of users active pools
-        uint8 totem = _getUserTotem(_userAdd);
-        uint256 harvestable = 0;
-        ElevationPoolInfo storage pool;
-        UserInfo storage user;
-
-        // Iterate through pools the user is interacting, get harvestable amount, update pool
-        for (uint8 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
-            pool = poolInfo[userInteractingPools[_userAdd].at(index)];
-            user = userInfo[userInteractingPools[_userAdd].at(index)][_userAdd];
-
-            // Harvest winnings
-            updatePool(pool.token);
-            harvestable += _harvestableWinnings(pool, user, _userAdd);
-            _vest(pool, user, _userAdd);
-            _updateUserRoundInteraction(pool, user, totem, 0, true);
-        }
-
-        // Cross compound, else harvest to user
-        if (harvestable > 0) {
-            if (_crossCompound){
-                unifiedDeposit(poolInfo[summitTokenAddress], userInfo[summitTokenAddress][_userAdd], harvestable, _userAdd, true);
-            } else {
-                cartographer.redeemRewards(_userAdd, harvestable);
-            }
-        }
-        
-        return harvestable;
-    }
-
-    
-    /// @dev Wrapper around cartographer token management on deposit
-    function _depositTokenManagement(address _token, uint256 _amount, address _userAdd)
-        internal
-        returns (uint256)
-    {
-        return cartographer.depositTokenManagement(_userAdd, _token, _amount);
-    }
-
-    function _depositValidate(address _token, address _userAdd)
-        internal view
-        userHasSelectedTotem(_userAdd) poolExistsAndLaunched(_token) validUserAdd(_userAdd) elevationInteractionsAvailable
-    { return; }
-    
-    /// @dev Stake funds in a yield multiplying elevation pool
-    /// @param _token Pool to stake in
-    /// @param _amount Amount to stake
-    /// @param _userAdd User wanting to stake
-    /// @return Amount deposited after deposit fee taken
-    function deposit(address _token, uint256 _amount, address _userAdd)
-        external override
-        nonReentrant onlyCartographer
-        returns (uint256)
-    {
-        // User has selected their totem, pool exists, user is valid, elevation is open for interactions
-        _depositValidate(_token, _userAdd);
-
-        ElevationPoolInfo storage pool = poolInfo[_token];
-        UserInfo storage user = userInfo[_token][_userAdd];
-
-        // Pass info to unified deposit to handle remainder of deposit functionality
-        return unifiedDeposit(pool, user, _amount, _userAdd, false);
-    }
-
-
-    /// @dev Elevate funds to a yield multiplying pool through the elevate pipeline
-    /// @param _token Pool to deposit funds in
-    /// @param _amount Amount to elevate
-    /// @param _userAdd User elevating funds
-    /// @return Amount deposited after fee taken
-    function elevateDeposit(address _token, uint256 _amount, address _userAdd)
-        external override
-        nonReentrant onlyCartographer userHasSelectedTotem(_userAdd)
-        returns (uint256)
-    {
-        _depositValidate(_token, _userAdd);
-        ElevationPoolInfo storage pool = poolInfo[_token];
-        UserInfo storage user = userInfo[_token][_userAdd];
-
-        // Pass info through to unified deposit to handle remainder of functionality
-        return unifiedDeposit(pool, user, _amount, _userAdd, true);
-    }
 
 
     /// @dev User interacting with pool getter
@@ -1213,6 +1141,226 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     }
 
 
+
+    /// @dev Harvest an entire elevation (or cross compound)
+    /// @param _userAdd User harvesting
+    /// @param _crossCompound Whether to cross compound earnings
+    function harvestElevation(address _userAdd, bool _crossCompound)
+        external override
+        validUserAdd(_userAdd) elevationInteractionsAvailable onlyCartographer
+        returns (uint256)
+    {
+        require(!_crossCompound || poolTokens.contains(summitTokenAddress), "No SUMMIT farm to CrossCompound into");
+
+        // Harvest rewards of users active pools
+        uint256 harvestable = 0;
+
+        // Iterate through pools the user is interacting, get harvestable amount, update pool
+        for (uint8 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
+            // Harvest winnings
+            harvestable += _unifiedHarvest(
+                poolInfo[userInteractingPools[_userAdd].at(index)],
+                userInfo[userInteractingPools[_userAdd].at(index)][_userAdd],
+                _userAdd,
+                _crossCompound
+            );
+        }
+
+        // Cross compound, else harvest to user
+        if (harvestable > 0) {
+            if (_crossCompound) {
+                // If the user is interacting with the SUMMIT pool, its rewards will already have been harvested above, so can deposit directly
+                _unifiedDeposit(
+                    poolInfo[summitTokenAddress],
+                    userInfo[summitTokenAddress][_userAdd],
+                    harvestable,
+                    _userAdd,
+                    true
+                );
+            } else {
+                cartographer.redeemRewards(_userAdd, harvestable);
+            }
+        }
+        
+        return harvestable;
+    }
+
+    
+    /// @dev Wrapper around cartographer token management on deposit
+    function _depositTokenManagement(address _token, uint256 _amount, address _userAdd)
+        internal
+        returns (uint256)
+    {
+        return cartographer.depositTokenManagement(_userAdd, _token, _amount);
+    }
+
+    function _depositValidate(address _token, address _userAdd)
+        internal view
+        userHasSelectedTotem(_userAdd) poolExistsAndLaunched(_token) validUserAdd(_userAdd) elevationInteractionsAvailable
+    { return; }
+
+    
+    /// @dev Stake funds in a yield multiplying elevation pool
+    /// @param _token Pool to stake in
+    /// @param _amount Amount to stake
+    /// @param _userAdd User wanting to stake
+    /// @param _crossCompound Whether to cross compound earnings
+    /// @param _isElevate Whether this is the deposit half of an elevate tx
+    /// @return Amount deposited after deposit fee taken
+    function deposit(address _token, uint256 _amount, address _userAdd, bool _crossCompound, bool _isElevate)
+        external override
+        nonReentrant onlyCartographer
+        returns (uint256)
+    {
+        // User has selected their totem, pool exists, user is valid, elevation is open for interactions
+        _depositValidate(_token, _userAdd);
+
+        // Harvest earnings from pool, cross compound if necessary
+        _harvestOrCrossCompoundPool(
+            poolInfo[_token],
+            _userAdd,
+            _crossCompound
+        );
+
+        // Deposit amount into pool
+        return _unifiedDeposit(
+            poolInfo[_token],
+            userInfo[_token][_userAdd],
+            _amount,
+            _userAdd,
+            _isElevate
+        );
+    }
+
+
+    /// @dev Emergency withdraw without rewards
+    /// @param _token Pool to emergency withdraw from
+    /// @param _userAdd User emergency withdrawing
+    /// @return Amount emergency withdrawn
+    function emergencyWithdraw(address _token, address _userAdd)
+        external override
+        nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
+        returns (uint256)
+    {
+        return _unifiedWithdraw(
+            poolInfo[_token],
+            userInfo[_token][_userAdd],
+            userInfo[_token][_userAdd].staked,
+            _userAdd,
+            false,
+            true
+        );
+    }
+
+
+    /// @dev Withdraw staked funds from pool
+    /// @param _token Pool to withdraw from
+    /// @param _amount Amount to withdraw
+    /// @param _userAdd User withdrawing
+    /// @param _crossCompound Whether to cross compound earnings
+    /// @param _isElevate Whether this is the withdraw half of an elevate tx
+    /// @return True amount withdrawn
+    function withdraw(address _token, uint256 _amount, address _userAdd, bool _crossCompound, bool _isElevate)
+        external override
+        nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd) elevationInteractionsAvailable
+        returns (uint256)
+    {
+        // Harvest earnings from pool, cross compound if necessary
+        _harvestOrCrossCompoundPool(
+            poolInfo[_token],
+            _userAdd,
+            _crossCompound
+        );
+
+        // Withdraw amount from pool
+        return _unifiedWithdraw(
+            poolInfo[_token],
+            userInfo[_token][_userAdd],
+            _amount,
+            _userAdd,
+            _isElevate,
+            false
+        );
+    }
+
+
+
+
+
+
+
+    /// @dev Helper function to harvest / cross compound a farm
+    /// @param pool OasisPoolInfo of pool to harvest
+    /// @param _userAdd User address
+    /// @param _crossCompound Whether to prevent sending these harvested winnings to the user
+    function _harvestOrCrossCompoundPool(ElevationPoolInfo storage pool, address _userAdd, bool _crossCompound)
+        internal
+    {
+        // Harvest / Get harvestable from withdrawing pool
+        // If {_crossCompound} is false, these harvestable funds will be sent to the user
+        // Else the amount to be harvested is returned, and deposited into the summit farm below
+        uint256 harvestable = _unifiedHarvest(
+            poolInfo[pool.token],
+            userInfo[pool.token][_userAdd],
+            _userAdd,
+            _crossCompound
+        );
+
+        // If cross compound, get harvestable from summit pool and deposit total harvestable into summit pool
+        if (_crossCompound) {
+            require(poolTokens.contains(summitTokenAddress), "No SUMMIT farm to CrossCompound into");
+
+            harvestable += _unifiedHarvest(
+                poolInfo[summitTokenAddress],
+                userInfo[summitTokenAddress][_userAdd],
+                _userAdd,
+                _crossCompound
+            );
+
+            _unifiedDeposit(
+                poolInfo[summitTokenAddress],
+                userInfo[summitTokenAddress][_userAdd],
+                harvestable,
+                _userAdd,
+                true
+            );
+        }
+    }
+
+
+
+
+    /// @dev Shared harvest functionality with cross compounding built in
+    /// @param pool ElevationPoolInfo of pool to withdraw from
+    /// @param user UserInfo of withdrawing user
+    /// @param _userAdd User address
+    /// @param _crossCompound Whether to prevent sending these harvested winnings to the user
+    /// @return Amount harvestable
+    function _unifiedHarvest(ElevationPoolInfo storage pool, UserInfo storage user, address _userAdd, bool _crossCompound)
+        internal
+        returns (uint256)
+    {
+        updatePool(pool.token);
+
+        // Get harvestable amount or harvest available winnings
+        uint256 harvestable = _crossCompound ?
+            _harvestableWinnings(pool, user, _userAdd) :
+            _harvest(pool, user, _userAdd);
+
+        // Vest any remaining un-vested winnings
+        _vest(pool, user, _userAdd);
+
+        // Update the users round interaction, may be updated again in the same tx, but must be updated here to maintain state
+        _updateUserRoundInteraction(pool, user, _getUserTotem(_userAdd), 0, true);
+
+        // Update users pool interaction status, may be updated again in the same tx, but must be updated here to maintain state
+        _markUserInteractingWithPool(pool.token, _userAdd, _userInteractingWithPool(user));
+
+        // Return amount harvested / harvestable
+        return harvestable;
+    }
+
+
     /// @dev Internal shared deposit functionality for elevate or standard deposit
     /// @param pool Pool info of pool to deposit into
     /// @param user UserInfo of depositing user
@@ -1220,17 +1368,12 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param _userAdd User address
     /// @param _isInternalTransfer Flag to switch off certain functionality for elevate deposit
     /// @return Amount deposited after fee taken
-    function unifiedDeposit(ElevationPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer)
+    function _unifiedDeposit(ElevationPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer)
         internal
         returns (uint256)
     {
         updatePool(pool.token);
         uint8 totem = _getUserTotem(_userAdd);
-
-        // Harvest any available rewards and vest any remaining for pool
-        _harvest(pool, user, _userAdd);
-
-        _vest(pool, user, _userAdd);
 
         uint256 amountAfterFee = _amount;
 
@@ -1257,59 +1400,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     }
 
 
-    /// @dev Emergency withdraw without rewards
-    /// @param _token Pool to emergency withdraw from
-    /// @param _userAdd User emergency withdrawing
-    /// @return Amount emergency withdrawn
-    function emergencyWithdraw(address _token, address _userAdd)
-        external override
-        nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd) elevationInteractionsAvailable
-        returns (uint256)
-    {
-        UserInfo storage user = userInfo[_token][_userAdd];
-        ElevationPoolInfo storage pool = poolInfo[_token];
-
-        // Shared withdraw functionality
-        return unifiedWithdraw(pool, user, 0, _userAdd, false, true);
-    }
-
-
-    /// @dev Withdraw staked funds from pool
-    /// @param _token Pool to withdraw from
-    /// @param _amount Amount to withdraw
-    /// @param _userAdd User withdrawing
-    /// @return True amount withdrawn
-    function withdraw(address _token, uint256 _amount, address _userAdd)
-        external override
-        nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd) elevationInteractionsAvailable
-        returns (uint256)
-    {
-        UserInfo storage user = userInfo[_token][_userAdd];
-        ElevationPoolInfo storage pool = poolInfo[_token];
-
-        // Shared withdraw functionality
-        return unifiedWithdraw(pool, user, _amount, _userAdd, false, false);
-    }
-
-
-    /// @dev Withdraw staked funds to elevate them to another elevation
-    /// @param _token Pool to elevate funds from
-    /// @param _amount Amount of funds to elevate
-    /// @param _userAdd User elevating
-    /// @return Amount withdrawn to be elevated
-    function elevateWithdraw(address _token, uint256 _amount, address _userAdd)
-        external override
-        nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd) elevationInteractionsAvailable
-        returns (uint256)
-    {
-        UserInfo storage user = userInfo[_token][_userAdd];       
-        ElevationPoolInfo storage pool = poolInfo[_token];
-
-        // Shared withdraw functionality
-        return unifiedWithdraw(pool, user, _amount, _userAdd, true, false);
-    }  
-
-
     /// @dev Withdraw functionality shared between standardWithdraw and elevateWithdraw
     /// @param pool Pool to withdraw from
     /// @param user UserInfo of withdrawing user
@@ -1318,7 +1408,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param _isInternalTransfer Flag to switch off certain functionality for elevate withdraw
     /// @param _isEmergencyWithdraw Flag to bypass emissions
     /// @return Amount withdrawn
-    function unifiedWithdraw(ElevationPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer, bool _isEmergencyWithdraw)
+    function _unifiedWithdraw(ElevationPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer, bool _isEmergencyWithdraw)
         internal
         returns (uint256)
     {
@@ -1338,11 +1428,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
             // Reset user back to base state
             _emergencyWithdrawResetUser(pool, _userAdd);
         } else {
-            // Harvest any available winnings
-            _harvest(pool, user, _userAdd);
-
-            // Vest or reVest any winnings not yet available
-            _vest(pool, user, _userAdd);
 
             // Update the users interaction in the pool
             _updateUserRoundInteraction(pool, user, totem, amount, false);
