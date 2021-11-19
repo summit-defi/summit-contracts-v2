@@ -57,15 +57,17 @@ contract ElevationHelper is Ownable {
     uint8 constant FIVETHOUSAND = 2;
     uint8 constant TENTHOUSAND = 3;
     uint8 constant EXPEDITION = 4;
-    uint8 constant seedRoundOffset = 60;
+    uint8 constant roundEndLockoutDuration = 120;
 
     
-    uint8[5] public allocMultiplier = [100, 110, 125, 150, 100];            // Alloc point multipliers for each elevation    
+    uint16[5] public allocMultiplier = [100, 110, 125, 150, 100];            // Alloc point multipliers for each elevation    
+    uint16[5] public pendingAllocMultiplier = [100, 110, 125, 150, 100];     // Pending alloc point multipliers for each elevation, updated at end of round for elevation, instantly for oasis   
     uint8[5] public totemCount = [1, 2, 5, 10, 2];                          // Number of totems at each elevation
 
     
     uint256 constant baseRoundDuration = 3600;                              // Duration (seconds) of the smallest round chunk
-    uint256[5] public durationMult = [0, 2, 4, 8, 24];                      // Number of round chunks for each elevation
+    uint256[5] public durationMult = [0, 2, 2, 2, 24];                      // Number of round chunks for each elevation
+    uint256[5] public pendingDurationMult = [0, 2, 2, 2, 24];               // Duration mult that takes effect at the end of the round
 
     uint256[5] public unlockTimestamp;                                      // Time at which each elevation unlocks to the public
     uint256[5] public roundNumber;                                          // Current round of each elevation
@@ -129,8 +131,8 @@ contract ElevationHelper is Ownable {
 
         // Setting when each elevation of the ecosystem unlocks
         unlockTimestamp = [
-            nextHourTimestamp,                          // Oasis - throwaway
-            nextHourTimestamp,                          // Plains
+            nextHourTimestamp,                       // Oasis - throwaway
+            nextHourTimestamp,                       // Plains
             nextHourTimestamp + 1 days,              // Mesa
             nextHourTimestamp + 4 days,              // Summit
             nextHourTimestamp + 7 days               // Expedition
@@ -143,7 +145,7 @@ contract ElevationHelper is Ownable {
         referralBurnTimestamp = nextHourTimestamp + 7 days;    
 
         // Timestamp of the first seed round starting
-        seedRoundEndTimestamp = nextHourTimestamp - seedRoundOffset;
+        seedRoundEndTimestamp = nextHourTimestamp - roundEndLockoutDuration;
     }
 
 
@@ -188,6 +190,13 @@ contract ElevationHelper is Ownable {
     // ---------------------------------------
     // --   U T I L S (inlined for brevity)
     // ---------------------------------------
+
+
+    /// @dev Allocation multiplier of an elevation
+    /// @param _elevation Desired elevation
+    function elevationAllocMultiplier(uint8 _elevation) public view returns (uint256) {
+        return uint256(allocMultiplier[_elevation]);
+    }
     
     /// @dev Duration of elevation round in seconds
     /// @param _elevation Desired elevation
@@ -212,10 +221,10 @@ contract ElevationHelper is Ownable {
         return _allocPoint * allocMultiplier[_elevation];
     }
 
-    /// @dev Checks whether elevation is locked due to round ending in next 60 seconds
+    /// @dev Checks whether elevation is locked due to round ending in next {roundEndLockoutDuration} seconds
     /// @param _elevation Which elevation to check
     function endOfRoundLockoutActive(uint8 _elevation) external view returns (bool) {
-        return block.timestamp >= roundEndTimestamp[_elevation] - 60;
+        return block.timestamp >= roundEndTimestamp[_elevation] - roundEndLockoutDuration;
     }
 
     /// @dev The next round available for a new pool to unlock at. Used to add pools but not start them until the next rollover
@@ -264,6 +273,37 @@ contract ElevationHelper is Ownable {
     /// @dev Validate unclaimed referral rewards available for burning
     function validateReferralBurnAvailable() external view {
         require(block.timestamp >= referralBurnTimestamp, "Referral burn not available");
+    }
+
+
+
+
+    
+    // ------------------------------------------------------------------
+    // --   P A R A M E T E R S
+    // ------------------------------------------------------------------
+
+
+    /// @dev Update round duration mult of an elevation
+    function setElevationRoundDurationMult(uint8 _elevation, uint8 _mult)
+        public
+        onlyOwner elevationOrExpedition(_elevation)
+    {
+        require(_mult > 0, "Duration mult must be non zero");
+        pendingDurationMult[_elevation] = _mult;
+    }
+
+
+    /// @dev Update emissions multiplier of an elevation
+    function setElevationAllocMultiplier(uint8 _elevation, uint8 _allocMultiplier)
+        public
+        onlyOwner allElevations(_elevation)
+    {
+        require(_allocMultiplier <= 300, "Multiplier cannot exceed 3X");
+        pendingAllocMultiplier[_elevation] = _allocMultiplier;
+        if (_elevation == OASIS) {
+            allocMultiplier[_elevation] = _allocMultiplier;
+        }
     }
 
 
@@ -361,7 +401,7 @@ contract ElevationHelper is Ownable {
 
         // Create the random number from the future block hash and newly unsealed seed
         uint256 rand = uint256(keccak256(abi.encode(roundNumber[_elevation], unsealedSeed[seedRound], futureBlockHash[seedRound])));
-       
+
         // Uses the random number to select the winning totem
         uint8 winner = chooseWinningTotem(_elevation, rand);
 
@@ -387,7 +427,20 @@ contract ElevationHelper is Ownable {
         uint256 overflownRounds = ((block.timestamp - roundEndTimestamp[_elevation]) / roundDurationSeconds(_elevation));
         
         // Brings current with any extra overflown rounds
-        roundEndTimestamp[_elevation] = roundEndTimestamp[_elevation] + roundDurationSeconds(_elevation) * (overflownRounds + 1);
+        roundEndTimestamp[_elevation] += roundDurationSeconds(_elevation) * overflownRounds;
+
+        // Updates round duration if necessary
+        if (pendingDurationMult[_elevation] != durationMult[_elevation]) {
+            durationMult[_elevation] = pendingDurationMult[_elevation];
+        }
+
+        // Adds the duration of the current round (updated if necessary) to the current round end timestamp
+        roundEndTimestamp[_elevation] += roundDurationSeconds(_elevation);
+
+        // Updates elevation allocation multiplier if necessary
+        if (pendingAllocMultiplier[_elevation] != allocMultiplier[_elevation]) {
+            allocMultiplier[_elevation] = pendingAllocMultiplier[_elevation];
+        }
     }
 
 
