@@ -32,15 +32,12 @@ const deploySummitLpToken: DeployFunction = async function ({
 
     if (DummySummitLp.newlyDeployed) {
       // Mint initial summit, change summit token owner
-      await execute('DummySUMMITLP', { from: dev }, 'mint', e18(50))
-      await execute('DummySUMMITLP', { from: dev }, 'approve', user1, e18(10))
-      await execute('DummySUMMITLP', { from: dev }, 'approve', user2, e18(10))
-      await execute('DummySUMMITLP', { from: dev }, 'approve', user3, e18(10))
+      await execute('DummySUMMITLP', { from: dev }, 'mint', dev, e18(50))
       await execute('DummySUMMITLP', { from: dev }, 'transfer', user1, e18(10))
       await execute('DummySUMMITLP', { from: dev }, 'transfer', user2, e18(10))
       await execute('DummySUMMITLP', { from: dev }, 'transfer', user3, e18(10))
 
-      await execute('DummyNativeToken', { from: dev }, 'mint', e18(50))
+      await execute('DummyNativeToken', { from: dev }, 'mint', dev, e18(50))
 
       await execute('DummySUMMITLP', { from: dev }, 'setTokens', SummitToken.address, DummyNativeToken.address)
       await execute('DummySUMMITLP', { from: dev }, 'setReserves', e18(100), e18(150))

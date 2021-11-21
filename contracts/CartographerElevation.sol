@@ -191,23 +191,25 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
 
     /// @dev Constructor, setting address of cartographer
-    constructor(address _Cartographer)
+    constructor(address _Cartographer, uint8 _elevation)
     {
         require(_Cartographer != address(0), "Cartographer required");
+        require(_elevation >= 1 && _elevation <= 3, "Invalid elevation");
         cartographer = Cartographer(_Cartographer);
+        elevation = _elevation;
     }
 
 
     /// @dev Set address of ElevationHelper during initialization
-    function initialize(uint8 _elevation, address _ElevationHelper, address _summitTokenAddress)
+    function initialize(address _ElevationHelper, address _summitTokenAddress)
         external override
         initializer onlyCartographer
     {
         require(_ElevationHelper != address(0), "Contract is zero");
         require(_summitTokenAddress != address(0), "SummitToken is zero");
-        elevation = elevation;
         elevationHelper = ElevationHelper(_ElevationHelper);
         summitTokenAddress = _summitTokenAddress;
+        totemCount = elevationHelper.getTotemCount(elevation);
     }
 
     /// @dev Unused enable summit stub
@@ -1136,8 +1138,8 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     {
         return (user.staked + user.roundRew + user.reVestAmt) > 0;
     }
-    function userInteractingWithPool(address _token) public view poolExists(_token) returns (bool) {
-        return _userInteractingWithPool(userInfo[_token][msg.sender]);
+    function userInteractingWithPool(address _token, address _userAdd) public view poolExists(_token) returns (bool) {
+        return userInteractingPools[_userAdd].contains(_token);
     }
 
 

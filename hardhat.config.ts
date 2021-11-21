@@ -11,6 +11,8 @@ import { HardhatUserConfig } from "hardhat/types";
 import { apiKey, mnemonics, namedAddresses } from './secrets'
 import { ethers } from "ethers"
 
+process.env['HARDHAT_VERBOSE'] = 'true'
+
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
 task("accounts", "Prints the list of accounts", async (args, hre) => {

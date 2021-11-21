@@ -35,10 +35,7 @@ const deployTimelock: DeployFunction = async function ({
     })
   }
 
-  console.log('Verified Timelock')
-
-  // if (Timelock.newlyDeployed) {
-    console.log('Setting Function Specific Delays')
+  if (Timelock.newlyDeployed) {
 
     const setFunctionSpecificDelaySignature = 'setFunctionSpecificDelay(string,uint)'
 
@@ -48,10 +45,6 @@ const deployTimelock: DeployFunction = async function ({
       ['string', 'uint'],
       [setExpedAddSignature, 72 * 3600],
     )
-    console.log({
-      sig: setExpedAddSignature,
-      data: setExpedAddData,
-    })
     await execute(
       'Timelock',
       { from: dev },
@@ -69,10 +62,6 @@ const deployTimelock: DeployFunction = async function ({
       ['string', 'uint'],
       [setTokenPassthroughStrategySignature, 72 * 3600],
     )
-    console.log({
-      sig: setTokenPassthroughStrategySignature,
-      data: setTokenPassthroughStrategyData,
-    })
     await execute(
       'Timelock',
       { from: dev },
@@ -90,10 +79,6 @@ const deployTimelock: DeployFunction = async function ({
       ['string', 'uint'],
       [retireTokenPassthroughStrategySignature, 72 * 3600],
     )
-    console.log({
-      sig: retireTokenPassthroughStrategySignature,
-      data: retireTokenPassthroughStrategyData,
-    })
     await execute(
       'Timelock',
       { from: dev },
@@ -104,10 +89,7 @@ const deployTimelock: DeployFunction = async function ({
       retireTokenPassthroughStrategyData,
       timestampWithDelay,
     )
-
-
-    console.log('Finished Function Specific Delays')
-  // }
+  }
 
 };
 export default deployTimelock;

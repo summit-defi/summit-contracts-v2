@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, delay } from '../utils';
+import { chainIdAllowsVerification, delay, getElevationName, OASIS } from '../utils';
 
 const deployCartographerOasis: DeployFunction = async function ({
   getNamedAccounts,
@@ -13,7 +13,8 @@ const deployCartographerOasis: DeployFunction = async function ({
 
   const Cartographer = await deployments.get('Cartographer');
 
-  const CartographerOasis = await deploy('CartographerOasis', {
+  const CartographerOasis = await deploy(`Cartographer${getElevationName(OASIS)}`, {
+    contract: 'CartographerOasis',
     from: dev,
     args: [Cartographer.address],
     log: true,

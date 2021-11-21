@@ -1,5 +1,5 @@
 import hre, { ethers, getChainId } from 'hardhat'
-import { Contracts, FIVETHOUSAND, OASIS, promiseSequenceMap, TENTHOUSAND, TWOTHOUSAND } from '../utils';
+import { Contracts, MESA, OASIS, promiseSequenceMap, SUMMIT, PLAINS } from '../utils';
 import { getConfigs } from '../data';
 import { queueSyncPoolsTimelockTransactions } from './scriptUtils/timelock-pool-sync';
 
@@ -20,7 +20,7 @@ async function main() {
     const poolConfigs = getConfigs(chainId).pools
 
     const elevationQueuedTxHashes = await promiseSequenceMap(
-        [TWOTHOUSAND, FIVETHOUSAND, TENTHOUSAND],
+        [PLAINS, MESA, SUMMIT],
         async (elevation) => {
             return await queueSyncPoolsTimelockTransactions(chainId, DRY_RUN, elevation, poolConfigs, cartographer, summitAddress, summitLpAddress)
         }

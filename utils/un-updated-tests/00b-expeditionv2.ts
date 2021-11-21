@@ -2,9 +2,9 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, toDecimal, Contracts, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, e36, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, e12, e0, consoleLog, expectAllEqual } from "../utils";
-import { getEverestLockMultiplier, getExpectedEverest } from "../utils/everestUtils";
-import { oasisUnlockedFixture } from "./fixtures";
+import { e18, ERR, EVENT, toDecimal, Contracts, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, e36, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, e12, e0, consoleLog, expectAllEqual } from "..";
+import { getEverestLockMultiplier, getExpectedEverest } from "../everestUtils";
+import { oasisUnlockedFixture } from "../fixtures";
 
 
 const rolloverExpedition = async () => {

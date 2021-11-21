@@ -4,7 +4,7 @@ import { OASIS } from '../utils'
 
 
 const withTokenAllocPoint = true
-const tokenSharedAlloc = 4000
+const tokenAlloc = 4000
 
 const token = '0xaf1B7B111F72d2fd2a7e0Ed248BF95a9A4eD7FC3'
 const elevation = OASIS
@@ -19,17 +19,15 @@ async function main() {
     if (withTokenAllocPoint) {
         await cartographer.connect(dev).createTokenAllocation(
             token,
-            tokenSharedAlloc,
+            tokenAlloc,
         )
     }
 
     await cartographer.connect(dev).add(
         token,
         true,
-        depositFee,
         true,
         elevation,
-        cakeChefPid,
     )
 }
 

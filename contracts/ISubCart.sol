@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 interface ISubCart {
-    function initialize(uint8 _elevation, address _elevationHelper, address _summit) external;
+    function initialize(address _elevationHelper, address _summit) external;
     function enable(uint256 _launchTimestamp) external;
     function add(address _token, bool _live) external;
     function set(address _token, bool _live) external;

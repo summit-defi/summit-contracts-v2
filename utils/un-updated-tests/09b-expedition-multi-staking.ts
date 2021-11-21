@@ -3,7 +3,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
 import { BigNumber, Contract } from "ethers";
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, PID, EXPEDITION, toDecimal, mineBlockWithTimestamp, Contracts, rolloverRoundUntilWinningTotem, expect6FigBigNumberAllEqual, deltaBN, promiseSequenceMap, expect6FigBigNumberEquals, consoleLog, OASIS, TWOTHOUSAND, FIVETHOUSAND, TENTHOUSAND, getSubCartographerStaked, INF_APPROVE, getTimestamp } from "../utils";
+import { e18, ERR, EVENT, PID, EXPEDITION, toDecimal, mineBlockWithTimestamp, Contracts, rolloverRoundUntilWinningTotem, expect6FigBigNumberAllEqual, deltaBN, promiseSequenceMap, expect6FigBigNumberEquals, consoleLog, OASIS, PLAINS, MESA, SUMMIT, getSubCartographerStaked, INF_APPROVE, getTimestamp } from "../utils";
 import { expeditionUnlockedFixture } from "./fixtures";
 
 // Constants
@@ -43,18 +43,18 @@ describe("EXPEDITION MULTI STAKING", function() {
         await cartographer.connect(dev).createTokenAllocation(dummySummitLpToken.address, 4000)
 
         await cartographer.connect(dev).add(dummySummitLpToken.address, OASIS, true, 0, true)
-        await cartographer.connect(dev).add(dummySummitLpToken.address, TWOTHOUSAND, true, 0, true)
-        await cartographer.connect(dev).add(dummySummitLpToken.address, FIVETHOUSAND, true, 0, true)
-        await cartographer.connect(dev).add(dummySummitLpToken.address, TENTHOUSAND, true, 0, true)
+        await cartographer.connect(dev).add(dummySummitLpToken.address, PLAINS, true, 0, true)
+        await cartographer.connect(dev).add(dummySummitLpToken.address, MESA, true, 0, true)
+        await cartographer.connect(dev).add(dummySummitLpToken.address, SUMMIT, true, 0, true)
 
         await dummySummitLpToken.connect(user1).approve(cartographer.address, INF_APPROVE)
         await dummySummitLpToken.connect(user2).approve(cartographer.address, INF_APPROVE)
         await dummySummitLpToken.connect(user3).approve(cartographer.address, INF_APPROVE)
 
         await cartographer.rollover(EXPEDITION)
-        await cartographer.rollover(TWOTHOUSAND)
-        await cartographer.rollover(FIVETHOUSAND)
-        await cartographer.rollover(TENTHOUSAND)
+        await cartographer.rollover(PLAINS)
+        await cartographer.rollover(MESA)
+        await cartographer.rollover(SUMMIT)
     })
 
     it('DEPOSIT SUMMIT LP: Depositing SUMMIT LP alone into an Expedition succeeds', async function() {

@@ -1,7 +1,7 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { ERR, TWOTHOUSAND, mineBlockWithTimestamp, Contracts, getSeeds, mineBlock, mineBlocks } from "../utils";
+import { ERR, PLAINS, mineBlockWithTimestamp, Contracts, getSeeds, mineBlock, mineBlocks } from "../utils";
 import { twoThousandUnlockedFixture } from "./fixtures";
 
 
@@ -28,7 +28,7 @@ describe("Seeding Random Numbers", function() {
   it(`SEEDING: nextSeedRoundAvailable should become true only within 60 seconds of end of round`, async function() {
     const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
 
-    const nextRoundTime = (await elevationHelper.roundEndTimestamp(TWOTHOUSAND)).toNumber()
+    const nextRoundTime = (await elevationHelper.roundEndTimestamp(PLAINS)).toNumber()
 
     await mineBlockWithTimestamp(nextRoundTime - 75)
     const nextSeedRoundAvailableFalse = await elevationHelper.nextSeedRoundAvailable()
@@ -101,12 +101,12 @@ describe("Seeding Random Numbers", function() {
     const cartographer = await ethers.getContract(Contracts.Cartographer)
     const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
     
-    const nextRoundTime = (await elevationHelper.roundEndTimestamp(TWOTHOUSAND)).toNumber()
+    const nextRoundTime = (await elevationHelper.roundEndTimestamp(PLAINS)).toNumber()
 
     await mineBlockWithTimestamp(nextRoundTime)
-    await cartographer.rollover(TWOTHOUSAND)
+    await cartographer.rollover(PLAINS)
 
-    const nextSeedRoundTime = (await elevationHelper.roundEndTimestamp(TWOTHOUSAND)).toNumber()
+    const nextSeedRoundTime = (await elevationHelper.roundEndTimestamp(PLAINS)).toNumber()
     await mineBlockWithTimestamp(nextSeedRoundTime - 60)
 
     const { sealedSeed } = getSeeds('summit', trustedSeeder.address)

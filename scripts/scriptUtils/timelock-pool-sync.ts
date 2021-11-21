@@ -87,13 +87,13 @@ export const queueSyncPoolsTimelockTransactions = async (chainId: string, dryRun
                     console.log(`\t\tAllocation out of sync, syncing ${existingAllocation} => ${configAllocation}`)
                     const updateAllocationNote = `Update ${configName} Allocation: ${existingAllocation} => ${configAllocation}`
                     // QUEUE UPDATE TOKEN ALLOCATION TRANSACTION
-                    const setTokenSharedAllocationTxHash = await queueTransactionInTimelock(chainId, dryRun, updateAllocationNote, {
+                    const setTokenAllocationTxHash = await queueTransactionInTimelock(chainId, dryRun, updateAllocationNote, {
                         targetContractName: TimelockTargetContract.Cartographer,
-                        txName: TimelockedTransaction.Cartographer_SetTokenSharedAlloc,
+                        txName: TimelockedTransaction.Cartographer_setTokenAlloc,
                         txParams: [tokenAddress, configAllocation],
                     })
-                    if (setTokenSharedAllocationTxHash != null) poolQueuedTxHashes.push({
-                        txHash: setTokenSharedAllocationTxHash,
+                    if (setTokenAllocationTxHash != null) poolQueuedTxHashes.push({
+                        txHash: setTokenAllocationTxHash,
                         note: updateAllocationNote,
                     })
                     console.log(`\t\t\tqueued.`)

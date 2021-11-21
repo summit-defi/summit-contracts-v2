@@ -2,11 +2,11 @@ import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat';
 import { consoleLog, deltaBN, depositedAfterFee, e18, toDecimal } from '.';
-import { Contracts, EVENT, EXPEDITION, FIVETHOUSAND, TENTHOUSAND, TWOTHOUSAND, ZEROADD } from './constants';
+import { Contracts, EVENT, EXPEDITION, MESA, SUMMIT, PLAINS } from './constants';
 import { amountAfterFullFee, e16, expect6FigBigNumberAllEqual, expect6FigBigNumberEquals, getBlockNumber, getTimestamp, mineBlock, mineBlockWithTimestamp, promiseSequenceMap, rolloverIfAvailable, withdrawnAfterFee } from './utils';
 
 // VAULT TESTING
-const vaultTests = (pid: number, poolFee: number) => {
+const vaultTests = (tokenName: string, elevation: number) => {
     it('SET PASSTHROUGH STRATEGY: Setting passthrough strategy is successful', async function() {
         const cartographer = await ethers.getContract(Contracts.Cartographer)
         const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
@@ -18,9 +18,9 @@ const vaultTests = (pid: number, poolFee: number) => {
             cartographer.setTokenPassthroughStrategy(dummyBifiToken.address, BeefyVaultV6Passthrough.address)
         ).to.emit(cartographer, EVENT.SET_PASSTHROUGH_STRATEGY).withArgs(dummyBifiToken.address, BeefyVaultV6Passthrough.address)
 
-        await rolloverIfAvailable(cartographer, elevationHelper, TWOTHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, FIVETHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, TENTHOUSAND)
+        await rolloverIfAvailable(cartographer, elevationHelper, PLAINS)
+        await rolloverIfAvailable(cartographer, elevationHelper, MESA)
+        await rolloverIfAvailable(cartographer, elevationHelper, SUMMIT)
         await rolloverIfAvailable(cartographer, elevationHelper, EXPEDITION)
 
     })
@@ -151,7 +151,7 @@ const vaultTests = (pid: number, poolFee: number) => {
     })
 }
 
-const switchPassthroughStrategyVaultToMasterChef = (pid: number, poolFee: number) => {
+const switchPassthroughStrategyVaultToMasterChef = (tokenName: string, elevation: number) => {
     it('RETIRE PASSTHROUGH STRATEGY: Retiring transfers users funds back to cartographer', async function() {
         const { dev } = await getNamedSigners(hre)
 
@@ -192,9 +192,9 @@ const switchPassthroughStrategyVaultToMasterChef = (pid: number, poolFee: number
             cartographer.connect(dev).setTokenPassthroughStrategy(dummyBifiToken.address, masterChefPassthrough.address)
         ).to.emit(cartographer, EVENT.SET_PASSTHROUGH_STRATEGY).withArgs(dummyBifiToken.address, masterChefPassthrough.address)
 
-        await rolloverIfAvailable(cartographer, elevationHelper, TWOTHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, FIVETHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, TENTHOUSAND)
+        await rolloverIfAvailable(cartographer, elevationHelper, PLAINS)
+        await rolloverIfAvailable(cartographer, elevationHelper, MESA)
+        await rolloverIfAvailable(cartographer, elevationHelper, SUMMIT)
         await rolloverIfAvailable(cartographer, elevationHelper, EXPEDITION)
 
         const cartographerBifiFinal = await dummyBifiToken.balanceOf(cartographer.address)
@@ -207,7 +207,7 @@ const switchPassthroughStrategyVaultToMasterChef = (pid: number, poolFee: number
     })
 }
 
-const masterChefTests = (pid: number, poolFee: number) => {
+const masterChefTests = (tokenName: string, elevation: number) => {
     it('MASTER CHEF DEPOSIT: Depositing into pool with passthrough masterChef transfers funds correctly', async function() {
         const { user1, user2, user3, exped, dev } = await getNamedSigners(hre)
         const cartographer = await ethers.getContract(Contracts.Cartographer)
@@ -337,7 +337,7 @@ const masterChefTests = (pid: number, poolFee: number) => {
     })
 }
 
-const switchPassthroughStrategyMasterChefToVault = (pid: number) => {
+const switchPassthroughStrategyMasterChefToVault = (tokenName: string, elevation: number) => {
     it('SWITCH PASSTHROUGH STRATEGY: Switching transfers users funds to vault directly', async function() {
         const { dev } = await getNamedSigners(hre)
 
@@ -363,9 +363,9 @@ const switchPassthroughStrategyMasterChefToVault = (pid: number) => {
             cartographer.connect(dev).setTokenPassthroughStrategy(dummyBifiToken.address, BeefyVaultV6Passthrough.address)
         ).to.emit(cartographer, EVENT.SET_PASSTHROUGH_STRATEGY).withArgs(dummyBifiToken.address, BeefyVaultV6Passthrough.address)
 
-        await rolloverIfAvailable(cartographer, elevationHelper, TWOTHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, FIVETHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, TENTHOUSAND)
+        await rolloverIfAvailable(cartographer, elevationHelper, PLAINS)
+        await rolloverIfAvailable(cartographer, elevationHelper, MESA)
+        await rolloverIfAvailable(cartographer, elevationHelper, SUMMIT)
         await rolloverIfAvailable(cartographer, elevationHelper, EXPEDITION)
         
         const masterChefBifiFinal = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount

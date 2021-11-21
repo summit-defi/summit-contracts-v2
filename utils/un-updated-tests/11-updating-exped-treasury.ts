@@ -1,7 +1,7 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, expect6FigBigNumberEquals, mineBlock, oasisTests, OASIS, PID, toDecimal, POOL_FEE, passthroughTests, SubCartographer, Contracts, EXPEDITION, FIVETHOUSAND, mineBlockWithTimestamp, TENTHOUSAND, TWOTHOUSAND, getTimestamp, rolloverRoundUntilWinningTotem, promiseSequenceMap, deltaBN, ZEROADD } from "../utils";
+import { e18, ERR, EVENT, expect6FigBigNumberEquals, mineBlock, oasisTests, OASIS, PID, toDecimal, POOL_FEE, passthroughTests, SubCartographer, Contracts, EXPEDITION, MESA, mineBlockWithTimestamp, SUMMIT, PLAINS, getTimestamp, rolloverRoundUntilWinningTotem, promiseSequenceMap, deltaBN, ZEROADD } from "../utils";
 import { expeditionUnlockedFixture, oasisUnlockedFixture, poolsFixture, twoThousandUnlockedFixture } from "./fixtures";
 
 

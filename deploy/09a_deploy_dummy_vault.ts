@@ -33,10 +33,7 @@ const deployDummyVault: DeployFunction = async function ({
   })
 
   if (dummyBifiToken.newlyDeployed) {
-    await execute('DummyBIFI', { from: dev }, 'mint', e18(20000000))
-    await execute('DummyBIFI', { from: dev }, 'approve', user1, e18(500))
-    await execute('DummyBIFI', { from: dev }, 'approve', user2, e18(500))
-    await execute('DummyBIFI', { from: dev }, 'approve', user3, e18(500))
+    await execute('DummyBIFI', { from: dev }, 'mint', dev, e18(20000000))
     await execute('DummyBIFI', { from: dev }, 'transfer', user1, e18(500))
     await execute('DummyBIFI', { from: dev }, 'transfer', user2, e18(500))
     await execute('DummyBIFI', { from: dev }, 'transfer', user3, e18(500))

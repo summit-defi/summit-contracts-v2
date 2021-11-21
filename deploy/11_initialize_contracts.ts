@@ -1,6 +1,6 @@
 import {DeployFunction} from 'hardhat-deploy/types'
 import { createLpPair, getLpPair } from '../scripts/scriptUtils';
-import { chainIdAMMFactory, chainIdAMMPairCodeHash, chainIdWrappedNativeToken, computePairAddress, consoleLog, ZEROADD } from '../utils'
+import { chainIdAMMFactory, chainIdAMMPairCodeHash, chainIdWrappedNativeToken, computePairAddress, consoleLog, getElevationName, MESA, OASIS, PLAINS, promiseSequenceMap, SUMMIT, ZEROADD } from '../utils'
 
 const initializeContracts: DeployFunction = async function ({
   getNamedAccounts,
@@ -28,9 +28,12 @@ const initializeContracts: DeployFunction = async function ({
 
     console.log('SUMMIT LP ADDRESS:', summitLpAddress)
 
-    const CartographerOasis = await deployments.get('CartographerOasis')
-    const CartographerElevation = await deployments.get('CartographerElevation')
-    const CartographerExpedition = await deployments.get('CartographerExpedition')
+    const SubCartographers = await promiseSequenceMap(
+      [OASIS, PLAINS, MESA, SUMMIT],
+      async (elevation) => {
+        return await deployments.get(`Cartographer${getElevationName(elevation)}`)
+      }
+    )
     const ElevationHelper = await deployments.get('ElevationHelper')
     const SummitReferrals = await deployments.get('SummitReferrals')
     
@@ -43,9 +46,10 @@ const initializeContracts: DeployFunction = async function ({
       summitLpAddress,
       ElevationHelper.address,
       SummitReferrals.address,
-      CartographerOasis.address,
-      CartographerElevation.address,
-      CartographerExpedition.address,
+      SubCartographers[OASIS].address,
+      SubCartographers[PLAINS].address,
+      SubCartographers[MESA].address,
+      SubCartographers[SUMMIT].address,
     )
     consoleLog('Cartographer Initialized')
   } else {

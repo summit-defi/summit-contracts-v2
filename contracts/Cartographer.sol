@@ -12,7 +12,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./IPassthrough.sol";
 import "./SummitToken.sol";
-import "./libs/ILiquidityPair.sol";
+import "./libs/IUniswapV2Pair.sol";
+import "./libs/IPriceOracle.sol";
+
+
+
+
+import "hardhat/console.sol";
 
 
 /*
@@ -82,8 +88,9 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
 
     SummitToken public summit;
-    ILiquidityPair public summitLp;
+    IUniswapV2Pair public summitLp;
     bool public enabled = false;                                                // Whether the ecosystem has been enabled for earning
+    IPriceOracle priceOracle;                 
 
     uint256 public rolloverRewardInNativeToken = 5e18;                          // Amount of native token which will be rewarded for rolling over a round (will be converted into summit and minted)
 
@@ -92,18 +99,18 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     address public trustedSeederAdd;                                            // Address that seeds the random number generation every 2 hours
     ElevationHelper elevationHelper;
     SummitReferrals summitReferrals;
-    address[] subCartographers;
+    address[4] subCartographers;
 
     uint256 public launchTimestamp = 1641028149;                                // 2022-1-1, will be updated when summit ecosystem switched on
     uint256 public summitPerSecond;                                             // Amount of Summit minted per second to be distributed to users
     uint256 public devSummitPerSecond;                                          // Amount of Summit minted per second to the treasury
     uint256 public referralsSummitPerSecond;                                    // Amount of Summit minted per second as referral rewards
 
-    uint16[] public elevationPoolCount;                                         // List of all pool identifiers (PIDs)
+    uint16[4] public elevationPoolsCount;                                       // List of all pool identifiers (PIDs)
 
     mapping(address => address) public tokenPassthroughStrategy;                // Passthrough strategy of each stakable token
 
-    uint256[5] public elevAlloc = [0, 0, 0, 0, 0];                              // Total allocation points of all pools at an elevation
+    uint256[4] public elevAlloc;                                                // Total allocation points of all pools at an elevation
     mapping(address => bool) public tokenAllocExistence;                        // Whether an allocation has been created for a specific token
     mapping(address => uint16) public tokenFee;                                 // Fee for all farms of this token
     address[] tokensWithAllocation;                                             // List of Token Addresses that have been assigned an allocation
@@ -188,7 +195,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         );
 
         summit = SummitToken(_summit);
-        summitLp = ILiquidityPair(_summitLp);
+        summitLp = IUniswapV2Pair(_summitLp);
         require(summitLp.token0() == address(_summit) || summitLp.token1() == _summit, "SUMMITLP is not SUMMIT liq pair");
 
         elevationHelper = ElevationHelper(_ElevationHelper);
@@ -198,11 +205,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         subCartographers[OASIS] = _CartographerOasis;
         subCartographers[PLAINS] = _CartographerPlains;
         subCartographers[MESA] = _CartographerMesa;
-        subCartographers[PLAINS] = _CartographerSummit;
+        subCartographers[SUMMIT] = _CartographerSummit;
 
         // Initialize the subCarts with the address of elevationHelper
-        for (uint8 elevation = 0; elevation < 4; elevation++) {
-            subCartographer(elevation).initialize(elevation, _ElevationHelper, address(_summit));
+        for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
+            subCartographer(elevation).initialize(_ElevationHelper, address(_summit));
         }
 
         // Initial value of summit minting
@@ -290,6 +297,13 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     }
 
 
+    /// @dev Update price oracle
+    function setPriceOracle(address _priceOracle) public onlyOwner {
+        require(_priceOracle != address(0), "Missing oracle");
+        priceOracle = IPriceOracle(_priceOracle);
+    }
+
+
 
 
 
@@ -368,7 +382,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // ---------------------------------------------------------------
 
     function subCartographer(uint8 _elevation) internal view returns (ISubCart) {
-        require(_elevation >= 0 && _elevation <= 4, "Invalid elev");
+        require(_elevation >= OASIS && _elevation <= SUMMIT, "Invalid elev");
         return ISubCart(subCartographers[_elevation]);
     }
 
@@ -380,6 +394,18 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // --   T O K E N   A L L O C A T I O N
     // ---------------------------------------
 
+
+    /// @dev Number of existing pools
+    function poolsCount()
+        public view
+        returns (uint256)
+    {
+        uint256 count = 0;
+        for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
+            count += elevationPoolsCount[elevation];
+        }
+        return count;
+    }
 
     /// @dev Set the fee for a token
     function setTokenFee(address _token, uint16 _feeBP)
@@ -412,7 +438,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Update the allocation for a token. This modifies existing allocations at each elevation for that token
     /// @param _token Token to update allocation for
     /// @param _allocation Updated allocation
-    function setTokenSharedAlloc(address _token, uint256 _allocation)
+    function setTokenAlloc(address _token, uint256 _allocation)
         public
         onlyOwner tokenAllocExists(_token)  validAllocation(_allocation)
     {
@@ -533,6 +559,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         // Get the next available pool identifier and register pool
         poolExistence[_token][_elevation] = true;
+        elevationPoolsCount[_elevation] += 1;
 
         // Create the pool in the appropriate sub cartographer
         subCartographer(_elevation).add(_token, _live);
@@ -564,7 +591,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     /// @dev Does what it says on the box
     function massUpdatePools() public {
-        for (uint8 elevation = 0; elevation < 4; elevation++) {
+        for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
             subCartographer(elevation).massUpdatePools();
         }
     }
@@ -687,7 +714,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Emission multiplier of token based on its allocation
     /// @return Multiplier raised 1e12
     function tokenAllocEmissionMultiplier(address _token)
-        internal view
+        public view
         returns (uint256)
     {
         // Sum allocation of all elevations with allocation multipliers

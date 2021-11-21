@@ -1,7 +1,7 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, PID, TWOTHOUSAND, FIVETHOUSAND, TENTHOUSAND, mineBlockWithTimestamp } from "../utils";
+import { e18, ERR, EVENT, PID, PLAINS, MESA, SUMMIT, mineBlockWithTimestamp } from "../utils";
 import { fiveThousandUnlockedFixture, oasisUnlockedFixture, poolsFixture, twoThousandUnlockedFixture } from "./fixtures";
 
 
@@ -44,24 +44,24 @@ describe("ELEVATION Unlocks", function() {
       const oasisUnlockedFixtureState = await oasisUnlockedFixture()
 
       const { elevationHelper, cartographer, user1 } = oasisUnlockedFixtureState
-      const twoThousandUnlockTime = (await elevationHelper.unlockTimestamp(TWOTHOUSAND)).toNumber()
+      const twoThousandUnlockTime = (await elevationHelper.unlockTimestamp(PLAINS)).toNumber()
       await mineBlockWithTimestamp(twoThousandUnlockTime - 60)
 
       await expect(
-        cartographer.connect(user1).rollover(TWOTHOUSAND)
+        cartographer.connect(user1).rollover(PLAINS)
       ).to.be.revertedWith(ERR.ELEVATION_LOCKED)
 
       await mineBlockWithTimestamp(twoThousandUnlockTime)
 
       await expect(
-        cartographer.connect(user1).rollover(TWOTHOUSAND)
-      ).to.emit(cartographer, EVENT.Rollover).withArgs(user1.address, TWOTHOUSAND)
+        cartographer.connect(user1).rollover(PLAINS)
+      ).to.emit(cartographer, EVENT.Rollover).withArgs(user1.address, PLAINS)
     })
     it(`UNLOCK: Rolling over first 2K round, 2K pools should switch from failing ("${ERR.POOL_NOT_AVAILABLE_YET}") to succeeding`, async function() {
       const oasisUnlockedFixtureState = await oasisUnlockedFixture()
 
       const { elevationHelper, cartographer, user1 } = oasisUnlockedFixtureState
-      const twoThousandUnlockTime = (await elevationHelper.unlockTimestamp(TWOTHOUSAND)).toNumber()
+      const twoThousandUnlockTime = (await elevationHelper.unlockTimestamp(PLAINS)).toNumber()
       await mineBlockWithTimestamp(twoThousandUnlockTime)
 
       const amount = e18(5)
@@ -76,7 +76,7 @@ describe("ELEVATION Unlocks", function() {
           cartographer.connect(user1).deposit(PID.SUMMIT_10K, amount, 0, 0)
       ).to.be.revertedWith(ERR.POOL_NOT_AVAILABLE_YET)
 
-      await cartographer.rollover(TWOTHOUSAND)
+      await cartographer.rollover(PLAINS)
 
       await expect(
         cartographer.connect(user1).deposit(PID.SUMMIT_2K, amount, 0, 0)
@@ -95,10 +95,10 @@ describe("ELEVATION Unlocks", function() {
       
       const totalAllocPointInit = await cartographer.totalSharedAlloc()
 
-      const twoThousandUnlockTime = (await elevationHelper.unlockTimestamp(TWOTHOUSAND)).toNumber()
+      const twoThousandUnlockTime = (await elevationHelper.unlockTimestamp(PLAINS)).toNumber()
       await mineBlockWithTimestamp(twoThousandUnlockTime)
 
-      await cartographer.rollover(TWOTHOUSAND)
+      await cartographer.rollover(PLAINS)
 
       const totalAllocPointFinal = await cartographer.totalSharedAlloc()
 
@@ -113,25 +113,25 @@ describe("ELEVATION Unlocks", function() {
       const twoThousandUnlockedFixtureState = await twoThousandUnlockedFixture()
 
       const { elevationHelper, cartographer, user1 } = twoThousandUnlockedFixtureState
-      const fiveThousandUnlockTime = (await elevationHelper.unlockTimestamp(FIVETHOUSAND)).toNumber()
+      const fiveThousandUnlockTime = (await elevationHelper.unlockTimestamp(MESA)).toNumber()
       
       await mineBlockWithTimestamp(fiveThousandUnlockTime - 60)
 
       await expect(
-        cartographer.connect(user1).rollover(FIVETHOUSAND)
+        cartographer.connect(user1).rollover(MESA)
       ).to.be.revertedWith(ERR.ELEVATION_LOCKED)
 
       await mineBlockWithTimestamp(fiveThousandUnlockTime)
 
       await expect(
-        cartographer.connect(user1).rollover(FIVETHOUSAND)
-      ).to.emit(cartographer, EVENT.Rollover).withArgs(user1.address, FIVETHOUSAND)
+        cartographer.connect(user1).rollover(MESA)
+      ).to.emit(cartographer, EVENT.Rollover).withArgs(user1.address, MESA)
     })
     it(`UNLOCK: Rolling over first 5K round, 5K pools should switch from failing ("${ERR.POOL_NOT_AVAILABLE_YET}") to succeeding`, async function() {
       const twoThousandUnlockedFixtureState = await twoThousandUnlockedFixture()
 
       const { elevationHelper, cartographer, user1 } = twoThousandUnlockedFixtureState
-      const fiveThousandUnlockTime = (await elevationHelper.unlockTimestamp(FIVETHOUSAND)).toNumber()
+      const fiveThousandUnlockTime = (await elevationHelper.unlockTimestamp(MESA)).toNumber()
       await mineBlockWithTimestamp(fiveThousandUnlockTime)
 
       const amount = e18(5)
@@ -143,7 +143,7 @@ describe("ELEVATION Unlocks", function() {
           cartographer.connect(user1).deposit(PID.SUMMIT_10K, amount, 0, 0)
       ).to.be.revertedWith(ERR.POOL_NOT_AVAILABLE_YET)
 
-      await cartographer.rollover(FIVETHOUSAND)
+      await cartographer.rollover(MESA)
 
       await expect(
           cartographer.connect(user1).deposit(PID.SUMMIT_5K, amount, 0, 0)
@@ -159,10 +159,10 @@ describe("ELEVATION Unlocks", function() {
       
       const totalAllocPointInit = await cartographer.totalSharedAlloc()
 
-      const fiveThousandUnlockTime = (await elevationHelper.unlockTimestamp(FIVETHOUSAND)).toNumber()
+      const fiveThousandUnlockTime = (await elevationHelper.unlockTimestamp(MESA)).toNumber()
       await mineBlockWithTimestamp(fiveThousandUnlockTime)
       
-      await cartographer.rollover(FIVETHOUSAND)
+      await cartographer.rollover(MESA)
 
       const totalAllocPointFinal = await cartographer.totalSharedAlloc()
 
@@ -176,7 +176,7 @@ describe("ELEVATION Unlocks", function() {
       const fiveThousandUnlockedFixtureState = await fiveThousandUnlockedFixture()
 
       const { elevationHelper, cartographer, user1 } = fiveThousandUnlockedFixtureState
-      const tenThousandUnlockTime = (await elevationHelper.unlockTimestamp(TENTHOUSAND)).toNumber()
+      const tenThousandUnlockTime = (await elevationHelper.unlockTimestamp(SUMMIT)).toNumber()
       
       await mineBlockWithTimestamp(tenThousandUnlockTime)
 
@@ -186,7 +186,7 @@ describe("ELEVATION Unlocks", function() {
           cartographer.connect(user1).deposit(PID.SUMMIT_10K, amount, 0, 0)
       ).to.be.revertedWith(ERR.POOL_NOT_AVAILABLE_YET)
 
-      await cartographer.rollover(TENTHOUSAND)
+      await cartographer.rollover(SUMMIT)
 
       await expect(
           cartographer.connect(user1).deposit(PID.SUMMIT_10K, amount, 0, 0)
@@ -196,18 +196,18 @@ describe("ELEVATION Unlocks", function() {
       const fiveThousandUnlockedFixtureState = await fiveThousandUnlockedFixture()
 
       const { elevationHelper, cartographer, user1 } = fiveThousandUnlockedFixtureState
-      const tenThousandUnlockTime = (await elevationHelper.unlockTimestamp(TENTHOUSAND)).toNumber()
+      const tenThousandUnlockTime = (await elevationHelper.unlockTimestamp(SUMMIT)).toNumber()
       await mineBlockWithTimestamp(tenThousandUnlockTime - 60)
 
       await expect(
-        cartographer.connect(user1).rollover(TENTHOUSAND)
+        cartographer.connect(user1).rollover(SUMMIT)
       ).to.be.revertedWith(ERR.ELEVATION_LOCKED)
 
       await mineBlockWithTimestamp(tenThousandUnlockTime)
 
       await expect(
-        cartographer.connect(user1).rollover(TENTHOUSAND)
-      ).to.emit(cartographer, EVENT.Rollover).withArgs(user1.address, TENTHOUSAND)
+        cartographer.connect(user1).rollover(SUMMIT)
+      ).to.emit(cartographer, EVENT.Rollover).withArgs(user1.address, SUMMIT)
     })
     it(`UNLOCK: 10K Rollover should increase totalAllocPoint`, async function() {
       const fiveThousandUnlockedFixtureState = await fiveThousandUnlockedFixture()
@@ -216,10 +216,10 @@ describe("ELEVATION Unlocks", function() {
       
       const totalAllocPointInit = await cartographer.totalSharedAlloc()
 
-      const tenThousandUnlockTime = (await elevationHelper.unlockTimestamp(TENTHOUSAND)).toNumber()
+      const tenThousandUnlockTime = (await elevationHelper.unlockTimestamp(SUMMIT)).toNumber()
       await mineBlockWithTimestamp(tenThousandUnlockTime)
       
-      await cartographer.rollover(TENTHOUSAND)
+      await cartographer.rollover(SUMMIT)
 
       const totalAllocPointFinal = await cartographer.totalSharedAlloc()
 
@@ -232,7 +232,7 @@ describe("ELEVATION Unlocks", function() {
     it(`LOCKOUT: Elevation pools lockout 1 minute before round end until rollover`, async function() {
       const { elevationHelper, cartographer, user1 } = await twoThousandUnlockedFixture()
       
-      const threeMinutesBeforeRollover = (await elevationHelper.roundEndTimestamp(TWOTHOUSAND)).sub(120)
+      const threeMinutesBeforeRollover = (await elevationHelper.roundEndTimestamp(PLAINS)).sub(120)
       await mineBlockWithTimestamp(threeMinutesBeforeRollover.toNumber())
 
       const amount = e18(5)
@@ -253,7 +253,7 @@ describe("ELEVATION Unlocks", function() {
         cartographer.connect(user1).deposit(PID.SUMMIT_2K, amount, 0, 0)
       ).to.be.revertedWith(ERR.ELEVATION_LOCKED_UNTIL_ROLLOVER)
 
-      await cartographer.rollover(TWOTHOUSAND)
+      await cartographer.rollover(PLAINS)
 
       await expect(
         cartographer.connect(user1).deposit(PID.SUMMIT_2K, amount, 0, 0)

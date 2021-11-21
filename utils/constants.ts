@@ -1,8 +1,5 @@
 export const Contracts = {
     Cartographer: 'Cartographer',
-    CartographerOasis: 'CartographerOasis',
-    CartographerElevation: 'CartographerElevation',
-    CartographerExpedition: 'CartographerExpedition',
     ElevationHelper: 'ElevationHelper',
     SummitToken: 'SummitToken',
     DummySUMMITLP: 'DummySUMMITLP',
@@ -25,9 +22,9 @@ export const Contracts = {
 export const hardhatChainId = '31337'
 
 export const OASIS = 0
-export const TWOTHOUSAND = 1
-export const FIVETHOUSAND = 2
-export const TENTHOUSAND = 3
+export const PLAINS = 1
+export const MESA = 2
+export const SUMMIT = 3
 export const EXPEDITION = 4
 
 export enum NamedElevations {
@@ -79,9 +76,9 @@ export const SubCartographerPoolInfo = {
 export const getTotemCount = (elevation: number): number => {
     switch(elevation) {
         case EXPEDITION:
-        case TWOTHOUSAND: return 2
-        case FIVETHOUSAND: return 5
-        case TENTHOUSAND: return 10
+        case PLAINS: return 2
+        case MESA: return 5
+        case SUMMIT: return 10
         case OASIS:
         default: return 0
     }
@@ -181,24 +178,7 @@ export const ERR = {
     },
 }
 
-export const PID = {
-    SUMMIT_OASIS: 1,
-    SUMMIT_2K: 2,
-    SUMMIT_5K: 3,
-    SUMMIT_10K: 4,
-    DUMMY_CAKE_OASIS: 5,
-    DUMMY_CAKE_2K: 6,
-    DUMMY_CAKE_5K: 7,
-    DUMMY_CAKE_10K: 8,
-    DUMMY_BIFI_OASIS: 9,
-    DUMMY_BIFI_2K: 10,
-    DUMMY_BIFI_5K: 11,
-    DUMMY_BIFI_10K: 12,
-    DUMMY_BIFI_EXPEDITION: 13,
-    DUMMY_CAKE_EXPEDITION: 14,
-}
-
-export const POOL_FEE = {
+export const TOKEN_FEE = {
     FEE_TAKEN_DURING_WITHDRAW: 50,
 
     DUMMY_CAKE_OASIS: 400,

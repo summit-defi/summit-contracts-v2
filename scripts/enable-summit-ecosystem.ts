@@ -25,7 +25,7 @@ async function main() {
     const wBNBAdd = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c'
     const pcsRouterArtifact = await artifacts.readArtifact("IPancakeRouter")
     const pcsFactoryArtifact = await artifacts.readArtifact("IPancakeFactory")
-    const pcsPairArtifact = await artifacts.readArtifact('ILiquidityPair')
+    const pcsPairArtifact = await artifacts.readArtifact('IUniswapV2Pair')
     const PCSRouter = await new ethers.Contract(pcsRouterAdd, pcsRouterArtifact.abi, ethers.provider)
     const PCSFactory = await new ethers.Contract(pcsFactoryAdd, pcsFactoryArtifact.abi, ethers.provider)
 

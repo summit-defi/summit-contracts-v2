@@ -135,7 +135,7 @@ export enum TimelockedTransaction {
     Cartographer_SetTotalSummitPerSecond = 'setTotalSummitPerSecond',
     Cartographer_SetSummitDistributionProfile = 'setSummitDistributionProfile',
     Cartographer_CreateTokenAllocation = 'createTokenAllocation',
-    Cartographer_SetTokenSharedAlloc = 'setTokenSharedAlloc',
+    Cartographer_setTokenAlloc = 'setTokenAlloc',
     Cartographer_SetTokenPassthroughStrategy = 'setTokenPassthroughStrategy',
     Cartographer_RetireTokenPassthroughStrategy = 'retireTokenPassthroughStrategy',
     Cartographer_AddFarm = 'add',

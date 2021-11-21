@@ -6,7 +6,7 @@ import "./ElevationHelper.sol";
 import "./SummitToken.sol";
 import "./EverestToken.sol";
 import "./ISubCart.sol";
-import "./libs/ILiquidityPair.sol";
+import "./libs/IUniswapV2Pair.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -102,7 +102,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
 
     SummitToken public summit;
-    ILiquidityPair public summitLp;
+    IUniswapV2Pair public summitLp;
     ElevationHelper elevationHelper;
     EverestToken public everest;
     uint8 constant EXPEDITION = 4;
@@ -220,7 +220,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         require(_everest != address(0), "Everest required");
         require(_elevationHelper != address(0), "Elevation Helper Required");
         summit = SummitToken(_summit);
-        summitLp = ILiquidityPair(_summitLp);
+        summitLp = IUniswapV2Pair(_summitLp);
         everest = EverestToken(_everest);
         elevationHelper = ElevationHelper(_elevationHelper);
         everest.approve(burnAdd, type(uint256).max);
@@ -834,7 +834,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         public
         nonReentrant userNotAlreadyLockingSummit validLockPeriod(_lockPeriod)
     {
-        require(_summitAmount <= IERC20(summit).balanceOf(msg.sender) && _lpAmount <= IERC20(summitLp).balanceOf(msg.sender), "Exceeds balance");
+        require(_summitAmount <= IERC20(summit).balanceOf(msg.sender) && _lpAmount <= IERC20(address(summitLp)).balanceOf(msg.sender), "Exceeds balance");
 
         uint256 everestLockMultiplier = _lockPeriodMultiplier(_lockPeriod);
         uint256 baseEverestAward = calcBaseEverestAward(_summitAmount, _lpAmount);
@@ -845,9 +845,9 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
             IERC20(summit).safeTransferFrom(msg.sender, address(this), _summitAmount);
         }
         if (_lpAmount > 0) {
-            IERC20(summitLp).safeTransferFrom(msg.sender, address(this), _lpAmount);        
+            IERC20(address(summitLp)).safeTransferFrom(msg.sender, address(this), _lpAmount);        
         }
-        everest.mintTo(msg.sender, initialEverestAward);
+        everest.mint(msg.sender, initialEverestAward);
 
         UserEverestInfo storage everestInfo = _getOrCreateUserEverestInfo(msg.sender);
 
@@ -867,7 +867,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         public
         nonReentrant userEverestInfoExists userOwnsEverest
     {
-        require(_summitAmount <= IERC20(summit).balanceOf(msg.sender) && _lpAmount <= IERC20(summitLp).balanceOf(msg.sender), "Exceeds balance");
+        require(_summitAmount <= IERC20(summit).balanceOf(msg.sender) && _lpAmount <= IERC20(address(summitLp)).balanceOf(msg.sender), "Exceeds balance");
 
         UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
 
@@ -878,9 +878,9 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
             IERC20(summit).safeTransferFrom(msg.sender, address(this), _summitAmount);
         }
         if (_lpAmount > 0) {
-            IERC20(summitLp).safeTransferFrom(msg.sender, address(this), _lpAmount);        
+            IERC20(address(summitLp)).safeTransferFrom(msg.sender, address(this), _lpAmount);        
         }
-        everest.mintTo(msg.sender, additionalEverestAward);
+        everest.mint(msg.sender, additionalEverestAward);
 
         everestInfo.everestOwned += additionalEverestAward;
         everestInfo.summitLocked += _summitAmount;
@@ -907,7 +907,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         everestInfo.summitLpLocked -= summitLpToWithdraw;
 
         IERC20(summit).safeTransfer(msg.sender, summitToWithdraw);
-        IERC20(summitLp).safeTransfer(msg.sender, summitLpToWithdraw);        
+        IERC20(address(summitLp)).safeTransfer(msg.sender, summitLpToWithdraw);        
         _burnEverest(msg.sender, _everestAmount);
 
         _updateInteractingExpeditions(everestInfo);

@@ -1,7 +1,7 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, expect6FigBigNumberEquals, mineBlock, oasisTests, OASIS, PID, toDecimal, POOL_FEE, passthroughTests, SubCartographer, Contracts, EXPEDITION, FIVETHOUSAND, mineBlockWithTimestamp, TENTHOUSAND, TWOTHOUSAND, getTimestamp, rolloverRoundUntilWinningTotem, promiseSequenceMap, deltaBN, consoleLog } from "../utils";
+import { e18, ERR, EVENT, expect6FigBigNumberEquals, mineBlock, oasisTests, OASIS, PID, toDecimal, POOL_FEE, passthroughTests, SubCartographer, Contracts, EXPEDITION, MESA, mineBlockWithTimestamp, SUMMIT, PLAINS, getTimestamp, rolloverRoundUntilWinningTotem, promiseSequenceMap, deltaBN, consoleLog } from "../utils";
 import { expeditionUnlockedFixture, oasisUnlockedFixture, poolsFixture, twoThousandUnlockedFixture } from "./fixtures";
 
 
@@ -42,9 +42,9 @@ describe("CROSS COMPOUNDING", function() {
         await mineBlockWithTimestamp(expeditionRoundEndTime)
 
         await cartographer.rollover(EXPEDITION)
-        await cartographer.rollover(TENTHOUSAND)
-        await cartographer.rollover(FIVETHOUSAND)
-        await cartographer.rollover(TWOTHOUSAND)
+        await cartographer.rollover(SUMMIT)
+        await cartographer.rollover(MESA)
+        await cartographer.rollover(PLAINS)
 
         await expect(
         cartographer.connect(user1).crossCompound(PID.DUMMY_BIFI_EXPEDITION, 0)
