@@ -122,6 +122,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     mapping(address => mapping(uint8 => bool)) public poolExistence;            // Whether a pool exists for a token at an elevation
     mapping(address => mapping(uint8 => bool)) public tokenElevationIsEarning;  // If a token is earning SUMMIT at a specific elevation
 
+    uint256 baseMinimumWithdrawalFee = 20;
+    uint256 decayDuration = 10 * 86400;
 
     struct UserLockedWinnings {
         uint256 winnings;
@@ -428,8 +430,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         public
         onlyOwner
     {
-        // Fees will never be higher than 4%
-        require(_feeBP <= 400, "Invalid fee");
+        // Fees will never be higher than 5%
+        require(_feeBP <= 500, "Invalid fee");
         tokenFee[_token] = _feeBP;
     }
 
@@ -1063,26 +1065,15 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     }
 
 
-    /// @dev Takes the deposit fee where applicable
-    /// @param _token Token to take fee out of
-    /// @param _amount Deposit amount to take fee from
-    /// @return Amount deposited after fee
-    function takeDepositFee(address _token, uint256 _amount)
-        internal
-        returns (uint256)
-    {
-        uint16 baseFee = tokenFee[_token];
-        uint16 trueFee = baseFee <= 50 ? 0 : baseFee - 50;
-        if (trueFee == 0) return _amount;
+    /// @dev Utility function to handle harvesting Summit rewards with referral rewards
+    function redeemRewards(address _userAdd, uint256 _amount) external onlySubCartographer {
+        // Transfers rewards to user
+        safeSummitTransfer(_userAdd, _amount);
 
-        // Calculate deposit fee
-        uint256 _depositFee = _amount * trueFee / 10000;
+        // If the user has been referred, add the 1% bonus to that user and their referrer
+        summitReferrals.addReferralRewardsIfNecessary(_userAdd, _amount);
 
-        // Half of deposit fee is sent to expedition accumulator, other half sent to devs
-        uint256 _depositFeeHalf = _depositFee / 2;
-        IERC20(_token).safeTransfer(expedAdd, _depositFeeHalf);
-        IERC20(_token).safeTransfer(devAdd, _depositFeeHalf);
-        return _amount - _depositFee;
+        emit RedeemRewards(_userAdd, _amount);
     }
 
 
@@ -1090,7 +1081,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _userAdd Depositing user
     /// @param _token Token to deposit
     /// @param _amount Deposit amount before fee
-    /// @return Deposit amount after fee
+    /// @return Deposit amount
     function depositTokenManagement(address _userAdd, address _token, uint256 _amount)
         external
         onlySubCartographer
@@ -1099,14 +1090,10 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         // Transfers total deposit amount
         IERC20(_token).safeTransferFrom(_userAdd, address(this), _amount);
 
-        // Takes deposit fee within cartographer if no passthrough strategy
-        uint256 amountAfterFee = takeDepositFee(_token, _amount);
+        // Deposit full amount to passthrough
+        uint256 amount = passthroughDeposit(_token, _amount);
 
-        // Deposits into passthrough target, if there are any passthrough strategy fees (shouldn't be any), they are taken
-        amountAfterFee = passthroughDeposit(_token, amountAfterFee);
-
-
-        return amountAfterFee;
+        return amount;
     }
 
 
@@ -1124,8 +1111,9 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _userAdd Withdrawing user
     /// @param _token Token to withdraw
     /// @param _amount Withdraw amount
+    /// @param _lastDepositTimestamp Last deposit timestamp
     /// @return Amount withdrawn after fee
-    function withdrawalTokenManagement(address _userAdd, address _token, uint256 _amount)
+    function withdrawalTokenManagement(address _userAdd, address _token, uint256 _amount, uint256 _lastDepositTimestamp)
         external
         onlySubCartographer
         returns (uint256)
@@ -1135,7 +1123,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         // Amount user expects to receive after fee taken
         uint16 baseFee = tokenFee[_token];
-        uint16 remainingFee = baseFee > 50 ? 50 : baseFee;
+        uint16 remainingFee = baseMinimumWithdrawalFee;
+        uint256 timeDiff = block.timestamp - _lastDepositTimestamp;
+        if (timeDiff < decayDuration) {
+            remainingFee = baseMinimumWithdrawalFee + ((baseFee - baseMinimumWithdrawalFee) * (decayDuration - timeDiff) * 1e12 / decayDuration) / 1e12;
+        }
         uint256 expectedWithdrawnAmount = (_amount * (10000 - remainingFee)) / 10000;
 
         // Take any remaining fee (gap between what was actually withdrawn, and what the user expects to receive)
