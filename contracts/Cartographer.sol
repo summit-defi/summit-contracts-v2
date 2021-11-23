@@ -122,6 +122,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     mapping(address => mapping(uint8 => bool)) public poolExistence;            // Whether a pool exists for a token at an elevation
     mapping(address => mapping(uint8 => bool)) public tokenElevationIsEarning;  // If a token is earning SUMMIT at a specific elevation
 
+    mapping(address => uint256) public lastDepositTimestamps;                   // Users' last deposit timestamp
     uint16 baseMinimumWithdrawalFee = 20;
     uint256 feeDecayDuration = 10 * 86400;
 
@@ -854,6 +855,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
                 _crossCompound,
                 false
             );
+        lastDepositTimestamps[msg.sender] = block.timestamp;
 
         emit Deposit(msg.sender, _token, _elevation, amountAfterFee);
     }
@@ -1111,9 +1113,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _userAdd Withdrawing user
     /// @param _token Token to withdraw
     /// @param _amount Withdraw amount
-    /// @param _lastDepositTimestamp Last deposit timestamp
     /// @return Amount withdrawn after fee
-    function withdrawalTokenManagement(address _userAdd, address _token, uint256 _amount, uint256 _lastDepositTimestamp)
+    function withdrawalTokenManagement(address _userAdd, address _token, uint256 _amount)
         external
         onlySubCartographer
         returns (uint256)
@@ -1124,7 +1125,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         // Amount user expects to receive after fee taken
         uint16 baseFee = tokenFee[_token];
         uint16 remainingFee = baseMinimumWithdrawalFee;
-        uint256 timeDiff = block.timestamp - _lastDepositTimestamp;
+        uint256 timeDiff = block.timestamp - lastDepositTimestamps[_userAdd];
         if (baseFee > baseMinimumWithdrawalFee && timeDiff < feeDecayDuration) {
             remainingFee = baseMinimumWithdrawalFee + ((baseFee - baseMinimumWithdrawalFee) * (feeDecayDuration - timeDiff) * 1e12 / feeDecayDuration) / 1e12;
         }
