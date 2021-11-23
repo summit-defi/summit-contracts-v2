@@ -452,7 +452,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
 
     /// @dev Add funds to the expedition
     function addExpeditionFunds(address _token, uint256 _amount)
-        public
+        public nonReentrant
     {
         require (_token == address(summit) || _token == address(expeditionRewardToken), "Invalid token to add to expedition");
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
@@ -844,7 +844,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
 
         // Iterate through expeditions and switch deity for each user staked with
         for (uint16 index = 0; index < userInteractingExpeds[everestInfo.userAdd].length(); index++) {
-            _selectDeityForExpedition(
+            _selectExpeditionDeity(
                 everestInfo,
                 _deity
             );
@@ -869,7 +869,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
 
         // Iterate through expeditions and update safety factor for each user staked with
         for (uint16 index = 0; index < userInteractingExpeds[everestInfo.userAdd].length(); index++) {
-            _selectSafetyFactorForExpedition(
+            _selectExpeditionSafetyFactor(
                 everestInfo,
                 _safetyFactor
             );
@@ -916,7 +916,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
 
     function harvestExpedition(address _token)
         public
-        userEverestInfoExists userOwnsEverest expeditionInteractionsAvailable
+        nonReentrant userEverestInfoExists userOwnsEverest expeditionInteractionsAvailable
     {
         UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
         UserExpeditionInfo storage userExpedInfo = userExpeditionInfo[msg.sender];        
@@ -940,7 +940,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     /// @dev Switch users funds (if any staked) to the new deity
     /// @param everestInfo User's everest info
     /// @param _newDeity Deity the user is leaving
-    function _selectDeityForExpedition(UserEverestInfo storage everestInfo, uint8 _newDeity)
+    function _selectExpeditionDeity(UserEverestInfo storage everestInfo, uint8 _newDeity)
         internal
     {
         UserExpeditionInfo storage userExpedInfo = userExpeditionInfo[everestInfo.userAdd];
@@ -960,7 +960,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     /// @dev Switch users funds (if any staked) to the new deity
     /// @param everestInfo User's everest info
     /// @param _newSafetyFactor New safety factor of user
-    function _selectSafetyFactorForExpedition(UserEverestInfo storage everestInfo, uint8 _newSafetyFactor)
+    function _selectExpeditionSafetyFactor(UserEverestInfo storage everestInfo, uint8 _newSafetyFactor)
         internal
     {
         UserExpeditionInfo storage userExpedInfo = userExpeditionInfo[everestInfo.userAdd];
@@ -982,7 +982,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     }
     
 
-    function updateInteractingExpeditions()
+    function updateExpeditionInteraction()
         public
         userEverestInfoExists userOwnsEverest expeditionInteractionsAvailable
     {
