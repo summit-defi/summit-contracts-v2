@@ -1,7 +1,8 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers, network } from "hardhat";
-import { e18, ERR, EVENT, EVM, getTimestamp, mineBlock, mineBlocks, PID, setTimestamp, toDecimal, ZEROADD } from "../utils";
+import { cartographerGet, cartographerMethod, e18, elevationHelperGet, ERR, EVENT, EVM, expect6FigBigNumberEquals, getTimestamp, mineBlock, mineBlocks, mineBlockWithTimestamp, OASIS, setTimestamp, toDecimal, ZEROADD } from "../utils";
+import { userPromiseSequenceMap } from "../utils/users";
 import { oasisUnlockedFixture } from "./fixtures";
 
 describe("Referrals", function() {
@@ -12,11 +13,11 @@ describe("Referrals", function() {
     // REFERRING
     it(`REFERRAL BURN: Attempting to burn before summit enabled should fail with error ${ERR.REFERRAL_BURN_NOT_AVAILABLE}`, async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
 
-        await expect(
-            cartographer.connect(user1).rolloverReferral()
-        ).to.be.revertedWith(ERR.REFERRAL_BURN_NOT_AVAILABLE)
+        await cartographerMethod.rolloverReferral({
+            user: user1,
+            revertErr: ERR.REFERRAL_BURN_NOT_AVAILABLE,
+        })
     })
     it(`REFERRAL: Attempting to refer self Should fail with error "${ERR.SELF_REFERRER}"`, async function() {
         const { user1 } = await getNamedSigners(hre)
@@ -64,33 +65,37 @@ describe("Referrals", function() {
     it('REFERRAL REWARDS: User1 and User2 should earn referral rewards on User1 reward withdraw', async function() {
         // USER1 HAS BEEN REFERRED BY USER2
         const { user1, user2 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
         const summitToken = await ethers.getContract('SummitToken')
         const summitReferrals = await ethers.getContract('SummitReferrals')
 
-        await cartographer.connect(user1).deposit(PID.SUMMIT_OASIS, e18(50), 0, 0)
-        await mineBlock()
-        await mineBlock()
-        await mineBlock()
-        await mineBlock()
-        await mineBlock()
+        await cartographerMethod.deposit({
+            user: user1,
+            tokenAddress: summitToken.address,
+            elevation: OASIS,
+            amount: e18(50),
+        })
+        await mineBlocks(5)
 
         const userSummitInit = await summitToken.balanceOf(user1.address)
-        await cartographer.connect(user1).deposit(PID.SUMMIT_OASIS, 0, 0, 0)
+        await cartographerMethod.harvestSingleFarm({
+            user: user1,
+            tokenAddress: summitToken.address,
+            elevation: OASIS,
+            eventOnly: true,
+        })
         const userSummitFinal = await summitToken.balanceOf(user1.address)
         const deltaSummit = userSummitFinal.sub(userSummitInit)
         const referralRewardAmount = deltaSummit.div(100)
-                
+        
         const pendingUser1ReferralReward = await summitReferrals.getPendingReferralRewards(user1.address)
         const pendingUser2ReferralReward = await summitReferrals.getPendingReferralRewards(user2.address)
 
-        expect(pendingUser1ReferralReward).to.equal(referralRewardAmount)
-        expect(pendingUser2ReferralReward).to.equal(referralRewardAmount)
+        expect6FigBigNumberEquals(pendingUser1ReferralReward, referralRewardAmount)
+        expect6FigBigNumberEquals(pendingUser2ReferralReward, referralRewardAmount)
     })
     it('REFERRAL REWARDS: User1 and User2 can withdraw the correct amount of referral rewards', async function() {
         // USER1 HAS BEEN REFERRED BY USER2
         const { user1, user2 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
         const summitToken = await ethers.getContract('SummitToken')
         const summitReferrals = await ethers.getContract('SummitReferrals')
 
@@ -109,8 +114,8 @@ describe("Referrals", function() {
         const deltaUser1Summit = user1SummitFinal.sub(user1SummitInit)
         const deltaUser2Summit = user2SummitFinal.sub(user2SummitInit)
 
-        expect(pendingUser1ReferralReward).to.equal(deltaUser1Summit)
-        expect(pendingUser2ReferralReward).to.equal(deltaUser2Summit)
+        expect6FigBigNumberEquals(pendingUser1ReferralReward, deltaUser1Summit)
+        expect6FigBigNumberEquals(pendingUser2ReferralReward, deltaUser2Summit)
 
         const pendingUser1ReferralRewardFinal = await summitReferrals.getPendingReferralRewards(user1.address)
         const pendingUser2ReferralRewardFinal = await summitReferrals.getPendingReferralRewards(user2.address)
@@ -128,7 +133,6 @@ describe("Referrals", function() {
     })
     it('REFERRAL BURN: Burning the rewards eliminates users rewards and sends a reward to burner', async function() {
         const { user1, user2, user3, dev } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
         const summitToken = await ethers.getContract('SummitToken')
         const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
         const summitReferrals = await ethers.getContract('SummitReferrals')
@@ -141,26 +145,40 @@ describe("Referrals", function() {
         const nativeInLpReserve = summitIsToken0InLp ? summitLpToken1Reserves : summitLpToken0Reserves
         const rewardInSummitToken = rewardInNativeToken.mul(summitInLpReserve).div(nativeInLpReserve)
 
-
         await summitReferrals.connect(user3).createReferral(dev.address)
-        await cartographer.connect(user1).deposit(PID.SUMMIT_OASIS, e18(50), 0, 0)
-        await cartographer.connect(user2).deposit(PID.SUMMIT_OASIS, e18(40), 0, 0)
-        await cartographer.connect(user3).deposit(PID.SUMMIT_OASIS, e18(30), 0, 0)
+
+        await userPromiseSequenceMap(
+            async (user, userIndex) => {
+                await cartographerMethod.deposit({
+                    user,
+                    tokenAddress: summitToken.address,
+                    elevation: OASIS,
+                    amount: e18(10 * (userIndex + 1)),
+                })
+            }
+        )
 
         await mineBlocks(32)
 
-        await cartographer.connect(user1).deposit(PID.SUMMIT_OASIS, e18(0), 0, 0)
-        await cartographer.connect(user2).deposit(PID.SUMMIT_OASIS, e18(0), 0, 0)
-        await cartographer.connect(user3).deposit(PID.SUMMIT_OASIS, e18(0), 0, 0)
-        
-        const user1SummitBalance = await summitToken.balanceOf(user1.address)
-                
-        const referralBurnTime = (await cartographer.referralBurnTimestamp()).toNumber()
-        await setTimestamp(referralBurnTime)
+        await userPromiseSequenceMap(
+            async (user) => {
+                await cartographerMethod.harvestSingleFarm({
+                    user,
+                    tokenAddress: summitToken.address,
+                    elevation: OASIS,
+                    eventOnly: true,
+                })
+            }
+        )
 
-        await expect(
-            cartographer.connect(user1).rolloverReferral()
-        ).to.emit(cartographer, EVENT.RolloverReferral).withArgs(user1.address)
+        const user1SummitBalance = await summitToken.balanceOf(user1.address)
+
+        const referralBurnTime = await elevationHelperGet.referralBurnTimestamp()
+        await mineBlockWithTimestamp(referralBurnTime)
+
+        await cartographerMethod.rolloverReferral({
+            user: user1,
+        })
         
         const user1SummitBalanceFinal = await summitToken.balanceOf(user1.address)
         const referralsSummitBalanceFinal = await summitToken.balanceOf(summitReferrals.address)
@@ -176,20 +194,17 @@ describe("Referrals", function() {
     })
     it(`REFERRAL BURN: Attempting to burn before round ends should fail with error ${ERR.REFERRAL_BURN_NOT_AVAILABLE}`, async function() {
         const { user2 } = await getNamedSigners(hre)
-        const summitReferrals = await ethers.getContract('SummitReferrals')
-        const cartographer = await ethers.getContract('Cartographer')
 
-        await expect(
-            cartographer.connect(user2).rolloverReferral()
-        ).to.be.revertedWith(ERR.REFERRAL_BURN_NOT_AVAILABLE)
+        await cartographerMethod.rolloverReferral({
+            user: user2,
+            revertErr: ERR.REFERRAL_BURN_NOT_AVAILABLE
+        })
 
-        const referralBurnTime = (await cartographer.referralBurnTimestamp()).toNumber()
-        await setTimestamp(referralBurnTime)
-        const timestamp = await getTimestamp()
+        const referralBurnTime = await elevationHelperGet.referralBurnTimestamp()
+        await mineBlockWithTimestamp(referralBurnTime)
 
-        await network.provider.send(EVM.SetNextBlockTimestamp, [Math.max(referralBurnTime, timestamp + 3)])
-        await expect(
-            cartographer.connect(user2).rolloverReferral()
-        ).to.emit(cartographer, EVENT.RolloverReferral).withArgs(user2.address)
+        await cartographerMethod.rolloverReferral({
+            user: user2,
+        })
     })
 })

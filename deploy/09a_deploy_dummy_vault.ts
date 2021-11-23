@@ -16,27 +16,24 @@ const deployDummyVault: DeployFunction = async function ({
 
   const Cartographer = await deployments.get('Cartographer');
 
-  const dummyBifiToken = await deploy('DummyBIFI', {
+  const bifiToken = await deploy('DummyBIFI', {
     from: dev,
     log: true,
   });
   const dummyVault = await deploy('BeefyVaultV6', {
     from: dev,
-    args: [dummyBifiToken.address, 'mooBIFI', 'mooBIFI'],
+    args: [bifiToken.address, 'mooBIFI', 'mooBIFI'],
     log: true,
   })
 
   await deploy('BeefyVaultV6Passthrough', {
     from: dev,
-    args: [Cartographer.address, dummyVault.address, dummyBifiToken.address],
+    args: [Cartographer.address, dummyVault.address, bifiToken.address],
     log: true,
   })
 
-  if (dummyBifiToken.newlyDeployed) {
-    await execute('DummyBIFI', { from: dev }, 'mint', e18(20000000))
-    await execute('DummyBIFI', { from: dev }, 'approve', user1, e18(500))
-    await execute('DummyBIFI', { from: dev }, 'approve', user2, e18(500))
-    await execute('DummyBIFI', { from: dev }, 'approve', user3, e18(500))
+  if (bifiToken.newlyDeployed) {
+    await execute('DummyBIFI', { from: dev }, 'mint', dev, e18(20000000))
     await execute('DummyBIFI', { from: dev }, 'transfer', user1, e18(500))
     await execute('DummyBIFI', { from: dev }, 'transfer', user2, e18(500))
     await execute('DummyBIFI', { from: dev }, 'transfer', user3, e18(500))
@@ -46,7 +43,7 @@ const deployDummyVault: DeployFunction = async function ({
     if (chainIdAllowsVerification(chainId)) {
       await delay(10000)
       await run("verify:verify", {
-        address: dummyBifiToken.address,
+        address: bifiToken.address,
         contract: 'contracts/DummyBIFI.sol:DummyBIFI',
       })
     }

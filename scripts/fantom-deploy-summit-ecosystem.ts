@@ -32,7 +32,7 @@ async function main() {
 
 
 
-  const Cartographer = await ethers.getContract('Cartographer')
+  const Cartographer = await getCartographer()
   const SummitToken = await ethers.getContract('SummitToken')
   const summitAddress = SummitToken.address
   const summitLpAddress = await Cartographer.summitLp()

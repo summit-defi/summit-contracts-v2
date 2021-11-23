@@ -37,7 +37,7 @@ export interface ExpeditionConfig {
 
 export enum UpdatePoolTxType {
     createTokenAllocationTxHash = 'createTokenAllocationTxHash',
-    setTokenSharedAllocationTxHash = 'setTokenSharedAllocationTxHash',
+    setTokenAllocationTxHash = 'setTokenAllocationTxHash',
     addFarmTxHash = 'addFarmTxHash',
     setFarmTxHash = 'setFarmTxHash',
     setTokenPassthroughStrategyTxHash = 'setTokenPassthroughStrategyTxHash'
@@ -50,7 +50,7 @@ export interface TxHashAndNote {
 
 export interface UpdatePoolTxHashes {
     [UpdatePoolTxType.createTokenAllocationTxHash]?: TxHashAndNote
-    [UpdatePoolTxType.setTokenSharedAllocationTxHash]?: TxHashAndNote
+    [UpdatePoolTxType.setTokenAllocationTxHash]?: TxHashAndNote
     [UpdatePoolTxType.addFarmTxHash]?: TxHashAndNote
     [UpdatePoolTxType.setFarmTxHash]?: TxHashAndNote
     [UpdatePoolTxType.setTokenPassthroughStrategyTxHash]?: TxHashAndNote

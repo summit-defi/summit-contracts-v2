@@ -22,10 +22,7 @@ const deployGasStressTokens: DeployFunction = async function ({
     async (tokenId) => {
         const tokenName = `GS${tokenId}`
         await deploy(tokenName, { from: dev, log: true });
-        await execute(tokenName, { from: dev }, 'mint', e18(2000000))
-        await execute(tokenName, { from: dev }, 'approve', user1, e18(500))
-        await execute(tokenName, { from: dev }, 'approve', user2, e18(500))
-        await execute(tokenName, { from: dev }, 'approve', user3, e18(500))
+        await execute(tokenName, { from: dev }, 'mint', dev, e18(2000000))
         await execute(tokenName, { from: dev }, 'transfer', user1, e18(500))
         await execute(tokenName, { from: dev }, 'transfer', user2, e18(500))
         await execute(tokenName, { from: dev }, 'transfer', user3, e18(500))

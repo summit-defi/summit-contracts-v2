@@ -1,12 +1,12 @@
 import { ContractFactory } from '@ethersproject/contracts'
 import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers'
 import hre, { ethers, getChainId, run } from 'hardhat'
-import { delay, PassthroughType, PoolConfig, replaceSummitAddresses, writePassthroughStrategy, ZEROADD } from '../../utils'
+import { delay, getCartographer, PassthroughType, PoolConfig, replaceSummitAddresses, writePassthroughStrategy, ZEROADD } from '../../utils'
 
 export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress: string, summitLpAddress: string): Promise<string | undefined> => {
     const chainId = await getChainId()
     const { dev } = await getNamedSigners(hre)
-    const Cartographer = await ethers.getContract('Cartographer')
+    const Cartographer = await getCartographer()
     const tokenAddress = replaceSummitAddresses(pool.token, summitAddress, summitLpAddress)
         
     // Early exit if no target passthrough strategy
@@ -46,7 +46,7 @@ export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress:
             ]
         break
         case PassthroughType.BeefyVaultV6:
-            passthroughFactory = await ethers.getContractFactory('BeefyVaultV6Passthrough')
+            passthroughFactory = await ethers.getContractFactory('beefyVaultPassthrough')
             constructorArguments = [
                 Cartographer.address,
                 target,

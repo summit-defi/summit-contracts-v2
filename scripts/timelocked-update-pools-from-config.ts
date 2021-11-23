@@ -1,5 +1,5 @@
 import hre, { ethers, getChainId } from 'hardhat'
-import { Contracts, FIVETHOUSAND, OASIS, promiseSequenceMap, TENTHOUSAND, TWOTHOUSAND } from '../utils';
+import { Contracts, MESA, OASIS, promiseSequenceMap, SUMMIT, PLAINS } from '../utils';
 import { getConfigs } from '../data';
 import { queueSyncPoolsTimelockTransactions } from './scriptUtils/timelock-pool-sync';
 
@@ -9,8 +9,8 @@ const DRY_RUN = false
 
 async function main() {
     const chainId = await getChainId()
-    const cartographer = await ethers.getContract(Contracts.Cartographer)
-    const SummitToken = await ethers.getContract(Contracts.SummitToken)
+    const cartographer = await getCartographer()
+    const SummitToken = await getSummitToken()
 
     const summitAddress = SummitToken.address
     const summitLpAddress = await cartographer.summitLp()
@@ -20,7 +20,7 @@ async function main() {
     const poolConfigs = getConfigs(chainId).pools
 
     const elevationQueuedTxHashes = await promiseSequenceMap(
-        [TWOTHOUSAND, FIVETHOUSAND, TENTHOUSAND],
+        [PLAINS, MESA, SUMMIT],
         async (elevation) => {
             return await queueSyncPoolsTimelockTransactions(chainId, DRY_RUN, elevation, poolConfigs, cartographer, summitAddress, summitLpAddress)
         }

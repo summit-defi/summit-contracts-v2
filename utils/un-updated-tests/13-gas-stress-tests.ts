@@ -11,9 +11,9 @@
 //   })
 //   it(`GAS STRESS POOLS: Plains will allow up to 24 active pools`, async function () {
 //     const { user1, user2, user3 } = await getNamedSigners(hre)
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const cartographer = await getCartographer()
 //     const cartographerElevation = await ethers.getContract(Contracts.CartographerElevation)
-//     const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+//     const elevationHelper = await getElevationHelper()
 
 //     const poolsCount = (await cartographer.poolsCount()).toNumber()
 
@@ -67,7 +67,7 @@
 
 //   // ACTIVE POOLS CAP TESTS
 //   it(`ACTIVE POOLS CAP: Attempting to add another pool should fail with error "${ERR.TOO_MANY_ACTIVE_POOLS}"`, async function() {
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const cartographer = await getCartographer()
 //     const cartographerElevation = await ethers.getContract(Contracts.CartographerElevation)
 
 //     const plainsActivePoolsCount = (await cartographerElevation.elevActivePoolsCount(TENTHOUSAND)).toNumber()
@@ -84,9 +84,9 @@
 //   })
 //   it(`ACTIVE POOLS CAP: Removing a pool should preserve active pools count until rollover, at which point it should decrement`, async function () {
 //     const { dev } = await getNamedSigners(hre)
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const cartographer = await getCartographer()
 //     const cartographerElevation = await ethers.getContract(Contracts.CartographerElevation)
-//     const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+//     const elevationHelper = await getElevationHelper()
 
 //     const plainsActivePoolsCountInit = await cartographerElevation.elevActivePoolsCount(TENTHOUSAND)
 //     expect(plainsActivePoolsCountInit).to.equal(24)
@@ -105,7 +105,7 @@
 //   })
 //   it(`ACTIVE POOLS CAP: Setting a pool live should add it to the active pools count instantly`, async function () {
 //     const { dev } = await getNamedSigners(hre)
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const cartographer = await getCartographer()
 //     const cartographerElevation = await ethers.getContract(Contracts.CartographerElevation)
 
 //     const plainsActivePoolsCountInit = await cartographerElevation.elevActivePoolsCount(TENTHOUSAND)
@@ -123,8 +123,8 @@
 //   // ROLLING OVER ALL ACTIVE POOLS
 //   it(`ROLLOVER 24 POOLS: Rolling over all active pools should have a reasonable gas usage`, async function () {
 //     const { user1 } = await getNamedSigners(hre)
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
-//     const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+//     const cartographer = await getCartographer()
+//     const elevationHelper = await getElevationHelper()
 
 //     const nextRoundTime = (await elevationHelper.roundEndTimestamp(TENTHOUSAND)).toNumber()
 //     await mineBlockWithTimestamp(nextRoundTime)
@@ -140,7 +140,7 @@
 //   it(`INTERACTING POOLS CAP: Attempting to add another pool should fail with error "${ERR.TOO_MANY_STAKED_POOLS}"`, async function() {
 //     const { user1 } = await getNamedSigners(hre)
 
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const cartographer = await getCartographer()
 
 //     const gasStressInfo = {
 //         name: 'GS24',
@@ -156,9 +156,9 @@
 //   it(`INTERACTING POOLS: Exiting a pool should reduce interacting pools count when there are no winnings to harvest or rewards generated in current round`, async function() {
 //     const { user1 } = await getNamedSigners(hre)
 
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const cartographer = await getCartographer()
 //     const cartographerElevation = await ethers.getContract(Contracts.CartographerElevation)
-//     const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+//     const elevationHelper = await getElevationHelper()
 
 //     const gasStressInfo = {
 //         name: 'GS4',
@@ -194,9 +194,9 @@
 //   it(`INTERACTING POOLS: Exiting a pool should reduce interacting pools count only after all winnings are harvested`, async function() {
 //     const { user1 } = await getNamedSigners(hre)
 
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const cartographer = await getCartographer()
 //     const cartographerElevation = await ethers.getContract(Contracts.CartographerElevation)
-//     const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+//     const elevationHelper = await getElevationHelper()
 
 //     const gasStressInfo = {
 //         name: 'GS5',
@@ -233,9 +233,9 @@
 //   it(`SWITCH TOTEM: Switching totem with 12 active pools with winnings should succeed`, async function() {
 //     const { user1 } = await getNamedSigners(hre)
 
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const cartographer = await getCartographer()
 //     const cartographerElevation = await ethers.getContract(Contracts.CartographerElevation)
-//     const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+//     const elevationHelper = await getElevationHelper()
 
 //     await rolloverRoundUntilWinningTotem(Contracts.CartographerElevation, cartographer, cartographerElevation, elevationHelper, PID.DUMMY_CAKE_10K, 0)
 
@@ -250,10 +250,10 @@
 //   it(`HARVEST ALL: Harvesting all winnings from 12 active pools with winnings should succeed`, async function() {
 //     const { user1 } = await getNamedSigners(hre)
 
-//     const summitToken = await ethers.getContract(Contracts.SummitToken)
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const summitToken = await getSummitToken()
+//     const cartographer = await getCartographer()
 //     const cartographerElevation = await ethers.getContract(Contracts.CartographerElevation)
-//     const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+//     const elevationHelper = await getElevationHelper()
 
 //     // Ensure winnings on all farms, then ensure that all has vested
 //     await rolloverRoundUntilWinningTotem(Contracts.CartographerElevation, cartographer, cartographerElevation, elevationHelper, PID.DUMMY_CAKE_10K, 1)
@@ -289,9 +289,9 @@
 //   it(`CROSS COMPOUND ALL: Cross compounding all winnings from 12 active pools with winnings should succeed`, async function() {
 //     const { user1 } = await getNamedSigners(hre)
 
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const cartographer = await getCartographer()
 //     const cartographerElevation = await ethers.getContract(Contracts.CartographerElevation)
-//     const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+//     const elevationHelper = await getElevationHelper()
 
 //     // Ensure winnings on all farms, then ensure that all has vested
 //     await rolloverRoundUntilWinningTotem(Contracts.CartographerElevation, cartographer, cartographerElevation, elevationHelper, PID.DUMMY_CAKE_10K, 1)

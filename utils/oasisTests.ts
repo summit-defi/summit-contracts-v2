@@ -1,244 +1,263 @@
+import { BigNumber } from '@ethersproject/bignumber';
 import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat';
-import { consoleLog, depositedAfterFee, e18, EVENT, expect6FigBigNumberEquals, mineBlock, toDecimal } from '.';
-import { getTimestamp, mineBlocks } from './utils';
+import { cartographerMethod, cartographerSynth, consoleLog, Contracts, depositedAfterFee, e18, EVENT, expect6FigBigNumberEquals, getSubCartographer, mineBlock, OASIS, promiseSequenceMap, subCartGet, subCartMethod, toDecimal } from '.';
+import { getContract, getSummitReferrals, getSummitToken } from './contracts';
+import { userPromiseSequenceMap, userPromiseSequenceReduce } from './users';
+import { e12, getTimestamp, mineBlocks } from './utils';
 
 
 // DEPOSIT
-const standardDepositShouldSucceed = (pid: number, depositFee: number = 0) => {
-    it('DEPOSIT: Standard deposit should succeed', async function() {
-      const { user1 } = await getNamedSigners(hre)
-      const cartographer = await ethers.getContract('Cartographer')
-      const cartographerOasis = await ethers.getContract('CartographerOasis')
+const standardDepositShouldSucceed = (tokenName: string, depositFee: number = 0) => {
+  it('DEPOSIT: Standard deposit should succeed', async function() {
+    const { user1 } = await getNamedSigners(hre)
+    const token = await ethers.getContract(tokenName)
+
+    const initialStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
   
-      const initialStaked = (await cartographerOasis.connect(user1).userInfo(pid, user1.address)).staked
-    
-      const amountAfterFee = depositedAfterFee(e18(5), depositFee)
-      await expect(
-          cartographer.connect(user1).deposit(pid, e18(5), 0, 1)
-      ).to.emit(cartographer, EVENT.Deposit).withArgs(user1.address, pid, amountAfterFee, 0)
-      
-      const finalStaked = (await cartographerOasis.connect(user1).userInfo(pid, user1.address)).staked
-      expect(finalStaked).to.equal(initialStaked.add(amountAfterFee))
+    const amountAfterFee = depositedAfterFee(e18(5), depositFee)
+    await cartographerMethod.deposit({
+      user: user1,
+      tokenAddress: token.address,
+      elevation: OASIS,
+      amount: e18(5),
+      crossCompound: false,
     })
-  }
-
-const incorrectTotemDepositShouldSucceed = (pid: number, depositFee: number = 0) => {
-    it('DEPOSIT: Incorrect totem deposit should succeed', async function() {
-        const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
-        const cartographerOasis = await ethers.getContract('CartographerOasis')
-
-        const initialStaked = (await cartographerOasis.connect(user1).userInfo(pid, user1.address)).staked
-
-        const amountAfterFee = depositedAfterFee(e18(5), depositFee)
-        await expect(
-          cartographer.connect(user1).deposit(pid, e18(5), 0, 1)
-        ).to.emit(cartographer, EVENT.Deposit).withArgs(user1.address, pid, amountAfterFee, 0)
-          
-        const userInfo = await cartographerOasis.connect(user1).userInfo(pid, user1.address)
-        expect(userInfo.staked).to.equal(initialStaked.add(amountAfterFee))
-      })
+    
+    const finalStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
+    expect(finalStaked).to.equal(initialStaked.add(amountAfterFee))
+  })
 }
 
 
 // PENDING
-const pendingSUMMITShouldIncreaseEachBlock = (pid: number) => {
+const pendingSUMMITShouldIncreaseEachBlock = (tokenName: string) => {
     it('PENDING: Users pending SUMMIT should increase each block', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const token = await getContract(tokenName)
     
         const timestampBefore = await getTimestamp()
-        const [pendingSummit0] = await cartographer.rewards(pid, user1.address)
+        const harvestable0 = (await subCartGet.rewards(token.address, OASIS, user1.address)).harvestable
         
         await mineBlock()
         
         const timestampAfter = await getTimestamp()
-        const [pendingSummit1] = await cartographer.rewards(pid, user1.address)
+        const harvestable1 = (await subCartGet.rewards(token.address, OASIS, user1.address)).harvestable
 
-        const allocPoint = await cartographer.elevationModulatedAllocation(pid)
-        const totalAllocPoint = await cartographer.totalSharedAlloc()
-        const summitPerSecond = await cartographer.summitPerSecond()
-        const timestampDiff = timestampAfter - timestampBefore
-        const blockPendingDiff = summitPerSecond.mul(timestampDiff).mul(allocPoint).div(totalAllocPoint)
-
+        const summitFarm1SecondEmission = await cartographerSynth.farmSummitEmissionOverDuration(
+          token.address,
+          OASIS,
+          timestampAfter - timestampBefore,
+        )
 
         consoleLog({
-          timestampDiff,
-          pendingSummit0: toDecimal(pendingSummit0),
-          pendingSummit1: toDecimal(pendingSummit1),
-          blockPendingDiff: toDecimal(blockPendingDiff),
+          pendingSummit0: toDecimal(harvestable0),
+          pendingSummit1: toDecimal(harvestable1),
+          summitFarm1SecondEmission: toDecimal(summitFarm1SecondEmission),
         })
-        expect6FigBigNumberEquals(pendingSummit1.sub(pendingSummit0), blockPendingDiff)
+
+        expect6FigBigNumberEquals(harvestable1.sub(harvestable0), summitFarm1SecondEmission)
     
         await mineBlocks(3)
 
-        const [pendingSummit2] = await cartographer.rewards(pid, user1.address)
-        expect6FigBigNumberEquals(pendingSummit2.sub(pendingSummit1), blockPendingDiff.mul(3))
+        const timestampFinal = await getTimestamp()
+
+        const summitFarm3SecondEmission = await cartographerSynth.farmSummitEmissionOverDuration(
+          token.address,
+          OASIS,
+          timestampFinal - timestampAfter,
+        )
+
+        const harvestable2 = (await subCartGet.rewards(token.address, OASIS, user1.address)).harvestable
+        expect6FigBigNumberEquals(harvestable2.sub(harvestable1), summitFarm3SecondEmission)
       })
 }
 
-const pendingSUMMITRedeemedOnDeposit = (pid: number, depositFee: number = 0) => {
+const pendingSUMMITRedeemedOnDeposit = (tokenName: string, depositFee: number = 0) => {
     it('DEPOSIT / REDEEM: User should redeem pending on further deposit', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
-        const cartographerOasis = await ethers.getContract('CartographerOasis')
+        const token = await getContract(tokenName)
 
-        const initialStaked = (await cartographerOasis.connect(user1).userInfo(pid, user1.address)).staked
+        const initialStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
 
-        await expect(
-          cartographer.connect(user1).deposit(pid, e18(5), 0, 0)
-        ).to.emit(cartographer, EVENT.RedeemRewards)
+        await cartographerMethod.harvestSingleFarm({
+          user: user1,
+          tokenAddress: token.address,
+          elevation: OASIS,
+          crossCompound: false,
+        })
           
-        const userInfo = await cartographerOasis.connect(user1).userInfo(pid, user1.address)
-        const amountAfterFee = depositedAfterFee(e18(5), depositFee)
-        expect(userInfo.staked).to.equal(initialStaked.add(amountAfterFee))
+        const finalStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
+        expect(finalStaked).to.equal(initialStaked)
       })
 }
 
-const redeemTransfersCorrectSUMMITToAddresses = (pid: number) => {
+const redeemTransfersCorrectSUMMITToAddresses = (tokenName: string) => {
     it('REDEEM: Redeeming rewards transfers correct amount to addresses', async function() {
       const { user1, dev} = await getNamedSigners(hre)
-      const cartographer = await ethers.getContract('Cartographer')
-      const summitToken = await ethers.getContract('SummitToken')
-      const summitReferrals = await ethers.getContract('SummitReferrals')
+      const token = await getContract(tokenName)
+      const summitReferrals = await getSummitReferrals()
 
-      await cartographer.connect(user1).deposit(pid, 0, 0, 0)
-      const userSummit = await summitToken.balanceOf(user1.address)
-      const referralSummit = await summitToken.balanceOf(summitReferrals.address)
-      const devSummit = await summitToken.balanceOf(dev.address)
 
-      await mineBlock()
+      const userSummitInit = await token.balanceOf(user1.address)
+      const referralSummitInit = await token.balanceOf(summitReferrals.address)
+      const devSummitInit = await token.balanceOf(dev.address)
 
-      // The prev mine will generate rewards, the following deposit will also generate rewards, so this pending must be doubled
-      const rewardsPending = (await cartographer.rewards(pid, user1.address))[0].mul('2')
-      const totalSummitPending = rewardsPending.div(98).mul(100).div(92).mul(100)
+      await mineBlocks(5)
+
+      const expectedRewards = (await subCartGet.rewards(token.address, OASIS, user1.address)).harvestable
+        .add(await cartographerSynth.farmSummitEmissionOverDuration(token.address, OASIS, 1))
+      const totalSummitPending = expectedRewards.div(98).mul(100).div(92).mul(100)
       const referralPending = totalSummitPending.mul(92).div(100).mul(2).div(100)
       const devPending = totalSummitPending.mul(8).div(100)
-      await cartographer.connect(user1).deposit(pid, 0, 0, 0)
-      
-      const userSummitFinal = await summitToken.balanceOf(user1.address)
-      const referralSummitFinal = await summitToken.balanceOf(summitReferrals.address)
-      const devSummitFinal = await summitToken.balanceOf(dev.address)
 
-      consoleLog({
-        user: `${toDecimal(userSummit)} --> ${toDecimal(userSummitFinal)}: Δ ${toDecimal(userSummitFinal.sub(userSummit))}`,
-        dev: `${toDecimal(devSummit)} --> ${toDecimal(devSummitFinal)}: Δ ${toDecimal(devSummitFinal.sub(devSummit))}`,
-        referral: `${toDecimal(referralSummit)} --> ${toDecimal(referralSummitFinal)}: Δ ${toDecimal(referralSummitFinal.sub(referralSummit))}`,
+      await cartographerMethod.harvestSingleFarm({
+        user: user1,
+        tokenAddress: token.address,
+        elevation: OASIS,
+        crossCompound: false,
       })
 
-      expect6FigBigNumberEquals(userSummitFinal, userSummit.add(rewardsPending))
-      expect6FigBigNumberEquals(referralSummitFinal, referralSummit.add(referralPending))
-      expect6FigBigNumberEquals(devSummitFinal, devSummit.add(devPending))
+      const userSummitFinal = await token.balanceOf(user1.address)
+      const referralSummitFinal = await token.balanceOf(summitReferrals.address)
+      const devSummitFinal = await token.balanceOf(dev.address)
+
+      consoleLog({
+        user: `${toDecimal(userSummitInit)} --> ${toDecimal(userSummitFinal)}: Δ ${toDecimal(userSummitFinal.sub(userSummitInit))}`,
+        dev: `${toDecimal(devSummitInit)} --> ${toDecimal(devSummitFinal)}: Δ ${toDecimal(devSummitFinal.sub(devSummitInit))}`,
+        referral: `${toDecimal(referralSummitInit)} --> ${toDecimal(referralSummitFinal)}: Δ ${toDecimal(referralSummitFinal.sub(referralSummitInit))}`,
+      })
+
+      expect6FigBigNumberEquals(userSummitFinal, userSummitInit.add(expectedRewards))
+      expect6FigBigNumberEquals(referralSummitFinal, referralSummitInit.add(referralPending))
+      expect6FigBigNumberEquals(devSummitFinal, devSummitInit.add(devPending))
     })
 }
 
 
 // WITHDRAW
-const pendingSUMMITRedeemedOnWithdrawal = (pid: number) => {
+const pendingSUMMITRedeemedOnWithdrawal = (tokenName: string) => {
   it('WITHDRAW / REDEEM: User should redeem pending on withdraw', async function() {
       const { user1 } = await getNamedSigners(hre)
-      const cartographer = await ethers.getContract('Cartographer')
-      const cartographerOasis = await ethers.getContract('CartographerOasis')
+      const token = await getContract(tokenName)
 
-      const initialStaked = (await cartographerOasis.connect(user1).userInfo(pid, user1.address)).staked
+      const initialStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
 
-      await expect(
-          cartographer.connect(user1).withdraw(pid, initialStaked.div('3'), 0)
-      ).to.emit(cartographer, EVENT.RedeemRewards)
+      await cartographerMethod.withdraw({
+        user: user1,
+        tokenAddress: token.address,
+        elevation: OASIS,
+        amount: initialStaked.div(3),
+        crossCompound: false,
+      })
 
-      const userInfo = await cartographerOasis.connect(user1).userInfo(pid, user1.address)
-      expect6FigBigNumberEquals(userInfo.staked, initialStaked.sub(initialStaked.div('3')))
+      const midStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
+      expect6FigBigNumberEquals(midStaked, initialStaked.sub(initialStaked.div(3)))
 
-      const remainingStaked = (await cartographerOasis.connect(user1).userInfo(pid, user1.address)).staked
-      await cartographer.connect(user1).withdraw(pid, remainingStaked, 0)
+      await cartographerMethod.withdraw({
+        user: user1,
+        tokenAddress: token.address,
+        elevation: OASIS,
+        amount: midStaked,
+        crossCompound: false,
+      })
 
-      const userInfo2 = await cartographerOasis.connect(user1).userInfo(pid, user1.address)
-      expect(userInfo2.staked).to.equal(0)
+      const finalStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
+      expect(finalStaked).to.equal(0)
   })
 }
 
 
   // RUNNING LP SUPPLY
-  const lpSupplyUpdatesWithDepositsAndWithdrawals = (pid: number, depositFee: number = 0) => {
+  const lpSupplyUpdatesWithDepositsAndWithdrawals = (tokenName: string, depositFee: number = 0) => {
     it('LPSUPPLY: Should increase and decrease with deposits and withdrawals', async function() {
-        const {
-            user1,
-            user2,
-            user3,
-        } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
-        const cartographerOasis = await ethers.getContract('CartographerOasis')
+        const { user1, user2, user3 } = await getNamedSigners(hre)
+        const token = await getContract(tokenName)
 
-        const lpSupplyBefore = (await cartographerOasis.connect(user1).oasisPoolInfo(pid)).supply
+        const txs = [
+          { deposit: true, user: user1, amount: e18(5) },
+          { deposit: false, user: user1, amount: e18(3) },
+          { deposit: true, user: user2, amount: e18(15) },
+          { deposit: false, user: user2, amount: e18(8.5) },
+          { deposit: true, user: user3, amount: e18(1.25) },
+          { deposit: false, user: user1, amount: e18(1.2) },
+          { deposit: true, user: user2, amount: e18(5.85) },
+          { deposit: false, user: user2, amount: e18(2.8) },
+          { deposit: true, user: user3, amount: e18(5.25) },
+        ]
 
+        let lpSupply = (await subCartGet.poolInfo(token.address, OASIS)).supply
         const feeMult = (10000 - depositFee) / 10000
-        await cartographer.connect(user1).deposit(pid, e18(5), 0, 0)
-        await cartographer.connect(user1).withdraw(pid, e18(3), 0)
-        await cartographer.connect(user2).deposit(pid, e18(15), 0, 0)
-        await cartographer.connect(user2).withdraw(pid, e18(8.5), 0)
-        await cartographer.connect(user3).deposit(pid, e18(1.25), 0, 0)
-        const lpSupplyAfter = lpSupplyBefore.add(e18((5 * feeMult) - 3 + (15 * feeMult) - 8.5 + (1.25 * feeMult)))
-        const trueLpSupplyAfter = (await cartographerOasis.connect(user1).oasisPoolInfo(pid)).supply
-        expect6FigBigNumberEquals(trueLpSupplyAfter, lpSupplyAfter)
 
-        await cartographer.connect(user1).withdraw(pid, e18(1.2), 0)
-        await cartographer.connect(user2).deposit(pid, e18(5.85), 0, 0)
-        await cartographer.connect(user2).withdraw(pid, e18(2.8), 0)
-        await cartographer.connect(user3).deposit(pid, e18(5.25), 0, 0)
-        const lpSupplyFinal = lpSupplyAfter.add(e18(-1.2 + (5.85 * feeMult) - 2.8 + (5.25 * feeMult)))
-        const trueLpSupplyFinal = (await cartographerOasis.connect(user1).oasisPoolInfo(pid)).supply
-        expect6FigBigNumberEquals(trueLpSupplyFinal, lpSupplyFinal)
+        await promiseSequenceMap(
+          txs,
+          async (tx) => {
+            const args = {
+              user: tx.user,
+              tokenAddress: token.address,
+              elevation: OASIS,
+              amount: tx.amount,
+              crossCompound: false,
+            }
+            await tx.deposit ? cartographerMethod.deposit(args) : cartographerMethod.withdraw(args)
+            const expectedLpSupply = tx.deposit ?
+              lpSupply.add(tx.amount.mul(feeMult)) :
+              lpSupply.sub(tx.amount.mul(feeMult))
+
+            lpSupply = (await subCartGet.poolInfo(token.address, OASIS)).supply
+            expect(expectedLpSupply).to.equal(lpSupply)
+          }
+        )
     })
 }
 
 
   // REWARDS UPDATING AND SPLITTING
-  const rewardsCorrectlyDistributed = (pid: number) => {
+  const rewardsCorrectlyDistributed = (tokenName: string) => {
       it('REWARDS: Rewards are correctly distributed among pool members', async function() {
-        const {
-            user1,
-            user2,
-            user3,
-        } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
-        const cartographerOasis = await ethers.getContract('CartographerOasis')
+        const token = await getContract(tokenName)
 
-        const user1Staked = (await cartographerOasis.connect(user1).userInfo(pid, user1.address)).staked
-        const user2Staked = (await cartographerOasis.connect(user1).userInfo(pid, user2.address)).staked
-        const user3Staked = (await cartographerOasis.connect(user1).userInfo(pid, user3.address)).staked
-        const totalStaked = user1Staked.add(user2Staked).add(user3Staked)
-        const lpSupply = (await cartographerOasis.connect(user1).oasisPoolInfo(pid)).supply
-        expect(lpSupply).to.be.equal(totalStaked)
+        const usersStaked = await userPromiseSequenceMap(
+          async (user) => (await subCartGet.userInfo(token.address, OASIS, user.address)).staked
+        )
 
-        await cartographerOasis.updatePool(pid)
-        const [user1Pending] = await cartographer.rewards(pid, user1.address)
-        const [user2Pending] = await cartographer.rewards(pid, user2.address)
-        const [user3Pending] = await cartographer.rewards(pid, user3.address)
+        const totalStaked = usersStaked[0]
+          .add(usersStaked[1])
+          .add(usersStaked[2])
 
-        await mineBlock()
-        await mineBlock()
-        await mineBlock()
+        const lpSupply = (await subCartGet.poolInfo(token.address, OASIS)).supply
+        expect(lpSupply).to.equal(totalStaked)
 
-        const [user1PendingFinal] = await cartographer.rewards(pid, user1.address)
-        const [user2PendingFinal] = await cartographer.rewards(pid, user2.address)
-        const [user3PendingFinal] = await cartographer.rewards(pid, user3.address)
+        await subCartMethod.updatePool(token.address, OASIS)
 
-        const user1Delta = user1PendingFinal.sub(user1Pending)
-        const user2Delta = user2PendingFinal.sub(user2Pending)
-        const user3Delta = user3PendingFinal.sub(user3Pending)
-        const totalDelta = user1Delta.add(user2Delta).add(user3Delta)      
+        const usersHarvestableInit = await userPromiseSequenceMap(
+          async (user) => (await subCartGet.rewards(token.address, OASIS, user.address)).harvestable
+        )
 
-        expect(user1Staked.mul('1000000').div(totalStaked)).to.equal(user1Delta.mul('1000000').div(totalDelta))
-        expect(user2Staked.mul('1000000').div(totalStaked)).to.equal(user2Delta.mul('1000000').div(totalDelta))
-        expect(user3Staked.mul('1000000').div(totalStaked)).to.equal(user3Delta.mul('1000000').div(totalDelta))
+        await mineBlocks(3)
+
+        const usersHarvestableFinal = await userPromiseSequenceMap(
+          async (user) => (await subCartGet.rewards(token.address, OASIS, user.address)).harvestable
+        )
+
+        const usersHarvestableDelta = await userPromiseSequenceMap(
+          async (_user, userIndex) => usersHarvestableFinal[userIndex].sub(usersHarvestableInit[userIndex])
+        )
+
+        const totalDelta = await userPromiseSequenceReduce(
+          (acc, _, userIndex) => acc.add(usersHarvestableDelta[userIndex]),
+          e18(0),
+        )
+
+        await userPromiseSequenceMap(
+          async (_, userIndex) => expect(usersStaked[userIndex].mul(e12(1)).div(totalStaked)).to.equal(usersHarvestableDelta[userIndex].mul(e12(1)).div(totalDelta))
+        )
     })
 }
 
 export const oasisTests = {
     standardDepositShouldSucceed,
-    incorrectTotemDepositShouldSucceed,
 
     pendingSUMMITShouldIncreaseEachBlock,
     pendingSUMMITRedeemedOnDeposit,

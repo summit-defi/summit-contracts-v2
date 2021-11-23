@@ -98,7 +98,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     }
 
     /// @dev Unused initializer as part of the SubCartographer interface
-    function initialize(uint8, address, address _summitTokenAddress)
+    function initialize(address, address _summitTokenAddress)
         external override
         initializer onlyCartographer
     {
@@ -152,10 +152,10 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     function supply(address _token) external view override returns (uint256) {
         return poolInfo[_token].supply;
     }
-    function selectedTotem(address) external view override returns (uint8) {
+    function selectedTotem(address) external pure override returns (uint8) {
         return 0;
     }
-    function isTotemSelected(address) external view override returns (bool) {
+    function isTotemSelected(address) external pure override returns (bool) {
         return true;
     }
 
@@ -317,7 +317,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     // ------------------------------------------------------------------
     
 
-    function hypotheticalRewards(uint16, address) public pure returns (uint256, uint256) { return (uint256(0), 0); }
+    function hypotheticalRewards(address, address) public pure returns (uint256, uint256) { return (uint256(0), 0); }
     function rollover() external override {}
     function switchTotem(uint8, address, bool) external override {}
 
@@ -338,6 +338,9 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         } else {
             userInteractingPools[_userAdd].remove(_token);
         }
+    }
+    function userInteractingWithPool(address _token, address _userAdd) public view poolExists(_token) returns (bool) {
+        return userInteractingPools[_userAdd].contains(_token);
     }
 
     /// @dev Harvest an entire elevation (or cross compound)
@@ -445,9 +448,6 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
         returns (uint256)
     {
-        UserInfo storage user = userInfo[_token][_userAdd];
-        OasisPoolInfo storage pool = poolInfo[_token];
-
         // Harvest earnings from pool, cross compound if necessary
         _harvestOrCrossCompoundPool(
             poolInfo[_token],

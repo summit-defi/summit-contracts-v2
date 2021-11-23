@@ -2,7 +2,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { Contract } from "ethers";
 import { deployments } from "hardhat";
-import { OASIS, TWOTHOUSAND, FIVETHOUSAND, TENTHOUSAND, EXPEDITION, INF_APPROVE, e18, mineBlockWithTimestamp, getSeeds, mineBlocks, POOL_FEE, Contracts } from "../utils";
+import { OASIS, PLAINS, MESA, SUMMIT, EXPEDITION, INF_APPROVE, e18, mineBlockWithTimestamp, getSeeds, mineBlocks, TOKEN_FEE, Contracts, getSubCartographers, promiseSequenceMap, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getMasterChef, getMasterChefPassthrough, getSummitLpToken, getSummitReferrals, getSummitToken, getTimelock, elevationHelperGet } from "../utils";
 
 interface FixtureState {
   readonly dev: SignerWithAddress
@@ -16,13 +16,11 @@ interface FixtureState {
   readonly dummyCakeToken: Contract
   readonly dummyMasterChef: Contract
   readonly masterChefPassthrough: Contract
-  readonly dummyBifiToken: Contract
+  readonly bifiToken: Contract
   readonly dummyVault: Contract
   readonly bifiVaultPassthrough: Contract
   readonly cartographer: Contract
-  readonly cartographerOasis: Contract
-  readonly cartographerElevation: Contract
-  readonly cartographerExpedition: Contract
+  readonly subCartographers: Contract[]
   readonly elevationHelper: Contract
   readonly summitReferrals: Contract
   readonly timelock: Contract
@@ -35,45 +33,34 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
   await deployments.all()
   await deployments.fixture();
   const { dev, exped, user1, user2, user3, trustedSeeder } = await getNamedSigners(hre)
-  const summitToken = await ethers.getContract('SummitToken')
-  const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
-  const dummyCakeToken = await ethers.getContract('DummyCAKE')
-  const dummyMasterChef = await ethers.getContract('MasterChef')
-  const masterChefPassthrough = await ethers.getContract('MasterChefPassthrough')
-  const dummyBifiToken = await ethers.getContract('DummyBIFI')
-  const dummyVault = await ethers.getContract('BeefyVaultV6')
-  const bifiVaultPassthrough = await ethers.getContract('BeefyVaultV6Passthrough')
-  const cartographer = await ethers.getContract('Cartographer')
-  const cartographerOasis = await ethers.getContract('CartographerOasis')
-  const cartographerElevation = await ethers.getContract('CartographerElevation')
-  const cartographerExpedition = await ethers.getContract('CartographerExpedition')
-  const elevationHelper = await ethers.getContract('ElevationHelper')
-  const summitReferrals = await ethers.getContract('SummitReferrals')
-  const timelock = await ethers.getContract('Timelock')
-  const everestToken = await ethers.getContract(Contracts.EverestToken)
-  const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
+  const summitToken = await getSummitToken()
+  const dummySummitLpToken = await getSummitLpToken()
+  const dummyCakeToken = await getCakeToken()
+  const dummyMasterChef = await getMasterChef()
+  const masterChefPassthrough = await getMasterChefPassthrough()
+  const bifiToken = await getBifiToken()
+  const dummyVault = await getBifiVault()
+  const bifiVaultPassthrough = await getBifiVaultPassthrough()
+  const cartographer = await getCartographer()
+  const subCartographers = await getSubCartographers()
+  const elevationHelper = await getElevationHelper()
+  const summitReferrals = await getSummitReferrals()
+  const timelock = await getTimelock()
+  const everestToken = await getEverestToken()
+  const expeditionV2 = await getExpedition()
 
   // APPROVALS
   await summitToken.connect(user1).approve(cartographer.address, INF_APPROVE)
   await summitToken.connect(user2).approve(cartographer.address, INF_APPROVE)
   await summitToken.connect(user3).approve(cartographer.address, INF_APPROVE)
-  await summitToken.connect(user1).approve(cartographerExpedition.address, INF_APPROVE)
-  await summitToken.connect(user2).approve(cartographerExpedition.address, INF_APPROVE)
-  await summitToken.connect(user3).approve(cartographerExpedition.address, INF_APPROVE)
 
   await dummyCakeToken.connect(user1).approve(cartographer.address, INF_APPROVE)
   await dummyCakeToken.connect(user2).approve(cartographer.address, INF_APPROVE)
   await dummyCakeToken.connect(user3).approve(cartographer.address, INF_APPROVE)
-  await dummyCakeToken.connect(user1).approve(cartographerExpedition.address, INF_APPROVE)
-  await dummyCakeToken.connect(user2).approve(cartographerExpedition.address, INF_APPROVE)
-  await dummyCakeToken.connect(user3).approve(cartographerExpedition.address, INF_APPROVE)
 
-  await dummyBifiToken.connect(user1).approve(cartographer.address, INF_APPROVE)
-  await dummyBifiToken.connect(user2).approve(cartographer.address, INF_APPROVE)
-  await dummyBifiToken.connect(user3).approve(cartographer.address, INF_APPROVE)
-  await dummyBifiToken.connect(user1).approve(cartographerExpedition.address, INF_APPROVE)
-  await dummyBifiToken.connect(user2).approve(cartographerExpedition.address, INF_APPROVE)
-  await dummyBifiToken.connect(user3).approve(cartographerExpedition.address, INF_APPROVE)
+  await bifiToken.connect(user1).approve(cartographer.address, INF_APPROVE)
+  await bifiToken.connect(user2).approve(cartographer.address, INF_APPROVE)
+  await bifiToken.connect(user3).approve(cartographer.address, INF_APPROVE)
 
   return {
     dev,
@@ -87,13 +74,11 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
     dummyCakeToken,
     dummyMasterChef,
     masterChefPassthrough,
-    dummyBifiToken,
+    bifiToken,
     dummyVault,
     bifiVaultPassthrough,
     cartographer,
-    cartographerOasis,
-    cartographerElevation,
-    cartographerExpedition,
+    subCartographers,
     elevationHelper,
     summitReferrals,
     timelock,
@@ -105,24 +90,24 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
 export const poolsFixture = deployments.createFixture(async (): Promise<FixtureState> => {
   const baseFixtureState = await baseFixture();
 
-  const { cartographer, cartographerOasis, cartographerElevation, cartographerExpedition, summitToken, dummyCakeToken, dummyBifiToken, bifiVaultPassthrough, user1, user2, user3 } = baseFixtureState
+  const { cartographer, subCartographers, summitToken, dummyCakeToken, bifiToken, bifiVaultPassthrough, user1, user2, user3 } = baseFixtureState
 
   // POOLS
   await cartographer.createTokenAllocation(summitToken.address, 4000)
   await cartographer.createTokenAllocation(dummyCakeToken.address, 100)
-  await cartographer.createTokenAllocation(dummyBifiToken.address, 150)
-  await cartographer.add(summitToken.address, OASIS, true, 0, true)
-  await cartographer.add(summitToken.address, TWOTHOUSAND, true, 0, true)
-  await cartographer.add(summitToken.address, FIVETHOUSAND, true, 0, true)
-  await cartographer.add(summitToken.address, TENTHOUSAND, true, 0, true)
-  await cartographer.add(dummyCakeToken.address, OASIS, true, POOL_FEE.DUMMY_CAKE_OASIS, true)
-  await cartographer.add(dummyCakeToken.address, TWOTHOUSAND, true, POOL_FEE.DUMMY_CAKE_2K, true)
-  await cartographer.add(dummyCakeToken.address, FIVETHOUSAND, true, POOL_FEE.DUMMY_CAKE_5K, true)
-  await cartographer.add(dummyCakeToken.address, TENTHOUSAND, true, POOL_FEE.DUMMY_CAKE_10K, true)
-  await cartographer.add(dummyBifiToken.address, OASIS, true, POOL_FEE.DUMMY_BIFI_OASIS, true)
-  await cartographer.add(dummyBifiToken.address, TWOTHOUSAND, true, POOL_FEE.DUMMY_BIFI_2K, true)
-  await cartographer.add(dummyBifiToken.address, FIVETHOUSAND, true, POOL_FEE.DUMMY_BIFI_5K, true)
-  await cartographer.add(dummyBifiToken.address, TENTHOUSAND, true, POOL_FEE.DUMMY_BIFI_10K, true)
+  await cartographer.createTokenAllocation(bifiToken.address, 150)
+  await cartographer.add(summitToken.address, OASIS, true, true)
+  await cartographer.add(summitToken.address, PLAINS, true, true)
+  await cartographer.add(summitToken.address, MESA, true, true)
+  await cartographer.add(summitToken.address, SUMMIT, true, true)
+  await cartographer.add(dummyCakeToken.address, OASIS, true, true)
+  await cartographer.add(dummyCakeToken.address, PLAINS, true, true)
+  await cartographer.add(dummyCakeToken.address, MESA, true, true)
+  await cartographer.add(dummyCakeToken.address, SUMMIT, true, true)
+  await cartographer.add(bifiToken.address, OASIS, true, true)
+  await cartographer.add(bifiToken.address, PLAINS, true, true)
+  await cartographer.add(bifiToken.address, MESA, true, true)
+  await cartographer.add(bifiToken.address, SUMMIT, true, true)
 
   return baseFixtureState
 })
@@ -140,9 +125,9 @@ export const twoThousandUnlockedFixture = deployments.createFixture(async (): Pr
   const oasisUnlockedFixtureState = await oasisUnlockedFixture();
 
   const { elevationHelper, cartographer, trustedSeeder } = oasisUnlockedFixtureState
-  const twoThousandUnlockTime = (await elevationHelper.unlockTimestamp(TWOTHOUSAND)).toNumber()
+  const twoThousandUnlockTime = await elevationHelperGet.unlockTimestamp(PLAINS)
   await mineBlockWithTimestamp(twoThousandUnlockTime)
-  await cartographer.rollover(TWOTHOUSAND)
+  await cartographer.rollover(PLAINS)
 
   const { unsealedSeed, sealedSeed } = getSeeds('throwaway', trustedSeeder.address)
 
@@ -157,10 +142,10 @@ export const twoThousandUnlockedFixture = deployments.createFixture(async (): Pr
 export const fiveThousandUnlockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
   const twoThousandUnlockedFixtureState = await twoThousandUnlockedFixture();
 
-  const { elevationHelper, cartographer } = twoThousandUnlockedFixtureState
-  const fiveThousandUnlockTime = (await elevationHelper.unlockTimestamp(FIVETHOUSAND)).toNumber()
+  const { cartographer } = twoThousandUnlockedFixtureState
+  const fiveThousandUnlockTime = await elevationHelperGet.unlockTimestamp(MESA)
   await mineBlockWithTimestamp(fiveThousandUnlockTime)
-  await cartographer.rollover(FIVETHOUSAND)
+  await cartographer.rollover(MESA)
 
   return twoThousandUnlockedFixtureState
 })
@@ -168,10 +153,10 @@ export const fiveThousandUnlockedFixture = deployments.createFixture(async (): P
 export const tenThousandUnlockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
   const fiveThousandUnlockedFixtureState = await fiveThousandUnlockedFixture();
 
-  const { elevationHelper, cartographer } = fiveThousandUnlockedFixtureState
-  const tenThousandUnlockTime = (await elevationHelper.unlockTimestamp(TENTHOUSAND)).toNumber()
+  const { cartographer } = fiveThousandUnlockedFixtureState
+  const tenThousandUnlockTime = await elevationHelperGet.unlockTimestamp(SUMMIT)
   await mineBlockWithTimestamp(tenThousandUnlockTime)
-  await cartographer.rollover(TENTHOUSAND)
+  await cartographer.rollover(SUMMIT)
 
   return fiveThousandUnlockedFixtureState
 })
@@ -179,8 +164,8 @@ export const tenThousandUnlockedFixture = deployments.createFixture(async (): Pr
 export const expeditionUnlockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
   const tenThousandUnlockedFixtureState = await tenThousandUnlockedFixture();
 
-  const { elevationHelper, cartographer } = tenThousandUnlockedFixtureState
-  const expeditionUnlockTime = (await elevationHelper.unlockTimestamp(EXPEDITION)).toNumber()
+  const { cartographer } = tenThousandUnlockedFixtureState
+  const expeditionUnlockTime = await elevationHelperGet.unlockTimestamp(EXPEDITION)
   await mineBlockWithTimestamp(expeditionUnlockTime)
   await cartographer.rollover(EXPEDITION)
 
@@ -190,10 +175,13 @@ export const expeditionUnlockedFixture = deployments.createFixture(async (): Pro
 export const timelockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
   const expeditionUnlockedFixtureState = await tenThousandUnlockedFixture();
 
-  const { dev, cartographer, cartographerExpedition, timelock } = expeditionUnlockedFixtureState
+  const { dev, cartographer, subCartographers, timelock } = expeditionUnlockedFixtureState
 
   await cartographer.connect(dev).transferOwnership(timelock.address)
-  await cartographerExpedition.connect(dev).transferOwnership(timelock.address)
+  await promiseSequenceMap(
+    subCartographers,
+    async (subCart) => subCart.connect(dev).transferOwnership(dev.address)
+  )
   await timelock.connect(dev).setPendingAdmin(dev.address)
   await timelock.connect(dev).acceptAdmin()
 

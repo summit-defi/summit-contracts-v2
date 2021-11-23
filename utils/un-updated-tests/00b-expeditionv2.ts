@@ -2,15 +2,15 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, toDecimal, Contracts, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, e36, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, e12, e0, consoleLog, expectAllEqual } from "../utils";
-import { getEverestLockMultiplier, getExpectedEverest } from "../utils/everestUtils";
-import { oasisUnlockedFixture } from "./fixtures";
+import { e18, ERR, EVENT, toDecimal, Contracts, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, e36, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, e12, e0, consoleLog, expectAllEqual } from "..";
+import { getEverestLockMultiplier, getExpectedEverest } from "../everestUtils";
+import { oasisUnlockedFixture } from "../fixtures";
 
 
 const rolloverExpedition = async () => {
-    const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
-    const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-    const cartographer = await ethers.getContract(Contracts.Cartographer)
+    const elevationHelper = await getElevationHelper()
+    const expeditionV2 = await getExpedition()
+    const cartographer = await getCartographer()
 
     const expeditionRoundEndTime = (await elevationHelper.roundEndTimestamp(EXPEDITION)).toNumber()
     await mineBlockWithTimestamp(expeditionRoundEndTime)
@@ -24,7 +24,7 @@ const rolloverExpeditionMultiRounds = async (roundsToRollover: number) => {
     }
 }
 const expeditionPrevWinningTotem = async () => {
-    const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+    const elevationHelper = await getElevationHelper()
     const round = await elevationHelper.roundNumber(EXPEDITION)
     return await elevationHelper.winningTotem(EXPEDITION, round - 1)
 }
@@ -35,19 +35,19 @@ const _getUserDeitiedAmount = (everestInfo: any) => {
     return everestInfo.everestOwned.mul(e0(100).sub(everestInfo.safetyFactor)).div(100).mul(120).div(100)
 }
 const getUserSafeAmount = async (user: SignerWithAddress) => {
-    const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
+    const expeditionV2 = await getExpedition()
     const everestInfo = await expeditionV2.userEverestInfo(user.address)
 
     return _getUserSafeAmount(everestInfo)
 }
 const getUserDeitiedAmount = async (user: SignerWithAddress) => {
-    const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
+    const expeditionV2 = await getExpedition()
     const everestInfo = await expeditionV2.userEverestInfo(user.address)
 
     return _getUserDeitiedAmount(everestInfo)
 }
 const getUserSafeAndDeitiedAmount = async (user: SignerWithAddress) => {
-    const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
+    const expeditionV2 = await getExpedition()
     const everestInfo = await expeditionV2.userEverestInfo(user.address)
     
     return {
@@ -57,8 +57,8 @@ const getUserSafeAndDeitiedAmount = async (user: SignerWithAddress) => {
 }
 const expectUserAndExpedSuppliesToMatch = async () => {
     const { user1, user2, user3 } = await getNamedSigners(hre)
-    const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-    const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+    const expeditionV2 = await getExpedition()
+    const dummyCakeToken = await getCakeToken()
 
     const users = [user1, user2, user3]
 
@@ -112,7 +112,7 @@ describe("EXPEDITION V2", async function() {
 
     it(`EVEREST: Locking for less than min time throws error "${ERR.EVEREST.INVALID_LOCK_PERIOD}"`, async function () {
         const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
+        const expeditionV2 = await getExpedition()
 
         await expect(
                 expeditionV2.connect(user1).lockSummit(e18(1), e18(1), 12 * 3600)
@@ -124,7 +124,7 @@ describe("EXPEDITION V2", async function() {
     })
     it(`EVEREST: Locking more than user's balance throws error "${ERR.ERC20.EXCEEDS_BALANCE}"`, async function () {
         const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
+        const expeditionV2 = await getExpedition()
 
         await expect(
                 expeditionV2.connect(user1).lockSummit(e18(100000), 0, 36 * 3600)
@@ -139,10 +139,10 @@ describe("EXPEDITION V2", async function() {
 
     it(`LOCK EVEREST: Depositing SUMMIT for EVEREST for different lock periods should succeed`, async function() {
         const { user1, user2 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const summitToken = await ethers.getContract(Contracts.SummitToken)
-        const dummySummitLp = await ethers.getContract(Contracts.DummySUMMITLP)
-        const everestToken = await ethers.getContract(Contracts.EverestToken)
+        const expeditionV2 = await getExpedition()
+        const summitToken = await getSummitToken()
+        const dummySummitLp = await getSummitLpToken()
+        const everestToken = await getEverestToken()
 
         const user1ExpectedEverest = await getExpectedEverest(e18(1), e18(1), 24 * 3600)
         const user2ExpectedEverest = await getExpectedEverest(e18(1), e18(1), 365 * 24 * 3600)
@@ -204,7 +204,7 @@ describe("EXPEDITION V2", async function() {
 
     it(`INCREASE EVEREST: User with already locked summit cannot do another initial lock, or throws "${ERR.EVEREST.MUST_NOT_OWN_EVEREST}"`, async function () {
         const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
+        const expeditionV2 = await getExpedition()
 
         await expect(
                 expeditionV2.connect(user1).lockSummit(e18(5), 0, 36 * 3600)
@@ -213,9 +213,9 @@ describe("EXPEDITION V2", async function() {
 
     it(`INCREASE EVEREST: User with already locked summit should be able to lock more summit`, async function() {
         const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const summitToken = await ethers.getContract(Contracts.SummitToken)
-        const everestToken = await ethers.getContract(Contracts.EverestToken)
+        const expeditionV2 = await getExpedition()
+        const summitToken = await getSummitToken()
+        const everestToken = await getEverestToken()
         
         const user1InitSummit = await summitToken.balanceOf(user1.address)
         const everestInit = await everestToken.balanceOf(user1.address)
@@ -252,7 +252,7 @@ describe("EXPEDITION V2", async function() {
 
     it(`REMOVE EVEREST: User without locked everest cannot withdraw, or throws "${ERR.EVEREST.MUST_OWN_EVEREST}"`, async function () {
         const { user3 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
+        const expeditionV2 = await getExpedition()
 
         await expect(
                 expeditionV2.connect(user3).decreaseLockedSummit(e18(1))
@@ -261,7 +261,7 @@ describe("EXPEDITION V2", async function() {
 
     it(`REMOVE EVEREST: User's lock must mature before decreasing locked summit, or throws "${ERR.EVEREST.EVEREST_UNLOCKED}"`, async function () {
         const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
+        const expeditionV2 = await getExpedition()
 
         await expect(
                 expeditionV2.connect(user1).decreaseLockedSummit(e18(1))
@@ -270,7 +270,7 @@ describe("EXPEDITION V2", async function() {
 
     it(`REMOVE EVEREST: User's lock must mature before decreasing locked summit, or throws "${ERR.EVEREST.EVEREST_UNLOCKED}"`, async function () {
         const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
+        const expeditionV2 = await getExpedition()
 
         await expect(
                 expeditionV2.connect(user1).decreaseLockedSummit(e18(1))
@@ -279,7 +279,7 @@ describe("EXPEDITION V2", async function() {
 
     it(`REMOVE EVEREST: After lock matured, User cannot withdraw 0 or more than their locked everest, or throws "${ERR.EVEREST.BAD_WITHDRAW}"`, async function () {
         const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
+        const expeditionV2 = await getExpedition()
 
         const everestInfo = await expeditionV2.userEverestInfo(user1.address)
         await mineBlockWithTimestamp(everestInfo.lockRelease)
@@ -295,10 +295,10 @@ describe("EXPEDITION V2", async function() {
 
     it(`REMOVE EVEREST: Valid summit / summit lp withdraw is successful`, async function () {
         const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const everestToken = await ethers.getContract(Contracts.EverestToken)
-        const summitToken = await ethers.getContract(Contracts.SummitToken)
-        const dummySummitLp = await ethers.getContract(Contracts.DummySUMMITLP)
+        const expeditionV2 = await getExpedition()
+        const everestToken = await getEverestToken()
+        const summitToken = await getSummitToken()
+        const dummySummitLp = await getSummitLpToken()
 
         const everestInfoInit = await expeditionV2.userEverestInfo(user1.address)
         const halfEverestAmount = everestInfoInit.everestOwned.div(2)
@@ -386,26 +386,26 @@ describe("EXPEDITION V2", async function() {
 
     it('EXPEDITION: Creating a valid expedition works', async function() {
         const { user1, dev } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const dummyBifiToken = await ethers.getContract(Contracts.DummyBIFI)
-        const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+        const expeditionV2 = await getExpedition()
+        const bifiToken = await getBifiToken()
+        const dummyCakeToken = await getCakeToken()
 
         await expect(
             expeditionV2.connect(user1).addExpedition(dummyCakeToken.address, true, e18(100000), 9)
         ).to.be.revertedWith(ERR.NON_OWNER)
         
         await expect(
-            expeditionV2.connect(dev).addExpedition(dummyBifiToken.address, true, e18(100000), 9)
+            expeditionV2.connect(dev).addExpedition(bifiToken.address, true, e18(100000), 9)
         ).to.be.revertedWith(ERR.EXPEDITION_FUNDS_REQUIRED)
         
-        await dummyBifiToken.connect(dev).approve(expeditionV2.address, e18(100000))
-        await dummyBifiToken.connect(dev).transfer(expeditionV2.address, e18(100000))
+        await bifiToken.connect(dev).approve(expeditionV2.address, e18(100000))
+        await bifiToken.connect(dev).transfer(expeditionV2.address, e18(100000))
         await dummyCakeToken.connect(dev).approve(expeditionV2.address, e18(50000))
         await dummyCakeToken.connect(dev).transfer(expeditionV2.address, e18(50000))
         
         await expect(
-            expeditionV2.connect(dev).addExpedition(dummyBifiToken.address, true, e18(500), 9)
-        ).to.emit(expeditionV2, EVENT.ExpeditionCreated).withArgs(dummyBifiToken.address, e18(500), 9);
+            expeditionV2.connect(dev).addExpedition(bifiToken.address, true, e18(500), 9)
+        ).to.emit(expeditionV2, EVENT.ExpeditionCreated).withArgs(bifiToken.address, e18(500), 9);
         await expect(
             expeditionV2.connect(dev).addExpedition(dummyCakeToken.address, true, e18(50000), 9)
         ).to.emit(expeditionV2, EVENT.ExpeditionCreated).withArgs(dummyCakeToken.address, e18(50000), 9);
@@ -417,8 +417,8 @@ describe("EXPEDITION V2", async function() {
 
     it('EXPEDITION: Entering expedition unlocks when expedition becomes active', async function() {
         const { user1, user2 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+        const expeditionV2 = await getExpedition()
+        const dummyCakeToken = await getCakeToken()
 
         await expeditionV2.connect(user1).lockSummit(e18(5), e18(5), 30 * 24 * 3600)
         await expeditionV2.connect(user1).selectDeity(0)
@@ -454,8 +454,8 @@ describe("EXPEDITION V2", async function() {
 
     it('EXPEDITION: Can only enter an expedition that exists', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const summitToken = await ethers.getContract(Contracts.SummitToken)
+        const expeditionV2 = await getExpedition()
+        const summitToken = await getSummitToken()
 
         const everestInfoInit = await expeditionV2.userEverestInfo(user1.address)
         expect(everestInfoInit.interactingExpedCount).to.equal(1)
@@ -470,8 +470,8 @@ describe("EXPEDITION V2", async function() {
 
     it('EXPEDITION: User can only enter expedition if they own everest, have selected a deity, and have selected a safety factor', async function() {
         const { user3 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+        const expeditionV2 = await getExpedition()
+        const dummyCakeToken = await getCakeToken()
 
         let userEligibleToJoinExpedition = await expeditionV2.connect(user3).userEligibleToJoinExpedition()
         expect(userEligibleToJoinExpedition).to.be.false
@@ -522,8 +522,8 @@ describe("EXPEDITION V2", async function() {
     
     it('EXPEDITION: Expeditions automatically end after the final round', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+        const expeditionV2 = await getExpedition()
+        const dummyCakeToken = await getCakeToken()
 
         await rolloverExpeditionMultiRounds(8)
 
@@ -552,8 +552,8 @@ describe("EXPEDITION V2", async function() {
 
     it(`EXPEDITION: Harvesting from an ended expedition automatically exits user`, async function() {
         const { user2 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+        const expeditionV2 = await getExpedition()
+        const dummyCakeToken = await getCakeToken()
 
         const everestInfoInit = await expeditionV2.userEverestInfo(user2.address)
         expect(everestInfoInit.interactingExpedCount).to.equal(1)
@@ -574,8 +574,8 @@ describe("EXPEDITION V2", async function() {
 
     it('EXPEDITION: Expeditions can be restarted after they end', async function() {
         const { dev } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+        const expeditionV2 = await getExpedition()
+        const dummyCakeToken = await getCakeToken()
 
         await expect(
             expeditionV2.connect(dev).restartExpedition(dummyCakeToken.address, e18(50000), 1)
@@ -597,8 +597,8 @@ describe("EXPEDITION V2", async function() {
 
     it('EXPEDITION: Expeditions can be extended while they are running', async function() {
         const { dev } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+        const expeditionV2 = await getExpedition()
+        const dummyCakeToken = await getCakeToken()
 
         await dummyCakeToken.connect(dev).approve(expeditionV2.address, e18(50000))
         await dummyCakeToken.connect(dev).transfer(expeditionV2.address, e18(50000))
@@ -610,8 +610,8 @@ describe("EXPEDITION V2", async function() {
 
     it(`EXPEDITION: Rounds yield correct winnings`, async function() {
         const { user1, user2, user3 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+        const expeditionV2 = await getExpedition()
+        const dummyCakeToken = await getCakeToken()
 
         const roundEmission = (await expeditionV2.expeditionInfo(dummyCakeToken.address)).roundEmission
     
@@ -656,8 +656,8 @@ describe("EXPEDITION V2", async function() {
     })
     it(`EXPEDITION: Winnings are withdrawn correctly`, async function() {
         const { user1, user2, user3 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+        const expeditionV2 = await getExpedition()
+        const dummyCakeToken = await getCakeToken()
 
         const users = [user1, user2, user3]
 
@@ -690,7 +690,7 @@ describe("EXPEDITION V2", async function() {
 
     it(`DEITIES: Switching to invalid deity should fail with error ${ERR.EXPEDITION_V2.INVALID_DEITY}`, async function() {
         const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
+        const expeditionV2 = await getExpedition()
         
         await expect(
           expeditionV2.connect(user1).selectDeity(2)
@@ -703,8 +703,8 @@ describe("EXPEDITION V2", async function() {
 
     it('DEITIES: Users should be able to switch to valid deities', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+        const expeditionV2 = await getExpedition()
+        const dummyCakeToken = await getCakeToken()
 
         await rolloverExpedition()
         
@@ -751,8 +751,8 @@ describe("EXPEDITION V2", async function() {
 
     it('SAFETY FACTOR: Users should be able to switch to valid safety factors', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+        const expeditionV2 = await getExpedition()
+        const dummyCakeToken = await getCakeToken()
 
         await rolloverExpedition()
         
@@ -821,8 +821,8 @@ describe("EXPEDITION V2", async function() {
 
     it('EVEREST CHANGE: Users should be able to increase or remove locked everest and update expeditions', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await ethers.getContract(Contracts.ExpeditionV2)
-        const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+        const expeditionV2 = await getExpedition()
+        const dummyCakeToken = await getCakeToken()
 
         await rolloverExpedition()
         

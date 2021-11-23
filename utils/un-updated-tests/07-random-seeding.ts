@@ -1,7 +1,7 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { ERR, TWOTHOUSAND, mineBlockWithTimestamp, Contracts, getSeeds, mineBlock, mineBlocks } from "../utils";
+import { ERR, PLAINS, mineBlockWithTimestamp, Contracts, getSeeds, mineBlock, mineBlocks } from "../utils";
 import { twoThousandUnlockedFixture } from "./fixtures";
 
 
@@ -11,7 +11,7 @@ describe("Seeding Random Numbers", function() {
   })
   it(`SEEDING: Sending sealed and unsealed seed should fail until nextSeedRoundAvailable returns true`, async function() {
     const { trustedSeeder } = await getNamedSigners(hre)
-    const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+    const elevationHelper = await getElevationHelper()
 
     const { unsealedSeed, sealedSeed } = getSeeds('summit', trustedSeeder.address)
 
@@ -26,9 +26,9 @@ describe("Seeding Random Numbers", function() {
     ).to.be.revertedWith(ERR.SEEDING.ALREADY_UNSEALED_SEEDED)
   })
   it(`SEEDING: nextSeedRoundAvailable should become true only within 60 seconds of end of round`, async function() {
-    const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+    const elevationHelper = await getElevationHelper()
 
-    const nextRoundTime = (await elevationHelper.roundEndTimestamp(TWOTHOUSAND)).toNumber()
+    const nextRoundTime = (await elevationHelper.roundEndTimestamp(PLAINS)).toNumber()
 
     await mineBlockWithTimestamp(nextRoundTime - 75)
     const nextSeedRoundAvailableFalse = await elevationHelper.nextSeedRoundAvailable()
@@ -40,7 +40,7 @@ describe("Seeding Random Numbers", function() {
   })
   it(`SEEDING: Sending a sealed seed should succeed, and nextSeedRoundAvailable should become false`, async function() {
     const { trustedSeeder } = await getNamedSigners(hre)
-    const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+    const elevationHelper = await getElevationHelper()
 
     const { sealedSeed } = getSeeds('summit', trustedSeeder.address)
 
@@ -54,7 +54,7 @@ describe("Seeding Random Numbers", function() {
   })
   it(`SEEDING: Sending another sealed seed should fail with error ${ERR.SEEDING.ALREADY_SEALED_SEEDED}`, async function() {
     const { trustedSeeder } = await getNamedSigners(hre)
-    const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+    const elevationHelper = await getElevationHelper()
 
     const { sealedSeed } = getSeeds('summit2', trustedSeeder.address)
 
@@ -63,7 +63,7 @@ describe("Seeding Random Numbers", function() {
     ).to.be.revertedWith(ERR.SEEDING.ALREADY_SEALED_SEEDED)
   })
   it(`SEEDING: After sealed seed received, the future block mined should become true`, async function() {
-    const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+    const elevationHelper = await getElevationHelper()
 
     const futureBlockMinedFalse = await elevationHelper.futureBlockMined()
     expect(futureBlockMinedFalse).to.be.false
@@ -75,7 +75,7 @@ describe("Seeding Random Numbers", function() {
   })
   it(`SEEDING: Sending incorrect unsealed seed should fail with error ${ERR.SEEDING.UNSEALED_SEED_NOT_MATCH}`, async function() {
     const { trustedSeeder } = await getNamedSigners(hre)
-    const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+    const elevationHelper = await getElevationHelper()
 
     const { unsealedSeed } = getSeeds('summitWRONG', trustedSeeder.address)
 
@@ -85,7 +85,7 @@ describe("Seeding Random Numbers", function() {
   })
   it(`SEEDING: After future block mined, sending the unsealed seed should succeed`, async function() {
     const { trustedSeeder } = await getNamedSigners(hre)
-    const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+    const elevationHelper = await getElevationHelper()
 
     const { unsealedSeed } = getSeeds('summit', trustedSeeder.address)
 
@@ -98,15 +98,15 @@ describe("Seeding Random Numbers", function() {
 
   it(`SEEDING: Non trusted seeder attempting to seed should fail with error ${ERR.SEEDING.ONLY_TRUSTED_SEEDER}`, async function() {
     const { user1, trustedSeeder } = await getNamedSigners(hre)
-    const cartographer = await ethers.getContract(Contracts.Cartographer)
-    const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+    const cartographer = await getCartographer()
+    const elevationHelper = await getElevationHelper()
     
-    const nextRoundTime = (await elevationHelper.roundEndTimestamp(TWOTHOUSAND)).toNumber()
+    const nextRoundTime = (await elevationHelper.roundEndTimestamp(PLAINS)).toNumber()
 
     await mineBlockWithTimestamp(nextRoundTime)
-    await cartographer.rollover(TWOTHOUSAND)
+    await cartographer.rollover(PLAINS)
 
-    const nextSeedRoundTime = (await elevationHelper.roundEndTimestamp(TWOTHOUSAND)).toNumber()
+    const nextSeedRoundTime = (await elevationHelper.roundEndTimestamp(PLAINS)).toNumber()
     await mineBlockWithTimestamp(nextSeedRoundTime - 60)
 
     const { sealedSeed } = getSeeds('summit', trustedSeeder.address)
@@ -117,8 +117,8 @@ describe("Seeding Random Numbers", function() {
   })
   it(`SEEDING: Trusted seeding address can be updated`, async function() {
     const { dev, user1, trustedSeeder } = await getNamedSigners(hre)
-    const cartographer = await ethers.getContract(Contracts.Cartographer)
-    const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+    const cartographer = await getCartographer()
+    const elevationHelper = await getElevationHelper()
     
     await cartographer.connect(dev).setTrustedSeederAdd(user1.address)
 
@@ -135,7 +135,7 @@ describe("Seeding Random Numbers", function() {
   it(`SEEDING: Sending unsealed seed before future block reached should fail with error ${ERR.SEEDING.FUTURE_BLOCK_NOT_REACHED}`, async function() {
     // This is tested at end because we already have a new sealed seed sent to elevationHelper
     const { user1 } = await getNamedSigners(hre)
-    const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+    const elevationHelper = await getElevationHelper()
 
     const { unsealedSeed } = getSeeds('summitUser1', user1.address)
 

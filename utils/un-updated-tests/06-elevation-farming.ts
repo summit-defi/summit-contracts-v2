@@ -1,9 +1,9 @@
-import { PID, POOL_FEE, TWOTHOUSAND, FIVETHOUSAND, TENTHOUSAND, elevationTests, passthroughTests, SubCartographer } from "../utils";
+import { PID, POOL_FEE, PLAINS, MESA, SUMMIT, elevationTests, passthroughTests, SubCartographer } from "../utils";
 import { fiveThousandUnlockedFixture, tenThousandUnlockedFixture, twoThousandUnlockedFixture } from "./fixtures";
 
 const getElevationDiffedVariables = (elevation: number) => {
     switch (elevation) {
-        case TENTHOUSAND:
+        case SUMMIT:
             return {
                 fixture: tenThousandUnlockedFixture,
                 meters: '10K',
@@ -12,7 +12,7 @@ const getElevationDiffedVariables = (elevation: number) => {
                 passthroughPid: PID.DUMMY_BIFI_10K,
                 passthroughPoolFee: POOL_FEE.DUMMY_BIFI_10K,
             }
-        case FIVETHOUSAND:
+        case MESA:
             return {
                 fixture: fiveThousandUnlockedFixture,
                 meters: '5K',
@@ -22,7 +22,7 @@ const getElevationDiffedVariables = (elevation: number) => {
                 passthroughPoolFee: POOL_FEE.DUMMY_BIFI_5K,
             }
         default:
-        case TWOTHOUSAND:
+        case PLAINS:
             return {
                 fixture: twoThousandUnlockedFixture,
                 meters: '2K',
@@ -35,7 +35,7 @@ const getElevationDiffedVariables = (elevation: number) => {
 }
 
 describe("ELEVATION FARMING", function() {
-    [TWOTHOUSAND, FIVETHOUSAND, TENTHOUSAND].forEach(async(elevation) => {
+    [PLAINS, MESA, SUMMIT].forEach(async(elevation) => {
         const {
             fixture,
             meters,

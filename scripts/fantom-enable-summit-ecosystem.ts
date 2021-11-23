@@ -4,7 +4,7 @@ import hre, { ethers } from 'hardhat'
 async function main() {
   console.log('Enabling Summit Ecosystem on Fantom')
   const { dev } = await getNamedSigners(hre)
-  const Cartographer = await ethers.getContract('Cartographer')
+  const Cartographer = await getCartographer()
 
   const enableSummitEcosystemTx = await Cartographer.connect(dev).enable()
   console.log({

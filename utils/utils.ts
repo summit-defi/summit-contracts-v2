@@ -167,14 +167,6 @@ export const writeContractAddresses = (chainId: string, addresses: Array<[string
     const output = JSON.stringify(contracts, null, 2)
     fs.writeFileSync('./data/contracts.json', output)
 }
-export const rolloverIfAvailable = async (cartographer: Contract, elevationHelper: Contract, elevation: number) => {
-    const timestamp = await getTimestamp()
-    const roundEndTimestamp = await elevationHelper.roundEndTimestamp(elevation)
-    const elevationUnlock = await elevationHelper.unlockTimestamp(elevation)
-    if (timestamp >= roundEndTimestamp.toNumber() && timestamp >= elevationUnlock.toNumber()) {
-        await cartographer.rollover(elevation)
-    }
-}
 
 // SEEDING
 export const getSeeds = (input: string, seeder: string): { unsealedSeed: string, sealedSeed: string } => {

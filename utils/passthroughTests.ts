@@ -1,65 +1,66 @@
 import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat';
-import { consoleLog, deltaBN, depositedAfterFee, e18, toDecimal } from '.';
-import { Contracts, EVENT, EXPEDITION, FIVETHOUSAND, TENTHOUSAND, TWOTHOUSAND, ZEROADD } from './constants';
-import { amountAfterFullFee, e16, expect6FigBigNumberAllEqual, expect6FigBigNumberEquals, getBlockNumber, getTimestamp, mineBlock, mineBlockWithTimestamp, promiseSequenceMap, rolloverIfAvailable, withdrawnAfterFee } from './utils';
+import { cartographerMethod, consoleLog, deltaBN, depositedAfterFee, e18, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getMasterChef, getMasterChefPassthrough, rolloverIfAvailable, toDecimal } from '.';
+import { Contracts, EVENT, EXPEDITION, MESA, SUMMIT, PLAINS, OASIS } from './constants';
+import { userPromiseSequenceMap } from './users';
+import { amountAfterFullFee, e16, expect6FigBigNumberAllEqual, expect6FigBigNumberEquals, getBlockNumber, getTimestamp, mineBlock, mineBlockWithTimestamp, promiseSequenceMap, withdrawnAfterFee } from './utils';
 
 // VAULT TESTING
-const vaultTests = (pid: number, poolFee: number) => {
+const vaultTests = (elevation: number) => {
     it('SET PASSTHROUGH STRATEGY: Setting passthrough strategy is successful', async function() {
-        const cartographer = await ethers.getContract(Contracts.Cartographer)
-        const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+        const { dev } = await getNamedSigners(hre)
 
-        const BeefyVaultV6Passthrough = await ethers.getContract(Contracts.BeefyVaultV6Passthrough)
-        const dummyBifiToken = await ethers.getContract(Contracts.DummyBIFI)
+        const beefyVaultPassthrough = await getBifiVaultPassthrough()
+        const bifiToken = await getBifiToken()
 
-        await expect(
-            cartographer.setTokenPassthroughStrategy(dummyBifiToken.address, BeefyVaultV6Passthrough.address)
-        ).to.emit(cartographer, EVENT.SET_PASSTHROUGH_STRATEGY).withArgs(dummyBifiToken.address, BeefyVaultV6Passthrough.address)
+        await cartographerMethod.setTokenPassthroughStrategy({
+            dev,
+            tokenAddress: bifiToken.address,
+            passthroughTargetAddress: beefyVaultPassthrough.address,
+        })
 
-        await rolloverIfAvailable(cartographer, elevationHelper, TWOTHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, FIVETHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, TENTHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, EXPEDITION)
-
+        await rolloverIfAvailable(OASIS)
+        await rolloverIfAvailable(PLAINS)
+        await rolloverIfAvailable(MESA)
+        await rolloverIfAvailable(SUMMIT)
     })
     it('VAULT DEPOSIT: Depositing into pool with passthrough vault transfers funds correctly', async function() {
-        const { user1, user2, user3, exped, dev } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract(Contracts.Cartographer)
-        const bifiVault = await ethers.getContract(Contracts.DummyVault)
-        const bifiVaultPassthrough = await ethers.getContract(Contracts.BeefyVaultV6Passthrough)
-        const dummyBifiToken = await ethers.getContract(Contracts.DummyBIFI)
+        const bifiVault = await getBifiVault()
+        const bifiVaultPassthrough = await getBifiVaultPassthrough()
+        const bifiToken = await getBifiToken()
 
-        const users = [user1, user2, user3]
 
-        const usersBifiInit = await Promise.all(users.map(async (user) => await dummyBifiToken.balanceOf(user.address)))
-        const vaultBifiInit = await dummyBifiToken.balanceOf(bifiVault.address)
+        const usersBifiInit = await userPromiseSequenceMap(
+            async (user) => await bifiToken.balanceOf(user.address)
+        )
+        const vaultBifiInit = await bifiToken.balanceOf(bifiVault.address)
 
-        const usersDepositedAmount = await promiseSequenceMap(
-            users,
-            async (user, index) => {
-                const amount = e18(index + 1)
-                const transferAmountAfterFee = depositedAfterFee(amount, poolFee)
+        const usersDepositedAmount = await userPromiseSequenceMap(
+            async (user, userIndex) => {
+                const amount = e18(userIndex + 1)
                 const balanceInit = await bifiVaultPassthrough.balance()
-                
-                await expect(
-                    cartographer.connect(user).deposit(pid, amount, 0, 0)
-                ).to.emit(cartographer, EVENT.Deposit).withArgs(user.address, pid, transferAmountAfterFee, 0)
+
+                await cartographerMethod.deposit({
+                    user,
+                    tokenAddress: bifiToken.address,
+                    elevation,
+                    amount,
+                })
 
                 const balanceFinal = await bifiVaultPassthrough.balance()
 
                 // Running users tokens in vault increases correctly
-                expect(deltaBN(balanceInit, balanceFinal)).to.equal(transferAmountAfterFee)
+                expect(deltaBN(balanceInit, balanceFinal)).to.equal(amount)
 
                 // Shares in passthrough contract matches users tokens in vault + new mint
                 const sharesInVault = await bifiVault.balanceOf(bifiVaultPassthrough.address)
                 const bifiPerShare = await bifiVault.getPricePerFullShare()
                 const bifiInVault = sharesInVault.mul(bifiPerShare).div(e18(1))
-                const trueBifiInVault = await dummyBifiToken.balanceOf(bifiVault.address)
+                const trueBifiInVault = await bifiToken.balanceOf(bifiVault.address)
                 expect6FigBigNumberEquals(trueBifiInVault, bifiInVault)
 
-                return transferAmountAfterFee
+                return amount
             }
         )
         
@@ -67,15 +68,18 @@ const vaultTests = (pid: number, poolFee: number) => {
         await bifiVault.updatePool()
         await bifiVault.updatePool()
 
-        const usersBifiFinal = await Promise.all(users.map(async (user) => await dummyBifiToken.balanceOf(user.address)))
-        const usersBifiDelta = await Promise.all(users.map(async (_, index) => deltaBN(usersBifiInit[index], usersBifiFinal[index])))
+        const usersBifiFinal = await userPromiseSequenceMap(
+            async (user) => await bifiToken.balanceOf(user.address)
+        )
+        const usersBifiDelta = await userPromiseSequenceMap(
+            async (_, index) => deltaBN(usersBifiInit[index], usersBifiFinal[index])
+        )
 
-        users.forEach((_, index) => {
-            expect(usersBifiDelta[index]).to.equal(e18(index + 1))
-        })
+        await userPromiseSequenceMap(
+            async (_, index) => expect(usersBifiDelta[index]).to.equal(e18(index + 1))
+        )
 
-        const timestampFinal = await getTimestamp()
-        const vaultBifiFinal = await dummyBifiToken.balanceOf(bifiVault.address)
+        const vaultBifiFinal = await bifiToken.balanceOf(bifiVault.address)
         const totalUsersDepositedAfterFee = usersDepositedAmount.reduce((accum, depositedAfterFee) => accum.add(depositedAfterFee), e18(0))
 
         consoleLog({
@@ -86,33 +90,35 @@ const vaultTests = (pid: number, poolFee: number) => {
         expect(deltaBN(vaultBifiInit, vaultBifiFinal)).to.equal(totalUsersDepositedAfterFee.add(e16(3)))
     })
     it('VAULT WITHDRAW: Withdrawing from passthrough vault transfers funds correctly', async function() {
-        const { user1, user2, exped, dev } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract(Contracts.Cartographer)
-        const bifiVault = await ethers.getContract(Contracts.DummyVault)
-        const bifiVaultPassthrough = await ethers.getContract(Contracts.BeefyVaultV6Passthrough)
-        const dummyBifiToken = await ethers.getContract(Contracts.DummyBIFI)
+        const { exped, dev } = await getNamedSigners(hre)
+        const bifiVault = await getBifiVault()
+        const bifiVaultPassthrough = await getBifiVaultPassthrough()
+        const bifiToken = await getBifiToken()
 
-        const users = [user1, user2]
+        const usersBifiInit = await userPromiseSequenceMap(
+            async (user) => await bifiToken.balanceOf(user.address)
+        )
 
-        const usersBifiInit = await Promise.all(users.map(async (user) => await dummyBifiToken.balanceOf(user.address)))
+        const expedBalanceInit = await bifiToken.balanceOf(exped.address)
+        const devBalanceInit = await bifiToken.balanceOf(dev.address)
 
-        const expedBalanceInit = await dummyBifiToken.balanceOf(exped.address)
-        const devBalanceInit = await dummyBifiToken.balanceOf(dev.address)
-
-        await promiseSequenceMap(
-            users,
+        await userPromiseSequenceMap(
             async (user, index) => {
-                const amount = depositedAfterFee(e18(index + 1), poolFee)
-                const transferAmountAfterFee = withdrawnAfterFee(amount, poolFee)
+                const amount = e18(index + 1)
+                const transferAmountAfterFee = withdrawnAfterFee(amount, 0)
                 consoleLog({
                     amount: toDecimal(amount),
                     transferAmountAfterFee: toDecimal(transferAmountAfterFee),
                 })
                 const vaultedBalanceInit = await bifiVaultPassthrough.balance()
-                
-                await expect(
-                    cartographer.connect(user).withdraw(pid, amount, 0)
-                ).to.emit(cartographer, EVENT.Withdraw).withArgs(user.address, pid, transferAmountAfterFee, 0)
+
+                await cartographerMethod.withdraw({
+                    user,
+                    tokenAddress: bifiToken.address,
+                    elevation,
+                    amount,
+                    eventOnly: true,
+                })
 
                 const vaultedBalanceFinal = await bifiVaultPassthrough.balance()
 
@@ -123,7 +129,7 @@ const vaultTests = (pid: number, poolFee: number) => {
                 const sharesInVault = await bifiVault.balanceOf(bifiVaultPassthrough.address)
                 const bifiPerShare = await bifiVault.getPricePerFullShare()
                 const bifiInVault = sharesInVault.mul(bifiPerShare).div(e18(1))
-                const trueBifiInVault = await dummyBifiToken.balanceOf(bifiVault.address)
+                const trueBifiInVault = await bifiToken.balanceOf(bifiVault.address)
 
                 expect6FigBigNumberEquals(trueBifiInVault, bifiInVault)
 
@@ -131,15 +137,19 @@ const vaultTests = (pid: number, poolFee: number) => {
             }
         )
 
-        const usersBifiFinal = await Promise.all(users.map(async (user) => await dummyBifiToken.balanceOf(user.address)))
-        const usersBifiDelta = await Promise.all(users.map(async (_, index) => deltaBN(usersBifiInit[index], usersBifiFinal[index])))
+        const usersBifiFinal = await userPromiseSequenceMap(
+            async (user) => await bifiToken.balanceOf(user.address)
+        )
+        const usersBifiDelta = await userPromiseSequenceMap(
+            async (_, index) => deltaBN(usersBifiInit[index], usersBifiFinal[index])
+        )
 
-        users.forEach((_, index) => {
-            expect(usersBifiDelta[index]).to.equal(amountAfterFullFee(e18(index + 1), poolFee))
-        })
+        await userPromiseSequenceMap(
+            async (_, index) => expect6FigBigNumberEquals(usersBifiDelta[index], amountAfterFullFee(e18(index + 1), 0))
+        )
 
-        const expedBalanceFinal = await dummyBifiToken.balanceOf(exped.address)
-        const devBalanceFinal = await dummyBifiToken.balanceOf(dev.address)
+        const expedBalanceFinal = await bifiToken.balanceOf(exped.address)
+        const devBalanceFinal = await bifiToken.balanceOf(dev.address)
 
         consoleLog({
             expedAccum: `${toDecimal(expedBalanceInit)} --> ${toDecimal(expedBalanceFinal)}: ${toDecimal(deltaBN(expedBalanceInit, expedBalanceFinal))}`,
@@ -151,113 +161,132 @@ const vaultTests = (pid: number, poolFee: number) => {
     })
 }
 
-const switchPassthroughStrategyVaultToMasterChef = (pid: number, poolFee: number) => {
+const switchPassthroughStrategyVaultToMasterChef = (elevation: number) => {
     it('RETIRE PASSTHROUGH STRATEGY: Retiring transfers users funds back to cartographer', async function() {
-        const { dev } = await getNamedSigners(hre)
+        const { dev, user1 } = await getNamedSigners(hre)
 
-        const cartographer = await ethers.getContract(Contracts.Cartographer)
+        const cartographer = await getCartographer()
 
-        const BeefyVaultV6Passthrough = await ethers.getContract(Contracts.BeefyVaultV6Passthrough)
-        const dummyBifiToken = await ethers.getContract(Contracts.DummyBIFI)
+        const bifiToken = await getBifiToken()
 
-        const vaultFee = 50
-        const user3AmountAfterVaultFee = withdrawnAfterFee(depositedAfterFee(e18(3), poolFee), vaultFee)
-        const cartographerBifiInit = await dummyBifiToken.balanceOf(cartographer.address)
+        await cartographerMethod.deposit({
+            user: user1,
+            tokenAddress: bifiToken.address,
+            elevation: elevation,
+            amount: e18(5),
+        })
 
-        await expect(
-            cartographer.connect(dev).retireTokenPassthroughStrategy(dummyBifiToken.address)
-        ).to.emit(cartographer, EVENT.RETIRE_PASSTHROUGH_STRATEGY).withArgs(dummyBifiToken.address, BeefyVaultV6Passthrough.address)
+        const cartographerBifiInit = await bifiToken.balanceOf(cartographer.address)
 
-        const cartographerBifiFinal = await dummyBifiToken.balanceOf(cartographer.address)
+        await cartographerMethod.retireTokenPassthroughStrategy({
+            dev,
+            tokenAddress: bifiToken.address
+        })
+
+        const cartographerBifiFinal = await bifiToken.balanceOf(cartographer.address)
         const cartographerBifiDelta = deltaBN(cartographerBifiInit, cartographerBifiFinal)
 
-        expect6FigBigNumberEquals(cartographerBifiDelta, user3AmountAfterVaultFee)
+        consoleLog({
+            cartographerBifi: `${toDecimal(cartographerBifiInit)} -> ${toDecimal(cartographerBifiFinal)}: ${toDecimal(cartographerBifiDelta)}`
+        })
+
+        expect6FigBigNumberEquals(cartographerBifiDelta, e18(5))
     })
     it('SET PASSTHROUGH STRATEGY: Setting new passthrough strategy transfers funds to masterchef', async function() {
         const { dev } = await getNamedSigners(hre)
 
-        const cartographer = await ethers.getContract(Contracts.Cartographer)
-        const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+        const cartographer = await getCartographer()
+        const masterChefPassthrough = await getMasterChefPassthrough()
+        const masterChef = await getMasterChef()
+        const bifiToken = await getBifiToken()
 
-        const masterChefPassthrough = await ethers.getContract(Contracts.MasterChefPassthrough)
-        const masterChef = await ethers.getContract(Contracts.DummyMasterChef)
-        const dummyBifiToken = await ethers.getContract(Contracts.DummyBIFI)
+        const cartographerBifiInit = await bifiToken.balanceOf(cartographer.address)
+        const masterChefBifiInit = await bifiToken.balanceOf(masterChef.address)
 
-        const vaultFee = 50
-        const user3AmountAfterVaultFee = withdrawnAfterFee(depositedAfterFee(e18(3), poolFee), vaultFee)
-        const cartographerBifiInit = await dummyBifiToken.balanceOf(cartographer.address)
-        const masterChefBifiInit = await dummyBifiToken.balanceOf(masterChef.address)
+        await cartographerMethod.setTokenPassthroughStrategy({
+            dev,
+            tokenAddress: bifiToken.address,
+            passthroughTargetAddress: masterChefPassthrough.address,
+        })
 
-        await expect(
-            cartographer.connect(dev).setTokenPassthroughStrategy(dummyBifiToken.address, masterChefPassthrough.address)
-        ).to.emit(cartographer, EVENT.SET_PASSTHROUGH_STRATEGY).withArgs(dummyBifiToken.address, masterChefPassthrough.address)
+        await rolloverIfAvailable(PLAINS)
+        await rolloverIfAvailable(MESA)
+        await rolloverIfAvailable(SUMMIT)
+        await rolloverIfAvailable(EXPEDITION)
 
-        await rolloverIfAvailable(cartographer, elevationHelper, TWOTHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, FIVETHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, TENTHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, EXPEDITION)
-
-        const cartographerBifiFinal = await dummyBifiToken.balanceOf(cartographer.address)
+        const cartographerBifiFinal = await bifiToken.balanceOf(cartographer.address)
         const cartographerBifiDelta = deltaBN(cartographerBifiInit, cartographerBifiFinal)
 
-        const masterChefBifiFinal = await dummyBifiToken.balanceOf(masterChef.address)
+        const masterChefBifiFinal = await bifiToken.balanceOf(masterChef.address)
         const masterChefBifiDelta = deltaBN(masterChefBifiInit, masterChefBifiFinal)
 
-        expect6FigBigNumberAllEqual([masterChefBifiDelta, cartographerBifiDelta, user3AmountAfterVaultFee])    
+        const amountDepositedIntoFarm = e18(5)
+
+        consoleLog({
+            cartographerBifiDelta: toDecimal(cartographerBifiDelta),
+            masterChefBifiDelta: toDecimal(masterChefBifiDelta),
+            amountDepositedIntoFarm: toDecimal(amountDepositedIntoFarm),
+        })
+
+        expect6FigBigNumberAllEqual([masterChefBifiDelta, cartographerBifiDelta, amountDepositedIntoFarm])    
     })
 }
 
-const masterChefTests = (pid: number, poolFee: number) => {
+const masterChefTests = (elevation: number) => {
     it('MASTER CHEF DEPOSIT: Depositing into pool with passthrough masterChef transfers funds correctly', async function() {
-        const { user1, user2, user3, exped, dev } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract(Contracts.Cartographer)
+        const { exped, dev } = await getNamedSigners(hre)
 
-        const masterChef = await ethers.getContract(Contracts.DummyMasterChef)
-        const masterChefPassthrough = await ethers.getContract(Contracts.MasterChefPassthrough)
-        const dummyBifiToken = await ethers.getContract(Contracts.DummyBIFI)
-        const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+        const masterChef = await getMasterChef()
+        const masterChefPassthrough = await getMasterChefPassthrough()
+        const bifiToken = await getBifiToken()
+        const dummyCakeToken = await getCakeToken()
 
-        const users = [user1, user2, user3]
 
-        const usersBifiInit = await Promise.all(users.map(async (user) => await dummyBifiToken.balanceOf(user.address)))
-
+        const usersBifiInit = await userPromiseSequenceMap(
+            async (user) => await bifiToken.balanceOf(user.address)
+        )
 
         const masterChefBifiInit = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
 
         const expedBalanceInit = await dummyCakeToken.balanceOf(exped.address)
         const devBalanceInit = await dummyCakeToken.balanceOf(dev.address)
 
-        const usersDepositedAmount = await promiseSequenceMap(
-            users,
+        const usersDepositedAmount = await userPromiseSequenceMap(
             async (user, index) => {
                 const amount = e18(index + 1)
-                const transferAmountAfterFee = depositedAfterFee(amount, poolFee)
                 
                 const masterChefBalanceInit = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
                 const balanceInit = await masterChefPassthrough.balance()
-                
-                await expect(
-                    cartographer.connect(user).deposit(pid, amount, 0, 0)
-                ).to.emit(cartographer, EVENT.Deposit).withArgs(user.address, pid, transferAmountAfterFee, 0)
+
+                await cartographerMethod.deposit({
+                    user,
+                    tokenAddress: bifiToken.address,
+                    elevation,
+                    amount,
+                })
 
                 const masterChefBalanceFinal = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
                 const balanceFinal = await masterChefPassthrough.balance()
 
                 // Running users tokens in vault increases correctly
-                expect(deltaBN(balanceInit, balanceFinal)).to.equal(transferAmountAfterFee)
-                expect(deltaBN(masterChefBalanceInit, masterChefBalanceFinal)).to.equal(transferAmountAfterFee)
+                expect(deltaBN(balanceInit, balanceFinal)).to.equal(amount)
+                expect(deltaBN(masterChefBalanceInit, masterChefBalanceFinal)).to.equal(amount)
 
-                return transferAmountAfterFee
+                return amount
             }
         )
 
-        const usersBifiFinal = await Promise.all(users.map(async (user) => await dummyBifiToken.balanceOf(user.address)))
-        const usersBifiDelta = await Promise.all(users.map(async (_, index) => deltaBN(usersBifiInit[index], usersBifiFinal[index])))
+        const usersBifiFinal = await userPromiseSequenceMap(
+            async (user) => await bifiToken.balanceOf(user.address)
+        )
+        const usersBifiDelta = await userPromiseSequenceMap(
+            async (_, index) => deltaBN(usersBifiInit[index], usersBifiFinal[index])
+        )
         const masterChefBifiFinal = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
 
-        users.forEach((_, index) => {
-            expect(usersBifiDelta[index]).to.equal(e18(index + 1))
-        })
+        await userPromiseSequenceMap(
+            async (_, index) => expect(usersBifiDelta[index]).to.equal(e18(index + 1))
+        )
 
         const totalUsersDepositedAfterFee = usersDepositedAmount.reduce((accum, depositedAfterFee) => accum.add(depositedAfterFee), e18(0))
 
@@ -275,35 +304,35 @@ const masterChefTests = (pid: number, poolFee: number) => {
         expect(devBalanceFinal.sub(devBalanceInit).gt(0)).to.be.true
     })
     it('MASTER CHEF WITHDRAW: Withdrawing from passthrough masterChef transfers funds correctly', async function() {
-        const { user1, user2, exped, dev } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract(Contracts.Cartographer)
+        const { exped, dev } = await getNamedSigners(hre)
         
-        const masterChef = await ethers.getContract(Contracts.DummyMasterChef)
-        const masterChefPassthrough = await ethers.getContract(Contracts.MasterChefPassthrough)
-        const dummyBifiToken = await ethers.getContract(Contracts.DummyBIFI)
-        const dummyCakeToken = await ethers.getContract(Contracts.DummyCAKE)
+        const masterChef = await getMasterChef()
+        const masterChefPassthrough = await getMasterChefPassthrough()
+        const bifiToken = await getBifiToken()
+        const dummyCakeToken = await getCakeToken()
 
-        const users = [user1, user2]
-
-        const usersBifiInit = await Promise.all(users.map(async (user) => await dummyBifiToken.balanceOf(user.address)))
+        const usersBifiInit = await userPromiseSequenceMap(
+            async (user) => await bifiToken.balanceOf(user.address)
+        )
 
         const masterChefBifiInit = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
 
         const expedBalanceInit = await dummyCakeToken.balanceOf(exped.address)
         const devBalanceInit = await dummyCakeToken.balanceOf(dev.address)
 
-        await promiseSequenceMap(
-            users,
+        await userPromiseSequenceMap(
             async (user, index) => {
-                const amount = depositedAfterFee(e18(index + 1), poolFee)
-                const transferAmountAfterFee = withdrawnAfterFee(amount, poolFee)
+                const amount = e18(index + 1)
 
                 const masterChefBalanceInit = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
                 const balanceInit = await masterChefPassthrough.balance()
-                
-                await expect(
-                    cartographer.connect(user).withdraw(pid, amount, 0)
-                ).to.emit(cartographer, EVENT.Withdraw).withArgs(user.address, pid, transferAmountAfterFee, 0)
+
+                await cartographerMethod.withdraw({
+                    user,
+                    tokenAddress: bifiToken.address,
+                    elevation,
+                    amount,
+                })
 
                 const masterChefBalanceFinal = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
                 const balanceFinal = await masterChefPassthrough.balance()
@@ -314,15 +343,19 @@ const masterChefTests = (pid: number, poolFee: number) => {
             }
         )
 
-        const usersBifiFinal = await Promise.all(users.map(async (user) => await dummyBifiToken.balanceOf(user.address)))
-        const usersBifiDelta = await Promise.all(users.map(async (_, index) => deltaBN(usersBifiInit[index], usersBifiFinal[index])))
+        const usersBifiFinal = await userPromiseSequenceMap(
+            async (user) => await bifiToken.balanceOf(user.address)
+        )
+        const usersBifiDelta = await userPromiseSequenceMap(
+            async (_, index) => deltaBN(usersBifiInit[index], usersBifiFinal[index])
+        )
         const masterChefBifiFinal = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
 
-        users.forEach((_, index) => {
-            expect(usersBifiDelta[index]).to.equal(amountAfterFullFee(e18(index + 1), poolFee))
-        })
+        await userPromiseSequenceMap(
+            async (_, index) => expect(usersBifiDelta[index]).to.equal(e18(index + 1))
+        )
 
-        expect(deltaBN(masterChefBifiInit, masterChefBifiFinal)).to.equal(depositedAfterFee(e18(3), poolFee))
+        expect(deltaBN(masterChefBifiInit, masterChefBifiFinal)).to.equal(e18(6))
 
         const expedBalanceFinal = await dummyCakeToken.balanceOf(exped.address)
         const devBalanceFinal = await dummyCakeToken.balanceOf(dev.address)
@@ -337,41 +370,40 @@ const masterChefTests = (pid: number, poolFee: number) => {
     })
 }
 
-const switchPassthroughStrategyMasterChefToVault = (pid: number) => {
+const switchPassthroughStrategyMasterChefToVault = (elevation: number) => {
     it('SWITCH PASSTHROUGH STRATEGY: Switching transfers users funds to vault directly', async function() {
         const { dev } = await getNamedSigners(hre)
 
-        const cartographer = await ethers.getContract(Contracts.Cartographer)
-        const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+        const bifiToken = await getBifiToken()
 
-        const dummyBifiToken = await ethers.getContract(Contracts.DummyBIFI)
+        const masterChefPassthrough = await getMasterChefPassthrough()
+        const masterChef = await getMasterChef()
 
-        const masterChefPassthrough = await ethers.getContract(Contracts.MasterChefPassthrough)
-        const masterChef = await ethers.getContract(Contracts.DummyMasterChef)
-
-        const BeefyVaultV6Passthrough = await ethers.getContract(Contracts.BeefyVaultV6Passthrough)
-        const bifiVault = await ethers.getContract(Contracts.DummyVault)
+        const beefyVaultPassthrough = await getBifiVaultPassthrough()
+        const bifiVault = await getBifiVault()
 
         await bifiVault.updatePool()
 
         const masterChefBifiInit = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
-        const vaultBifiInit = await dummyBifiToken.balanceOf(bifiVault.address)
+        const vaultBifiInit = await bifiToken.balanceOf(bifiVault.address)
         const masterChefUsersTokensInVaultInit = await masterChefPassthrough.balance()
-        const vaultUsersTokensInVaultInit = await BeefyVaultV6Passthrough.balance()
-        
-        await expect(
-            cartographer.connect(dev).setTokenPassthroughStrategy(dummyBifiToken.address, BeefyVaultV6Passthrough.address)
-        ).to.emit(cartographer, EVENT.SET_PASSTHROUGH_STRATEGY).withArgs(dummyBifiToken.address, BeefyVaultV6Passthrough.address)
+        const vaultUsersTokensInVaultInit = await beefyVaultPassthrough.balance()
 
-        await rolloverIfAvailable(cartographer, elevationHelper, TWOTHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, FIVETHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, TENTHOUSAND)
-        await rolloverIfAvailable(cartographer, elevationHelper, EXPEDITION)
+        await cartographerMethod.setTokenPassthroughStrategy({
+            dev,
+            tokenAddress: bifiToken.address,
+            passthroughTargetAddress: beefyVaultPassthrough.address
+        })
+
+        await rolloverIfAvailable(PLAINS)
+        await rolloverIfAvailable(MESA)
+        await rolloverIfAvailable(SUMMIT)
+        await rolloverIfAvailable(EXPEDITION)
         
         const masterChefBifiFinal = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
-        const vaultBifiFinal = await dummyBifiToken.balanceOf(bifiVault.address)
+        const vaultBifiFinal = await bifiToken.balanceOf(bifiVault.address)
         const masterChefUsersTokensInVaultFinal = await masterChefPassthrough.balance()
-        const vaultUsersTokensInVaultFinal = await BeefyVaultV6Passthrough.balance()
+        const vaultUsersTokensInVaultFinal = await beefyVaultPassthrough.balance()
 
         consoleLog({
             masterChefBifiInit: toDecimal(masterChefBifiInit),
