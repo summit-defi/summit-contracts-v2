@@ -123,8 +123,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     mapping(address => mapping(uint8 => bool)) public tokenElevationIsEarning;  // If a token is earning SUMMIT at a specific elevation
 
     mapping(address => uint256) public lastDepositTimestamps;                   // Users' last deposit timestamp
-    uint16 baseMinimumWithdrawalFee = 20;
-    uint256 feeDecayDuration = 10 * 86400;
+    uint16 public baseMinimumWithdrawalFee = 20;
+    uint256 public feeDecayDuration = 10 * 86400;
 
     struct UserLockedWinnings {
         uint256 winnings;
