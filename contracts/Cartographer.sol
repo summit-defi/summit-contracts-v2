@@ -140,7 +140,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     event SwitchTotem(address indexed user, uint8 indexed elevation, uint8 totem);
     event Elevate(address indexed user, address indexed token, uint8 sourceElevation, uint8 targetElevation, uint256 amount);
     event Withdraw(address indexed user, address indexed token, uint8 indexed elevation, uint256 amount);
-    event RedeemRewards(address indexed user, uint256 amount);
+    event ClaimWinnings(address indexed user, uint256 amount);
     event SetExpeditionTreasuryAddress(address indexed user, address indexed newAddress);
     event SetTreasuryAddress(address indexed user, address indexed newAddress);
     event SetTrustedSeederAddress(address indexed user, address indexed newAddress);
@@ -968,14 +968,14 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
 
     /// @dev Utility function to handle harvesting Summit rewards with referral rewards
-    function redeemRewards(address _userAdd, uint256 _amount) external onlySubCartographer {
+    function claimWinnings(address _userAdd, uint256 _amount) external onlySubCartographer {
         // Transfers rewards to user
         safeSummitTransfer(_userAdd, _amount);
 
         // If the user has been referred, add the 1% bonus to that user and their referrer
         summitReferrals.addReferralRewardsIfNecessary(_userAdd, _amount);
 
-        emit RedeemRewards(_userAdd, _amount);
+        emit ClaimWinnings(_userAdd, _amount);
     }
 
 
