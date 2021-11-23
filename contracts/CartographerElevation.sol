@@ -126,6 +126,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         uint256 roundRew;                           // Running sum of user's rewards earned in current round
 
         uint256 winningsDebt;                       // AccWinnings of user's totem at time of deposit
+        uint256 lastDepositTimestamp;               // Last timestamp user deposits fund into pool
 
         // ReVesting                                // When a user interacts with a round where some funds are already vesting, the remaining amount to vest is re-vested here
         uint256 reVestAmt;                          // The amount of SUMMIT reward to vest over a duration
@@ -1372,6 +1373,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         internal
         returns (uint256)
     {
+        user.lastDepositTimestamp = block.timestamp;
         updatePool(pool.token);
         uint8 totem = _getUserTotem(_userAdd);
 
@@ -1437,7 +1439,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         // Elevated funds remain in the cartographer, or in the passthrough target, so no need to withdraw from anywhere as they would be immediately re-deposited
         uint256 amountAfterFee = amount;
         if (!_isInternalTransfer) {
-            amountAfterFee = cartographer.withdrawalTokenManagement(_userAdd, pool.token, amount);
+            amountAfterFee = cartographer.withdrawalTokenManagement(_userAdd, pool.token, amount, user.lastDepositTimestamp);
         }
 
         // Remove withdrawn amount from pool's running supply accumulators
