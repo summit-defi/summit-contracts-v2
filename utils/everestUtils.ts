@@ -11,8 +11,8 @@ export const everestExpeditionRiskedEverestWinningsMult = 120;
 
 
 export const getSummitInLp = async (amount: BigNumber) => {
-    const summitToken = await ethers.getContract(Contracts.SummitToken)
-    const dummySummitLpToken = await ethers.getContract(Contracts.DummySUMMITLP)
+    const summitToken = await getSummitToken()
+    const dummySummitLpToken = await getSummitLpToken()
 
     const summitTokenInLpIndex = (await dummySummitLpToken.token0()) === summitToken.address ? 0 : 1
     const [reserve0, reserve1] = await dummySummitLpToken.getReserves()
@@ -31,7 +31,7 @@ export const getEverestLockMultiplier = async (lockPeriod: number): Promise<BigN
 }
 
 export const getExpectedEverest = async (summitAmount: BigNumber, summitLpAmount: BigNumber, lockPeriod: number, initialMinting = true) => {
-    const summitToken = await ethers.getContract(Contracts.SummitToken)
+    const summitToken = await getSummitToken()
     const summitSupply = await summitToken.totalSupply()
     const summitInLpAmount = await getSummitInLp(summitLpAmount)
     const lockMult = await getEverestLockMultiplier(lockPeriod)

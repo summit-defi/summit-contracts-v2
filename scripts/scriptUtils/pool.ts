@@ -1,11 +1,11 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import hre, { ethers, getChainId } from "hardhat";
-import { getElevationName, PoolConfig, promiseSequenceMap, replaceSummitAddresses, writePoolAllocation, writePoolPid } from "../../utils";
+import { getCartographer, getElevationName, PoolConfig, promiseSequenceMap, replaceSummitAddresses, writePoolAllocation, writePoolPid } from "../../utils";
 
 export const createPool = async (pool: PoolConfig, summitAddress: string, summitLpAddress: string) => {
     const chainId = await getChainId()
     const { dev } = await getNamedSigners(hre)
-    const Cartographer = await ethers.getContract('Cartographer')
+    const Cartographer = await getCartographer()
     const tokenAddress = replaceSummitAddresses(pool.token, summitAddress, summitLpAddress)
 
     console.log(`\tCreate Pool: ${pool.name}`)
@@ -22,7 +22,7 @@ export const createPool = async (pool: PoolConfig, summitAddress: string, summit
 
         // Update allocation if it exists but is different than intended allocation
         if (baseAllocation.toNumber() !== pool.allocation) {
-            const updateAllocationTx = await Cartographer.connect(dev).setTokenSharedAlloc(tokenAddress, pool.allocation)
+            const updateAllocationTx = await Cartographer.connect(dev).setTokenAlloc(tokenAddress, pool.allocation)
             await updateAllocationTx.wait(10)
             console.log(`\t\tPool allocation updated: ${baseAllocation} --> ${pool.allocation}`)
             writePoolAllocation(chainId, pool.name, pool.allocation)
@@ -51,7 +51,6 @@ export const createPool = async (pool: PoolConfig, summitAddress: string, summit
                 tokenAddress,
                 elevation,
                 pool.elevations[getElevationName(elevation)].live,
-                pool.fee,
                 false
             )
             await createPoolTx.wait(10)

@@ -2,13 +2,13 @@ import { Contract } from "@ethersproject/contracts";
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, OASIS, PID, POOL_FEE, TWOTHOUSAND, FIVETHOUSAND, TENTHOUSAND, EXPEDITION, depositedAfterFee, mineBlockWithTimestamp, toDecimal, expect6FigBigNumberEquals, deltaBN, expect6FigBigNumberAllEqual, promiseSequenceMap, rolloverIfAvailable, consoleLog, Contracts, getSubCartographerStaked } from "../utils";
+import { e18, ERR, EVENT, OASIS, PID, POOL_FEE, PLAINS, MESA, SUMMIT, EXPEDITION, depositedAfterFee, mineBlockWithTimestamp, toDecimal, expect6FigBigNumberEquals, deltaBN, expect6FigBigNumberAllEqual, promiseSequenceMap, rolloverIfAvailable, consoleLog, Contracts, getSubCartographerStaked } from "../utils";
 import { expeditionUnlockedFixture } from "./fixtures";
 
 
 const elevateTestSeries = async (elevationPids: number[], depositFee: number, token: Contract) => {
     const { user1 } = await getNamedSigners(hre)
-    const cartographer = await ethers.getContract('Cartographer')
+    const cartographer = await getCartographer()
     const cartographerOasis = await ethers.getContract('CartographerOasis')
     const cartographerElevation = await ethers.getContract('CartographerElevation')
 
@@ -18,59 +18,59 @@ const elevateTestSeries = async (elevationPids: number[], depositFee: number, to
 
     const oasisStaked0 = (await cartographerOasis.userInfo(elevationPids[OASIS], user1.address)).staked
     expect(oasisStaked0).to.equal(amountAfterFee)
-    const twoKStaked0 = (await cartographerElevation.userInfo(elevationPids[TWOTHOUSAND], user1.address)).staked
+    const twoKStaked0 = (await cartographerElevation.userInfo(elevationPids[PLAINS], user1.address)).staked
     expect(twoKStaked0).to.equal(0)
-    const fiveKStaked0 = (await cartographerElevation.userInfo(elevationPids[FIVETHOUSAND], user1.address)).staked
+    const fiveKStaked0 = (await cartographerElevation.userInfo(elevationPids[MESA], user1.address)).staked
     expect(fiveKStaked0).to.equal(0)
-    const tenKStaked0 = (await cartographerElevation.userInfo(elevationPids[TENTHOUSAND], user1.address)).staked
+    const tenKStaked0 = (await cartographerElevation.userInfo(elevationPids[SUMMIT], user1.address)).staked
     expect(tenKStaked0).to.equal(0)
 
     await expect (
-        cartographer.connect(user1).elevate(elevationPids[OASIS], elevationPids[TWOTHOUSAND], amountAfterFee, token.address, 0)
-    ).to.emit(cartographer, EVENT.Elevate).withArgs(user1.address, elevationPids[OASIS], elevationPids[TWOTHOUSAND], 0, amountAfterFee)
+        cartographer.connect(user1).elevate(elevationPids[OASIS], elevationPids[PLAINS], amountAfterFee, token.address, 0)
+    ).to.emit(cartographer, EVENT.Elevate).withArgs(user1.address, elevationPids[OASIS], elevationPids[PLAINS], 0, amountAfterFee)
     const oasisStaked1 = (await cartographerOasis.userInfo(elevationPids[OASIS], user1.address)).staked
     expect(oasisStaked1).to.equal(0)
-    const twoKStaked1 = (await cartographerElevation.userInfo(elevationPids[TWOTHOUSAND], user1.address)).staked
+    const twoKStaked1 = (await cartographerElevation.userInfo(elevationPids[PLAINS], user1.address)).staked
     expect(twoKStaked1).to.equal(amountAfterFee)
-    const fiveKStaked1 = (await cartographerElevation.userInfo(elevationPids[FIVETHOUSAND], user1.address)).staked
+    const fiveKStaked1 = (await cartographerElevation.userInfo(elevationPids[MESA], user1.address)).staked
     expect(fiveKStaked1).to.equal(0)
-    const tenKStaked1 = (await cartographerElevation.userInfo(elevationPids[TENTHOUSAND], user1.address)).staked
+    const tenKStaked1 = (await cartographerElevation.userInfo(elevationPids[SUMMIT], user1.address)).staked
     expect(tenKStaked1).to.equal(0)
 
     await expect (
-        cartographer.connect(user1).elevate(elevationPids[TWOTHOUSAND], elevationPids[FIVETHOUSAND], amountAfterFee, token.address, 0)
-    ).to.emit(cartographer, EVENT.Elevate).withArgs(user1.address, elevationPids[TWOTHOUSAND], elevationPids[FIVETHOUSAND], 0, amountAfterFee)
+        cartographer.connect(user1).elevate(elevationPids[PLAINS], elevationPids[MESA], amountAfterFee, token.address, 0)
+    ).to.emit(cartographer, EVENT.Elevate).withArgs(user1.address, elevationPids[PLAINS], elevationPids[MESA], 0, amountAfterFee)
     const oasisStaked2 = (await cartographerOasis.userInfo(elevationPids[OASIS], user1.address)).staked
     expect(oasisStaked2).to.equal(0)
-    const twoKStaked2 = (await cartographerElevation.userInfo(elevationPids[TWOTHOUSAND], user1.address)).staked
+    const twoKStaked2 = (await cartographerElevation.userInfo(elevationPids[PLAINS], user1.address)).staked
     expect(twoKStaked2).to.equal(0)
-    const fiveKStaked2 = (await cartographerElevation.userInfo(elevationPids[FIVETHOUSAND], user1.address)).staked
+    const fiveKStaked2 = (await cartographerElevation.userInfo(elevationPids[MESA], user1.address)).staked
     expect(fiveKStaked2).to.equal(amountAfterFee)
-    const tenKStaked2 = (await cartographerElevation.userInfo(elevationPids[TENTHOUSAND], user1.address)).staked
+    const tenKStaked2 = (await cartographerElevation.userInfo(elevationPids[SUMMIT], user1.address)).staked
     expect(tenKStaked2).to.equal(0)
 
     await expect (
-        cartographer.connect(user1).elevate(elevationPids[FIVETHOUSAND], elevationPids[TENTHOUSAND], amountAfterFee, token.address, 0)
-    ).to.emit(cartographer, EVENT.Elevate).withArgs(user1.address, elevationPids[FIVETHOUSAND], elevationPids[TENTHOUSAND], 0, amountAfterFee)
+        cartographer.connect(user1).elevate(elevationPids[MESA], elevationPids[SUMMIT], amountAfterFee, token.address, 0)
+    ).to.emit(cartographer, EVENT.Elevate).withArgs(user1.address, elevationPids[MESA], elevationPids[SUMMIT], 0, amountAfterFee)
     const oasisStaked3 = (await cartographerOasis.userInfo(elevationPids[OASIS], user1.address)).staked
     expect(oasisStaked3).to.equal(0)
-    const twoKStaked3 = (await cartographerElevation.userInfo(elevationPids[TWOTHOUSAND], user1.address)).staked
+    const twoKStaked3 = (await cartographerElevation.userInfo(elevationPids[PLAINS], user1.address)).staked
     expect(twoKStaked3).to.equal(0)
-    const fiveKStaked3 = (await cartographerElevation.userInfo(elevationPids[FIVETHOUSAND], user1.address)).staked
+    const fiveKStaked3 = (await cartographerElevation.userInfo(elevationPids[MESA], user1.address)).staked
     expect(fiveKStaked3).to.equal(0)
-    const tenKStaked3 = (await cartographerElevation.userInfo(elevationPids[TENTHOUSAND], user1.address)).staked
+    const tenKStaked3 = (await cartographerElevation.userInfo(elevationPids[SUMMIT], user1.address)).staked
     expect(tenKStaked3).to.equal(amountAfterFee)
 
     await expect (
-        cartographer.connect(user1).elevate(elevationPids[TENTHOUSAND], elevationPids[OASIS], amountAfterFee, token.address, 0)
-    ).to.emit(cartographer, EVENT.Elevate).withArgs(user1.address, elevationPids[TENTHOUSAND], elevationPids[OASIS], 0, amountAfterFee)
+        cartographer.connect(user1).elevate(elevationPids[SUMMIT], elevationPids[OASIS], amountAfterFee, token.address, 0)
+    ).to.emit(cartographer, EVENT.Elevate).withArgs(user1.address, elevationPids[SUMMIT], elevationPids[OASIS], 0, amountAfterFee)
     const oasisStaked4 = (await cartographerOasis.userInfo(elevationPids[OASIS], user1.address)).staked
     expect(oasisStaked4).to.equal(amountAfterFee)
-    const twoKStaked4 = (await cartographerElevation.userInfo(elevationPids[TWOTHOUSAND], user1.address)).staked
+    const twoKStaked4 = (await cartographerElevation.userInfo(elevationPids[PLAINS], user1.address)).staked
     expect(twoKStaked4).to.equal(0)
-    const fiveKStaked4 = (await cartographerElevation.userInfo(elevationPids[FIVETHOUSAND], user1.address)).staked
+    const fiveKStaked4 = (await cartographerElevation.userInfo(elevationPids[MESA], user1.address)).staked
     expect(fiveKStaked4).to.equal(0)
-    const tenKStaked4 = (await cartographerElevation.userInfo(elevationPids[TENTHOUSAND], user1.address)).staked
+    const tenKStaked4 = (await cartographerElevation.userInfo(elevationPids[SUMMIT], user1.address)).staked
     expect(tenKStaked4).to.equal(0)
 }
 
@@ -78,9 +78,9 @@ const elevateTestSeries = async (elevationPids: number[], depositFee: number, to
 describe("ELEVATION Switching", function() {
     before(async function() {
         const { cartographer } = await expeditionUnlockedFixture()
-        await cartographer.rollover(TENTHOUSAND)
-        await cartographer.rollover(FIVETHOUSAND)
-        await cartographer.rollover(TWOTHOUSAND)
+        await cartographer.rollover(SUMMIT)
+        await cartographer.rollover(MESA)
+        await cartographer.rollover(PLAINS)
     })
 
     it('Standard elevation switch should succeed', async function() {
@@ -93,17 +93,17 @@ describe("ELEVATION Switching", function() {
         ], 0, summitToken)
     })
     it('Passthrough elevation switch should succeed with deposit fee taken', async function() {
-        const dummyBifiToken = await ethers.getContract('DummyBIFI')
+        const bifiToken = await ethers.getContract('DummyBIFI')
         await elevateTestSeries([
             PID.DUMMY_BIFI_OASIS,
             PID.DUMMY_BIFI_2K,
             PID.DUMMY_BIFI_5K,
             PID.DUMMY_BIFI_10K
-        ], POOL_FEE.DUMMY_BIFI_OASIS, dummyBifiToken)
+        ], POOL_FEE.DUMMY_BIFI_OASIS, bifiToken)
     })
     it(`Switching must be to a valid totem, or will fail with error ${ERR.ELEV_SWITCH.INVALID_TOTEM}`, async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const summitToken = await ethers.getContract('SummitToken')
 
         await expect (
@@ -112,7 +112,7 @@ describe("ELEVATION Switching", function() {
     })
     it(`Switching to a pool at the current elevation will fail with error ${ERR.ELEV_SWITCH.NO_SAME_ELEV_TRANSFER}`, async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const summitToken = await ethers.getContract('SummitToken')
 
         await expect (
@@ -121,33 +121,33 @@ describe("ELEVATION Switching", function() {
     })
     it(`Switching SUMMIT to and from expeditions should succeed`, async function() {
         const { user1, dev } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerOasis = await ethers.getContract('CartographerOasis')
         const cartographerElevation = await ethers.getContract('CartographerElevation')
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const summitToken = await ethers.getContract('SummitToken')
-        const dummyBifiToken = await ethers.getContract('DummyBIFI')
+        const bifiToken = await ethers.getContract('DummyBIFI')
         const elevationHelper = await ethers.getContract('ElevationHelper')
 
-        await dummyBifiToken.connect(dev).approve(cartographerExpedition.address, e18(500))
-        await dummyBifiToken.connect(dev).transfer(cartographerExpedition.address, e18(500))
+        await bifiToken.connect(dev).approve(cartographerExpedition.address, e18(500))
+        await bifiToken.connect(dev).transfer(cartographerExpedition.address, e18(500))
         await expect(
-            cartographer.connect(dev).addExpedition(0, dummyBifiToken.address, e18(500), 9)
-        ).to.emit(cartographer, EVENT.ExpeditionCreated).withArgs(PID.DUMMY_BIFI_EXPEDITION, dummyBifiToken.address, e18(500), 9);
+            cartographer.connect(dev).addExpedition(0, bifiToken.address, e18(500), 9)
+        ).to.emit(cartographer, EVENT.ExpeditionCreated).withArgs(PID.DUMMY_BIFI_EXPEDITION, bifiToken.address, e18(500), 9);
         const expeditionRoundEndTime = (await elevationHelper.roundEndTimestamp(EXPEDITION)).toNumber()
 
         await mineBlockWithTimestamp(expeditionRoundEndTime)
 
         await cartographer.rollover(EXPEDITION)
-        await cartographer.rollover(TENTHOUSAND)
-        await cartographer.rollover(FIVETHOUSAND)
-        await cartographer.rollover(TWOTHOUSAND)
+        await cartographer.rollover(SUMMIT)
+        await cartographer.rollover(MESA)
+        await cartographer.rollover(PLAINS)
 
         // TESTING BEGINS HERE
         await cartographer.connect(user1).deposit(PID.DUMMY_BIFI_OASIS, e18(5), 0, 0)
 
         await expect (
-            cartographer.connect(user1).elevate(PID.DUMMY_BIFI_OASIS, PID.DUMMY_BIFI_EXPEDITION, e18(5), dummyBifiToken.address, 0)
+            cartographer.connect(user1).elevate(PID.DUMMY_BIFI_OASIS, PID.DUMMY_BIFI_EXPEDITION, e18(5), bifiToken.address, 0)
         ).to.be.revertedWith(ERR.ELEV_SWITCH.DIFFERENT_TOKEN)
 
         // TESTING WORKING TRANSFERS
@@ -213,7 +213,7 @@ describe("ELEVATION Switching", function() {
     it(`Switching with zero amount will fail with error ${ERR.ELEV_SWITCH.NON_ZERO_AMOUNT}`, async function() {
         const { user1 } = await getNamedSigners(hre)
         const summitToken = await ethers.getContract('SummitToken')
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
 
         await expect (
             cartographer.connect(user1).elevate(PID.SUMMIT_OASIS, PID.SUMMIT_2K, e18(0), summitToken.address, 0)
@@ -222,7 +222,7 @@ describe("ELEVATION Switching", function() {
     it(`Switching more than staked will fail with error ${ERR.ELEV_SWITCH.BAD_TRANSFER}`, async function() {
         const { user1 } = await getNamedSigners(hre)
         const summitToken = await ethers.getContract('SummitToken')
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
 
         await expect (
             cartographer.connect(user1).elevate(PID.SUMMIT_OASIS, PID.SUMMIT_2K, e18(100), summitToken.address, 0)
@@ -231,7 +231,7 @@ describe("ELEVATION Switching", function() {
     it(`Switching to different totem than currently staked will fail with error ${ERR.ELEV_SWITCH.NO_TOTEM_SWITCH}`, async function() {
         const { user1 } = await getNamedSigners(hre)
         const summitToken = await ethers.getContract('SummitToken')
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
 
         await cartographer.connect(user1).deposit(PID.SUMMIT_2K, e18(5), 0, 0)
 
@@ -242,7 +242,7 @@ describe("ELEVATION Switching", function() {
     it(`Can only switch between pools of the same token, or will fail with error ${ERR.ELEV_SWITCH.DIFFERENT_TOKEN}`, async function() {
         const { user1 } = await getNamedSigners(hre)
         const summitToken = await ethers.getContract('SummitToken')
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
 
         await expect (
             cartographer.connect(user1).elevate(PID.SUMMIT_OASIS, PID.DUMMY_BIFI_2K, e18(5), summitToken.address, 0)

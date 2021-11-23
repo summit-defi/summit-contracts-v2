@@ -86,19 +86,6 @@ USER:
         - user.roundRew - The user may interact with the same round multiple times without losing any existing farmed rewards, this stores any accumulated rewards that have built up mid round, and is increased with each subsequent round interaction in the same round
     
 
-USER VESTING:
-    . Following a win, the users winnings vest over the duration of the next round, and are 100% vested by the end of that round
-    . Fully vested winnings are permanently available at the end of the following round, even if the user wins more rounds subsequently, it is only the latest rounds winnings that require vesting
-    . The users vesting amounts are calculated in two ways, depending on whether the user has interacted with the current round
-        . <innate vesting> If the user has not interacted during the vesting period, the vested amount is:
-            - (Winnings from the previous round) * (percentage through current round)
-
-        . <re-vested> If the user has already interacted with a round that has winnings vesting, the vested portion of the winnings has been harvested, and the remaining un-vested portion reVested into userInfo
-            - (user.reVestedAmount) * (timestamp - user.reVestStart) / (user.reVestDuration)
-
-    . Users can have both reVested winnings from many rounds ago, as well as innate vesting from the previous round's winnings
-        . When the user interacts with the current round, the reVested winnings (long since fully vested) will be withdrawn, and the innate vesting winnings will be reVested
-
 */
 
 contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGuard {
@@ -120,17 +107,12 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
     struct UserInfo {
         // Yield Multiplying
-        uint256 prevInteractedRound;                // Round the user last made a deposit / withdrawal / harvest
+        uint256 prevInteractedRound;                // Round the user last made a deposit / withdrawal / claim
         uint256 staked;                             // The amount of token the user has in the pool
         uint256 roundDebt;                          // Used to calculate user's first interacted round reward
         uint256 roundRew;                           // Running sum of user's rewards earned in current round
 
         uint256 winningsDebt;                       // AccWinnings of user's totem at time of deposit
-
-        // ReVesting                                // When a user interacts with a round where some funds are already vesting, the remaining amount to vest is re-vested here
-        uint256 reVestAmt;                          // The amount of SUMMIT reward to vest over a duration
-        uint256 reVestStart;                        // The start of the current re-vested period, updated on interaction
-        uint256 reVestDur;                          // How long the current re-vested stint lasts
     }
 
     struct UserElevationInfo {
@@ -191,21 +173,22 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
 
     /// @dev Constructor, setting address of cartographer
-    constructor(address _Cartographer)
+    constructor(address _Cartographer, uint8 _elevation)
     {
         require(_Cartographer != address(0), "Cartographer required");
+        require(_elevation >= 1 && _elevation <= 3, "Invalid elevation");
         cartographer = Cartographer(_Cartographer);
+        elevation = _elevation;
     }
 
 
     /// @dev Set address of ElevationHelper during initialization
-    function initialize(uint8 _elevation, address _ElevationHelper, address _summitTokenAddress)
+    function initialize(address _ElevationHelper, address _summitTokenAddress)
         external override
         initializer onlyCartographer
     {
         require(_ElevationHelper != address(0), "Contract is zero");
         require(_summitTokenAddress != address(0), "SummitToken is zero");
-        elevation = elevation;
         elevationHelper = ElevationHelper(_ElevationHelper);
         summitTokenAddress = _summitTokenAddress;
     }
@@ -251,6 +234,10 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         require(_totem < elevationHelper.totemCount(elevation), "Invalid totem");
         _;
     }
+    modifier elevationTotemSelectionAvailable() {
+        require(!elevationHelper.endOfRoundLockoutActive(elevation) || elevationHelper.elevationLocked(elevation), "Totem selection locked");
+        _;
+    }
     function _elevationInteractionsAvailable() internal view {
         require(!elevationHelper.endOfRoundLockoutActive(elevation), "Elev locked until rollover");
     }
@@ -266,6 +253,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         _;
     }
     modifier poolExistsAndLaunched(address _token) {
+        console.log("Pool Exists and Launched", poolTokens.contains(_token), poolInfo[_token].launched);
         require(poolTokens.contains(_token), "Pool doesnt exist");
         require(poolInfo[_token].launched, "Pool not launched yet");
         _;
@@ -500,28 +488,20 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     // ---------------------------------------
 
 
-    /// @dev Fetch guaranteed yield rewards of the pool
+    /// @dev Fetch claimable yield rewards amount of the pool
     /// @param _token Pool token to fetch rewards from
     /// @param _userAdd User requesting rewards info
-    /// @return (
-    ///     harvestableRewards - Amount of Summit available to harvest
-    ///     vestingWinnings - Winnings of the previous round that will become available by the end of the current round
-    ///     vestingStart - When the current vesting period began
-    ///     vestingDuration - Time remaining until all winnings are vested
-    /// )
-    function rewards(address _token, address _userAdd)
+    /// @return claimableRewards - Amount of Summit available to claim
+    function claimableRewards(address _token, address _userAdd)
         public view
         onlyCartographer poolExists(_token) validUserAdd(_userAdd)
-        returns (uint256, uint256, uint256, uint256)
+        returns (uint256)
     {
         ElevationPoolInfo storage pool = poolInfo[_token];
         UserInfo storage user = userInfo[_token][_userAdd];
 
-        // Fetch vesting information
-        (uint256 vestingWinnings, uint256 vestingDuration, uint256 currentVestingPeriodStart) = winningsToVest(pool, user, _userAdd);
-
-        // Return rewards values
-        return (_harvestableWinnings(pool, user, _userAdd), vestingWinnings, currentVestingPeriodStart, vestingDuration);
+        // Return claimable winnings
+        return _claimableWinnings(pool, user, _userAdd);
     }
 
 
@@ -704,6 +684,9 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         // The change in accSummitPerShare from the end of the previous round to the end of the current round
         uint256 deltaAccSummitPerShare = pool.accSummitPerShare - poolRoundInfo[_token][_prevRound - 1].endAccSummitPerShare;
 
+        // Add Winnings to multiplier of winning totem
+        pool.totemRunningPrecomputedMult[elevationHelper.winningTotem(elevation, _prevRound - 1)] += deltaAccSummitPerShare * _winningsMultiplier / 1e12;
+
         // Adding a new entry to the pool's poolRoundInfo for the most recently closed round
         poolRoundInfo[_token][_prevRound] = RoundInfo({
             endAccSummitPerShare: pool.accSummitPerShare,
@@ -711,53 +694,9 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
             precomputedFullRoundMult: deltaAccSummitPerShare * _winningsMultiplier / 1e12
         });
 
-        // Round before recently closed round has finished vesting, add the full round multiplier of the vested round to the winning totem's accumulator
-        if (_prevRound > 0)
-            pool.totemRunningPrecomputedMult[elevationHelper.winningTotem(elevation, _prevRound - 1)] += poolRoundInfo[_token][_prevRound - 1].precomputedFullRoundMult;
-
         // Resetting round reward accumulators to begin accumulating over the next round
         pool.roundRewards = 0;
         pool.totemRoundRewards = new uint256[](elevationHelper.totemCount(elevation));
-    }
-    
-
-
-
-
-    // -------------------------------------------
-    // --   V E S T I N G   G E T T E R S
-    // -------------------------------------------
-    
-    
-    /// @dev Getter function to return any vesting coming from UserInfo
-    ///      If a user has some amount vesting (won previous round), and then harvests the vested rewards
-    ///      The amount remaining to vest (yet un-harvested) is RE-VESTED, and stored in UserInfo, where this pulls from
-    /// @param user UserInfo containing the re-vested info
-    /// @return This function returns ONLY the re-vested winnings from UserInfo
-    function reVestedWinnings(UserInfo storage user)
-        internal view
-        returns (uint256)
-    {
-        // Early escape if the user doesn't have any reVested winnings
-        if (user.reVestAmt == 0) return 0;
-
-        // Return the full reVested amount if the vesting period has finished
-        if (block.timestamp >= (user.reVestStart + user.reVestDur)) return user.reVestAmt;
-
-        // Return a fraction of the reVested amount if the vesting period is still ongoing
-        return user.reVestAmt * (block.timestamp - user.reVestStart) / user.reVestDur;
-    }
-
-
-    /// @dev Convenience function to determine how much of the winnings are harvestable
-    ///      Innate vesting comes from winnings that haven't yet been interacted with (would be reVested)
-    /// @param _amount Winnings to determine vested of
-    /// @return Portion of winnings that are harvestable, will increase over duration of current round
-    function innateVestedRoundWinnings(uint256 _amount)
-        internal view
-        returns (uint256)
-    {
-        return _amount * elevationHelper.fractionRoundComplete(elevation) / 1e12;
     }
     
 
@@ -799,110 +738,37 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         return ((user.staked * round.endAccSummitPerShare / 1e12) - user.roundDebt + user.roundRew) * round.winningsMultiplier / 1e12;
     }
 
-    
-    /// @dev Generalized rewards from a round, including full amount vesting, escapes if round not won
-    /// @param pool Pool info
-    /// @param user User info
-    /// @param _roundIndex Round to calculate winnings for
-    /// @param _userAdd Address of user for validation
-    /// @return Generalized winnings from round
-    function rawRoundWinnings(ElevationPoolInfo storage pool, UserInfo storage user, uint256 _roundIndex, address _userAdd)
-        internal view
-        returns (uint256)
-    {
-        // Differentiate calculation of winnings if roundIndex is user's previous interacted round
-        uint8 totem = _getUserTotem(_userAdd);
 
-        return user.prevInteractedRound == _roundIndex ?
-            userFirstInteractedRoundWinnings(user, poolRoundInfo[pool.token][_roundIndex], totem) :
-            user.staked * totemPrecomputedMultForRound(pool, totem, _roundIndex) / 1e12;
-    } 
-
-
-    /// @dev Calculation of winnings that are available to be harvested
+    /// @dev Calculation of winnings that are available to be claimed
     /// @param pool Pool info
     /// @param user UserInfo
     /// @param _userAdd User's address passed through for win check
-    /// @return Total harvestable winnings for a user, including vesting on previous round's winnings (if any)
-    function _harvestableWinnings(ElevationPoolInfo storage pool, UserInfo storage user, address _userAdd)
+    /// @return Total claimable winnings for a user, including vesting on previous round's winnings (if any)
+    function _claimableWinnings(ElevationPoolInfo storage pool, UserInfo storage user, address _userAdd)
         internal view
         returns (uint256)
     {
         uint256 currRound = elevationHelper.roundNumber(elevation);
+        uint256 claimable = 0;
 
         // Exit early if no previous round exists to have winnings
-        if (!pool.launched) return 0;
+        if (!pool.launched) return claimable;
 
-        // Seed harvestable with the harvestable re-vested winnings from a previous interaction
-        uint256 harvestable = reVestedWinnings(user);
+        // If user interacted in current round, any claimable winnings will come only from reVestedWinnings from previous round
+        if (user.prevInteractedRound == currRound) return claimable;
 
-        // If user interacted in current round, any harvestable winnings will come only from reVestedWinnings from previous round
-        if (user.prevInteractedRound == currRound) return harvestable;
-        
-        // Exit early with vesting if user interacted in previous round
         uint8 totem = _getUserTotem(_userAdd);
-        if (user.prevInteractedRound == currRound - 1)
-            return harvestable + innateVestedRoundWinnings(userFirstInteractedRoundWinnings(user, poolRoundInfo[pool.token][user.prevInteractedRound], totem));
 
         // Get winnings from first user interacted round if it was won
-        harvestable += userFirstInteractedRoundWinnings(user, poolRoundInfo[pool.token][user.prevInteractedRound], totem);
+        claimable += userFirstInteractedRoundWinnings(user, poolRoundInfo[pool.token][user.prevInteractedRound], totem);
 
-        // Add Vesting from most recent completed round if it was won
-        harvestable += innateVestedRoundWinnings(user.staked * totemPrecomputedMultForRound(pool, totem, currRound - 1) / 1e12);
-
-        // Calculate true winnings debt, which is precomputed mult debt at time of interaction + first round's precomputed mult (which is bypassed by first round calculation above)        
-        uint256 trueDebt = user.winningsDebt + totemPrecomputedMultForRound(pool, totem, user.prevInteractedRound);
+        // Escape early if user interacted during previous round
+        if (user.prevInteractedRound == currRound - 1) return claimable;
 
         // Add multiple rounds of precomputed mult delta for all rounds between first interacted and most recent round
-        harvestable += user.staked * (pool.totemRunningPrecomputedMult[totem] - trueDebt) / 1e12;
+        claimable += user.staked * (pool.totemRunningPrecomputedMult[totem] - user.winningsDebt) / 1e12;
 
-        return harvestable;
-    }
-    
-    
-    /// @dev Innately vesting winnings that need to be reVested on user interaction
-    /// @param pool Pool info
-    /// @param user User info
-    /// @param _userAdd User's address passed through for win check
-    /// @return (
-    ///     reVestAmount - Currently vesting funds that have not completed vesting yet
-    ///     reVestDuration - Duration of the new vesting period for the reVestedAmount
-    ///     reVestStart - The start timestamp of the new vesting period
-    /// )
-    function winningsToVest(ElevationPoolInfo storage pool, UserInfo storage user, address _userAdd)
-        internal view
-        returns (uint256, uint256, uint256)
-    {
-        uint256 currRound = elevationHelper.roundNumber(elevation);
-
-        // Escape early if the pool hasn't completed the first round with winnings
-        if (!pool.launched) return (0, 0, 0);
-
-        // RE-VEST
-        // User has already interacted this round, so ReVest the already reVested winnings that have yet to become harvestable
-        if (user.prevInteractedRound == currRound) {
-            // Vesting info comes from UserInfo
-            uint256 harvestable = reVestedWinnings(user);
-
-            // ReVest original reVested amount reduced by harvestable, over time remaining in current round
-            // Vesting start remains the same at the beginning of current round timestamp
-            return (user.reVestAmt - harvestable, elevationHelper.timeRemainingInRound(elevation), user.reVestStart);
-        }
-
-        // Amount to reVest comes from the current innate vesting of the previous round's winnings
-        // currRound is used for `_mostRecentCompletedRoundIndex` to retrieve the full round's winnings, not just harvestable winnings
-        uint256 roundWinnings = rawRoundWinnings(pool, user, currRound - 1, _userAdd);
-
-        // Escape early if previous round was lost
-        if (roundWinnings == 0) return (0, 0, 0);
-
-        // INNATE VEST
-        // Return amount of winnings remaining to be vested, the time remaining in the current round as duration, and the start of the current round as the start period of the new vesting
-        return (
-            roundWinnings * elevationHelper.fractionRoundRemaining(elevation) / 1e12,
-            elevationHelper.timeRemainingInRound(elevation),
-            elevationHelper.currentRoundStartTime(elevation)
-        );
+        return claimable;
     }
     
 
@@ -918,9 +784,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param _userAdd USer's address used for redeeming rewards and checking for if rounds won
     function _emergencyWithdrawResetUser(ElevationPoolInfo storage pool, address _userAdd) internal {
         userInfo[pool.token][_userAdd] = UserInfo({
-            reVestAmt: 0,
-            reVestDur: 0,
-            reVestStart: 0,
             roundRew: 0,
             staked: 0,
             roundDebt: 0,
@@ -929,54 +792,23 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         });
     }
     
-    /// @dev Harvest any available winnings, and 
+    /// @dev Claim any available winnings, and 
     /// @param pool Pool info
     /// @param user User info
     /// @param _userAdd USer's address used for redeeming rewards and checking for if rounds won
-    function _harvest(ElevationPoolInfo storage pool, UserInfo storage user, address _userAdd)
+    function _claimWinnings(ElevationPoolInfo storage pool, UserInfo storage user, address _userAdd)
         internal
         returns (uint256)
     {
-        // Get user's winnings available for harvest
-        uint256 harvestable = _harvestableWinnings(pool, user, _userAdd);
+        // Get user's winnings available for claim
+        uint256 claimable = _claimableWinnings(pool, user, _userAdd);
 
-        // Harvest winnings if any available
-        if (harvestable > 0) {
-            cartographer.redeemRewards(_userAdd, harvestable);
+        // Claim winnings if any available
+        if (claimable > 0) {
+            cartographer.claimWinnings(_userAdd, claimable);
         }
 
-        return harvestable;
-    }
-
-    /// @dev Vest or ReVest any winnings currently vesting but not yet vested
-    /// @param pool Pool info
-    /// @param user User info
-    /// @param _userAdd User's address to vest
-    function _vest(ElevationPoolInfo storage pool, UserInfo storage user, address _userAdd)
-        internal
-    {
-        // Calculate the amount to reVest, and the duration to reVest over, the reVestStart is thrown away as the vesting begins from the current timestamp
-        (uint256 vestAmount, uint256 reVestDur,) = winningsToVest(pool, user, _userAdd);
-
-        // Update user info with new reVesting info
-        user.reVestAmt = vestAmount;
-        user.reVestDur = reVestDur;
-        user.reVestStart = block.timestamp;
-    }
-
-
-    /// @dev Totem AccWinningsPerShare at end of current round (adds vesting)
-    /// @param pool Pool info
-    /// @param _totem Totem to get winnings per share for
-    function totemRunningPrecomputedMultWithVesting(ElevationPoolInfo storage pool, uint8 _totem)
-        internal view
-        returns (uint256)
-    {
-        // Early escape if current round is first round
-        if (elevationHelper.roundNumber(elevation) == 0) return pool.totemRunningPrecomputedMult[_totem];
-
-        // Return base + prev round total delta amount
-        return pool.totemRunningPrecomputedMult[_totem] + totemPrecomputedMultForRound(pool, _totem, elevationHelper.roundNumber(elevation) - 1);
+        return claimable;
     }
 
 
@@ -1016,7 +848,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         user.roundDebt = user.staked * pool.accSummitPerShare / 1e12;
 
         // Acc Winnings Per Share of the user's totem
-        user.winningsDebt = totemRunningPrecomputedMultWithVesting(pool, _totem);
+        user.winningsDebt = pool.totemRunningPrecomputedMult[_totem];
 
         // Update the user's previous interacted round to be this round
         user.prevInteractedRound = currRound;
@@ -1047,40 +879,25 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @dev All funds at an elevation share a totem. This function allows switching staked funds from one totem to another
     /// @param _totem New target totem
     /// @param _userAdd User requesting switch
-    /// @param _crossCompound Whether to cross compound any harvested winnings during totem switch
-    function switchTotem(uint8 _totem, address _userAdd, bool _crossCompound)
+    function switchTotem(uint8 _totem, address _userAdd)
         external override
-        nonReentrant onlyCartographer validTotem(_totem) validUserAdd(_userAdd) elevationInteractionsAvailable
+        nonReentrant onlyCartographer validTotem(_totem) validUserAdd(_userAdd) elevationTotemSelectionAvailable
     {
-        // Early exit if cross compound will fail
-        require(!_crossCompound || poolTokens.contains(summitTokenAddress), "No SUMMIT farm to CrossCompound into");
-
         uint8 prevTotem = _getUserTotem(_userAdd);
 
         // Early exit if totem is same as current
         require(!_totemSelected(_userAdd) || prevTotem != _totem, "Totem must be different");
 
         // Iterate through pools the user is interacting with and update totem
-        uint256 harvestable = 0;
+        uint256 claimable = 0;
         for (uint8 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
-            harvestable += switchTotemForPool(userInteractingPools[_userAdd].at(index), prevTotem, _totem, _userAdd, _crossCompound);
+            claimable += switchTotemForPool(userInteractingPools[_userAdd].at(index), prevTotem, _totem, _userAdd);
         }
 
         // Update user's totem in state
         userElevationInfo[_userAdd].totem = _totem;
         userElevationInfo[_userAdd].totemSelected = true;
         userElevationInfo[_userAdd].totemSelectionRound = elevationHelper.roundNumber(elevation);
-
-        // If cross compounding, deposit the combined harvestable amount from all user's pools into the SUMMIT pool
-        if (_crossCompound) {
-            _unifiedDeposit(
-                poolInfo[summitTokenAddress],
-                userInfo[summitTokenAddress][_userAdd],
-                harvestable,
-                _userAdd,
-                true
-            );
-        }
     }
 
 
@@ -1089,19 +906,17 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param _prevTotem Totem the user is leaving
     /// @param _newTotem Totem the user is moving to
     /// @param _userAdd User doing the switch
-    /// @param _crossCompound Whether to cross compound these winnings
-    function switchTotemForPool(address _token, uint8 _prevTotem, uint8 _newTotem, address _userAdd, bool _crossCompound)
+    function switchTotemForPool(address _token, uint8 _prevTotem, uint8 _newTotem, address _userAdd)
         internal
         returns (uint256)
     {
         UserInfo storage user = userInfo[_token][_userAdd];
         ElevationPoolInfo storage pool = poolInfo[_token];
 
-        uint256 harvestable = _unifiedHarvest(
+        uint256 claimable = _unifiedClaim(
             pool,
             user,
-            _userAdd,
-            _crossCompound
+            _userAdd
         );
 
         // Transfer supply and round rewards from previous totem to new totem
@@ -1110,7 +925,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         pool.totemRoundRewards[_prevTotem] -= user.roundRew;
         pool.totemRoundRewards[_newTotem] += user.roundRew;
 
-        return harvestable;
+        return claimable;
     }
     
 
@@ -1128,7 +943,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// If any of the 3 are true, then the user still has interactions other than 'deposit' that can be meaningfully called on the pool
     /// User.reVestAmt will only be > 0 if the user has any remaining amount of winnings that can be withdrawn
     /// User.reVestAmt will only be > 0 if the user has any remaining amount of winnings that can be withdrawn
-    /// This is used to keep `userElevInteractingPools` up to date for switchTotem and harvestElevation
+    /// This is used to keep `userElevInteractingPools` up to date for switchTotem and claimElevation
     /// This is also used on the frontend (through public wrapper) to boost the sort order of pools the user is interacting with
     function _userInteractingWithPool(UserInfo storage user)
         internal view
@@ -1136,53 +951,39 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     {
         return (user.staked + user.roundRew + user.reVestAmt) > 0;
     }
-    function userInteractingWithPool(address _token) public view poolExists(_token) returns (bool) {
-        return _userInteractingWithPool(userInfo[_token][msg.sender]);
+    function userInteractingWithPool(address _token, address _userAdd) public view poolExists(_token) returns (bool) {
+        return userInteractingPools[_userAdd].contains(_token);
     }
 
 
 
-    /// @dev Harvest an entire elevation (or cross compound)
-    /// @param _userAdd User harvesting
-    /// @param _crossCompound Whether to cross compound earnings
-    function harvestElevation(address _userAdd, bool _crossCompound)
+    /// @dev Claim an entire elevation's winnings
+    /// @param _userAdd User claiming
+    function claimElevation(address _userAdd)
         external override
         validUserAdd(_userAdd) elevationInteractionsAvailable onlyCartographer
         returns (uint256)
     {
-        require(!_crossCompound || poolTokens.contains(summitTokenAddress), "No SUMMIT farm to CrossCompound into");
 
-        // Harvest rewards of users active pools
-        uint256 harvestable = 0;
+        // Claim rewards of users active pools
+        uint256 claimable = 0;
 
-        // Iterate through pools the user is interacting, get harvestable amount, update pool
+        // Iterate through pools the user is interacting, get claimable amount, update pool
         for (uint8 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
-            // Harvest winnings
-            harvestable += _unifiedHarvest(
+            // Claim winnings
+            claimable += _unifiedClaim(
                 poolInfo[userInteractingPools[_userAdd].at(index)],
                 userInfo[userInteractingPools[_userAdd].at(index)][_userAdd],
-                _userAdd,
-                _crossCompound
+                _userAdd
             );
         }
 
-        // Cross compound, else harvest to user
-        if (harvestable > 0) {
-            if (_crossCompound) {
-                // If the user is interacting with the SUMMIT pool, its rewards will already have been harvested above, so can deposit directly
-                _unifiedDeposit(
-                    poolInfo[summitTokenAddress],
-                    userInfo[summitTokenAddress][_userAdd],
-                    harvestable,
-                    _userAdd,
-                    true
-                );
-            } else {
-                cartographer.redeemRewards(_userAdd, harvestable);
-            }
+        // Claim available winnings
+        if (claimable > 0) {
+            cartographer.claimRewards(_userAdd, claimable);
         }
         
-        return harvestable;
+        return claimable;
     }
 
     
@@ -1204,10 +1005,9 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param _token Pool to stake in
     /// @param _amount Amount to stake
     /// @param _userAdd User wanting to stake
-    /// @param _crossCompound Whether to cross compound earnings
     /// @param _isElevate Whether this is the deposit half of an elevate tx
     /// @return Amount deposited after deposit fee taken
-    function deposit(address _token, uint256 _amount, address _userAdd, bool _crossCompound, bool _isElevate)
+    function deposit(address _token, uint256 _amount, address _userAdd, bool _isElevate)
         external override
         nonReentrant onlyCartographer
         returns (uint256)
@@ -1215,11 +1015,11 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         // User has selected their totem, pool exists, user is valid, elevation is open for interactions
         _depositValidate(_token, _userAdd);
 
-        // Harvest earnings from pool, cross compound if necessary
-        _harvestOrCrossCompoundPool(
+        // Claim earnings from pool
+        _unifiedClaim(
             poolInfo[_token],
-            _userAdd,
-            _crossCompound
+            userInfo[_token][_userAdd],
+            _userAdd
         );
 
         // Deposit amount into pool
@@ -1257,19 +1057,18 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param _token Pool to withdraw from
     /// @param _amount Amount to withdraw
     /// @param _userAdd User withdrawing
-    /// @param _crossCompound Whether to cross compound earnings
     /// @param _isElevate Whether this is the withdraw half of an elevate tx
     /// @return True amount withdrawn
-    function withdraw(address _token, uint256 _amount, address _userAdd, bool _crossCompound, bool _isElevate)
+    function withdraw(address _token, uint256 _amount, address _userAdd, bool _isElevate)
         external override
         nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd) elevationInteractionsAvailable
         returns (uint256)
     {
-        // Harvest earnings from pool, cross compound if necessary
-        _harvestOrCrossCompoundPool(
+        // Claim earnings from pool
+        _unifiedClaim(
             poolInfo[_token],
-            _userAdd,
-            _crossCompound
+            userInfo[_token][_userAdd],
+            _userAdd
         );
 
         // Withdraw amount from pool
@@ -1284,71 +1083,19 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     }
 
 
-
-
-
-
-
-    /// @dev Helper function to harvest / cross compound a farm
-    /// @param pool OasisPoolInfo of pool to harvest
-    /// @param _userAdd User address
-    /// @param _crossCompound Whether to prevent sending these harvested winnings to the user
-    function _harvestOrCrossCompoundPool(ElevationPoolInfo storage pool, address _userAdd, bool _crossCompound)
-        internal
-    {
-        // Harvest / Get harvestable from withdrawing pool
-        // If {_crossCompound} is false, these harvestable funds will be sent to the user
-        // Else the amount to be harvested is returned, and deposited into the summit farm below
-        uint256 harvestable = _unifiedHarvest(
-            poolInfo[pool.token],
-            userInfo[pool.token][_userAdd],
-            _userAdd,
-            _crossCompound
-        );
-
-        // If cross compound, get harvestable from summit pool and deposit total harvestable into summit pool
-        if (_crossCompound) {
-            require(poolTokens.contains(summitTokenAddress), "No SUMMIT farm to CrossCompound into");
-
-            harvestable += _unifiedHarvest(
-                poolInfo[summitTokenAddress],
-                userInfo[summitTokenAddress][_userAdd],
-                _userAdd,
-                _crossCompound
-            );
-
-            _unifiedDeposit(
-                poolInfo[summitTokenAddress],
-                userInfo[summitTokenAddress][_userAdd],
-                harvestable,
-                _userAdd,
-                true
-            );
-        }
-    }
-
-
-
-
-    /// @dev Shared harvest functionality with cross compounding built in
+    /// @dev Claim winnings from a pool
     /// @param pool ElevationPoolInfo of pool to withdraw from
     /// @param user UserInfo of withdrawing user
     /// @param _userAdd User address
-    /// @param _crossCompound Whether to prevent sending these harvested winnings to the user
-    /// @return Amount harvestable
-    function _unifiedHarvest(ElevationPoolInfo storage pool, UserInfo storage user, address _userAdd, bool _crossCompound)
+    /// @return Amount claimable
+    function _unifiedClaim(ElevationPoolInfo storage pool, UserInfo storage user, address _userAdd)
         internal
         returns (uint256)
     {
         updatePool(pool.token);
 
-        // Get harvestable amount or harvest available winnings
-        uint256 harvestable = _crossCompound ?
-            _harvestableWinnings(pool, user, _userAdd) :
-            _harvest(pool, user, _userAdd);
-
-        // Vest any remaining un-vested winnings
-        _vest(pool, user, _userAdd);
+        // Get claimable amount or claim available winnings
+        uint256 claimable = _claimWinnings(pool, user, _userAdd);
 
         // Update the users round interaction, may be updated again in the same tx, but must be updated here to maintain state
         _updateUserRoundInteraction(pool, user, _getUserTotem(_userAdd), 0, true);
@@ -1356,8 +1103,8 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         // Update users pool interaction status, may be updated again in the same tx, but must be updated here to maintain state
         _markUserInteractingWithPool(pool.token, _userAdd, _userInteractingWithPool(user));
 
-        // Return amount harvested / harvestable
-        return harvestable;
+        // Return amount claimed / claimable
+        return claimable;
     }
 
 

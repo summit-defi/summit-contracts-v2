@@ -36,7 +36,7 @@ const getSeedRoundTimeRemaining = async (nextTopOfSeedRound: number) => {
 
 async function main() {
     const { trustedSeeder } = await getNamedSigners(hre)
-    const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+    const elevationHelper = await getElevationHelper()
 
 
     const timestamp = await getTimestamp()

@@ -48,7 +48,7 @@
 //     await timelockedFixture()
 //   })
 //   it(`TIMELOCK: Set base delay to 24 hours`, async function () {
-//     const timelock = await ethers.getContract(Contracts.Timelock)
+//     const timelock = await getTimelock()
 
 //     const initialTimelockDelay = (await timelock.delay()).toNumber()
 
@@ -72,7 +72,7 @@
   
 //   it(`TIMELOCK SET DELAY: SetDelay must be a timelocked call with valid parameters, else throw errors`, async function () {
 //     const { dev } = await getNamedSigners(hre)
-//     const timelock = await ethers.getContract(Contracts.Timelock)
+//     const timelock = await getTimelock()
 
 //     // Must be timelocked call
 //     await expect(
@@ -122,8 +122,8 @@
   
 //   it(`TIMELOCK SET FUNCTION SPECIFIC DELAY: SetFunctionSpecificDelay must be a timelocked call with valid parameters, else throw errors`, async function () {
 //     const { dev } = await getNamedSigners(hre)
-//     const timelock = await ethers.getContract(Contracts.Timelock)
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const timelock = await getTimelock()
+//     const cartographer = await getCartographer()
 
 //     const setTokenPassthroughStrategySignature = getTxSignatureBase({
 //         targetContract: cartographer,
@@ -206,8 +206,8 @@
 //   })
   
 //   it(`TIMELOCK QUEUE: QueueTransaction must be called with valid delay, else throw errors"`, async function () {
-//     const timelock = await ethers.getContract(Contracts.Timelock)
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const timelock = await getTimelock()
+//     const cartographer = await getCartographer()
 
 //     const setTokenPassthroughStrategySignature = getTxSignatureBase({
 //         targetContract: cartographer,
@@ -235,8 +235,8 @@
   
 //   it(`TIMELOCK CANCEL QUEUED: CancelQueuedTransaction should succeed`, async function () {
 //     const { dev } = await getNamedSigners(hre)
-//     const timelock = await ethers.getContract(Contracts.Timelock)
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const timelock = await getTimelock()
+//     const cartographer = await getCartographer()
 
 //     const timestamp = await getTimestamp()
 
@@ -280,8 +280,8 @@
   
 //   it(`TIMELOCK EXECUTE QUEUED: ExecuteQueuedTransactions should succeed`, async function () {
 //     const { user1, exped } = await getNamedSigners(hre)
-//     const timelock = await ethers.getContract(Contracts.Timelock)
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const timelock = await getTimelock()
+//     const cartographer = await getCartographer()
     
 //     const expedAddInit = await cartographer.expedAdd()
 //     expect(expedAddInit).to.equal(exped.address)
@@ -317,10 +317,10 @@
 
 //   it(`TIMELOCK SYNC POOLS: The syncing pool flow should succeed`, async function () {
 //     const { user1, exped } = await getNamedSigners(hre)
-//     const timelock = await ethers.getContract(Contracts.Timelock)
-//     const cartographer = await ethers.getContract(Contracts.Cartographer)
+//     const timelock = await getTimelock()
+//     const cartographer = await getCartographer()
 //     const cartographerElevation = await ethers.getContract(Contracts.CartographerElevation)
-//     const SummitToken = await ethers.getContract(Contracts.SummitToken)
+//     const SummitToken = await getSummitToken()
     
 //     const summitAddress = SummitToken.address
 //     const summitLpAddress = await cartographer.summitLp()

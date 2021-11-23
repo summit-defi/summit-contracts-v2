@@ -12,7 +12,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./IPassthrough.sol";
 import "./SummitToken.sol";
-import "./libs/ILiquidityPair.sol";
+import "./libs/IUniswapV2Pair.sol";
+import "./libs/IPriceOracle.sol";
+
+
+
+
+import "hardhat/console.sol";
 
 
 /*
@@ -79,11 +85,13 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     uint8 constant PLAINS = 1;
     uint8 constant MESA = 2;
     uint8 constant SUMMIT = 3;
+    address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
 
 
     SummitToken public summit;
-    ILiquidityPair public summitLp;
+    IUniswapV2Pair public summitLp;
     bool public enabled = false;                                                // Whether the ecosystem has been enabled for earning
+    IPriceOracle priceOracle;                 
 
     uint256 public rolloverRewardInNativeToken = 5e18;                          // Amount of native token which will be rewarded for rolling over a round (will be converted into summit and minted)
 
@@ -92,18 +100,18 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     address public trustedSeederAdd;                                            // Address that seeds the random number generation every 2 hours
     ElevationHelper elevationHelper;
     SummitReferrals summitReferrals;
-    address[] subCartographers;
+    address[4] subCartographers;
 
     uint256 public launchTimestamp = 1641028149;                                // 2022-1-1, will be updated when summit ecosystem switched on
     uint256 public summitPerSecond;                                             // Amount of Summit minted per second to be distributed to users
     uint256 public devSummitPerSecond;                                          // Amount of Summit minted per second to the treasury
     uint256 public referralsSummitPerSecond;                                    // Amount of Summit minted per second as referral rewards
 
-    uint16[] public elevationPoolCount;                                         // List of all pool identifiers (PIDs)
+    uint16[4] public elevationPoolsCount;                                       // List of all pool identifiers (PIDs)
 
     mapping(address => address) public tokenPassthroughStrategy;                // Passthrough strategy of each stakable token
 
-    uint256[5] public elevAlloc = [0, 0, 0, 0, 0];                              // Total allocation points of all pools at an elevation
+    uint256[4] public elevAlloc;                                                // Total allocation points of all pools at an elevation
     mapping(address => bool) public tokenAllocExistence;                        // Whether an allocation has been created for a specific token
     mapping(address => uint16) public tokenFee;                                 // Fee for all farms of this token
     address[] tokensWithAllocation;                                             // List of Token Addresses that have been assigned an allocation
@@ -113,7 +121,15 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     mapping(address => mapping(uint8 => bool)) public tokenElevationIsEarning;  // If a token is earning SUMMIT at a specific elevation
 
 
+    struct UserLockedWinnings {
+        uint256 winnings;
+        uint256 bonusEarned;
+        uint256 claimedWinnings;
+    }
+    uint8 public yieldLockEpochCount = 5;
+    mapping(address => mapping(uint256 => UserLockedWinnings)) public userLockedWinnings;
 
+    mapping(address => uint256) public userBonusSummitEarned;
 
 
 
@@ -133,7 +149,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     event SwitchTotem(address indexed user, uint8 indexed elevation, uint8 totem);
     event Elevate(address indexed user, address indexed token, uint8 sourceElevation, uint8 targetElevation, uint256 amount);
     event Withdraw(address indexed user, address indexed token, uint8 indexed elevation, uint256 amount);
-    event RedeemRewards(address indexed user, uint256 amount);
+    event ClaimWinnings(address indexed user, uint256 amount);
     event SetExpeditionTreasuryAddress(address indexed user, address indexed newAddress);
     event SetTreasuryAddress(address indexed user, address indexed newAddress);
     event SetTrustedSeederAddress(address indexed user, address indexed newAddress);
@@ -188,7 +204,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         );
 
         summit = SummitToken(_summit);
-        summitLp = ILiquidityPair(_summitLp);
+        summitLp = IUniswapV2Pair(_summitLp);
         require(summitLp.token0() == address(_summit) || summitLp.token1() == _summit, "SUMMITLP is not SUMMIT liq pair");
 
         elevationHelper = ElevationHelper(_ElevationHelper);
@@ -198,15 +214,16 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         subCartographers[OASIS] = _CartographerOasis;
         subCartographers[PLAINS] = _CartographerPlains;
         subCartographers[MESA] = _CartographerMesa;
-        subCartographers[PLAINS] = _CartographerSummit;
+        subCartographers[SUMMIT] = _CartographerSummit;
 
         // Initialize the subCarts with the address of elevationHelper
-        for (uint8 elevation = 0; elevation < 4; elevation++) {
-            subCartographer(elevation).initialize(elevation, _ElevationHelper, address(_summit));
+        for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
+            subCartographer(elevation).initialize(_ElevationHelper, address(_summit));
         }
 
         // Initial value of summit minting
-        setTotalSummitPerSecond(25e16);
+        setTotalSummitPerSecond(15e16);
+        summit.approve(burnAdd, type(uint256).max);
     }
 
 
@@ -290,6 +307,13 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     }
 
 
+    /// @dev Update price oracle
+    function setPriceOracle(address _priceOracle) public onlyOwner {
+        require(_priceOracle != address(0), "Missing oracle");
+        priceOracle = IPriceOracle(_priceOracle);
+    }
+
+
 
 
 
@@ -368,7 +392,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // ---------------------------------------------------------------
 
     function subCartographer(uint8 _elevation) internal view returns (ISubCart) {
-        require(_elevation >= 0 && _elevation <= 4, "Invalid elev");
+        require(_elevation >= OASIS && _elevation <= SUMMIT, "Invalid elev");
         return ISubCart(subCartographers[_elevation]);
     }
 
@@ -380,6 +404,18 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // --   T O K E N   A L L O C A T I O N
     // ---------------------------------------
 
+
+    /// @dev Number of existing pools
+    function poolsCount()
+        public view
+        returns (uint256)
+    {
+        uint256 count = 0;
+        for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
+            count += elevationPoolsCount[elevation];
+        }
+        return count;
+    }
 
     /// @dev Set the fee for a token
     function setTokenFee(address _token, uint16 _feeBP)
@@ -412,7 +448,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Update the allocation for a token. This modifies existing allocations at each elevation for that token
     /// @param _token Token to update allocation for
     /// @param _allocation Updated allocation
-    function setTokenSharedAlloc(address _token, uint256 _allocation)
+    function setTokenAlloc(address _token, uint256 _allocation)
         public
         onlyOwner tokenAllocExists(_token)  validAllocation(_allocation)
     {
@@ -473,6 +509,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         public
         onlyOwner
     {
+        console.log("Passthrough Strategy", tokenPassthroughStrategy[_token]);
         require(tokenPassthroughStrategy[_token] != address(0), "No passthrough strategy to retire");
         address retiredTokenPassthroughStrategy = tokenPassthroughStrategy[_token];
         _retireTokenPassthroughStrategy(_token);
@@ -533,6 +570,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         // Get the next available pool identifier and register pool
         poolExistence[_token][_elevation] = true;
+        elevationPoolsCount[_elevation] += 1;
 
         // Create the pool in the appropriate sub cartographer
         subCartographer(_elevation).add(_token, _live);
@@ -564,7 +602,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     /// @dev Does what it says on the box
     function massUpdatePools() public {
-        for (uint8 elevation = 0; elevation < 4; elevation++) {
+        for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
             subCartographer(elevation).massUpdatePools();
         }
     }
@@ -687,7 +725,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Emission multiplier of token based on its allocation
     /// @return Multiplier raised 1e12
     function tokenAllocEmissionMultiplier(address _token)
-        internal view
+        public view
         returns (uint256)
     {
         // Sum allocation of all elevations with allocation multipliers
@@ -907,6 +945,87 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
 
     // -----------------------------------------------------
+    // --   Y I E L D   L O C K
+    // -----------------------------------------------------
+
+    /// @dev Update yield lock epoch count
+    function setYieldLockEpochCount(uint8 _count)
+        public onlyOwner
+    {
+        require(_count <= 12, "Invalid lock epoch count");
+        yieldLockEpochCount = _count;
+    }
+
+    /// @dev Get current epoch
+    function _getCurrentEpoch()
+        internal view
+        returns (uint256)
+    {
+        return block.timestamp / (3600 * 24 * 7);
+    }
+
+    /// @dev Test if epoch has matured
+    function _hasEpochMatured(uint256 _epoch)
+        internal view
+        returns (bool)
+    {
+        return (_getCurrentEpoch() - _epoch) >= yieldLockEpochCount;
+    }
+
+
+    /// @dev Utility function to handle harvesting Summit rewards with referral rewards
+    function claimWinnings(address _userAdd, uint256 _amount) external onlySubCartographer {
+        uint256 bonus = 700;
+
+        uint256 amountWithBonus = _amount * (10000 + bonus) / 10000;
+
+        UserLockedWinnings storage userEpochWinnings = userLockedWinnings[_userAdd][_getCurrentEpoch()];
+        userEpochWinnings.winnings += amountWithBonus;
+        userEpochWinnings.bonusEarned += _amount * bonus / 10000;
+
+        // If the user has been referred, add the 1% bonus to that user and their referrer
+        summitReferrals.addReferralRewardsIfNecessary(_userAdd, _amount);
+
+        emit ClaimWinnings(_userAdd, amountWithBonus);
+    }
+
+    /// @dev Harvest locked winnings, 50% tax taken on early harvest
+    function harvestWinnings(uint256 _epoch, uint256 _amount, bool _lockForEverest)
+        public
+        nonReentrant
+    {
+        UserLockedWinnings storage userEpochWinnings = userLockedWinnings[msg.sender][_epoch];
+
+        // Winnings that haven't yet been claimed
+        uint256 unclaimedWinnings = userEpochWinnings.winnings - userEpochWinnings.claimedWinnings;
+
+        // Validate harvest amount
+        require(_amount > 0 && _amount <= unclaimedWinnings, "Bad Harvest");
+
+        // Harvest winnings by locking for everest in the expedition
+        if (_lockForEverest) {
+            // TODO: Harvest this everest by sending to the expedition
+
+        // Else check if epoch matured, harvest 100% if true, else harvest 50%, burn 25%, and send 25% to expedition contract to be distributed to EVEREST holders
+        } else {
+            bool epochMatured = _hasEpochMatured(_epoch);
+            if (epochMatured) {
+                summit.safeTransfer(msg.sender, unclaimedWinnings);
+            } else {
+                summit.safeTransfer(msg.sender, unclaimedWinnings / 2);
+                summit.safeTransfer(burnAdd, unclaimedWinnings / 4);
+                summit.safeTransfer(expedAdd, unclaimedWinnings / 4);
+            }
+        }
+
+        userEpochWinnings.claimedWinnings += unclaimedWinnings;
+    }
+
+
+
+
+
+    // -----------------------------------------------------
     // --   T O K E N   M A N A G E M E N T
     // -----------------------------------------------------
 
@@ -935,18 +1054,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
             transferSuccess = summit.transfer(_to, _amount);
         }
         require(transferSuccess, "SafeSummitTransfer: failed");
-    }
-
-
-    /// @dev Utility function to handle harvesting Summit rewards with referral rewards
-    function redeemRewards(address _userAdd, uint256 _amount) external onlySubCartographer {
-        // Transfers rewards to user
-        safeSummitTransfer(_userAdd, _amount);
-
-        // If the user has been referred, add the 1% bonus to that user and their referrer
-        summitReferrals.addReferralRewardsIfNecessary(_userAdd, _amount);
-
-        emit RedeemRewards(_userAdd, _amount);
     }
 
 

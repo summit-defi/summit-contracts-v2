@@ -11,9 +11,9 @@ describe("EXPEDITION FARMING", function() {
 
     it('EXPEDITION: Creating a valid expedition works', async function() {
         const { user1, dev } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
-        const dummyBifiToken = await ethers.getContract('DummyBIFI')
+        const bifiToken = await ethers.getContract('DummyBIFI')
         const dummyCakeToken = await ethers.getContract('DummyCAKE')
 
         await expect(
@@ -21,17 +21,17 @@ describe("EXPEDITION FARMING", function() {
         ).to.be.revertedWith(ERR.NON_OWNER)
         
         await expect(
-            cartographer.connect(dev).addExpedition(0, dummyBifiToken.address, e18(100), 9)
+            cartographer.connect(dev).addExpedition(0, bifiToken.address, e18(100), 9)
         ).to.be.revertedWith(ERR.EXPEDITION_FUNDS_REQUIRED)
         
-        await dummyBifiToken.connect(dev).approve(cartographerExpedition.address, e18(500000))
-        await dummyBifiToken.connect(dev).transfer(cartographerExpedition.address, e18(500000))
+        await bifiToken.connect(dev).approve(cartographerExpedition.address, e18(500000))
+        await bifiToken.connect(dev).transfer(cartographerExpedition.address, e18(500000))
         await dummyCakeToken.connect(dev).approve(cartographerExpedition.address, e18(50000))
         await dummyCakeToken.connect(dev).transfer(cartographerExpedition.address, e18(50000))
         
         await expect(
-            cartographer.connect(dev).addExpedition(0, dummyBifiToken.address, e18(500000), 9)
-        ).to.emit(cartographer, EVENT.ExpeditionCreated).withArgs(PID.DUMMY_BIFI_EXPEDITION, dummyBifiToken.address, e18(500000), 9);
+            cartographer.connect(dev).addExpedition(0, bifiToken.address, e18(500000), 9)
+        ).to.emit(cartographer, EVENT.ExpeditionCreated).withArgs(PID.DUMMY_BIFI_EXPEDITION, bifiToken.address, e18(500000), 9);
         await expect(
             cartographer.connect(dev).addExpedition(0, dummyCakeToken.address, e18(50000), 9)
         ).to.emit(cartographer, EVENT.ExpeditionCreated).withArgs(PID.DUMMY_CAKE_EXPEDITION, dummyCakeToken.address, e18(50000), 9);
@@ -42,7 +42,7 @@ describe("EXPEDITION FARMING", function() {
     })
     it('EXPEDITION: Deposits unlock when expedition rolls over', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const elevationHelper = await ethers.getContract('ElevationHelper')
 
         await expect(
@@ -60,7 +60,7 @@ describe("EXPEDITION FARMING", function() {
     })
     it('EXPEDITION: Expeditions automatically end after the final round', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const elevationHelper = await ethers.getContract('ElevationHelper')
 
@@ -86,7 +86,7 @@ describe("EXPEDITION FARMING", function() {
     })
     it('EXPEDITION: Expeditions can be restarted after they end', async function() {
         const { dev } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const elevationHelper = await ethers.getContract('ElevationHelper')
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
 
@@ -107,10 +107,10 @@ describe("EXPEDITION FARMING", function() {
     it('EXPEDITION: Expeditions can be extended while they are running', async function() {
         const { dev } = await getNamedSigners(hre)
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
-        const dummyBifiToken = await ethers.getContract('DummyBIFI')
+        const bifiToken = await ethers.getContract('DummyBIFI')
 
-        await dummyBifiToken.connect(dev).approve(cartographerExpedition.address, e18(5000000))
-        await dummyBifiToken.connect(dev).transfer(cartographerExpedition.address, e18(5000000))
+        await bifiToken.connect(dev).approve(cartographerExpedition.address, e18(5000000))
+        await bifiToken.connect(dev).transfer(cartographerExpedition.address, e18(5000000))
         
         await expect(
             cartographerExpedition.connect(dev).extendExpeditionPool(PID.DUMMY_BIFI_EXPEDITION, e18(5000000), 200)
@@ -125,10 +125,10 @@ describe("EXPEDITION FARMING", function() {
     
     it(`EXPEDITION: Rounds yield correct winnings`, async function() {
         const { user1, user2, user3 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerExpedition = await ethers.getContract(Contracts.CartographerExpedition)
-        const dummyBIFI = await ethers.getContract(Contracts.DummyBIFI)
-        const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+        const dummyBIFI = await getBifiToken()
+        const elevationHelper = await getElevationHelper()
 
         const roundEmission = (await cartographerExpedition.expeditionPoolInfo(PID.DUMMY_BIFI_EXPEDITION)).roundEmission
     
@@ -174,8 +174,8 @@ describe("EXPEDITION FARMING", function() {
     })
     it(`EXPEDITION: Winnings are withdrawn correctly`, async function() {
         const { user1, user2, user3 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
-        const dummyBIFI = await ethers.getContract(Contracts.DummyBIFI)
+        const cartographer = await getCartographer()
+        const dummyBIFI = await getBifiToken()
 
         const users = [user1, user2, user3]
 
@@ -208,7 +208,7 @@ describe("EXPEDITION FARMING", function() {
 
     it(`DEITIES: Switching to invalid deity should fail with error ${ERR.INVALID_TOTEM}`, async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         
         await expect(
           cartographer.connect(user1).switchTotem(EXPEDITION, TOTEM_COUNT[EXPEDITION])
@@ -216,10 +216,10 @@ describe("EXPEDITION FARMING", function() {
     })
     it('TOTEMS: Users should be able to switch to valid totems', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerExpedition = await ethers.getContract(Contracts.CartographerExpedition)
-        const dummyBIFI = await ethers.getContract(Contracts.DummyBIFI)
-        const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+        const dummyBIFI = await getBifiToken()
+        const elevationHelper = await getElevationHelper()
 
         const targetTotem = TOTEM_COUNT[EXPEDITION] - 1
 

@@ -2,6 +2,7 @@
 pragma solidity 0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 
 /*
@@ -132,9 +133,9 @@ contract ElevationHelper is Ownable {
         // Setting when each elevation of the ecosystem unlocks
         unlockTimestamp = [
             nextHourTimestamp,                       // Oasis - throwaway
-            nextHourTimestamp,                       // Plains
-            nextHourTimestamp + 1 days,              // Mesa
-            nextHourTimestamp + 4 days,              // Summit
+            nextHourTimestamp + 1 days,              // Plains
+            nextHourTimestamp + 3 days,              // Mesa
+            nextHourTimestamp + 5 days,              // Summit
             nextHourTimestamp + 7 days               // Expedition
         ];
 
@@ -221,10 +222,19 @@ contract ElevationHelper is Ownable {
         return _allocPoint * allocMultiplier[_elevation];
     }
 
+    /// @dev Checks whether elevation is is yet to be unlocked for farming
+    /// @param _elevation Which elevation to check
+    function elevationLocked(uint8 _elevation) external view returns (bool) {
+        console.log("ElevationLocked", _elevation, unlockTimestamp[_elevation], block.timestamp <= unlockTimestamp[_elevation]);
+        return block.timestamp <= unlockTimestamp[_elevation];
+    }
+
     /// @dev Checks whether elevation is locked due to round ending in next {roundEndLockoutDuration} seconds
     /// @param _elevation Which elevation to check
     function endOfRoundLockoutActive(uint8 _elevation) external view returns (bool) {
-        return block.timestamp >= roundEndTimestamp[_elevation] - roundEndLockoutDuration;
+        console.log("Lockout?", _elevation, block.timestamp, roundEndTimestamp[_elevation]);
+        if (roundEndTimestamp[_elevation] == 0) return false;
+        return block.timestamp >= (roundEndTimestamp[_elevation] - roundEndLockoutDuration);
     }
 
     /// @dev The next round available for a new pool to unlock at. Used to add pools but not start them until the next rollover

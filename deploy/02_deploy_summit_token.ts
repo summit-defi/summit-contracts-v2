@@ -19,7 +19,7 @@ const deploySummitToken: DeployFunction = async function ({
 
   if (SummitToken.newlyDeployed) {
     // Mint initial summit, change summit token owner
-    await execute('SummitToken', { from: dev }, 'mintTo', dev, e18(2000000))
+    await execute('SummitToken', { from: dev }, 'mint', dev, e18(2000000))
     consoleLog('Minted Initial SUMMIT Token')
 
     const Cartographer = await deployments.get('Cartographer');
@@ -28,9 +28,6 @@ const deploySummitToken: DeployFunction = async function ({
     consoleLog('Transferred Ownership of SUMMIT Token to Cartographer')
 
     if (chainIdExpectsUserToHaveSummit(chainId)) {
-      await execute('SummitToken', { from: dev }, 'approve', user1, e18(500))
-      await execute('SummitToken', { from: dev }, 'approve', user2, e18(500))
-      await execute('SummitToken', { from: dev }, 'approve', user3, e18(500))
       await execute('SummitToken', { from: dev }, 'transfer', user1, e18(500))
       await execute('SummitToken', { from: dev }, 'transfer', user2, e18(500))
       await execute('SummitToken', { from: dev }, 'transfer', user3, e18(500))

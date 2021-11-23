@@ -3,7 +3,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
 import { BigNumber, Contract } from "ethers";
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, PID, EXPEDITION, toDecimal, mineBlockWithTimestamp, Contracts, rolloverRoundUntilWinningTotem, expect6FigBigNumberAllEqual, deltaBN, promiseSequenceMap, expect6FigBigNumberEquals, consoleLog, OASIS, TWOTHOUSAND, FIVETHOUSAND, TENTHOUSAND, getSubCartographerStaked, INF_APPROVE, getTimestamp } from "../utils";
+import { e18, ERR, EVENT, PID, EXPEDITION, toDecimal, mineBlockWithTimestamp, Contracts, rolloverRoundUntilWinningTotem, expect6FigBigNumberAllEqual, deltaBN, promiseSequenceMap, expect6FigBigNumberEquals, consoleLog, OASIS, PLAINS, MESA, SUMMIT, getSubCartographerStaked, INF_APPROVE, getTimestamp } from "../utils";
 import { expeditionUnlockedFixture } from "./fixtures";
 
 // Constants
@@ -31,11 +31,11 @@ const getUnderlyingSummitAmountInLp = (lpAmount: BigNumber, mult: BigNumber) => 
 // Tests
 describe("EXPEDITION MULTI STAKING", function() {
     before(async function() {
-        const { dev, user1, user2, user3, dummySummitLpToken, cartographer, elevationHelper, cartographerExpedition, dummyBifiToken } = await expeditionUnlockedFixture()
+        const { dev, user1, user2, user3, dummySummitLpToken, cartographer, elevationHelper, cartographerExpedition, bifiToken } = await expeditionUnlockedFixture()
 
-        await dummyBifiToken.connect(dev).approve(cartographerExpedition.address, e18(500))
-        await dummyBifiToken.connect(dev).transfer(cartographerExpedition.address, e18(500))
-        await cartographer.connect(dev).addExpedition(0, dummyBifiToken.address, e18(500), 50)
+        await bifiToken.connect(dev).approve(cartographerExpedition.address, e18(500))
+        await bifiToken.connect(dev).transfer(cartographerExpedition.address, e18(500))
+        await cartographer.connect(dev).addExpedition(0, bifiToken.address, e18(500), 50)
         
         const expeditionRoundEndTime = (await elevationHelper.roundEndTimestamp(EXPEDITION)).toNumber()
         await mineBlockWithTimestamp(expeditionRoundEndTime)
@@ -43,23 +43,23 @@ describe("EXPEDITION MULTI STAKING", function() {
         await cartographer.connect(dev).createTokenAllocation(dummySummitLpToken.address, 4000)
 
         await cartographer.connect(dev).add(dummySummitLpToken.address, OASIS, true, 0, true)
-        await cartographer.connect(dev).add(dummySummitLpToken.address, TWOTHOUSAND, true, 0, true)
-        await cartographer.connect(dev).add(dummySummitLpToken.address, FIVETHOUSAND, true, 0, true)
-        await cartographer.connect(dev).add(dummySummitLpToken.address, TENTHOUSAND, true, 0, true)
+        await cartographer.connect(dev).add(dummySummitLpToken.address, PLAINS, true, 0, true)
+        await cartographer.connect(dev).add(dummySummitLpToken.address, MESA, true, 0, true)
+        await cartographer.connect(dev).add(dummySummitLpToken.address, SUMMIT, true, 0, true)
 
         await dummySummitLpToken.connect(user1).approve(cartographer.address, INF_APPROVE)
         await dummySummitLpToken.connect(user2).approve(cartographer.address, INF_APPROVE)
         await dummySummitLpToken.connect(user3).approve(cartographer.address, INF_APPROVE)
 
         await cartographer.rollover(EXPEDITION)
-        await cartographer.rollover(TWOTHOUSAND)
-        await cartographer.rollover(FIVETHOUSAND)
-        await cartographer.rollover(TENTHOUSAND)
+        await cartographer.rollover(PLAINS)
+        await cartographer.rollover(MESA)
+        await cartographer.rollover(SUMMIT)
     })
 
     it('DEPOSIT SUMMIT LP: Depositing SUMMIT LP alone into an Expedition succeeds', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
 
@@ -85,7 +85,7 @@ describe("EXPEDITION MULTI STAKING", function() {
     })
     it('DEPOSIT SUMMIT + SUMMIT LP: Depositing SUMMIT LP and SUMMIT TOKEN simultaneously into an Expedition succeeds', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
 
@@ -110,7 +110,7 @@ describe("EXPEDITION MULTI STAKING", function() {
     })
     it('WITHDRAW SUMMIT LP: Withdrawing more than staked should still fail', async function () {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
 
         await expect(
             cartographer.connect(user1).withdraw(PID.DUMMY_BIFI_EXPEDITION, e18(0), e18(100))
@@ -129,7 +129,7 @@ describe("EXPEDITION MULTI STAKING", function() {
 
     it('WITHDRAW SUMMIT LP: Withdrawing SUMMIT LP alone from an Expedition succeeds', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
 
@@ -154,7 +154,7 @@ describe("EXPEDITION MULTI STAKING", function() {
     })
     it('WITHDRAW SUMMIT + SUMMIT LP: Withdrawing SUMMIT LP and SUMMIT TOKEN simultaneously from an Expedition succeeds', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
 
@@ -181,7 +181,7 @@ describe("EXPEDITION MULTI STAKING", function() {
 
     it('ELEVATE SUMMIT LP: Elevating SUMMIT LP to an Oasis farm and back should succeed', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const cartographerOasis = await ethers.getContract('CartographerOasis')
         const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
@@ -242,7 +242,7 @@ describe("EXPEDITION MULTI STAKING", function() {
     })
     it('ELEVATE SUMMIT LP: Elevating SUMMIT LP to an Elevation farm and back should succeed', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const cartographerElevation = await ethers.getContract('CartographerElevation')
         const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
@@ -305,7 +305,7 @@ describe("EXPEDITION MULTI STAKING", function() {
     // ELEVATION --> OASIS --> ELEVATION SUMMIT LP ELEVATE
     it('ELEVATE SUMMIT LP: Elevating SUMMIT LP from an elevation to an oasis farm and back should succeed', async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerElevation = await ethers.getContract('CartographerElevation')
         const cartographerOasis = await ethers.getContract('CartographerOasis')
         const summitToken = await ethers.getContract('SummitToken')
@@ -365,7 +365,7 @@ describe("EXPEDITION MULTI STAKING", function() {
     // Elevating SUMMIT LP from Expedition to NON SUMMIT LP pool should fail
     it(`ELEVATE SUMMIT LP: Elevating SUMMIT LP from Expedition to NON SUMMIT LP pool should fail with error "${ERR.ELEV_SWITCH.DIFFERENT_TOKEN}"`, async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
 
         await expect(
@@ -378,7 +378,7 @@ describe("EXPEDITION MULTI STAKING", function() {
 
     it(`SUMMIT LP EQUIVALENCE: SUMMIT LP behaves like SUMMIT token`, async function () {
         const { user1, user2, user3 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const summitToken = await ethers.getContract('SummitToken')
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
@@ -447,7 +447,7 @@ describe("EXPEDITION MULTI STAKING", function() {
 
     it(`SUMMIT LP EQUIVALENCE: Rolling over a round updates the winnings multipliers correctly`, async function() {
         const { user1, user2, user3 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const summitToken = await ethers.getContract('SummitToken')
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const elevationHelper = await ethers.getContract('ElevationHelper')
@@ -506,7 +506,7 @@ describe("EXPEDITION MULTI STAKING", function() {
     })
     it(`SUMMIT LP EQUIVALENCE: Equivalent amounts of SUMMIT and SUMMIT LP should yield the same rewards`, async function () {
         const { user1, user2, user3 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const summitToken = await ethers.getContract('SummitToken')
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const elevationHelper = await ethers.getContract('ElevationHelper')
@@ -557,7 +557,7 @@ describe("EXPEDITION MULTI STAKING", function() {
     // The SUMMIT - [NATIVE token, SUMMIT token] ratio changing in the SUMMIT LP token
     it(`SUMMIT LP RATIO: SUMMIT LP ratio changing updates hypothetical rewards`, async function() {
         const { user1, user2 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const summitToken = await ethers.getContract('SummitToken')
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
@@ -587,7 +587,7 @@ describe("EXPEDITION MULTI STAKING", function() {
     })
     it(`SUMMIT LP RATIO: SUMMIT LP ratio changing after round end doesn't change winnings`, async function() {
         const { user1, user2 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const elevationHelper = await ethers.getContract('ElevationHelper')
         const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
@@ -631,7 +631,7 @@ describe("EXPEDITION MULTI STAKING", function() {
     // Updating Summit in Lp Incentive Multiplier
     it(`INCENTIVE MULTIPLIER: SUMMIT LP Incentive multiplier can be updated`, async function() {
         const { dev, user1, user2 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const summitToken = await ethers.getContract('SummitToken')
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
