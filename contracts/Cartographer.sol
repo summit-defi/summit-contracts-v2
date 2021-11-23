@@ -122,8 +122,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     mapping(address => mapping(uint8 => bool)) public poolExistence;            // Whether a pool exists for a token at an elevation
     mapping(address => mapping(uint8 => bool)) public tokenElevationIsEarning;  // If a token is earning SUMMIT at a specific elevation
 
-    uint256 baseMinimumWithdrawalFee = 20;
-    uint256 decayDuration = 10 * 86400;
+    uint16 baseMinimumWithdrawalFee = 20;
+    uint256 feeDecayDuration = 10 * 86400;
 
     struct UserLockedWinnings {
         uint256 winnings;
@@ -1125,8 +1125,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         uint16 baseFee = tokenFee[_token];
         uint16 remainingFee = baseMinimumWithdrawalFee;
         uint256 timeDiff = block.timestamp - _lastDepositTimestamp;
-        if (timeDiff < decayDuration) {
-            remainingFee = baseMinimumWithdrawalFee + ((baseFee - baseMinimumWithdrawalFee) * (decayDuration - timeDiff) * 1e12 / decayDuration) / 1e12;
+        if (timeDiff < feeDecayDuration) {
+            remainingFee = baseMinimumWithdrawalFee + ((baseFee - baseMinimumWithdrawalFee) * (feeDecayDuration - timeDiff) * 1e12 / feeDecayDuration) / 1e12;
         }
         uint256 expectedWithdrawnAmount = (_amount * (10000 - remainingFee)) / 10000;
 
@@ -1182,5 +1182,37 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         require(_amount > 0, "Non zero");
 
         summit.mint(address(summitReferrals), _amount);
+    }
+
+    // -----------------------------------------------------
+    // --   Fee management
+    // -----------------------------------------------------
+
+    /// @dev Set the fee for a token
+    function setTokenFee(address _token, uint16 _feeBP)
+        public
+        onlyOwner
+    {
+        // Fees will never be higher than 5%
+        require(_feeBP <= 500, "Invalid fee");
+        tokenFee[_token] = _feeBP;
+    }
+
+    /// @dev Set the fee decaying duration
+    function setFeeDecayDuration(uint256 _feeDecayDuration)
+        public
+        onlyOwner
+    {
+        feeDecayDuration = _feeDecayDuration;
+    }
+
+    /// @dev Set the minimum withdrawal fee
+    function setBaseMinimumWithdrawalFee(uint16 _baseMinimumWithdrawalFee)
+        public
+        onlyOwner
+    {
+        require(_baseMinimumWithdrawalFee < 10, "Invalid minimum fee lower than mimum");
+        require(_baseMinimumWithdrawalFee > 100, "Invalid minimum fee bigger than maximum");
+        baseMinimumWithdrawalFee = _baseMinimumWithdrawalFee;
     }
 }
