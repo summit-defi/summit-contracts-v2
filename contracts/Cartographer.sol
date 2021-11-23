@@ -1074,8 +1074,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         public
         onlyOwner
     {
-        require(_baseMinimumWithdrawalFee < 10, "Invalid minimum fee lower than mimum");
-        require(_baseMinimumWithdrawalFee > 100, "Invalid minimum fee bigger than maximum");
+        require(_baseMinimumWithdrawalFee >= 10 && _baseMinimumWithdrawalFee <= 100, "Minimum fee outside 1%-10%");
         baseMinimumWithdrawalFee = _baseMinimumWithdrawalFee;
     }
 }
