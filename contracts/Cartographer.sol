@@ -988,7 +988,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         uint16 baseFee = tokenFee[_token];
         uint16 remainingFee = baseMinimumWithdrawalFee;
         uint256 timeDiff = block.timestamp - _lastDepositTimestamp;
-        if (timeDiff < feeDecayDuration) {
+        if (baseFee > baseMinimumWithdrawalFee && timeDiff < feeDecayDuration) {
             remainingFee = baseMinimumWithdrawalFee + ((baseFee - baseMinimumWithdrawalFee) * (feeDecayDuration - timeDiff) * 1e12 / feeDecayDuration) / 1e12;
         }
         uint256 expectedWithdrawnAmount = (_amount * (10000 - remainingFee)) / 10000;
