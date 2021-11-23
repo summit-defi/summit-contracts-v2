@@ -85,6 +85,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     uint8 constant PLAINS = 1;
     uint8 constant MESA = 2;
     uint8 constant SUMMIT = 3;
+    address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
 
 
     SummitToken public summit;
@@ -120,7 +121,15 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     mapping(address => mapping(uint8 => bool)) public tokenElevationIsEarning;  // If a token is earning SUMMIT at a specific elevation
 
 
+    struct UserLockedWinnings {
+        uint256 winnings;
+        uint256 bonusEarned;
+        uint256 claimedWinnings;
+    }
+    uint8 public yieldLockEpochCount = 5;
+    mapping(address => mapping(uint256 => UserLockedWinnings)) public userLockedWinnings;
 
+    mapping(address => uint256) public userBonusSummitEarned;
 
 
 
@@ -213,7 +222,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         }
 
         // Initial value of summit minting
-        setTotalSummitPerSecond(25e16);
+        setTotalSummitPerSecond(15e16);
+        summit.approve(burnAdd, type(uint256).max);
     }
 
 
@@ -382,7 +392,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // ---------------------------------------------------------------
 
     function subCartographer(uint8 _elevation) internal view returns (ISubCart) {
-        console.log("Get SubCartographer", _elevation);
         require(_elevation >= OASIS && _elevation <= SUMMIT, "Invalid elev");
         return ISubCart(subCartographers[_elevation]);
     }
@@ -936,6 +945,87 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
 
     // -----------------------------------------------------
+    // --   Y I E L D   L O C K
+    // -----------------------------------------------------
+
+    /// @dev Update yield lock epoch count
+    function setYieldLockEpochCount(uint8 _count)
+        public onlyOwner
+    {
+        require(_count <= 12, "Invalid lock epoch count");
+        yieldLockEpochCount = _count;
+    }
+
+    /// @dev Get current epoch
+    function _getCurrentEpoch()
+        internal view
+        returns (uint256)
+    {
+        return block.timestamp / (3600 * 24 * 7);
+    }
+
+    /// @dev Test if epoch has matured
+    function _hasEpochMatured(uint256 _epoch)
+        internal view
+        returns (bool)
+    {
+        return (_getCurrentEpoch() - _epoch) >= yieldLockEpochCount;
+    }
+
+
+    /// @dev Utility function to handle harvesting Summit rewards with referral rewards
+    function claimWinnings(address _userAdd, uint256 _amount) external onlySubCartographer {
+        uint256 bonus = 700;
+
+        uint256 amountWithBonus = _amount * (10000 + bonus) / 10000;
+
+        UserLockedWinnings storage userEpochWinnings = userLockedWinnings[_userAdd][_getCurrentEpoch()];
+        userEpochWinnings.winnings += amountWithBonus;
+        userEpochWinnings.bonusEarned += _amount * bonus / 10000;
+
+        // If the user has been referred, add the 1% bonus to that user and their referrer
+        summitReferrals.addReferralRewardsIfNecessary(_userAdd, _amount);
+
+        emit ClaimWinnings(_userAdd, amountWithBonus);
+    }
+
+    /// @dev Harvest locked winnings, 50% tax taken on early harvest
+    function harvestWinnings(uint256 _epoch, uint256 _amount, bool _lockForEverest)
+        public
+        nonReentrant
+    {
+        UserLockedWinnings storage userEpochWinnings = userLockedWinnings[msg.sender][_epoch];
+
+        // Winnings that haven't yet been claimed
+        uint256 unclaimedWinnings = userEpochWinnings.winnings - userEpochWinnings.claimedWinnings;
+
+        // Validate harvest amount
+        require(_amount > 0 && _amount <= unclaimedWinnings, "Bad Harvest");
+
+        // Harvest winnings by locking for everest in the expedition
+        if (_lockForEverest) {
+            // TODO: Harvest this everest by sending to the expedition
+
+        // Else check if epoch matured, harvest 100% if true, else harvest 50%, burn 25%, and send 25% to expedition contract to be distributed to EVEREST holders
+        } else {
+            bool epochMatured = _hasEpochMatured(_epoch);
+            if (epochMatured) {
+                summit.safeTransfer(msg.sender, unclaimedWinnings);
+            } else {
+                summit.safeTransfer(msg.sender, unclaimedWinnings / 2);
+                summit.safeTransfer(burnAdd, unclaimedWinnings / 4);
+                summit.safeTransfer(expedAdd, unclaimedWinnings / 4);
+            }
+        }
+
+        userEpochWinnings.claimedWinnings += unclaimedWinnings;
+    }
+
+
+
+
+
+    // -----------------------------------------------------
     // --   T O K E N   M A N A G E M E N T
     // -----------------------------------------------------
 
@@ -964,18 +1054,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
             transferSuccess = summit.transfer(_to, _amount);
         }
         require(transferSuccess, "SafeSummitTransfer: failed");
-    }
-
-
-    /// @dev Utility function to handle harvesting Summit rewards with referral rewards
-    function claimWinnings(address _userAdd, uint256 _amount) external onlySubCartographer {
-        // Transfers rewards to user
-        safeSummitTransfer(_userAdd, _amount);
-
-        // If the user has been referred, add the 1% bonus to that user and their referrer
-        summitReferrals.addReferralRewardsIfNecessary(_userAdd, _amount);
-
-        emit ClaimWinnings(_userAdd, _amount);
     }
 
 
