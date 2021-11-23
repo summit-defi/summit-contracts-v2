@@ -115,13 +115,9 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     uint256 public lockTimeRequiredForTaxlessSummitWithdraw = 3600 * 24 * 7;
     uint256 public lockTimeRequiredForLockedSummitDeposit = 3600 * 24 * 30;
     uint256 public minEverestLockMult = 1000;
-    // TODO: add setter for this
     uint256 public maxEverestLockMult = 10000;
-    // TODO: Add setter
     uint256 public expeditionDeityWinningsMult = 120;
-    // TODO: Add setter
     uint256 public expeditionRunwayRounds = 60;
-    // TODO: Setter
 
     struct UserEverestInfo {
         address userAdd;
@@ -357,6 +353,48 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     function setLockTimeRequiredForLockedSummitDeposit(uint256 _lockTimeDays) public onlyOwner {
         require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 90, "Invalid locked summit lock time (1-90 days)");
         lockTimeRequiredForClaimableSummitLock = _lockTimeDays;
+    }
+    function setMinEverestLockMult(uint256 _lockMult) public onlyOwner {
+        require(_lockMult >= 100 && _lockMult <= 50000, "Invalid lock mult");
+        minEverestLockMult = _lockMult;
+    }
+    function setMaxEverestLockMult(uint256 _lockMult) public onlyOwner {
+        require(_lockMult >= 100 && _lockMult <= 50000, "Invalid lock mult");
+        maxEverestLockMult = _lockMult;
+    }
+    function setExpeditionDeityWinningsMult(uint256 _deityWinningsMult) public onlyOwner {
+        require(_deityWinningsMult >= 100 && _deityWinningsMult <= 500, "Invalid runway rounds (7-90)");
+        expeditionDeityWinningsMult = _deityWinningsMult;
+    }
+    function setExpeditionRunwayRounds(uint256 _runwayRounds) public onlyOwner {
+        require(_runwayRounds >= 7 && _runwayRounds <= 90, "Invalid runway rounds (7-90)");
+        expeditionRunwayRounds = _runwayRounds;
+    }
+
+
+
+
+    // ---------------------------------------
+    // --   A D J U S T M E N T S
+    // ---------------------------------------
+
+
+
+    function setMinLockTime(uint256 _lockTimeDays) public onlyOwner {
+        require(_lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 30, "Invalid minimum lock time (1-30 days)");
+        minLockTime = _lockTimeDays * 24 * 365;
+    }
+    function setMaxLockTime(uint256 _lockTimeDays) public onlyOwner {
+        require(_lockTimeDays >= minLockTime && _lockTimeDays >= 7 && _lockTimeDays <= 730, "Invalid maximum lock time (7-730 days)");
+        maxLockTime = _lockTimeDays * 24 * 365;
+    }
+    function setLockTimeRequiredForTaxlessSummitWithdraw(uint256 _lockTimeDays) public onlyOwner {
+        require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 30, "Invalid taxless summit lock time (1-30 days)");
+        lockTimeRequiredForTaxlessSummitWithdraw = _lockTimeDays;
+    }
+    function setLockTimeRequiredForLockedSummitDeposit(uint256 _lockTimeDays) public onlyOwner {
+        require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 90, "Invalid locked summit lock time (1-90 days)");
+        lockTimeRequiredForLockedSummitDeposit = _lockTimeDays;
     }
     function setMinEverestLockMult(uint256 _lockMult) public onlyOwner {
         require(_lockMult >= 100 && _lockMult <= 50000, "Invalid lock mult");
