@@ -14,7 +14,7 @@ export const executeTxExpectEvent = async (tx: any, txArgs: any[], contract: Con
     if (eventArgs != null) {
         await expect(
             tx(...txArgs)
-        ).to.emit(contract, eventName).withArgs(eventArgs)
+        ).to.emit(contract, eventName).withArgs(...eventArgs)
     } else {
         await expect(
             tx(...txArgs)

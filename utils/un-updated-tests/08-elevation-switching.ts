@@ -8,7 +8,7 @@ import { expeditionUnlockedFixture } from "./fixtures";
 
 const elevateTestSeries = async (elevationPids: number[], depositFee: number, token: Contract) => {
     const { user1 } = await getNamedSigners(hre)
-    const cartographer = await ethers.getContract('Cartographer')
+    const cartographer = await getCartographer()
     const cartographerOasis = await ethers.getContract('CartographerOasis')
     const cartographerElevation = await ethers.getContract('CartographerElevation')
 
@@ -93,17 +93,17 @@ describe("ELEVATION Switching", function() {
         ], 0, summitToken)
     })
     it('Passthrough elevation switch should succeed with deposit fee taken', async function() {
-        const dummyBifiToken = await ethers.getContract('DummyBIFI')
+        const bifiToken = await ethers.getContract('DummyBIFI')
         await elevateTestSeries([
             PID.DUMMY_BIFI_OASIS,
             PID.DUMMY_BIFI_2K,
             PID.DUMMY_BIFI_5K,
             PID.DUMMY_BIFI_10K
-        ], POOL_FEE.DUMMY_BIFI_OASIS, dummyBifiToken)
+        ], POOL_FEE.DUMMY_BIFI_OASIS, bifiToken)
     })
     it(`Switching must be to a valid totem, or will fail with error ${ERR.ELEV_SWITCH.INVALID_TOTEM}`, async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const summitToken = await ethers.getContract('SummitToken')
 
         await expect (
@@ -112,7 +112,7 @@ describe("ELEVATION Switching", function() {
     })
     it(`Switching to a pool at the current elevation will fail with error ${ERR.ELEV_SWITCH.NO_SAME_ELEV_TRANSFER}`, async function() {
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const summitToken = await ethers.getContract('SummitToken')
 
         await expect (
@@ -121,19 +121,19 @@ describe("ELEVATION Switching", function() {
     })
     it(`Switching SUMMIT to and from expeditions should succeed`, async function() {
         const { user1, dev } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerOasis = await ethers.getContract('CartographerOasis')
         const cartographerElevation = await ethers.getContract('CartographerElevation')
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
         const summitToken = await ethers.getContract('SummitToken')
-        const dummyBifiToken = await ethers.getContract('DummyBIFI')
+        const bifiToken = await ethers.getContract('DummyBIFI')
         const elevationHelper = await ethers.getContract('ElevationHelper')
 
-        await dummyBifiToken.connect(dev).approve(cartographerExpedition.address, e18(500))
-        await dummyBifiToken.connect(dev).transfer(cartographerExpedition.address, e18(500))
+        await bifiToken.connect(dev).approve(cartographerExpedition.address, e18(500))
+        await bifiToken.connect(dev).transfer(cartographerExpedition.address, e18(500))
         await expect(
-            cartographer.connect(dev).addExpedition(0, dummyBifiToken.address, e18(500), 9)
-        ).to.emit(cartographer, EVENT.ExpeditionCreated).withArgs(PID.DUMMY_BIFI_EXPEDITION, dummyBifiToken.address, e18(500), 9);
+            cartographer.connect(dev).addExpedition(0, bifiToken.address, e18(500), 9)
+        ).to.emit(cartographer, EVENT.ExpeditionCreated).withArgs(PID.DUMMY_BIFI_EXPEDITION, bifiToken.address, e18(500), 9);
         const expeditionRoundEndTime = (await elevationHelper.roundEndTimestamp(EXPEDITION)).toNumber()
 
         await mineBlockWithTimestamp(expeditionRoundEndTime)
@@ -147,7 +147,7 @@ describe("ELEVATION Switching", function() {
         await cartographer.connect(user1).deposit(PID.DUMMY_BIFI_OASIS, e18(5), 0, 0)
 
         await expect (
-            cartographer.connect(user1).elevate(PID.DUMMY_BIFI_OASIS, PID.DUMMY_BIFI_EXPEDITION, e18(5), dummyBifiToken.address, 0)
+            cartographer.connect(user1).elevate(PID.DUMMY_BIFI_OASIS, PID.DUMMY_BIFI_EXPEDITION, e18(5), bifiToken.address, 0)
         ).to.be.revertedWith(ERR.ELEV_SWITCH.DIFFERENT_TOKEN)
 
         // TESTING WORKING TRANSFERS
@@ -213,7 +213,7 @@ describe("ELEVATION Switching", function() {
     it(`Switching with zero amount will fail with error ${ERR.ELEV_SWITCH.NON_ZERO_AMOUNT}`, async function() {
         const { user1 } = await getNamedSigners(hre)
         const summitToken = await ethers.getContract('SummitToken')
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
 
         await expect (
             cartographer.connect(user1).elevate(PID.SUMMIT_OASIS, PID.SUMMIT_2K, e18(0), summitToken.address, 0)
@@ -222,7 +222,7 @@ describe("ELEVATION Switching", function() {
     it(`Switching more than staked will fail with error ${ERR.ELEV_SWITCH.BAD_TRANSFER}`, async function() {
         const { user1 } = await getNamedSigners(hre)
         const summitToken = await ethers.getContract('SummitToken')
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
 
         await expect (
             cartographer.connect(user1).elevate(PID.SUMMIT_OASIS, PID.SUMMIT_2K, e18(100), summitToken.address, 0)
@@ -231,7 +231,7 @@ describe("ELEVATION Switching", function() {
     it(`Switching to different totem than currently staked will fail with error ${ERR.ELEV_SWITCH.NO_TOTEM_SWITCH}`, async function() {
         const { user1 } = await getNamedSigners(hre)
         const summitToken = await ethers.getContract('SummitToken')
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
 
         await cartographer.connect(user1).deposit(PID.SUMMIT_2K, e18(5), 0, 0)
 
@@ -242,7 +242,7 @@ describe("ELEVATION Switching", function() {
     it(`Can only switch between pools of the same token, or will fail with error ${ERR.ELEV_SWITCH.DIFFERENT_TOKEN}`, async function() {
         const { user1 } = await getNamedSigners(hre)
         const summitToken = await ethers.getContract('SummitToken')
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
 
         await expect (
             cartographer.connect(user1).elevate(PID.SUMMIT_OASIS, PID.DUMMY_BIFI_2K, e18(5), summitToken.address, 0)

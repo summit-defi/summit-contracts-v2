@@ -1,11 +1,11 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import hre, { ethers, getChainId } from "hardhat";
-import { getElevationName, PoolConfig, promiseSequenceMap, replaceSummitAddresses, writePoolAllocation, writePoolPid } from "../../utils";
+import { getCartographer, getElevationName, PoolConfig, promiseSequenceMap, replaceSummitAddresses, writePoolAllocation, writePoolPid } from "../../utils";
 
 export const createPool = async (pool: PoolConfig, summitAddress: string, summitLpAddress: string) => {
     const chainId = await getChainId()
     const { dev } = await getNamedSigners(hre)
-    const Cartographer = await ethers.getContract('Cartographer')
+    const Cartographer = await getCartographer()
     const tokenAddress = replaceSummitAddresses(pool.token, summitAddress, summitLpAddress)
 
     console.log(`\tCreate Pool: ${pool.name}`)

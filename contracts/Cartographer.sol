@@ -382,6 +382,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // ---------------------------------------------------------------
 
     function subCartographer(uint8 _elevation) internal view returns (ISubCart) {
+        console.log("Get SubCartographer", _elevation);
         require(_elevation >= OASIS && _elevation <= SUMMIT, "Invalid elev");
         return ISubCart(subCartographers[_elevation]);
     }
@@ -499,6 +500,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         public
         onlyOwner
     {
+        console.log("Passthrough Strategy", tokenPassthroughStrategy[_token]);
         require(tokenPassthroughStrategy[_token] != address(0), "No passthrough strategy to retire");
         address retiredTokenPassthroughStrategy = tokenPassthroughStrategy[_token];
         _retireTokenPassthroughStrategy(_token);

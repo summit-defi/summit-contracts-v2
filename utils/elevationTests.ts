@@ -856,7 +856,7 @@ const correctWinnersHistoricalData = (tokenName: string, elevation: number) => {
 // const switchingTotems = (tokenName: string, rewardTokenName: string, elevation: number) => {
 //   it(`TOTEMS: Switching to invalid totem should fail with error ${ERR.INVALID_TOTEM}`, async function() {
 //     const { user1 } = await getNamedSigners(hre)
-//     const cartographer = await ethers.getContract('Cartographer')
+//     const cartographer = await getCartographer()
     
 //     await expect(
 //       cartographer.connect(user1).switchTotem(elevation, TOTEM_COUNT[elevation])
@@ -864,7 +864,7 @@ const correctWinnersHistoricalData = (tokenName: string, elevation: number) => {
 //   })
 //   it('TOTEMS: Users should be able to switch to valid totems', async function() {
 //     const { user1 } = await getNamedSigners(hre)
-//     const cartographer = await ethers.getContract('Cartographer')
+//     const cartographer = await getCartographer()
 //     const subCartographer = await ethers.getContract(tokenName)
 //     const rewardToken = await ethers.getContract(rewardTokenName)
 //     const elevationHelper = await ethers.getContract('ElevationHelper')

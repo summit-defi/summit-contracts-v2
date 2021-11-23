@@ -1,7 +1,7 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, mineBlock, oasisTests, toDecimal, passthroughTests, consoleLog, Contracts, OASIS, cartographerMethod, cartographerGet, subCartGet } from "../utils";
+import { e18, ERR, EVENT, mineBlock, oasisTests, toDecimal, passthroughTests, consoleLog, Contracts, OASIS, cartographerMethod, cartographerGet, subCartGet, mineBlocks } from "../utils";
 import { getCartographer, getSummitToken } from "../utils/contracts";
 import { oasisUnlockedFixture, poolsFixture } from "./fixtures";
 
@@ -14,12 +14,14 @@ describe("OASIS Pools", function() {
 
     it(`DEPOSIT: Deposit before summit enabled should succeed`, async function() {
       const { user1 } = await getNamedSigners(hre)
-      const cartographer = await ethers.getContract(Contracts.Cartographer)
       const summitToken = await getSummitToken()
 
-      await expect(
-          cartographer.connect(user1).deposit(summitToken.address, OASIS, e18(5), false)
-      ).to.emit(cartographer, EVENT.Deposit)
+      await cartographerMethod.deposit({
+        user: user1,
+        tokenAddress: summitToken.address,
+        elevation: OASIS,
+        amount: e18(5)
+      })
     })
   })
 
@@ -30,14 +32,16 @@ describe("OASIS Pools", function() {
 
   
     // DEPOSIT
-    it(`DEPOSIT: Incorrect pid should fail with error "${ERR.POOL_DOESNT_EXIST}"`, async function() {
+    it(`DEPOSIT: Incorrect token deposit should fail with error "${ERR.POOL_DOESNT_EXIST}"`, async function() {
       const { user1 } = await getNamedSigners(hre)
-      const cartographer = await ethers.getContract(Contracts.Cartographer)
-      const summitToken = await getSummitToken()
 
-      await expect(
-          cartographer.connect(user1).deposit(summitToken.address, OASIS, e18(5), false)
-      ).to.be.revertedWith(ERR.POOL_DOESNT_EXIST)
+      await cartographerMethod.deposit({
+        user: user1,
+        tokenAddress: (await getCartographer()).address,
+        elevation: OASIS,
+        amount: e18(5),
+        revertErr: ERR.POOL_DOESNT_EXIST
+      })
     })
     
 
@@ -75,7 +79,6 @@ describe("OASIS Pools", function() {
     })
     it(`WITHDRAW: Withdrawing amount higher than staked should fail with error ${ERR.BAD_WITHDRAWAL}`, async function() {
       const { user1 } = await getNamedSigners(hre)
-      const cartographer = await ethers.getContract(Contracts.Cartographer)
       await cartographerMethod.withdraw({
         user: user1,
         tokenAddress: (await getSummitToken()).address,
@@ -87,7 +90,6 @@ describe("OASIS Pools", function() {
     })
     it(`WITHDRAW: Withdrawing from a pool that doesnt exist should fail with error ${ERR.POOL_DOESNT_EXIST}`, async function() {
       const { user1 } = await getNamedSigners(hre)
-      const cartographer = await ethers.getContract(Contracts.Cartographer)
       await cartographerMethod.withdraw({
         user: user1,
         tokenAddress: (await getCartographer()).address,
@@ -133,7 +135,8 @@ describe("OASIS Pools", function() {
       const { dev } = await getNamedSigners(hre)
       const summitToken = await getSummitToken()
       
-      const oasisAllocInit = await cartographerGet.tokenAlloc(summitToken.address)
+      const tokenAllocInit = await cartographerGet.tokenAlloc(summitToken.address)
+      const oasisAllocInit = await cartographerGet.elevAlloc(OASIS)
 
       await cartographerMethod.setTokenAlloc({
         user: dev,
@@ -141,33 +144,11 @@ describe("OASIS Pools", function() {
         alloc: 1000,
       })
 
-      const tokenAllocFinal = await cartographerGet.elevAlloc(OASIS)
+      const tokenAllocFinal = await cartographerGet.tokenAlloc(summitToken.address)
       const oasisAllocFinal = await cartographerGet.elevAlloc(OASIS)
 
-      expect(tokenAllocFinal).to.equal(1000)
-      expect(oasisAllocFinal).to.equal(oasisAllocInit - 1000)
-    })
-    it('ALLOCPOINT: Rewards change based on allocpoint share', async function () {
-      const { dev, user1 } = await getNamedSigners(hre)
-      const summitToken = await getSummitToken()
-      
-      const userHarvestable0 = (await subCartGet.rewards(summitToken.address, OASIS, user1.address)).harvestable
-      await mineBlock()
-      const userHarvestable1 = (await subCartGet.rewards(summitToken.address, OASIS, user1.address)).harvestable
-      const userDelta0 = userHarvestable1.sub(userHarvestable0)
-
-      await cartographerMethod.setTokenAlloc({
-        user: dev,
-        tokenAddress: summitToken.address,
-        alloc: 4000,
-      })
-
-      const userHarvestable2 = (await subCartGet.rewards(summitToken.address, OASIS, user1.address)).harvestable
-      await mineBlock()
-      const userHarvestable3 = (await subCartGet.rewards(summitToken.address, OASIS, user1.address)).harvestable
-      const userDelta1 = userHarvestable3.sub(userHarvestable2)
-
-      expect(userDelta1).to.equal(userDelta0.mul(4))
+      expect(tokenAllocInit - tokenAllocFinal).to.equal(1000)
+      expect(oasisAllocInit - oasisAllocFinal).to.equal(1000)
     })
     it('ALLOCPOINT: No rewards are earned on 0 alloc point', async function () {
       const { dev, user1 } = await getNamedSigners(hre)
@@ -184,12 +165,6 @@ describe("OASIS Pools", function() {
       const userHarvestable1 = (await subCartGet.rewards(summitToken.address, OASIS, user1.address)).harvestable
       const userDelta0 = userHarvestable1.sub(userHarvestable0)
 
-
-      const userHarvestable2 = (await subCartGet.rewards(summitToken.address, OASIS, user1.address)).harvestable
-      await mineBlock()
-      const userHarvestable3 = (await subCartGet.rewards(summitToken.address, OASIS, user1.address)).harvestable
-      const userDelta1 = userHarvestable3.sub(userHarvestable2)
-
       expect(userDelta0).to.equal(0)
     })
   })
@@ -198,10 +173,10 @@ describe("OASIS Pools", function() {
     before(async function() {
         await oasisUnlockedFixture()
     })
-    passthroughTests.vaultTests(PID.DUMMY_BIFI_OASIS, POOL_FEE.DUMMY_BIFI_OASIS)
-    passthroughTests.switchPassthroughStrategyVaultToMasterChef(PID.DUMMY_BIFI_OASIS, POOL_FEE.DUMMY_BIFI_OASIS)
-    passthroughTests.masterChefTests(PID.DUMMY_BIFI_OASIS, POOL_FEE.DUMMY_BIFI_OASIS)
-    passthroughTests.switchPassthroughStrategyMasterChefToVault(PID.DUMMY_BIFI_OASIS)
+    passthroughTests.vaultTests(OASIS)
+    passthroughTests.switchPassthroughStrategyVaultToMasterChef(OASIS)
+    passthroughTests.masterChefTests(OASIS)
+    passthroughTests.switchPassthroughStrategyMasterChefToVault(OASIS)
   })
 })
 

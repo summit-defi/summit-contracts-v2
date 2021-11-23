@@ -1,5 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
-import { cartographerMethod, elevationHelperGet, mineBlockWithTimestamp } from "."
+import { cartographerMethod, elevationHelperGet, getTimestamp, mineBlockWithTimestamp } from "."
 
 export const rolloverRound = async (elevation: number) => {
     const nextRoundTime = await elevationHelperGet.roundEndTimestamp(elevation)
@@ -22,10 +22,18 @@ export const rolloverRound = async (elevation: number) => {
       winningTotem = await getPrevRoundWinner(elevation)
     } while (winningTotem !== targetWinningTotem)
   }
-  export const rolloverRoundUntilLosingTotem = async(elevation: number, targetLosingTotem: number) => {
+  export const rolloverRoundUntilLosingTotem = async (elevation: number, targetLosingTotem: number) => {
     let winningTotem
     do {
       await rolloverRound(elevation)
       winningTotem = await getPrevRoundWinner(elevation)
     } while (winningTotem === targetLosingTotem)
+  }
+  export const rolloverIfAvailable = async (elevation: number) => {
+    const timestamp = await getTimestamp()
+    const roundEndTimestamp = await elevationHelperGet.roundEndTimestamp(elevation)
+    const elevationUnlock = await elevationHelperGet.unlockTimestamp(elevation)
+    if (timestamp >= roundEndTimestamp && timestamp >= elevationUnlock) {
+        await rolloverRound(elevation)
+    }
   }

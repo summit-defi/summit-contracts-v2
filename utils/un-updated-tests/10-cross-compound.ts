@@ -11,7 +11,7 @@ describe("CROSS COMPOUNDING", function() {
         await twoThousandUnlockedFixture()
 
         const { user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerElevation = await ethers.getContract('CartographerElevation')
         const elevationHelper = await ethers.getContract('ElevationHelper')
 
@@ -29,14 +29,14 @@ describe("CROSS COMPOUNDING", function() {
         await expeditionUnlockedFixture()
         
         const { user1, dev } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerExpedition = await ethers.getContract('CartographerExpedition')
-        const dummyBifiToken = await ethers.getContract('DummyBIFI')
+        const bifiToken = await ethers.getContract('DummyBIFI')
         const elevationHelper = await ethers.getContract('ElevationHelper')
 
-        await dummyBifiToken.connect(dev).approve(cartographerExpedition.address, e18(500))
-        await dummyBifiToken.connect(dev).transfer(cartographerExpedition.address, e18(500))
-        await cartographer.connect(dev).addExpedition(0, dummyBifiToken.address, e18(500), 9)
+        await bifiToken.connect(dev).approve(cartographerExpedition.address, e18(500))
+        await bifiToken.connect(dev).transfer(cartographerExpedition.address, e18(500))
+        await cartographer.connect(dev).addExpedition(0, bifiToken.address, e18(500), 9)
 
         const expeditionRoundEndTime = (await elevationHelper.roundEndTimestamp(EXPEDITION)).toNumber()
         await mineBlockWithTimestamp(expeditionRoundEndTime)
@@ -57,7 +57,7 @@ describe("CROSS COMPOUNDING", function() {
         await oasisUnlockedFixture()
 
         const { user1, user2, user3 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
 
         const users = [user1, user2, user3]
         await promiseSequenceMap(
@@ -71,7 +71,7 @@ describe("CROSS COMPOUNDING", function() {
     
     it('OASIS SELF COMPOUND: Cross compounding from within SUMMIT pool should succeed', async function() {
         const { user1, user2, user3 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerOasis = await ethers.getContract(Contracts.CartographerOasis)
     
         const users = [user1, user2, user3]
@@ -119,7 +119,7 @@ describe("CROSS COMPOUNDING", function() {
 
     it('OASIS CROSS COMPOUND: Cross compounding from outside SUMMIT pool should succeed', async function() {
         const { user1, user2, user3 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
         const cartographerOasis = await ethers.getContract(Contracts.CartographerOasis)
     
         const users = [user1, user2, user3]

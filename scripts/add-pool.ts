@@ -14,7 +14,7 @@ const cakeChefPid = 0
 
 async function main() {
     const { dev } = await getNamedSigners(hre)
-    const cartographer = await ethers.getContract('Cartographer')
+    const cartographer = await getCartographer()
 
     if (withTokenAllocPoint) {
         await cartographer.connect(dev).createTokenAllocation(

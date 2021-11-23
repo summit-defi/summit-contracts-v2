@@ -209,7 +209,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         require(_summitTokenAddress != address(0), "SummitToken is zero");
         elevationHelper = ElevationHelper(_ElevationHelper);
         summitTokenAddress = _summitTokenAddress;
-        totemCount = elevationHelper.getTotemCount(elevation);
     }
 
     /// @dev Unused enable summit stub
@@ -253,6 +252,10 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         require(_totem < elevationHelper.totemCount(elevation), "Invalid totem");
         _;
     }
+    modifier elevationTotemSelectionAvailable() {
+        require(!elevationHelper.endOfRoundLockoutActive(elevation) || elevationHelper.elevationLocked(elevation), "Totem selection locked");
+        _;
+    }
     function _elevationInteractionsAvailable() internal view {
         require(!elevationHelper.endOfRoundLockoutActive(elevation), "Elev locked until rollover");
     }
@@ -268,6 +271,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         _;
     }
     modifier poolExistsAndLaunched(address _token) {
+        console.log("Pool Exists and Launched", poolTokens.contains(_token), poolInfo[_token].launched);
         require(poolTokens.contains(_token), "Pool doesnt exist");
         require(poolInfo[_token].launched, "Pool not launched yet");
         _;
@@ -1052,7 +1056,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param _crossCompound Whether to cross compound any harvested winnings during totem switch
     function switchTotem(uint8 _totem, address _userAdd, bool _crossCompound)
         external override
-        nonReentrant onlyCartographer validTotem(_totem) validUserAdd(_userAdd) elevationInteractionsAvailable
+        nonReentrant onlyCartographer validTotem(_totem) validUserAdd(_userAdd) elevationTotemSelectionAvailable
     {
         // Early exit if cross compound will fail
         require(!_crossCompound || poolTokens.contains(summitTokenAddress), "No SUMMIT farm to CrossCompound into");

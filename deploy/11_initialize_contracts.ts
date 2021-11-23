@@ -1,6 +1,6 @@
 import {DeployFunction} from 'hardhat-deploy/types'
 import { createLpPair, getLpPair } from '../scripts/scriptUtils';
-import { chainIdAMMFactory, chainIdAMMPairCodeHash, chainIdWrappedNativeToken, computePairAddress, consoleLog, getElevationName, MESA, OASIS, PLAINS, promiseSequenceMap, SUMMIT, ZEROADD } from '../utils'
+import { chainIdAMMFactory, chainIdAMMPairCodeHash, chainIdWrappedNativeToken, computePairAddress, consoleLog, getCartographer, getElevationName, getSubCartographers, MESA, OASIS, PLAINS, promiseSequenceMap, SUMMIT, ZEROADD } from '../utils'
 
 const initializeContracts: DeployFunction = async function ({
   getNamedAccounts,
@@ -11,7 +11,7 @@ const initializeContracts: DeployFunction = async function ({
   const {execute} = deployments;
   const {dev} = await getNamedAccounts();
 
-  const Cartographer = await ethers.getContract('Cartographer')
+  const Cartographer = await getCartographer()
   const cartSummitToken = await Cartographer.summit()
   consoleLog('Cartographer address', Cartographer.address, 'summitToken', cartSummitToken)
 
@@ -28,12 +28,7 @@ const initializeContracts: DeployFunction = async function ({
 
     console.log('SUMMIT LP ADDRESS:', summitLpAddress)
 
-    const SubCartographers = await promiseSequenceMap(
-      [OASIS, PLAINS, MESA, SUMMIT],
-      async (elevation) => {
-        return await deployments.get(`Cartographer${getElevationName(elevation)}`)
-      }
-    )
+    const SubCartographers = await getSubCartographers()
     const ElevationHelper = await deployments.get('ElevationHelper')
     const SummitReferrals = await deployments.get('SummitReferrals')
     

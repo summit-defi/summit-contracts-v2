@@ -1,8 +1,10 @@
+import { BigNumber } from '@ethersproject/bignumber';
 import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat';
 import { cartographerMethod, cartographerSynth, consoleLog, Contracts, depositedAfterFee, e18, EVENT, expect6FigBigNumberEquals, getSubCartographer, mineBlock, OASIS, promiseSequenceMap, subCartGet, subCartMethod, toDecimal } from '.';
 import { getContract, getSummitReferrals, getSummitToken } from './contracts';
+import { userPromiseSequenceMap, userPromiseSequenceReduce } from './users';
 import { e12, getTimestamp, mineBlocks } from './utils';
 
 
@@ -87,8 +89,7 @@ const pendingSUMMITRedeemedOnDeposit = (tokenName: string, depositFee: number = 
         })
           
         const finalStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
-        const amountAfterFee = depositedAfterFee(e18(5), depositFee)
-        expect(finalStaked.sub(initialStaked)).to.equal(amountAfterFee)
+        expect(finalStaked).to.equal(initialStaked)
       })
 }
 
@@ -215,11 +216,9 @@ const pendingSUMMITRedeemedOnWithdrawal = (tokenName: string) => {
   // REWARDS UPDATING AND SPLITTING
   const rewardsCorrectlyDistributed = (tokenName: string) => {
       it('REWARDS: Rewards are correctly distributed among pool members', async function() {
-        const { user1, user2, user3 } = await getNamedSigners(hre)
         const token = await getContract(tokenName)
 
-        const usersStaked = await promiseSequenceMap(
-          [user1, user2, user3],
+        const usersStaked = await userPromiseSequenceMap(
           async (user) => (await subCartGet.userInfo(token.address, OASIS, user.address)).staked
         )
 
@@ -232,27 +231,27 @@ const pendingSUMMITRedeemedOnWithdrawal = (tokenName: string) => {
 
         await subCartMethod.updatePool(token.address, OASIS)
 
-        const usersHarvestableInit = await promiseSequenceMap(
-          [user1, user2, user3],
+        const usersHarvestableInit = await userPromiseSequenceMap(
           async (user) => (await subCartGet.rewards(token.address, OASIS, user.address)).harvestable
         )
 
         await mineBlocks(3)
 
-        const usersHarvestableFinal = await promiseSequenceMap(
-          [user1, user2, user3],
+        const usersHarvestableFinal = await userPromiseSequenceMap(
           async (user) => (await subCartGet.rewards(token.address, OASIS, user.address)).harvestable
         )
 
-        const usersHarvestableDelta = await promiseSequenceMap(
-          [user1, user2, user3],
+        const usersHarvestableDelta = await userPromiseSequenceMap(
           async (_user, userIndex) => usersHarvestableFinal[userIndex].sub(usersHarvestableInit[userIndex])
         )
 
-        const totalDelta = usersHarvestableDelta[0].add(usersHarvestableDelta[1]).add(usersHarvestableDelta[2])      
+        const totalDelta = await userPromiseSequenceReduce(
+          (acc, _, userIndex) => acc.add(usersHarvestableDelta[userIndex]),
+          e18(0),
+        )
 
-        ([0, 1, 2]).map(
-          (_: any, userIndex: number) => expect(usersStaked[userIndex].mul(e12(1)).div(totalStaked)).to.equal(usersHarvestableDelta[userIndex].mul(e12(1)).div(totalDelta))
+        await userPromiseSequenceMap(
+          async (_, userIndex) => expect(usersStaked[userIndex].mul(e12(1)).div(totalStaked)).to.equal(usersHarvestableDelta[userIndex].mul(e12(1)).div(totalDelta))
         )
     })
 }

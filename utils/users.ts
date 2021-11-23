@@ -14,7 +14,7 @@ export const userPromiseSequenceMap = async (transformer: (element: SignerWithAd
     )
 }
 
-export const userPromiseSequenceReduce = async (reducer: (acc: any, element: SignerWithAddress, index: number, array: SignerWithAddress[]) => any, initialValue: any) => {
+export const userPromiseSequenceReduce = async <T>(reducer: (acc: any, element: SignerWithAddress, index: number, array: SignerWithAddress[]) => T, initialValue: T) => {
     const { user1, user2, user3 } = await getNamedSigners(hre)
     return [user1, user2, user3].reduce(await reducer, initialValue)
 }

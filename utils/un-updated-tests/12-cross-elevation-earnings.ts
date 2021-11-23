@@ -10,9 +10,9 @@ describe("Cross Elevation Winnings", function() {
   })
   it(`WINNINGS: Winnings are earned and shared across elevation at the end of rounds`, async function() {
     const { user1, user2 } = await getNamedSigners(hre)
-    const cartographer = await ethers.getContract(Contracts.Cartographer)
+    const cartographer = await getCartographer()
     const cartographerElevation = await ethers.getContract(Contracts.CartographerElevation)
-    const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
+    const elevationHelper = await getElevationHelper()
 
 
     // INDIVIDUAL WINNINGS

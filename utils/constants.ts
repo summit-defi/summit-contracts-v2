@@ -6,8 +6,8 @@ export const Contracts = {
     SummitReferrals: 'SummitReferrals',
 
     DummyBIFI: 'DummyBIFI',
-    DummyVault: 'BeefyVaultV6',
-    BeefyVaultV6Passthrough: 'BeefyVaultV6Passthrough',
+    BeefyVault: 'BeefyVaultV6',
+    BeefyVaultPassthrough: 'BeefyVaultV6Passthrough',
 
     DummyCAKE: 'DummyCAKE',
     DummyMasterChef: 'MasterChef',

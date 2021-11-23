@@ -5,7 +5,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { providers } from "ethers";
 import hre, { getChainId, ethers } from "hardhat";
 import Web3 from "web3";
-import { bytesify, Contracts, ethersKeccak256, extractRevertMsg, getQueuedTimelockTransactionByHash, getTimestamp, hardhatChainId, mineBlockWithTimestamp, writeTimelockTransaction } from ".";
+import { bytesify, Contracts, ethersKeccak256, extractRevertMsg, getQueuedTimelockTransactionByHash, getTimelock, getTimestamp, hardhatChainId, mineBlockWithTimestamp, writeTimelockTransaction } from ".";
 
 
 
@@ -228,7 +228,7 @@ const timelockTransaction = async (params: TimelockTxFunctionParams) => {
         params.dev = (await getNamedSigners(hre)).dev
     }
     if (params.timelock == null) {
-        params.timelock = await ethers.getContract(Contracts.Timelock)
+        params.timelock = await getTimelock()
     }
     const { txType, txName, txParams, queuedTxEta, targetContract, dev, timelock, dryRun = false, note } = params
 
@@ -302,7 +302,7 @@ export const testableTimelockTransaction = async (params: TimelockTxFunctionPara
         params.dev = (await getNamedSigners(hre)).dev
     }
     if (params.timelock == null) {
-        params.timelock = await ethers.getContract(Contracts.Timelock)
+        params.timelock = await getTimelock()
     }
     const { txType, txParams, queuedTxEta, dev, timelock, note } = params
 
@@ -348,7 +348,7 @@ export const cancelQueuedTimelockTransactionByHash = async (txHash: string, with
 const timelockTransactionByHash = async (txType: TimelockTransactionType, txHash: string, withMine = false) => {
     if (txType === TimelockTransactionType.Queue) throw new Error('Cant Call a Timelock Transaction of Time Queue by Hash')
     const { dev } = await getNamedSigners(hre)
-    const timelock = await ethers.getContract(Contracts.Timelock)
+    const timelock = await getTimelock()
     const chainId = await getChainId()
     
     const queuedTransactionByHash = getQueuedTimelockTransactionByHash(chainId, txHash)
@@ -427,7 +427,7 @@ const timelockTransactionByHash = async (txType: TimelockTransactionType, txHash
 export const testableTimelockTransactionByHash = async (txType: TimelockTransactionType, txHash: string, withMine = false) => {
     if (txType === TimelockTransactionType.Queue) throw new Error('Cant Call a Timelock Transaction of Time Queue by Hash')
     const { dev } = await getNamedSigners(hre)
-    const timelock = await ethers.getContract(Contracts.Timelock)
+    const timelock = await getTimelock()
     const chainId = await getChainId()
     
     const queuedTransactionByHash = getQueuedTimelockTransactionByHash(chainId, txHash)

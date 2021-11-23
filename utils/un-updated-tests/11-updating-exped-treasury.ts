@@ -11,7 +11,7 @@ describe("UPDATE EXPEDITION TREASURY ADDRESS", function() {
     })
     it(`UPDATE EXPED TREASURY: Only callable by owner and must supply valid address`, async function() {
         const { dev, user1 } = await getNamedSigners(hre)
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
 
         await expect(
             cartographer.connect(user1).setExpedAdd(user1.address)
@@ -24,7 +24,7 @@ describe("UPDATE EXPEDITION TREASURY ADDRESS", function() {
     it(`SUCCESSFUL UPDATE: Calling setExpedAdd with correct parameters should update exped add`, async function () {
         const { dev, exped, user2 } = await getNamedSigners(hre) 
 
-        const cartographer = await ethers.getContract('Cartographer')
+        const cartographer = await getCartographer()
 
         const expedTreasuryAddInit = await cartographer.expedAdd()
         expect(expedTreasuryAddInit).to.equal(exped.address)

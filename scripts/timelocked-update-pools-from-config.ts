@@ -9,8 +9,8 @@ const DRY_RUN = false
 
 async function main() {
     const chainId = await getChainId()
-    const cartographer = await ethers.getContract(Contracts.Cartographer)
-    const SummitToken = await ethers.getContract(Contracts.SummitToken)
+    const cartographer = await getCartographer()
+    const SummitToken = await getSummitToken()
 
     const summitAddress = SummitToken.address
     const summitLpAddress = await cartographer.summitLp()

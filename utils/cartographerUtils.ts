@@ -1,32 +1,31 @@
 import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
-import { string } from "hardhat/internal/core/params/argumentTypes"
-import { e12, elevationPromiseSequenceReduce, EVENT, executeTxExpectEvent, executeTxExpectReversion, subCartGet } from "."
+import { e12, e6, elevationPromiseSequenceReduce, EVENT, executeTxExpectEvent, executeTxExpectReversion, subCartGet } from "."
 import { getCartographer } from "./contracts"
 
 
 // BASE GETTERS
 
 const tokenAlloc = async (tokenAddress: string): Promise<number> => {
-    return (await getCartographer()).tokenAlloc(tokenAddress)
+    return (await (await getCartographer()).tokenAlloc(tokenAddress)).toNumber()
 }
 const elevAlloc =  async (elevation: number): Promise<number> => {
-    return (await getCartographer()).elevAlloc(elevation)
+    return (await (await getCartographer()).elevAlloc(elevation)).toNumber()
 }
 const elevationModulatedAllocation = async (tokenAddress: string, elevation: number): Promise<number> => {
-    return (await getCartographer()).elevationModulatedAllocation(tokenAddress, elevation)
+    return (await (await getCartographer()).elevationModulatedAllocation(tokenAddress, elevation)).toNumber()
 }
 const tokenElevationIsEarning = async (tokenAddress: string, elevation: number): Promise<boolean> => {
-    return (await getCartographer()).tokenElevationIsEarning(tokenAddress, elevation)
+    return await (await getCartographer()).tokenElevationIsEarning(tokenAddress, elevation)
 }
 const tokenElevationEmissionMultiplier = async (tokenAddress: string, elevation: number): Promise<BigNumber> => {
-    return (await getCartographer()).tokenElevationEmissionMultiplier(tokenAddress, elevation)
+    return await (await getCartographer()).tokenElevationEmissionMultiplier(tokenAddress, elevation)
 }
 const tokenAllocEmissionMultiplier = async (tokenAddress: string, elevation: number): Promise<BigNumber> => {
-    return (await getCartographer()).tokenAllocEmissionMultiplier(tokenAddress)
+    return await (await getCartographer()).tokenAllocEmissionMultiplier(tokenAddress)
 }
 const summitPerSecond = async (): Promise<BigNumber> => {
-    return (await getCartographer()).summitPerSecond()
+    return await (await getCartographer()).summitPerSecond()
 }
 
 export const cartographerGet = {
@@ -51,7 +50,7 @@ const tokenTotalAlloc =  async (tokenAddress: string): Promise<number> => {
 }
 const totalAlloc = async (): Promise<number> => {
     return await elevationPromiseSequenceReduce(
-        async (alloc, elevation) => alloc + (await elevAlloc(elevation)),
+        async (alloc, elevation) => alloc + await elevAlloc(elevation),
         0,
     )
 }
@@ -101,10 +100,10 @@ export const cartographerMethod = {
         const txArgs = [tokenAddress, elevation, amount, crossCompound]
         
         if (revertErr != null) {
-            executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [user.address, tokenAddress, elevation, expectedAfterFee]
-            executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Deposit, eventArgs)
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Deposit, eventArgs)
         }
     },
     harvestSingleFarm: async ({
@@ -113,24 +112,27 @@ export const cartographerMethod = {
         elevation,
         crossCompound = false,
         revertErr,
+        eventOnly = false,
     }: {
         user: SignerWithAddress,
         tokenAddress: string,
         elevation: number,
         crossCompound?: boolean,
         revertErr?: string,
+        eventOnly?: boolean,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(user).deposit
         const txArgs = [tokenAddress, elevation, 0, crossCompound]
         
         if (revertErr != null) {
-            executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const expectedRewards = (await subCartGet.rewards(tokenAddress, elevation, user.address)).harvestable
                 .add(await farmSummitEmissionOverDuration(tokenAddress, elevation, 1))
-            const eventArgs = [user.address, expectedRewards]
-            executeTxExpectEvent(tx, txArgs, cartographer, EVENT.RedeemRewards, eventArgs)
+                .div(e6(1)).mul(e6(1))
+            const eventArgs = eventOnly ? undefined : [user.address, expectedRewards]
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.RedeemRewards, eventArgs)
         }
     },
     withdraw: async ({
@@ -140,6 +142,7 @@ export const cartographerMethod = {
         amount,
         crossCompound = false,
         revertErr,
+        eventOnly = false,
     }: {
         user: SignerWithAddress,
         tokenAddress: string,
@@ -147,16 +150,17 @@ export const cartographerMethod = {
         amount: BigNumber,
         crossCompound?: boolean,
         revertErr?: string,
+        eventOnly?: boolean,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(user).withdraw
         const txArgs = [tokenAddress, elevation, amount, crossCompound]
         
         if (revertErr != null) {
-            executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [user.address, tokenAddress, elevation, amount]
-            executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Withdraw, eventArgs)
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Withdraw, eventOnly ? undefined : eventArgs)
         }
     },
     setTokenAlloc: async ({
@@ -175,50 +179,113 @@ export const cartographerMethod = {
         const txArgs = [tokenAddress, alloc]
         
         if (revertErr != null) {
-            executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [tokenAddress, alloc]
-            executeTxExpectEvent(tx, txArgs, cartographer, EVENT.TokenAllocUpdated, eventArgs)
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.TokenAllocUpdated, eventArgs)
         }
     },
     switchTotem: async ({
         user,
         elevation,
         totem,
+        crossCompound = false,
         revertErr,
     }: {
         user: SignerWithAddress,
         elevation: number,
         totem: number,
+        crossCompound?: boolean,
         revertErr?: string,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(user).switchTotem
-        const txArgs = [elevation, totem]
+        const txArgs = [elevation, totem, crossCompound]
         
         if (revertErr != null) {
-            executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [user.address, elevation, totem]
-            executeTxExpectEvent(tx, txArgs, cartographer, EVENT.SwitchTotem, eventArgs)
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.SwitchTotem, eventArgs)
         }
     },
     rollover: async ({
+        user,
         elevation,
         revertErr,
     }: {
+        user?: SignerWithAddress,
         elevation: number,
         revertErr?: string,
     }) => {
         const cartographer = await getCartographer()
-        const tx = cartographer.rollover
+        const tx = user != null ? cartographer.connect(user).rollover : cartographer.rollover
         const txArgs = [elevation]
         
         if (revertErr != null) {
-            executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
-            executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Rollover)
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Rollover)
         }
-    }
+    },
+    setTokenPassthroughStrategy: async ({
+        dev,
+        tokenAddress,
+        passthroughTargetAddress,
+        revertErr,
+    }: {
+        dev: SignerWithAddress
+        tokenAddress: string,
+        passthroughTargetAddress: string,
+        revertErr?: string,
+    }) => {
+        const cartographer = await getCartographer()
+        const tx = cartographer.connect(dev).setTokenPassthroughStrategy
+        const txArgs = [tokenAddress, passthroughTargetAddress]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            const eventArgs = [tokenAddress, passthroughTargetAddress]
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.SET_PASSTHROUGH_STRATEGY, eventArgs)
+        }
+    },
+    retireTokenPassthroughStrategy: async ({
+        dev,
+        tokenAddress,
+        revertErr,
+    }: {
+        dev: SignerWithAddress,
+        tokenAddress: string,
+        revertErr?: string,
+    }) => {
+        const cartographer = await getCartographer()
+        const tx = cartographer.connect(dev).retireTokenPassthroughStrategy
+        const txArgs = [tokenAddress]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.RETIRE_PASSTHROUGH_STRATEGY)
+        }
+    },
+    rolloverReferral: async ({
+        user,
+        revertErr,
+    }: {
+        user: SignerWithAddress,
+        revertErr?: string,
+    }) => {
+        const cartographer = await getCartographer()
+        const tx = cartographer.connect(user).rolloverReferral
+        const txArgs = [] as any[]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            const eventArgs = [user.address]
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.RolloverReferral, eventArgs)
+        }
+    },
 
 }

@@ -8,8 +8,13 @@ export const elevationPromiseSequenceMap = async (transformer: (element: number,
         async (elevation, index, array) => await transformer(elevation, index, array)
     )
 }
-export const elevationPromiseSequenceReduce = async (reducer: (acc: any, element: number, index: number, array: number[]) => any, initialValue: any) => {
-    return [OASIS, PLAINS, MESA, SUMMIT].reduce(await reducer, initialValue)
+export const elevationPromiseSequenceReduce = async (reducer: (acc: any, element: number, index: number, array: number[]) => Promise<any>, initialValue: any) => {
+    let acc = initialValue
+    const elevations = [OASIS, PLAINS, MESA, SUMMIT]
+    for (let i = 0; i < elevations.length; i++) {
+        acc = await reducer(acc, elevations[i], i, elevations)
+    }
+    return acc
 }
 
 export const getSubCartographer = async (elevation: number) => {
@@ -19,7 +24,6 @@ export const getSubCartographer = async (elevation: number) => {
 export const getSubCartographers = async () => {
     return await elevationPromiseSequenceMap(getSubCartographer)
 }
-
 export interface UserInfo {
     [key: string]: BigNumber
     prevInteractedRound: BigNumber

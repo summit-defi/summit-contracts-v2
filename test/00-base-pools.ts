@@ -2,7 +2,7 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { consoleLog, ERR, EVENT, MESA, mineBlockWithTimestamp, OASIS, SUMMIT, PLAINS, ZEROADD, promiseSequenceMap, elevationPromiseSequenceMap, getSubCartographers, Contracts } from "../utils";
+import { consoleLog, ERR, EVENT, MESA, mineBlockWithTimestamp, OASIS, SUMMIT, PLAINS, ZEROADD, promiseSequenceMap, elevationPromiseSequenceMap, getSubCartographers, Contracts, getCakeToken, getCartographer, getElevationHelper, getSummitToken } from "../utils";
 import { baseFixture, twoThousandUnlockedFixture } from "./fixtures";
 
 let pid: BigNumber
@@ -56,8 +56,8 @@ describe("Base Pools", function() {
     })
     it(`Deploying another OASIS SUMMIT Pool should fail with error ${ERR.DUPLICATED}`, async function() {
       const { dev } = await getNamedSigners(hre)
-      const summitToken = await ethers.getContract(Contracts.SummitToken)
-      const cartographer = await ethers.getContract(Contracts.Cartographer)
+      const summitToken = await getSummitToken()
+      const cartographer = await getCartographer()
       await expect(
         cartographer.connect(dev).add(summitToken.address, OASIS, true, true)
       ).to.be.revertedWith(ERR.DUPLICATED)
@@ -78,17 +78,17 @@ describe("Base Pools", function() {
       await cartographer.add(dummyCakeToken.address, SUMMIT, true, true)
     })
     it('Number of pools should be correct', async function() {  
-      const cartographer = await ethers.getContract(Contracts.Cartographer)
+      const cartographer = await getCartographer()
       expect(await cartographer.poolsCount()).to.equal(8)
       await elevationPromiseSequenceMap(
         async (elevation) => expect(await cartographer.elevationPoolsCount(elevation)).to.equal(2)
       )
     })
     it('Pool Allocation Points should be correct', async function () {
-      const cartographer = await ethers.getContract(Contracts.Cartographer)
-      const elevationHelper = await ethers.getContract(Contracts.ElevationHelper)
-      const summitToken = await ethers.getContract(Contracts.SummitToken)
-      const cakeToken = await ethers.getContract(Contracts.DummyCAKE)
+      const cartographer = await getCartographer()
+      const elevationHelper = await getElevationHelper()
+      const summitToken = await getSummitToken()
+      const cakeToken = await getCakeToken()
 
       const oasisAllocSummit = Math.floor(4000 * 100)
       const twothousandAllocSummit = Math.floor(4000 * 110)
@@ -119,8 +119,8 @@ describe("Base Pools", function() {
     it('Pools can be disabled and reenabled', async function() {
       await twoThousandUnlockedFixture()
       const { dev } = await getNamedSigners(hre)
-      const cartographer = await ethers.getContract(Contracts.Cartographer)
-      const summitToken = await ethers.getContract(Contracts.SummitToken)
+      const cartographer = await getCartographer()
+      const summitToken = await getSummitToken()
 
       const oasisAllocSummit = 4000
       const oasisAllocBefore = await cartographer.elevAlloc(OASIS)
@@ -143,8 +143,8 @@ describe("Base Pools", function() {
     it('Tokens total alloc points can be updated', async function() {
       await twoThousandUnlockedFixture()
       const { dev } = await getNamedSigners(hre)
-      const cartographer = await ethers.getContract(Contracts.Cartographer)
-      const summitToken = await ethers.getContract(Contracts.SummitToken)
+      const cartographer = await getCartographer()
+      const summitToken = await getSummitToken()
 
       const oasisAllocBefore = await cartographer.elevAlloc(OASIS)
       const oasisAllocSummit = 4000
