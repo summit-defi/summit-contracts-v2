@@ -115,26 +115,28 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     uint256[4] public elevAlloc;                                                // Total allocation points of all pools at an elevation
     mapping(address => bool) public tokenAllocExistence;                        // Whether an allocation has been created for a specific token
-    mapping(address => uint16) public tokenFee;                                 // Fee for all farms of this token
+    mapping(address => uint16) public tokenWithdrawalTax;                                 // Fee for all farms of this token
     address[] tokensWithAllocation;                                             // List of Token Addresses that have been assigned an allocation
     mapping(address => uint256) public tokenAlloc;                              // A tokens underlying allocation, which is modulated for each elevation
 
     mapping(address => mapping(uint8 => bool)) public poolExistence;            // Whether a pool exists for a token at an elevation
     mapping(address => mapping(uint8 => bool)) public tokenElevationIsEarning;  // If a token is earning SUMMIT at a specific elevation
 
-    mapping(address => uint256) public lastDepositTimestamps;                   // Users' last deposit timestamp
-    uint16 public baseMinimumWithdrawalFee = 20;
-    uint256 public feeDecayDuration = 10 * 86400;
+    mapping(address => mapping(address => uint256)) public tokenLastDepositTimestamp; // Users' last deposit timestamp
+    mapping(address => bool) public isNativeFarmToken;
+    uint16 public baseMinimumWithdrawalFee = 100;
+    uint256 public feeDecayDuration = 7 * 86400;
+    uint256 public taxResetOnDepositBP = 500;
+    uint256 public nativeTaxResetOnDepositBP = 1000;
 
     struct UserLockedWinnings {
         uint256 winnings;
         uint256 bonusEarned;
         uint256 claimedWinnings;
     }
+
     uint8 public yieldLockEpochCount = 5;
     mapping(address => mapping(uint256 => UserLockedWinnings)) public userLockedWinnings;
-
-    mapping(address => uint256) public userBonusSummitEarned;
 
 
 
@@ -424,16 +426,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
             count += elevationPoolsCount[elevation];
         }
         return count;
-    }
-
-    /// @dev Set the fee for a token
-    function setTokenFee(address _token, uint16 _feeBP)
-        public
-        onlyOwner
-    {
-        // Fees will never be higher than 5%
-        require(_feeBP <= 500, "Invalid fee");
-        tokenFee[_token] = _feeBP;
     }
 
 
@@ -855,7 +847,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
                 _crossCompound,
                 false
             );
-        lastDepositTimestamps[msg.sender] = block.timestamp;
+
+        uint256 taxResetBP = isNativeFarmToken[_token] ? nativeTaxResetOnDepositBP : baseTaxResetOnDepositBP;
+        if (_amount > staked.mul(taxResetBP).div(10000)) {
+            tokenLastDepositTimestamp[msg.sender][_token] = block.timestamp;
+        }
 
         emit Deposit(msg.sender, _token, _elevation, amountAfterFee);
     }
@@ -1067,18 +1063,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     }
 
 
-    /// @dev Utility function to handle harvesting Summit rewards with referral rewards
-    function redeemRewards(address _userAdd, uint256 _amount) external onlySubCartographer {
-        // Transfers rewards to user
-        safeSummitTransfer(_userAdd, _amount);
-
-        // If the user has been referred, add the 1% bonus to that user and their referrer
-        summitReferrals.addReferralRewardsIfNecessary(_userAdd, _amount);
-
-        emit RedeemRewards(_userAdd, _amount);
-    }
-
-
     /// @dev Transfers funds from user on deposit
     /// @param _userAdd Depositing user
     /// @param _token Token to deposit
@@ -1092,17 +1076,15 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         // Transfers total deposit amount
         IERC20(_token).safeTransferFrom(_userAdd, address(this), _amount);
 
-        // Deposit full amount to passthrough
-        uint256 amount = passthroughDeposit(_token, _amount);
-
-        return amount;
+        // Deposit full amount to passthrough, return amount deposited
+        return passthroughDeposit(_token, _amount);
     }
 
 
-    /// @dev Takes the remaining withdrawal fee (difference between total withdrawn amount and the amount expected to be withdrawn after the remaining fee)
+    /// @dev Takes the remaining withdrawal tax (difference between total withdrawn amount and the amount expected to be withdrawn after the remaining fee)
     /// @param _token Token to withdraw
     /// @param _amount Funds above the amount after remaining withdrawal fee that was returned from the passthrough strategy
-    function takeWithdrawFeeAmount(address _token, uint256 _amount)
+    function _distributeWithdrawalTax(address _token, uint256 _amount)
         internal
     {
         IERC20(_token).safeTransfer(devAdd, _amount / 2);
@@ -1123,17 +1105,17 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         uint256 amountAfterFee = passthroughWithdraw(_token, _amount);
 
         // Amount user expects to receive after fee taken
-        uint16 baseFee = tokenFee[_token];
-        uint16 remainingFee = baseMinimumWithdrawalFee;
-        uint256 timeDiff = block.timestamp - lastDepositTimestamps[_userAdd];
-        if (baseFee > baseMinimumWithdrawalFee && timeDiff < feeDecayDuration) {
-            remainingFee = baseMinimumWithdrawalFee + uint16(((baseFee - baseMinimumWithdrawalFee) * (feeDecayDuration - timeDiff) * 1e12 / feeDecayDuration) / 1e12);
+        uint16 tokenTax = tokenWithdrawalTax[_token];
+        uint16 remainingFee = tokenIsNativeFarm[_token] ? uint16(0) : baseMinimumWithdrawalFee;
+        uint256 timeDiff = block.timestamp - tokenLastDepositTimestamp[_userAdd];
+        if (tokenTax > baseMinimumWithdrawalFee && timeDiff < feeDecayDuration) {
+            remainingFee = baseMinimumWithdrawalFee + uint16(((tokenTax - baseMinimumWithdrawalFee) * (feeDecayDuration - timeDiff) * 1e12 / feeDecayDuration) / 1e12);
         }
         uint256 expectedWithdrawnAmount = (_amount * (10000 - remainingFee)) / 10000;
 
         // Take any remaining fee (gap between what was actually withdrawn, and what the user expects to receive)
         if (amountAfterFee > expectedWithdrawnAmount) {
-            takeWithdrawFeeAmount(_token, amountAfterFee - expectedWithdrawnAmount);
+            _distributeWithdrawalTax(_token, amountAfterFee - expectedWithdrawnAmount);
             amountAfterFee = expectedWithdrawnAmount;
         }
 
@@ -1184,19 +1166,25 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         summit.mint(address(summitReferrals), _amount);
     }
+    
+    
+    
+    
+    
+    
+    // ---------------------------------------
+    // --   W I T H D R A W A L   T A X
+    // ---------------------------------------
 
-    // -----------------------------------------------------
-    // --   Fee management
-    // -----------------------------------------------------
 
     /// @dev Set the fee for a token
-    function setTokenFee(address _token, uint16 _feeBP)
+    function setTokenWithdrawalTax(address _token, uint16 _taxBP)
         public
         onlyOwner
     {
         // Fees will never be higher than 5%
-        require(_feeBP <= 500, "Invalid fee");
-        tokenFee[_token] = _feeBP;
+        require(_taxBP <= 1000, "Invalid fee");
+        tokenWithdrawalTax[_token] = _taxBP;
     }
 
     /// @dev Set the fee decaying duration
@@ -1212,7 +1200,15 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         public
         onlyOwner
     {
-        require(_baseMinimumWithdrawalFee >= 10 && _baseMinimumWithdrawalFee <= 100, "Minimum fee outside 1%-10%");
+        require(_baseMinimumWithdrawalFee <= 100, "Minimum fee outside 0%-10%");
         baseMinimumWithdrawalFee = _baseMinimumWithdrawalFee;
+    }
+
+    /// @dev Set whether a token is a native farm
+    function setTokenIsNativeFarm(address _token, bool _isNativeFarm)
+        public
+        onlyOwner
+    {
+        tokenIsNativeFarm[_token] = _isNativeFarm;
     }
 }

@@ -281,6 +281,9 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     function isTotemSelected(address _userAdd) external view override returns (bool) {
         return _totemSelected(_userAdd);
     }
+    function userStakedAmount(address _token, address _userAdd) external view override returns (uint256) {
+        return userInfo[_token][_userAdd].staked;
+    }
     
     function totemSupplies(address _token) public view poolExists(_token) returns (uint256[10] memory) {
         ElevationPoolInfo storage pool = poolInfo[_token];
