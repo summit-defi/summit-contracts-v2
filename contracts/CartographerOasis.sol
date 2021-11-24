@@ -158,6 +158,9 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     function isTotemSelected(address) external pure override returns (bool) {
         return true;
     }
+    function userStakedAmount(address _token, address _userAdd) external view override returns (uint256) {
+        return userInfo[_token][_userAdd].staked;
+    }
 
 
 
