@@ -857,6 +857,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
             );
         lastDepositTimestamps[msg.sender] = block.timestamp;
 
+        uint256 taxResetBP = isNativeFarmToken[_token] ? nativeTaxResetOnDepositBP : baseTaxResetOnDepositBP;
+        if (_amount > (staked * taxResetBP / 10000)) {
+            tokenLastDepositTimestamp[msg.sender][_token] = block.timestamp;
+        }
+
         emit Deposit(msg.sender, _token, _elevation, amountAfterFee);
     }
 
@@ -1195,8 +1200,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         onlyOwner
     {
         // Fees will never be higher than 5%
-        require(_feeBP <= 500, "Invalid fee");
-        tokenFee[_token] = _feeBP;
+        require(_taxBP <= 1000, "Invalid tax > 10%");
+        tokenWithdrawalTax[_token] = _taxBP;
     }
 
     /// @dev Set the fee decaying duration
