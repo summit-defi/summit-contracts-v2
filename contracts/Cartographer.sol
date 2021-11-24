@@ -3,6 +3,7 @@
 pragma solidity 0.8.0;
 import "./CartographerOasis.sol";
 import "./CartographerElevation.sol";
+import "./ExpeditionV2.sol";
 import "./ElevationHelper.sol";
 import "./SummitReferrals.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -101,6 +102,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     ElevationHelper elevationHelper;
     SummitReferrals summitReferrals;
     address[4] subCartographers;
+    ExpeditionV2 expeditionV2;
 
     uint256 public launchTimestamp = 1641028149;                                // 2022-1-1, will be updated when summit ecosystem switched on
     uint256 public summitPerSecond;                                             // Amount of Summit minted per second to be distributed to users
@@ -186,7 +188,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         address _CartographerOasis,
         address _CartographerPlains,
         address _CartographerMesa,
-        address _CartographerSummit
+        address _CartographerSummit,
+        address _expeditionV2
     )
         external
         initializer onlyOwner
@@ -199,7 +202,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
             _CartographerOasis != address(0) &&
             _CartographerPlains != address(0) &&
             _CartographerMesa != address(0) &&
-            _CartographerSummit != address(0),
+            _CartographerSummit != address(0) &&
+            _expeditionV2 != address(0),
             "Contract is zero"
         );
 
@@ -215,6 +219,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         subCartographers[PLAINS] = _CartographerPlains;
         subCartographers[MESA] = _CartographerMesa;
         subCartographers[SUMMIT] = _CartographerSummit;
+
+        expeditionV2 = ExpeditionV2(_expeditionV2);
 
         // Initialize the subCarts with the address of elevationHelper
         for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
@@ -1004,7 +1010,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         // Harvest winnings by locking for everest in the expedition
         if (_lockForEverest) {
-            // TODO: Harvest this everest by sending to the expedition
+            expeditionV2.lockClaimableSummit(unclaimedWinnings, msg.sender);
 
         // Else check if epoch matured, harvest 100% if true, else harvest 50%, burn 25%, and send 25% to expedition contract to be distributed to EVEREST holders
         } else {

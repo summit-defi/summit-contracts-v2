@@ -113,7 +113,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     uint256 public minLockTime = 3600 * 24 * 3;
     uint256 public maxLockTime = 3600 * 24 * 365;
     uint256 public lockTimeRequiredForTaxlessSummitWithdraw = 3600 * 24 * 7;
-    uint256 public lockTimeRequiredForLockedSummitDeposit = 3600 * 24 * 30;
+    uint256 public lockTimeRequiredForClaimableSummitLock = 3600 * 24 * 30;
     uint256 public minEverestLockMult = 1000;
     uint256 public maxEverestLockMult = 10000;
     uint256 public expeditionDeityWinningsMult = 120;
@@ -197,7 +197,8 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     // ---------------------------------------
 
     event SummitLocked(address indexed user, uint256 _summitLocked, uint256 _lockPeriod, uint256 _everestAwarded);
-    event LockedSummitIncreased(address indexed user, uint256 _summitLocked, uint256 _everestAwarded);
+    event LockDurationIncreased(address indexed user, uint256 _lockPeriod, uint256 _additionalEverestAwarded);
+    event LockedSummitIncreased(address indexed user, bool indexed _increasedWithClaimableWinnings, uint256 _summitLocked, uint256 _everestAwarded);
     event LockedSummitRemoved(address indexed user, uint256 _summitRemoved, uint256 _everestBurned);
 
     event UserJoinedExpedition(address indexed user, address indexed exped, uint8 _deity, uint8 _safetyFactor, uint256 _everestOwned);
@@ -366,7 +367,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     }
     function setLockTimeRequiredForLockedSummitDeposit(uint256 _lockTimeDays) public onlyOwner {
         require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 90, "Invalid locked summit lock time (1-90 days)");
-        lockTimeRequiredForLockedSummitDeposit = _lockTimeDays;
+        lockTimeRequiredForClaimableSummitLock = _lockTimeDays;
     }
     function setMinEverestLockMult(uint256 _lockMult) public onlyOwner {
         require(_lockMult >= 100 && _lockMult <= 50000, "Invalid lock mult");
@@ -694,16 +695,10 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         internal view
         returns (uint256)
     {
-        return ((((_lockPeriod - minLockTime) * 1e12) / (maxLockTime - minLockTime)) * (maxEverestLockMult - minEverestLockMult) / 1e12) + minEverestLockMult;
-    }
-
-    /// @dev Calculate lock awarded Everest
-    function calcBaseEverestAward(uint256 _summitAmount)
-        internal view
-        returns (uint256)
-    {
-        // 1e23 scaling factor creates a base 1 million EVEREST
-        return _summitAmount * 1e23 / summit.totalSupply();
+        return (((_lockPeriod - minLockTime) * (maxEverestLockMult - minEverestLockMult) * 1e12) /
+            (maxLockTime - minLockTime) /
+            1e12) +
+            minEverestLockMult;
     }
 
     function _burnEverest(address _userAdd, uint256 _everestAmount)
@@ -722,7 +717,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         return everestInfo;
     }
 
-    /// @dev Lock Summit or SummitLP and earn everest
+    /// @dev Lock Summit and earn everest
     function lockSummit(uint256 _summitAmount, uint256 _lockPeriod)
         public
         nonReentrant userNotAlreadyLockingSummit validLockPeriod(_lockPeriod)
@@ -730,53 +725,126 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         require(_summitAmount <= IERC20(summit).balanceOf(msg.sender), "Exceeds balance");
 
         uint256 everestLockMultiplier = _lockPeriodMultiplier(_lockPeriod);
-        uint256 baseEverestAward = calcBaseEverestAward(_summitAmount);
-        uint256 initialEverestAward = (baseEverestAward * everestLockMultiplier) / 1000;
+        uint256 everestAward = (_summitAmount * everestLockMultiplier) / 10000;
         uint256 lockRelease = block.timestamp + _lockPeriod;
 
         if (_summitAmount > 0) {
             IERC20(summit).safeTransferFrom(msg.sender, address(this), _summitAmount);
         }
-        everest.mint(msg.sender, initialEverestAward);
+        everest.mint(msg.sender, everestAward);
 
         UserEverestInfo storage everestInfo = _getOrCreateUserEverestInfo(msg.sender);
 
-        everestInfo.everestOwned = initialEverestAward;
+        everestInfo.everestOwned = everestAward;
         everestInfo.everestLockMultiplier = everestLockMultiplier;
         everestInfo.lockRelease = lockRelease;
         everestInfo.summitLocked = _summitAmount;
 
         _updateExpeditionInteraction(everestInfo);
 
-        emit SummitLocked(msg.sender, _summitAmount, _lockPeriod, initialEverestAward);
+        emit SummitLocked(msg.sender, _summitAmount, _lockPeriod, everestAward);
     }
 
-    /// @dev Increase the Locked Summit or SummitLP and earn everest
-    function increaseLockedSummit(uint256 _summitAmount)
+
+    /// @dev Increase the lock duration of user's locked SUMMIT
+    function increaseLockDuration(uint256 _lockPeriod)
         public
         nonReentrant userEverestInfoExists userOwnsEverest
     {
-        require(_summitAmount <= IERC20(summit).balanceOf(msg.sender), "Exceeds balance");
+        uint256 additionalEverestAward = _increaseLockDuration(_lockPeriod, msg.sender);
+        emit LockDurationIncreased(msg.sender, _lockPeriod, additionalEverestAward);
+    }
+    function _increaseLockDuration(uint256 _lockPeriod, address _userAdd)
+        internal
+        returns (uint256)
+    {
+        UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
 
-        UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
+        uint256 everestLockMultiplier = _lockPeriodMultiplier(_lockPeriod);
+        require(everestLockMultiplier > everestInfo.everestLockMultiplier, "New lock period must be greater");
 
-        uint256 baseEverestAward = calcBaseEverestAward(_summitAmount);
-        uint256 additionalEverestAward = (baseEverestAward * everestInfo.everestLockMultiplier) / 1000;
+        uint256 additionalEverestAward = ((everestInfo.summitLocked * everestLockMultiplier) / 10000) - everestInfo.everestOwned;
+        uint256 lockRelease = block.timestamp + _lockPeriod;
+
+        everest.mint(msg.sender, additionalEverestAward);
+
+        everestInfo.everestOwned += additionalEverestAward;
+        everestInfo.everestLockMultiplier = everestLockMultiplier;
+        everestInfo.lockRelease = lockRelease;
+
+        _updateExpeditionInteraction(everestInfo);
+
+        return additionalEverestAward;
+    }
+
+
+    /// @dev Internal locked amount increase
+    function _increaseLockedSummit(uint256 _summitAmount, UserEverestInfo storage everestInfo, address _summitOriginAdd)
+        internal
+        returns (uint256)
+    {
+        require(_summitAmount <= IERC20(summit).balanceOf(_summitOriginAdd), "Exceeds balance");
+
+        uint256 additionalEverestAward = (_summitAmount * everestInfo.everestLockMultiplier) / 10000;
 
         if (_summitAmount > 0) {
-            IERC20(summit).safeTransferFrom(msg.sender, address(this), _summitAmount);
+            IERC20(summit).safeTransferFrom(_summitOriginAdd, address(this), _summitAmount);
         }
-        everest.mint(msg.sender, additionalEverestAward);
+        everest.mint(everestInfo.userAdd, additionalEverestAward);
 
         everestInfo.everestOwned += additionalEverestAward;
         everestInfo.summitLocked += _summitAmount;
 
         _updateExpeditionInteraction(everestInfo);
 
-        emit LockedSummitIncreased(msg.sender, _summitAmount, additionalEverestAward);
+        return additionalEverestAward;
     }
 
-    /// @dev Decrease the Summit or SummitLP and burn everest
+    /// @dev 
+    function _increaseLockReleaseOnClaimableLocked(UserEverestInfo storage everestInfo)
+        internal
+    {
+        // Early escape if lock release already satisfies requirement
+        if (everestInfo.lockRelease >= block.timestamp + lockTimeRequiredForClaimableSummitLock) return;
+
+        // Update lock release
+        _increaseLockDuration(lockTimeRequiredForClaimableSummitLock, everestInfo.userAdd);
+    }
+
+    /// @dev Lock summit from elevation farms
+    function lockClaimableSummit(uint256 _summitAmount, address _userAdd)
+        external
+        nonReentrant userEverestInfoExists userOwnsEverest
+    {
+        // TODO: This flow is messed up, its calculating things in the wrong order and needs fixing
+        UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
+
+        uint256 additionalEverestAward = _increaseLockedSummit(
+            _summitAmount,
+            everestInfo,
+            msg.sender
+        );
+        
+        _increaseLockReleaseOnClaimableLocked(everestInfo);
+
+        emit LockedSummitIncreased(msg.sender, true, _summitAmount, additionalEverestAward);
+    }
+
+    /// @dev Increase the Locked Summit and earn everest
+    function increaseLockedSummit(uint256 _summitAmount)
+        public
+        nonReentrant userEverestInfoExists userOwnsEverest
+    {
+        uint256 additionalEverestAward = _increaseLockedSummit(
+            _summitAmount,
+            userEverestInfo[msg.sender],
+            msg.sender
+        );
+
+        emit LockedSummitIncreased(msg.sender, false, _summitAmount, additionalEverestAward);
+    }
+
+    /// @dev Decrease the Summit and burn everest
     function decreaseLockedSummit(uint256 _everestAmount)
         public
         nonReentrant userEverestInfoExists userOwnsEverest userLockPeriodSatisfied validEverestAmountToBurn(_everestAmount)
@@ -993,6 +1061,9 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         internal
     {
         UserExpeditionInfo storage userExpedInfo = userExpeditionInfo[everestInfo.userAdd];        
+
+        // Early exit if user hasn't entered expedition
+        if (!userExpeditionInfo[everestInfo.userAdd].entered) return;
 
         // Harvest winnings from expedition
         _harvestExpedition(everestInfo, userExpedInfo);
