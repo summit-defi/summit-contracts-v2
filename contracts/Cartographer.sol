@@ -1107,7 +1107,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         // Amount user expects to receive after fee taken
         uint16 tokenTax = tokenWithdrawalTax[_token];
         uint16 remainingFee = tokenIsNativeFarm[_token] ? uint16(0) : baseMinimumWithdrawalFee;
-        uint256 timeDiff = block.timestamp - tokenLastDepositTimestamp[_userAdd];
+        uint256 timeDiff = block.timestamp - tokenLastDepositTimestamp[_userAdd][_token];
         if (tokenTax > baseMinimumWithdrawalFee && timeDiff < feeDecayDuration) {
             remainingFee = baseMinimumWithdrawalFee + uint16(((tokenTax - baseMinimumWithdrawalFee) * (feeDecayDuration - timeDiff) * 1e12 / feeDecayDuration) / 1e12);
         }
