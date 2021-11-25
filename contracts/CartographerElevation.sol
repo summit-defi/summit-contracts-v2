@@ -753,17 +753,14 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         returns (uint256)
     {
         uint256 currRound = elevationHelper.roundNumber(elevation);
-        uint256 claimable = 0;
 
-        // Exit early if no previous round exists to have winnings
-        if (!pool.launched) return claimable;
-
-        // If user interacted in current round, any claimable winnings will come only from reVestedWinnings from previous round
-        if (user.prevInteractedRound == currRound) return claimable;
+        // Exit early if no previous round exists to have winnings, or user has already interacted this round
+        if (!pool.launched || user.prevInteractedRound == currRound) return 0;
 
         uint8 totem = _getUserTotem(_userAdd);
+        uint256 claimable = 0;
 
-        // Get winnings from first user interacted round if it was won
+        // Get winnings from first user interacted round if it was won (requires different calculation)
         claimable += userFirstInteractedRoundWinnings(user, poolRoundInfo[pool.token][user.prevInteractedRound], totem);
 
         // Escape early if user interacted during previous round
@@ -792,7 +789,8 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
             staked: 0,
             roundDebt: 0,
             winningsDebt: 0,
-            prevInteractedRound: 0
+            prevInteractedRound: 0,
+            lastDepositTimestamp: block.timestamp
         });
     }
     
@@ -873,6 +871,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         require(!_interacting || userInteractingPools[_userAdd].length() < 12, "Staked pool cap (12) reached");
 
         if (_interacting) {
+
             userInteractingPools[_userAdd].add(_token);
         } else {
             userInteractingPools[_userAdd].remove(_token);
@@ -953,7 +952,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         internal view
         returns (bool)
     {
-        return (user.staked + user.roundRew + user.reVestAmt) > 0;
+        return (user.staked + user.roundRew) > 0;
     }
     function userInteractingWithPool(address _token, address _userAdd) public view poolExists(_token) returns (bool) {
         return userInteractingPools[_userAdd].contains(_token);
@@ -984,7 +983,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
         // Claim available winnings
         if (claimable > 0) {
-            cartographer.claimRewards(_userAdd, claimable);
+            cartographer.claimWinnings(_userAdd, claimable);
         }
         
         return claimable;

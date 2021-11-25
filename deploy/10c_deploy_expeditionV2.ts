@@ -13,6 +13,7 @@ const deployExpeditionV2: DeployFunction = async function ({
   const chainId = await getChainId()
 
   const SummitToken = await deployments.get(Contracts.SummitToken);
+  const CakeToken = await deployments.get(Contracts.DummyCAKE)
   const ElevationHelper = await deployments.get(Contracts.ElevationHelper)
 
   const ammFactory = await chainIdAMMFactory(chainId)
@@ -29,7 +30,7 @@ const deployExpeditionV2: DeployFunction = async function ({
 
   const ExpeditionV2 = await deploy('ExpeditionV2', {
     from: dev,
-    args: [SummitToken.address, summitLpAddress, EverestToken.address, ElevationHelper.address],
+    args: [SummitToken.address, EverestToken.address, ElevationHelper.address, CakeToken.address],
     log: true,
   });
 
@@ -37,7 +38,7 @@ const deployExpeditionV2: DeployFunction = async function ({
     await delay(10000)
     await run("verify:verify", {
       address: ExpeditionV2.address,
-      constructorArguments: [SummitToken.address, summitLpAddress, EverestToken.address, ElevationHelper.address],
+      constructorArguments: [SummitToken.address, EverestToken.address, ElevationHelper.address, CakeToken.address],
     })
   }
 

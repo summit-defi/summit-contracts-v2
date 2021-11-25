@@ -220,7 +220,7 @@ export const EVENT = {
 
     SET_EXPED_SUMMIT_LP_INCENTIVE_MULT: 'SetSummitInLpIncentiveMultiplier',
 
-    HarvestElevation: 'HarvestElevation',
+    claimElevation: 'claimElevation',
 
     TIMELOCK_EXECUTE_TRANSACTION: 'ExecuteTransaction',
 

@@ -142,8 +142,8 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         uint256 safeSupply;
         uint256 deitiedSupply;
 
-        uint256 summitSafeEarningsDebt;
-        uint256 rewardsSafeEarningsDebt;
+        uint256 summitSafeWinningsDebt;
+        uint256 rewardsSafeWinningsDebt;
         uint256 summitDeityWinningsDebt;
         uint256 rewardsDeityWinningsDebt;
     }
@@ -153,6 +153,11 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     mapping(address => UserEverestInfo) public userEverestInfo;
 
     IERC20 expeditionRewardToken;
+
+    struct ExpeditionBasket {
+        uint256 summit;
+        uint256 rewards;
+    }
 
     struct ExpeditionInfo {
         bool launched;                                      // If the start round of the pool has passed and it is open for betting
@@ -164,23 +169,12 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         uint256 deitiedSupply;
         uint256[2] deitySupply;                       // Running total of combined equivalent SUMMIT in each deity to calculate rewards
 
-        uint256 summitRoundEmission;                              // The amount of Reward token for each round
-        uint256 rewardsRoundEmission;                              // The amount of Reward token for each round
-
-        uint256 summitRemaining;                       // Rewards marked to be distributed but not yet withdrawn by users.
-        uint256 rewardsRemaining;                       // Rewards marked to be distributed but not yet withdrawn by users.
-
-        uint256 summitMarkedForDist;                       // Rewards marked to be distributed but not yet withdrawn by users.
-        uint256 rewardsMarkedForDist;                       // Rewards marked to be distributed but not yet withdrawn by users.
-
-        uint256 summitDistributed;
-        uint256 rewardsDistributed;
-
-        uint256 summitSafeEarningsMult;                         // Guaranteed earnings that are earned each round (safetyFactor everest) 
-        uint256 rewardsSafeEarningsMult;                         // Guaranteed earnings that are earned each round (safetyFactor everest) 
-
-        uint256[2] summitDeityWinningsMult;                // Running winnings per share for each deity, increased at round end with snapshot of SUMMIT LP incentive multiplier and SUMMIT token to SUMMIT LP ratio
-        uint256[2] rewardsDeityWinningsMult;                // Running winnings per share for each deity, increased at round end with snapshot of SUMMIT LP incentive multiplier and SUMMIT token to SUMMIT LP ratio
+        ExpeditionBasket roundEmission;         // The amount of Reward token for each round
+        ExpeditionBasket emissionsRemaining;     // Remaining rewards to be earned
+        ExpeditionBasket markedForDist;         // Rewards marked to be distributed but not yet withdrawn by users.
+        ExpeditionBasket distributed;           // Total rewards distribution amount
+        ExpeditionBasket safeWinningsMult;      // Guaranteed winnings regardless of deity selected
+        ExpeditionBasket[2] deityWinningsMult;  // Running winnings per share for each deity, increased at round end
     }
 
     ExpeditionInfo public expeditionInfo;        // Expedition info
@@ -339,8 +333,8 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         returns (uint256, uint256)
     {
         return (
-            expeditionInfo.summitRemaining,
-            expeditionInfo.rewardsRemaining
+            expeditionInfo.emissionsRemaining.summit,
+            expeditionInfo.emissionsRemaining.rewards
         );
     }
 
@@ -399,16 +393,16 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     function _recalculateExpeditionEmissions()
         internal
     {
-        uint256 summitFund = summit.balanceOf(address(this)) - expeditionInfo.summitMarkedForDist;
-        uint256 rewardsFund = expeditionRewardToken.balanceOf(address(this)) - expeditionInfo.rewardsMarkedForDist;
+        uint256 summitFund = summit.balanceOf(address(this)) - expeditionInfo.markedForDist.summit;
+        uint256 rewardsFund = expeditionRewardToken.balanceOf(address(this)) - expeditionInfo.markedForDist.rewards;
 
         expeditionInfo.roundsRemaining = summitFund == 0 && rewardsFund == 0 ? 0 : expeditionRunwayRounds;
 
-        expeditionInfo.summitRemaining = summitFund;
-        expeditionInfo.summitRoundEmission = expeditionInfo.roundsRemaining == 0 ? 0 : summitFund / expeditionRunwayRounds;
+        expeditionInfo.emissionsRemaining.summit = summitFund;
+        expeditionInfo.roundEmission.summit = expeditionInfo.roundsRemaining == 0 ? 0 : summitFund / expeditionRunwayRounds;
 
-        expeditionInfo.rewardsRemaining = rewardsFund;
-        expeditionInfo.rewardsRoundEmission = expeditionInfo.roundsRemaining == 0 ? 0 : rewardsFund / expeditionRunwayRounds;
+        expeditionInfo.emissionsRemaining.rewards = rewardsFund;
+        expeditionInfo.roundEmission.rewards = expeditionInfo.roundsRemaining == 0 ? 0 : rewardsFund / expeditionRunwayRounds;
     }
 
     /// @dev Initializes the expedition
@@ -419,32 +413,16 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         require(!expeditionInitialized, "Expedition not initialized");
         expeditionInitialized = true;
 
-        // Create the initial state of the expedition
-        expeditionInfo = ExpeditionInfo({
-            launched: false,
-            live: true,
-            
-            summitMarkedForDist: 0,
-            rewardsMarkedForDist: 0,
-            summitDistributed: 0,
-            rewardsDistributed: 0,
-
-            safeSupply: 0,
-            deitiedSupply: 0,
-            deitySupply: [uint256(0), 0],
-
-            summitSafeEarningsMult: 0,
-            rewardsSafeEarningsMult: 0,
-            summitDeityWinningsMult: [uint256(0), 0],
-            rewardsDeityWinningsMult: [uint256(0), 0],
-
-            // Following be reset in emission calculation below
-            roundsRemaining: 0, 
-            summitRemaining: 0,
-            summitRoundEmission: 0,
-            rewardsRemaining: 0,
-            rewardsRoundEmission: 0
+        ExpeditionBasket memory emptyBasket = ExpeditionBasket({
+            summit: 0,
+            rewards: 0
         });
+
+        ExpeditionBasket[2] memory emptyDeityWinningsMult;
+        emptyDeityWinningsMult[0] = emptyBasket;
+        emptyDeityWinningsMult[1] = emptyBasket;
+
+        expeditionInfo.live =  true;
 
         _recalculateExpeditionEmissions();
 
@@ -503,12 +481,12 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         if (totalExpedSupply == 0) return (0, 0, 0, 0);
 
         // Calculate safe winnings multiplier or escape if div/0
-        uint256 summitSafeEmission = (expeditionInfo.summitRoundEmission * 1e18 * expeditionInfo.safeSupply) / totalExpedSupply;
-        uint256 rewardSafeEmission = (expeditionInfo.rewardsRoundEmission * 1e18 * expeditionInfo.safeSupply) / totalExpedSupply;
+        uint256 summitSafeEmission = (expeditionInfo.roundEmission.summit * 1e18 * expeditionInfo.safeSupply) / totalExpedSupply;
+        uint256 rewardSafeEmission = (expeditionInfo.roundEmission.rewards * 1e18 * expeditionInfo.safeSupply) / totalExpedSupply;
 
         // Calculate winning deity's winnings multiplier or escape if div/0
-        uint256 summitDeitiedEmission = (expeditionInfo.summitRoundEmission * 1e18 * expeditionInfo.deitiedSupply) / totalExpedSupply;
-        uint256 rewardDeitiedEmission = (expeditionInfo.rewardsRoundEmission * 1e18 * expeditionInfo.deitiedSupply) / totalExpedSupply;
+        uint256 summitDeitiedEmission = (expeditionInfo.roundEmission.summit * 1e18 * expeditionInfo.deitiedSupply) / totalExpedSupply;
+        uint256 rewardDeitiedEmission = (expeditionInfo.roundEmission.rewards * 1e18 * expeditionInfo.deitiedSupply) / totalExpedSupply;
 
         return (
             summitSafeEmission,
@@ -586,20 +564,20 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         (uint256 summitSafeEmissionMultE18, uint256 rewardsSafeEmissionMultE18, uint256 summitDeitiedEmissionMultE18, uint256 rewardsDeitiedEmissionMultE18) = _calculateEmissionMultipliers();
 
         // Mark current round's emission to be distributed
-        expeditionInfo.summitMarkedForDist += (summitSafeEmissionMultE18 + summitDeitiedEmissionMultE18) / 1e18;
-        expeditionInfo.rewardsMarkedForDist += (rewardsSafeEmissionMultE18 + rewardsDeitiedEmissionMultE18) / 1e18;
-        expeditionInfo.summitDistributed += (summitSafeEmissionMultE18 + summitDeitiedEmissionMultE18) / 1e18;
-        expeditionInfo.rewardsDistributed += (rewardsSafeEmissionMultE18 + rewardsDeitiedEmissionMultE18) / 1e18;
+        expeditionInfo.markedForDist.summit += (summitSafeEmissionMultE18 + summitDeitiedEmissionMultE18) / 1e18;
+        expeditionInfo.markedForDist.rewards += (rewardsSafeEmissionMultE18 + rewardsDeitiedEmissionMultE18) / 1e18;
+        expeditionInfo.distributed.summit += (summitSafeEmissionMultE18 + summitDeitiedEmissionMultE18) / 1e18;
+        expeditionInfo.distributed.rewards += (rewardsSafeEmissionMultE18 + rewardsDeitiedEmissionMultE18) / 1e18;
 
         // Update the guaranteed emissions mults
         if (expeditionInfo.safeSupply > 0) {
-            expeditionInfo.summitSafeEarningsMult += summitSafeEmissionMultE18 / expeditionInfo.safeSupply;
-            expeditionInfo.rewardsSafeEarningsMult += rewardsSafeEmissionMultE18 / expeditionInfo.safeSupply;
+            expeditionInfo.safeWinningsMult.summit += summitSafeEmissionMultE18 / expeditionInfo.safeSupply;
+            expeditionInfo.safeWinningsMult.rewards += rewardsSafeEmissionMultE18 / expeditionInfo.safeSupply;
         }
         // Update winning deity's running winnings mult
         if (expeditionInfo.deitySupply[winningDeity] > 0) {
-            expeditionInfo.summitDeityWinningsMult[winningDeity] += summitDeitiedEmissionMultE18 / expeditionInfo.deitySupply[winningDeity];
-            expeditionInfo.rewardsDeityWinningsMult[winningDeity] += rewardsDeitiedEmissionMultE18 / expeditionInfo.deitySupply[winningDeity];
+            expeditionInfo.deityWinningsMult[winningDeity].summit += summitDeitiedEmissionMultE18 / expeditionInfo.deitySupply[winningDeity];
+            expeditionInfo.deityWinningsMult[winningDeity].rewards += rewardsDeitiedEmissionMultE18 / expeditionInfo.deitySupply[winningDeity];
         }
     }
     
@@ -647,10 +625,10 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         uint256 deitiedEverest = _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor);
 
         return (
-            ((safeEverest * (expeditionInfo.summitSafeEarningsMult - userExpedInfo.summitSafeEarningsDebt)) / 1e18) +
-            ((deitiedEverest * (expeditionInfo.summitDeityWinningsMult[everestInfo.deity] - userExpedInfo.summitDeityWinningsDebt)) / 1e18),
-            ((safeEverest * (expeditionInfo.rewardsSafeEarningsMult - userExpedInfo.rewardsSafeEarningsDebt)) / 1e18) +
-            ((deitiedEverest * (expeditionInfo.rewardsDeityWinningsMult[everestInfo.deity] - userExpedInfo.rewardsDeityWinningsDebt)) / 1e18)
+            ((safeEverest * (expeditionInfo.safeWinningsMult.summit - userExpedInfo.summitSafeWinningsDebt)) / 1e18) +
+            ((deitiedEverest * (expeditionInfo.deityWinningsMult[everestInfo.deity].summit - userExpedInfo.summitDeityWinningsDebt)) / 1e18),
+            ((safeEverest * (expeditionInfo.safeWinningsMult.rewards - userExpedInfo.rewardsSafeWinningsDebt)) / 1e18) +
+            ((deitiedEverest * (expeditionInfo.deityWinningsMult[everestInfo.deity].rewards - userExpedInfo.rewardsDeityWinningsDebt)) / 1e18)
         );
     }
     
@@ -675,10 +653,10 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         userExpedInfo.deitiedSupply = _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor);
 
         // Acc winnings per share of user's deity of both SUMMIT token and SUMMIT LP
-        userExpedInfo.summitSafeEarningsDebt = expeditionInfo.summitSafeEarningsMult;
-        userExpedInfo.rewardsSafeEarningsDebt = expeditionInfo.rewardsSafeEarningsMult;
-        userExpedInfo.summitDeityWinningsDebt = expeditionInfo.summitDeityWinningsMult[everestInfo.deity];
-        userExpedInfo.rewardsDeityWinningsDebt = expeditionInfo.rewardsDeityWinningsMult[everestInfo.deity];
+        userExpedInfo.summitSafeWinningsDebt = expeditionInfo.safeWinningsMult.summit;
+        userExpedInfo.rewardsSafeWinningsDebt = expeditionInfo.safeWinningsMult.rewards;
+        userExpedInfo.summitDeityWinningsDebt = expeditionInfo.deityWinningsMult[everestInfo.deity].summit;
+        userExpedInfo.rewardsDeityWinningsDebt = expeditionInfo.deityWinningsMult[everestInfo.deity].rewards;
 
         // Update the user's previous interacted round to be this round
         userExpedInfo.prevInteractedRound = currRound;
@@ -886,8 +864,8 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         expeditionRewardToken.safeTransfer(everestInfo.userAdd, rewardsWinnings);
 
         // Mark harvested winnings as withdrawn
-        expeditionInfo.summitMarkedForDist -= summitWinnings;
-        expeditionInfo.rewardsMarkedForDist -= rewardsWinnings;
+        expeditionInfo.markedForDist.summit -= summitWinnings;
+        expeditionInfo.markedForDist.rewards -= rewardsWinnings;
 
         return (summitWinnings, rewardsWinnings);
     }

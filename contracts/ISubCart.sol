@@ -23,5 +23,5 @@ interface ISubCart {
     function selectedTotem(address _userAdd) external view returns (uint8);
     function isTotemSelected(address _userAdd) external view returns (bool);
 
-    function userStakedAmount(address _token, address _userAdd) external view returns (bool);
+    function userStakedAmount(address _token, address _userAdd) external view returns (uint256);
 }

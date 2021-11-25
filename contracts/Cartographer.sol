@@ -127,7 +127,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     uint16 public baseMinimumWithdrawalFee = 100;
     uint256 public feeDecayDuration = 7 * 86400;
     uint256 public taxResetOnDepositBP = 500;
-    uint256 public nativeTaxResetOnDepositBP = 1000;
 
     struct UserLockedWinnings {
         uint256 winnings;
@@ -137,6 +136,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     uint8 public yieldLockEpochCount = 5;
     mapping(address => mapping(uint256 => UserLockedWinnings)) public userLockedWinnings;
+
+    mapping(address => bool) public tokenIsNativeFarm;
 
 
 
@@ -148,9 +149,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     event TokenAllocUpdated(address indexed token, uint256 alloc);
     event PoolCreated(address indexed token, uint8 elevation);
     event PoolUpdated(address indexed token, uint8 elevation, bool live);
-    event CrossCompound(address indexed user, uint16 indexed harvestPid, uint16 indexed crossCompoundPid, uint256 amount);
     event Deposit(address indexed user, address indexed token, uint8 indexed elevation, uint256 amount);
-    event HarvestElevation(address indexed user, uint8 indexed elevation, bool crossCompound, uint256 totalHarvested);
+    event ClaimElevation(address indexed user, uint8 indexed elevation, uint256 totalHarvested);
     event Rollover(address indexed user, uint256 elevation);
     event RolloverReferral(address indexed user);
     event SwitchTotem(address indexed user, uint8 indexed elevation, uint8 totem);
@@ -810,13 +810,12 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev All funds at an elevation share a totem. This function allows switching staked funds from one totem to another
     /// @param _elevation Elevation to switch totem on
     /// @param _totem New target totem
-    /// @param _crossCompound Whether to cross compound earnings from active pools that would be harvested during this tx
-    function switchTotem(uint8 _elevation, uint8 _totem, bool _crossCompound)
+    function switchTotem(uint8 _elevation, uint8 _totem)
         public
         nonReentrant isElevation(_elevation) validTotem(_elevation, _totem)
     {
         // Executes the totem switch in the correct subcartographer
-        subCartographer(_elevation).switchTotem(_totem, msg.sender, _crossCompound);
+        subCartographer(_elevation).switchTotem(_totem, msg.sender);
 
         emit SwitchTotem(msg.sender, _elevation, _totem);
     }
@@ -830,11 +829,29 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // -----------------------------------------------------
 
 
+    /// @dev Users staked amount across all elevations
+    function userTokenStakedAmount(address _token)
+        public
+        returns (uint256)
+    {
+        return _userTokenStakedAmount(_token, msg.sender);
+    }
+    function _userTokenStakedAmount(address _token, address _userAdd)
+        internal
+        returns (uint256)
+    {
+        uint256 totalStaked = 0;
+        for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
+            totalStaked += subCartographer(elevation).userStakedAmount(_token, _userAdd);
+        }
+        return totalStaked;
+    }
+
+
     /// @dev Stake funds with a pool, is also used to harvest with a deposit of 0
     /// (@param _token, @param _elevation) Pool identifier
     /// @param _amount Amount to stake
-    /// @param _crossCompound Whether to cross compound earnings from this pool
-    function deposit(address _token, uint8 _elevation, uint256 _amount, bool _crossCompound)
+    function deposit(address _token, uint8 _elevation, uint256 _amount)
         public
         nonReentrant poolExists(_token, _elevation)
     {
@@ -844,12 +861,10 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
                 _token,
                 _amount,
                 msg.sender,
-                _crossCompound,
                 false
             );
 
-        uint256 taxResetBP = isNativeFarmToken[_token] ? nativeTaxResetOnDepositBP : baseTaxResetOnDepositBP;
-        if (_amount > (staked * taxResetBP / 10000)) {
+        if (_amount > (_userTokenStakedAmount(_token, msg.sender) * taxResetOnDepositBP / 10000)) {
             tokenLastDepositTimestamp[msg.sender][_token] = block.timestamp;
         }
 
@@ -859,23 +874,21 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     /// @dev Harvest all rewards (or cross compound) of an elevation
     /// @param _elevation Elevation to harvest all rewards from
-    /// @param _crossCompound Whether to harvest rewards directly into SUMMIT farm at {_elevation}
-    function harvestElevation(uint8 _elevation, bool _crossCompound)
+    function claimElevation(uint8 _elevation)
         public
         nonReentrant isElevation(_elevation)
     {
         // Harvest across an elevation, return total amount harvested
-        uint256 totalHarvested = subCartographer(_elevation).harvestElevation(msg.sender, _crossCompound);
+        uint256 totalHarvested = subCartographer(_elevation).claimElevation(msg.sender);
         
-        emit HarvestElevation(msg.sender, _elevation, _crossCompound, totalHarvested);
+        emit ClaimElevation(msg.sender, _elevation, totalHarvested);
     }
 
 
     /// @dev Withdraw staked funds from a pool
     /// (@param _token, @param _elevation) Pool identifier
     /// @param _amount Amount to withdraw, must be > 0 and <= staked amount
-    /// @param _crossCompound Whether to cross compound during this withdraw
-    function withdraw(address _token, uint8 _elevation, uint256 _amount, bool _crossCompound)
+    function withdraw(address _token, uint8 _elevation, uint256 _amount)
         public
         nonReentrant poolExists(_token, _elevation)
     {
@@ -885,7 +898,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
                 _token,
                 _amount,
                 msg.sender,
-                _crossCompound,
                 false
             );
 
@@ -917,8 +929,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _sourceElevation Elevation to withdraw from
     /// @param _targetElevation Elevation to deposit into
     /// @param _amount Amount to elevate
-    /// @param _crossCompound Whether to compound earnings from the source and target pools
-    function elevate(address _token, uint8 _sourceElevation, uint8 _targetElevation, uint256 _amount, bool _crossCompound)
+    function elevate(address _token, uint8 _sourceElevation, uint8 _targetElevation, uint256 _amount)
         public
     {
         validateElevate(_token, _sourceElevation, _targetElevation, _amount);
@@ -929,7 +940,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
                 _token,
                 _amount,
                 msg.sender,
-                _crossCompound,
                 true
             );
         
@@ -939,7 +949,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
                 _token,
                 elevatedAmount,
                 msg.sender,
-                _crossCompound,
                 true
             );
 
@@ -1016,11 +1025,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         } else {
             bool epochMatured = _hasEpochMatured(_epoch);
             if (epochMatured) {
-                summit.safeTransfer(msg.sender, unclaimedWinnings);
+                IERC20(summit).safeTransfer(msg.sender, unclaimedWinnings);
             } else {
-                summit.safeTransfer(msg.sender, unclaimedWinnings / 2);
-                summit.safeTransfer(burnAdd, unclaimedWinnings / 4);
-                summit.safeTransfer(expedAdd, unclaimedWinnings / 4);
+                IERC20(summit).safeTransfer(msg.sender, unclaimedWinnings / 2);
+                IERC20(summit).safeTransfer(burnAdd, unclaimedWinnings / 4);
+                IERC20(summit).safeTransfer(expedAdd, unclaimedWinnings / 4);
             }
         }
 
@@ -1048,18 +1057,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     function passthroughWithdraw(address _token, uint256 _amount) internal returns (uint256) {
         if (tokenPassthroughStrategy[_token] == address(0)) return _amount;
         return IPassthrough(tokenPassthroughStrategy[_token]).withdraw(_amount, expedAdd, devAdd);
-    }
-
-    /// @dev Utility function to transfer Summit
-    function safeSummitTransfer(address _to, uint256 _amount) internal {
-        uint256 summitBal = summit.balanceOf(address(this));
-        bool transferSuccess = false;
-        if (_amount > summitBal) {
-            transferSuccess = summit.transfer(_to, summitBal);
-        } else {
-            transferSuccess = summit.transfer(_to, _amount);
-        }
-        require(transferSuccess, "SafeSummitTransfer: failed");
     }
 
 

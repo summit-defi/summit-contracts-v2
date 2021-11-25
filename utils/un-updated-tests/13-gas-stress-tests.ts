@@ -274,8 +274,8 @@
 //     const userSummitInit = await summitToken.balanceOf(user1.address)
     
 //     await expect(
-//         cartographer.connect(user1).harvestElevation(TENTHOUSAND, false)
-//     ).to.emit(cartographer, EVENT.HarvestElevation)
+//         cartographer.connect(user1).claimElevation(TENTHOUSAND, false)
+//     ).to.emit(cartographer, EVENT.claimElevation)
 
 //     const userSummitFinal = await summitToken.balanceOf(user1.address)
 //     const userSummitDelta = userSummitFinal.sub(userSummitInit)
@@ -312,8 +312,8 @@
 //     const userSummitInit = (await getSubCartographerStaked(cartographerElevation, Contracts.CartographerElevation, PID.SUMMIT_10K, user1))[0]
     
 //     await expect(
-//         cartographer.connect(user1).harvestElevation(TENTHOUSAND, true)
-//     ).to.emit(cartographer, EVENT.HarvestElevation)
+//         cartographer.connect(user1).claimElevation(TENTHOUSAND, true)
+//     ).to.emit(cartographer, EVENT.claimElevation)
     
 //     const userSummitFinal = (await getSubCartographerStaked(cartographerElevation, Contracts.CartographerElevation, PID.SUMMIT_10K, user1))[0]
 //     const userSummitDelta = userSummitFinal.sub(userSummitInit)
