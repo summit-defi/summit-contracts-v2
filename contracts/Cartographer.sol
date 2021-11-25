@@ -122,8 +122,10 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     mapping(address => mapping(uint8 => bool)) public poolExistence;            // Whether a pool exists for a token at an elevation
     mapping(address => mapping(uint8 => bool)) public tokenElevationIsEarning;  // If a token is earning SUMMIT at a specific elevation
 
-    mapping(address => mapping(address => uint256)) public tokenLastDepositTimestamp; // Users' last deposit timestamp
     mapping(address => bool) public isNativeFarmToken;
+    mapping(address => mapping(address => uint256)) public nativeFarmTokenLastDepositTimestamp; // Users' last deposit timestamp for native farms
+
+    mapping(address => mapping(address => uint256)) public tokenLastDepositTimestampForTax; // Users' last deposit timestamp for tax
     uint16 public baseMinimumWithdrawalFee = 100;
     uint256 public feeDecayDuration = 7 * 86400;
     uint256 public baseTaxResetOnDepositBP = 500;
@@ -865,10 +867,18 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
                 false
             );
 
+        // native farm bonus handling
+        if (isNativeFarmToken[_token]) {
+            if (nativeFarmTokenLastDepositTimestamp[msg.sender][_token] == 0) {
+                nativeFarmTokenLastDepositTimestamp[msg.sender][_token] == block.timestamp;
+            }
+        }
+
+        // tax handling
         uint256 taxResetBP = isNativeFarmToken[_token] ? nativeTaxResetOnDepositBP : baseTaxResetOnDepositBP;
         uint256 staked = subCartographer(elevation).userStakedAmount(_token, msg.sender);
         if (_amount > (staked * taxResetBP / 10000)) {
-            tokenLastDepositTimestamp[msg.sender][_token] = block.timestamp;
+            tokenLastDepositTimestampForTax[msg.sender][_token] = block.timestamp;
         }
 
         emit Deposit(msg.sender, _token, _elevation, amountAfterFee);
@@ -903,6 +913,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
                 msg.sender,
                 false
             );
+
+        // native farm bonus handling
+        if (isNativeFarmToken[_token]) {
+            nativeFarmTokenLastDepositTimestamp[msg.sender][_token] == 0;
+        }
 
         emit Withdraw(msg.sender, _token, _elevation, amountAfterFee);
     }
@@ -993,7 +1008,12 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     /// @dev Utility function to handle harvesting Summit rewards with referral rewards
     function claimWinnings(address _userAdd, uint256 _amount) external onlySubCartographer {
-        uint256 bonus = 700;
+        uint256 bonusBP = 0;
+        uint256 nativeFarmTokenLastDepositTimestamp = nativeFarmTokenLastDepositTimestamp[_userAdd][_token];
+        if (nativeFarmTokenLastDepositTimestamp > 0 && nativeFarmTokenLastDepositTimestamp + feeDecayDuration > block.timestamp) {
+            uint256 timeDiff = block.timestamp - nativeFarmTokenLastDepositTimestamp > feeDecayDuration ? feeDecayDuration : block.timestamp - nativeFarmTokenLastDepositTimestamp;
+            bonusBP = (700 * timeDiff * 1e12 / feeDecayDuration) / 1e12;
+        }
 
         uint256 amountWithBonus = _amount * (10000 + bonus) / 10000;
 
@@ -1107,7 +1127,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         // Amount user expects to receive after fee taken
         uint16 tokenTax = tokenWithdrawalTax[_token];
         uint16 remainingFee = isNativeFarmToken[_token] ? uint16(0) : baseMinimumWithdrawalFee;
-        uint256 timeDiff = block.timestamp - tokenLastDepositTimestamp[_userAdd][_token];
+        uint256 timeDiff = block.timestamp - tokenLastDepositTimestampForTax[_userAdd][_token];
         if (tokenTax > baseMinimumWithdrawalFee && timeDiff < feeDecayDuration) {
             remainingFee = baseMinimumWithdrawalFee + uint16(((tokenTax - baseMinimumWithdrawalFee) * (feeDecayDuration - timeDiff) * 1e12 / feeDecayDuration) / 1e12);
         }
