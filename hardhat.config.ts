@@ -37,6 +37,7 @@ const config: HardhatUserConfig = {
       }
     },
   },
+  defaultNetwork: 'hardhat',
   // defaultNetwork: 'ganache',
   // networks: {
   //   ganache: {
@@ -45,16 +46,16 @@ const config: HardhatUserConfig = {
   //   },
   // },
   networks: {
-    hardhat: {
-      throwOnCallFailures: true,
-      throwOnTransactionFailures: true,
-      allowUnlimitedContractSize: true,
-      // forking: {
-      //   url: "https://bsc.getblock.io/?api_key=4c801b23-8ca3-45a4-a13a-426d8a0c7ac6",
-      //   // blockNumber: 8401715,
-      // },
-      tags: ['LOCALHOST'],
-    },
+    // hardhat: {
+    //   throwOnCallFailures: true,
+    //   throwOnTransactionFailures: true,
+    //   allowUnlimitedContractSize: true,
+    //   // forking: {
+    //   //   url: "https://bsc.getblock.io/?api_key=4c801b23-8ca3-45a4-a13a-426d8a0c7ac6",
+    //   //   // blockNumber: 8401715,
+    //   // },
+    //   tags: ['LOCALHOST'],
+    // },
     bsc_testnet: {
       url: "https://data-seed-prebsc-1-s3.binance.org:8545/",
       chainId: 97,

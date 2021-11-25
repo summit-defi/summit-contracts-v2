@@ -7,25 +7,25 @@ const deployCartographerExpedition: DeployFunction = async function ({
   getChainId,
   run,
 }) {
-  const {deploy} = deployments;
-  const {dev} = await getNamedAccounts();
-  const chainId = await getChainId()
+  // const {deploy} = deployments;
+  // const {dev} = await getNamedAccounts();
+  // const chainId = await getChainId()
 
-  const Cartographer = await deployments.get('Cartographer');
+  // const Cartographer = await deployments.get('Cartographer');
 
-  const CartographerExpedition = await deploy('CartographerExpedition', {
-    from: dev,
-    args: [Cartographer.address],
-    log: true,
-  });
+  // const CartographerExpedition = await deploy('CartographerExpedition', {
+  //   from: dev,
+  //   args: [Cartographer.address],
+  //   log: true,
+  // });
 
-  if (CartographerExpedition.newlyDeployed && chainIdAllowsVerification(chainId)) {
-    await delay(10000)
-    await run("verify:verify", {
-      address: CartographerExpedition.address,
-      constructorArguments: [Cartographer.address],
-    })
-  }
+  // if (CartographerExpedition.newlyDeployed && chainIdAllowsVerification(chainId)) {
+  //   await delay(10000)
+  //   await run("verify:verify", {
+  //     address: CartographerExpedition.address,
+  //     constructorArguments: [Cartographer.address],
+  //   })
+  // }
 };
 export default deployCartographerExpedition;
 deployCartographerExpedition.tags = ['CartographerExpedition', 'LOCALHOST', 'TESTNET', 'MAINNET']

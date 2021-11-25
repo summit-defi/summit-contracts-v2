@@ -19,7 +19,7 @@ const deploySummitToken: DeployFunction = async function ({
 
   if (SummitToken.newlyDeployed) {
     // Mint initial summit, change summit token owner
-    await execute('SummitToken', { from: dev }, 'mintTo', dev, e18(2000000))
+    await execute('SummitToken', { from: dev }, 'mint', dev, e18(2000000))
     consoleLog('Minted Initial SUMMIT Token')
 
     const Cartographer = await deployments.get('Cartographer');
