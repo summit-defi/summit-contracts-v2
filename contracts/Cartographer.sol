@@ -97,8 +97,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     uint256 public rolloverRewardInNativeToken = 5e18;                          // Amount of native token which will be rewarded for rolling over a round (will be converted into summit and minted)
 
-    address public devAdd;                                                      // Treasury address, see docs for spend breakdown
-    address public expedAdd;                                                    // Expedition Treasury address, intermediate address to convert to stablecoins
+    address public treasuryAdd;                                                      // Treasury address, see docs for spend breakdown
+    address public expeditionTreasuryAdd;                                                    // Expedition Treasury address, intermediate address to convert to stablecoins
     address public trustedSeederAdd;                                            // Address that seeds the random number generation every 2 hours
     ElevationHelper elevationHelper;
     SummitReferrals summitReferrals;
@@ -108,8 +108,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     uint256 public launchTimestamp = 1641028149;                                // 2022-1-1, will be updated when summit ecosystem switched on
     uint256 public summitPerSecond;                                             // Amount of Summit minted per second to be distributed to users
-    uint256 public devSummitPerSecond;                                          // Amount of Summit minted per second to the treasury
-    uint256 public referralsSummitPerSecond;                                    // Amount of Summit minted per second as referral rewards
+    uint256 public treasurySummitBP = 180;                                      // Amount of Summit minted per second to the treasury
+    uint256 public referralsSummitBP = 20;                                      // Amount of Summit minted per second as referral rewards
 
     uint16[4] public elevationPoolsCount;                                       // List of all pool identifiers (PIDs)
 
@@ -170,12 +170,12 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     /// @dev Constructor simply setting addresses on creation
     constructor(
-        address _devAdd,
-        address _expedAdd,
+        address _treasuryAdd,
+        address _expeditionTreasuryAdd,
         address _trustedSeederAdd
     ) {
-        devAdd = _devAdd;
-        expedAdd = _expedAdd;
+        treasuryAdd = _treasuryAdd;
+        expeditionTreasuryAdd = _expeditionTreasuryAdd;
         trustedSeederAdd = _trustedSeederAdd;
     }
 
@@ -251,22 +251,22 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
 
     /// @dev Updating the dev address, can only be called by the current dev address
-    /// @param _devAdd New dev address
-    function setDevAdd(address _devAdd) public {
-        require(_devAdd != address(0), "Missing address");
-        require(msg.sender == devAdd, "Forbidden");
+    /// @param _treasuryAdd New dev address
+    function settreasuryAdd(address _treasuryAdd) public {
+        require(_treasuryAdd != address(0), "Missing address");
+        require(msg.sender == treasuryAdd, "Forbidden");
 
-        devAdd = _devAdd;
-        emit SetTreasuryAddress(msg.sender, _devAdd);
+        treasuryAdd = _treasuryAdd;
+        emit SetTreasuryAddress(msg.sender, _treasuryAdd);
     }
 
 
     /// @dev Updating the expedition accumulator address
-    /// @param _expedAdd New expedition accumulator address
-    function setExpedAdd(address _expedAdd) public onlyOwner {
-        require(_expedAdd != address(0), "Missing address");
-        expedAdd = _expedAdd;
-        emit SetExpeditionTreasuryAddress(msg.sender, _expedAdd);
+    /// @param _expeditionTreasuryAdd New expedition accumulator address
+    function setexpeditionTreasuryAdd(address _expeditionTreasuryAdd) public onlyOwner {
+        require(_expeditionTreasuryAdd != address(0), "Missing address");
+        expeditionTreasuryAdd = _expeditionTreasuryAdd;
+        emit SetExpeditionTreasuryAddress(msg.sender, _expeditionTreasuryAdd);
     }
 
     /// @dev Update the amount of native token equivalent to reward for rolling over a round
@@ -291,28 +291,18 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         // Require non-zero and less than 1 SUMMIT per second
         require(_amount > 0 && _amount < 1e18, "Invalid emission");
 
-        // New total emission is split into its component parts to save computation costs later
-        // 92% goes to staking rewards, of which 2% goes to referrals
-        summitPerSecond = (_amount * 92 / 100) * 98 / 100;
-        referralsSummitPerSecond = (_amount * 92 / 100) * 2 / 100;
-        devSummitPerSecond = _amount * 8 / 100;
+        summitPerSecond = _amount;
     }
 
     /// @dev Updating the emission split profile
-    /// @param _staking How much is reserved for staking
-    /// @param _dev How much is reserved for the treasury
-    function setSummitDistributionProfile(uint256 _staking, uint256 _dev) public onlyOwner {
+    /// @param _referralsBP How much extra is minted for referrals
+    /// @param _treasuryBP How much extra is minted for the treasury
+    function setSummitDistributionBPs(uint256 _referralsBP, uint256 _treasuryBP) public onlyOwner {
         // Require dev emission less than 25% of total emission
-        require(_staking < 10000 && _dev < 10000 && _dev * 3 < _staking, "Invalid Distribution Profile");
+        require(_treasuryBP  <= 250 && _referralsBP <= 5, "Invalid Distributions");
 
-        // Total amount of shares passed in is irrelevant, they are summed
-        uint256 totalShares = _staking + _dev;
-        // Total emission summed from component parts
-        uint256 totalEmission = summitPerSecond + devSummitPerSecond + referralsSummitPerSecond;
-
-        summitPerSecond = (totalEmission * _staking / totalShares) * 98 / 100;
-        referralsSummitPerSecond = (totalEmission * _staking * totalShares) * 2 / 100;
-        devSummitPerSecond = totalEmission * _dev / totalShares;
+        referralsSummitBP = _referralsBP;
+        treasurySummitBP = _treasuryBP;
     }
 
 
@@ -538,7 +528,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         // Early exit if token doesn't have passthrough strategy
         if(tokenPassthroughStrategy[_token] == address(0)) return;
 
-        IPassthrough(tokenPassthroughStrategy[_token]).retire(expedAdd, devAdd);
+        IPassthrough(tokenPassthroughStrategy[_token]).retire(expeditionTreasuryAdd, treasuryAdd);
         tokenPassthroughStrategy[_token] = address(0);
     }
 
@@ -772,27 +762,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         // Emission multiplier multiplied by summitPerSecond, finally reducing back to true exponential
         return poolEmissionMultiplier(_lastRewardTimestamp, _token, _elevation) * summitPerSecond / 1e12;
-    }
-
-
-    /// @dev Mints the total emission of pool and split respectively to destinations
-    /// @param _lastRewardTimestamp Used for time span
-    /// (@param _token, @param _elevation) Pool identifier
-    /// @return only staking SUMMIT yield component of emission, not raised to any power
-    function mintPoolSummit(uint256 _lastRewardTimestamp, address _token, uint8 _elevation)
-        external
-        onlySubCartographer
-        returns (uint256)
-    {
-        uint256 emissionMultiplier = poolEmissionMultiplier(_lastRewardTimestamp, _token, _elevation);
-
-        // Mint summit to all destinations accordingly
-        summit.mint(devAdd, emissionMultiplier * devSummitPerSecond / 1e12);
-        summit.mint(address(summitReferrals), emissionMultiplier * referralsSummitPerSecond / 1e12);
-        summit.mint(address(this), emissionMultiplier * summitPerSecond / 1e12);
-
-        // This return value is used by pools to div shares, and doesn't need the referrals or dev components included
-        return emissionMultiplier * summitPerSecond / 1e12;
     }
 
 
@@ -1035,6 +1004,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         uint256 bonusWinnings = _amount * tokenBonusBP / 10000;
         uint256 totalWinnings = _amount + bonusWinnings;
 
+        // Mint Summit user has won, and additional mints for distribution
+        summit.mint(address(summitLocking), totalWinnings);
+        summit.mint(address(summitReferrals), totalWinnings * referralsSummitBP / 10000);
+        summit.mint(treasuryAdd, totalWinnings * treasurySummitBP / 10000);
+
         // Send users claimable winnings to SummitLocking.sol
         summitLocking.addLockedWinnings(totalWinnings, bonusWinnings, _userAdd);
 
@@ -1053,7 +1027,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Utility function for depositing tokens into passthrough strategy
     function passthroughDeposit(address _token, uint256 _amount) internal returns (uint256) {
         if (tokenPassthroughStrategy[_token] == address(0)) return _amount;
-        return IPassthrough(tokenPassthroughStrategy[_token]).deposit(_amount, expedAdd, devAdd);
+        return IPassthrough(tokenPassthroughStrategy[_token]).deposit(_amount, expeditionTreasuryAdd, treasuryAdd);
     }
 
     /// @dev Utility function for withdrawing tokens from passthrough strategy
@@ -1062,7 +1036,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @return The true amount withdrawn from the passthrough strategy after the passthrough's tax was taken (if any)
     function passthroughWithdraw(address _token, uint256 _amount) internal returns (uint256) {
         if (tokenPassthroughStrategy[_token] == address(0)) return _amount;
-        return IPassthrough(tokenPassthroughStrategy[_token]).withdraw(_amount, expedAdd, devAdd);
+        return IPassthrough(tokenPassthroughStrategy[_token]).withdraw(_amount, expeditionTreasuryAdd, treasuryAdd);
     }
 
 
@@ -1090,8 +1064,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     function _distributeWithdrawalTax(address _token, uint256 _amount)
         internal
     {
-        IERC20(_token).safeTransfer(devAdd, _amount / 2);
-        IERC20(_token).safeTransfer(expedAdd, _amount / 2);
+        IERC20(_token).safeTransfer(treasuryAdd, _amount / 2);
+        IERC20(_token).safeTransfer(expeditionTreasuryAdd, _amount / 2);
     }
 
     /// @dev Transfers funds to user on withdraw
