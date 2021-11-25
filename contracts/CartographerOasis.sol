@@ -365,11 +365,6 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
                 _userAdd
             );
         }
-
-        // Claim to user
-        if (claimable > 0) {
-            cartographer.claimWinnings(_userAdd, claimable);
-        }
         
         return claimable;
     }
@@ -386,7 +381,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         returns (uint256)
     {
         // Claim earnings from pool
-        uint256 claimable = _unifiedClaim(
+        _unifiedClaim(
             poolInfo[_token],
             userInfo[_token][_userAdd],
             _userAdd
@@ -434,8 +429,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
         returns (uint256)
     {
-        // Claim earnings from pool
-        uint256 claimable = _unifiedClaim(
+        _unifiedClaim(
             poolInfo[_token],
             userInfo[_token][_userAdd],
             _userAdd
@@ -470,7 +464,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
 
         // Claim rewards
         if (claimable > 0) {
-            cartographer.claimWinnings(_userAdd, claimable);
+            cartographer.claimWinnings(_userAdd, pool.token, claimable);
         }
 
         // Set debt, may be overwritten in subsequent deposit / withdraw, but may not so it needs to be set here
