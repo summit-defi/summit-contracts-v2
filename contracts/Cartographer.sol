@@ -336,6 +336,35 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // --   M O D I F I E R S (Many are split to save contract size)
     // -----------------------------------------------------------------
 
+    function _getTaxBP(address _userAdd, address _token)
+        public view
+        returns (uint16)
+    {
+        // Amount user expects to receive after fee taken
+        uint16 tokenTax = tokenWithdrawalTax[_token];
+        uint16 remainingFee = isNativeFarmToken[_token] ? uint16(0) : baseMinimumWithdrawalFee;
+        uint256 timeDiff = block.timestamp - tokenLastDepositTimestampForTax[_userAdd][_token];
+        if (tokenTax > baseMinimumWithdrawalFee && timeDiff < feeDecayDuration) {
+            remainingFee = baseMinimumWithdrawalFee + uint16(((tokenTax - baseMinimumWithdrawalFee) * (feeDecayDuration - timeDiff) * 1e12 / feeDecayDuration) / 1e12);
+        }
+
+        return remainingFee;
+    }
+
+    function _bonusBP(address _userAdd, address _token)
+        public view
+        returns (uint256)
+    {
+        uint256 bonusBP = 0;
+        uint256 nativeFarmTokenLastDepositTimestamp = nativeFarmTokenLastDepositTimestamp[_userAdd][_token];
+        if (nativeFarmTokenLastDepositTimestamp > 0 && nativeFarmTokenLastDepositTimestamp + feeDecayDuration > block.timestamp) {
+            uint256 timeDiff = block.timestamp - nativeFarmTokenLastDepositTimestamp > feeDecayDuration ? feeDecayDuration : block.timestamp - nativeFarmTokenLastDepositTimestamp;
+            bonusBP = (700 * timeDiff * 1e12 / feeDecayDuration) / 1e12;
+        }
+
+        return bonusBP;
+    }
+
     function _onlySubCartographer(address _subCartographer) internal view {
         require(
             _subCartographer == subCartographers[OASIS] ||
@@ -839,7 +868,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     {
         return _userTokenStakedAmount(_token, msg.sender);
     }
-    
+
     function _userTokenStakedAmount(address _token, address _userAdd)
         internal
         returns (uint256)
@@ -1009,13 +1038,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     /// @dev Utility function to handle harvesting Summit rewards with referral rewards
     function claimWinnings(address _userAdd, address _token, uint256 _amount) external onlySubCartographer {
-        uint256 bonusBP = 0;
-        uint256 nativeFarmTokenLastDepositTimestamp = nativeFarmTokenLastDepositTimestamp[_userAdd][_token];
-        if (nativeFarmTokenLastDepositTimestamp > 0 && nativeFarmTokenLastDepositTimestamp + feeDecayDuration > block.timestamp) {
-            uint256 timeDiff = block.timestamp - nativeFarmTokenLastDepositTimestamp > feeDecayDuration ? feeDecayDuration : block.timestamp - nativeFarmTokenLastDepositTimestamp;
-            bonusBP = (700 * timeDiff * 1e12 / feeDecayDuration) / 1e12;
-        }
-
+        uint256 bonusBP = _bonusBP(_userAdd, _token);
         uint256 amountWithBonus = _amount * (10000 + bonusBP) / 10000;
 
         UserLockedWinnings storage userEpochWinnings = userLockedWinnings[_userAdd][_getCurrentEpoch()];
@@ -1126,13 +1149,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         uint256 amountAfterFee = passthroughWithdraw(_token, _amount);
 
         // Amount user expects to receive after fee taken
-        uint16 tokenTax = tokenWithdrawalTax[_token];
-        uint16 remainingFee = isNativeFarmToken[_token] ? uint16(0) : baseMinimumWithdrawalFee;
-        uint256 timeDiff = block.timestamp - tokenLastDepositTimestampForTax[_userAdd][_token];
-        if (tokenTax > baseMinimumWithdrawalFee && timeDiff < feeDecayDuration) {
-            remainingFee = baseMinimumWithdrawalFee + uint16(((tokenTax - baseMinimumWithdrawalFee) * (feeDecayDuration - timeDiff) * 1e12 / feeDecayDuration) / 1e12);
-        }
-        uint256 expectedWithdrawnAmount = (_amount * (10000 - remainingFee)) / 10000;
+        uint256 expectedWithdrawnAmount = (_amount * (10000 - _getTaxBP(_userAdd, _token))) / 10000;
 
         // Take any remaining fee (gap between what was actually withdrawn, and what the user expects to receive)
         if (amountAfterFee > expectedWithdrawnAmount) {
@@ -1231,5 +1248,29 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         onlyOwner
     {
         isNativeFarmToken[_token] = _isNativeFarm;
+    }
+
+    // -----------------------------------------------------
+    // --   G E T T E R
+    // -----------------------------------------------------
+
+    /// @dev Get tax BP
+    /// @param _userAdd user address
+    /// @param _token token address
+    function taxBP(address _userAdd, address _token)
+        public view
+        returns (uint16)
+    {
+        return _getTaxBP(_userAdd, _token);
+    }
+
+    /// @dev Get bonus BP
+    /// @param _userAdd user address
+    /// @param _token token address
+    function bonusBP(address _userAdd, address _token)
+        public view
+        returns (uint256)
+    {
+        return _bonusBP(_userAdd, _token);
     }
 }
