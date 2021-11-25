@@ -863,14 +863,14 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     /// @dev Users staked amount across all elevations
     function userTokenStakedAmount(address _token)
-        public
+        public view
         returns (uint256)
     {
         return _userTokenStakedAmount(_token, msg.sender);
     }
 
     function _userTokenStakedAmount(address _token, address _userAdd)
-        internal
+        internal view
         returns (uint256)
     {
         uint256 totalStaked = 0;
