@@ -839,6 +839,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     {
         return _userTokenStakedAmount(_token, msg.sender);
     }
+    
     function _userTokenStakedAmount(address _token, address _userAdd)
         internal
         returns (uint256)
@@ -876,7 +877,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         // tax handling
         uint256 taxResetBP = isNativeFarmToken[_token] ? nativeTaxResetOnDepositBP : baseTaxResetOnDepositBP;
-        uint256 staked = subCartographer(elevation).userStakedAmount(_token, msg.sender);
+        uint256 staked = subCartographer(_elevation).userStakedAmount(_token, msg.sender);
         if (_amount > (staked * taxResetBP / 10000)) {
             tokenLastDepositTimestampForTax[msg.sender][_token] = block.timestamp;
         }
@@ -1007,7 +1008,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
 
     /// @dev Utility function to handle harvesting Summit rewards with referral rewards
-    function claimWinnings(address _userAdd, uint256 _amount) external onlySubCartographer {
+    function claimWinnings(address _userAdd, address _token, uint256 _amount) external onlySubCartographer {
         uint256 bonusBP = 0;
         uint256 nativeFarmTokenLastDepositTimestamp = nativeFarmTokenLastDepositTimestamp[_userAdd][_token];
         if (nativeFarmTokenLastDepositTimestamp > 0 && nativeFarmTokenLastDepositTimestamp + feeDecayDuration > block.timestamp) {
@@ -1015,11 +1016,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
             bonusBP = (700 * timeDiff * 1e12 / feeDecayDuration) / 1e12;
         }
 
-        uint256 amountWithBonus = _amount * (10000 + bonus) / 10000;
+        uint256 amountWithBonus = _amount * (10000 + bonusBP) / 10000;
 
         UserLockedWinnings storage userEpochWinnings = userLockedWinnings[_userAdd][_getCurrentEpoch()];
         userEpochWinnings.winnings += amountWithBonus;
-        userEpochWinnings.bonusEarned += _amount * bonus / 10000;
+        userEpochWinnings.bonusEarned += _amount * bonusBP / 10000;
 
         // If the user has been referred, add the 1% bonus to that user and their referrer
         summitReferrals.addReferralRewardsIfNecessary(_userAdd, _amount);
