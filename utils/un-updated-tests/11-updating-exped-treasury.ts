@@ -14,26 +14,26 @@ describe("UPDATE EXPEDITION TREASURY ADDRESS", function() {
         const cartographer = await getCartographer()
 
         await expect(
-            cartographer.connect(user1).setExpedAdd(user1.address)
+            cartographer.connect(user1).setexpeditionTreasuryAdd(user1.address)
         ).to.be.revertedWith(ERR.NON_OWNER)
 
         await expect(
-            cartographer.connect(dev).setExpedAdd(ZEROADD)
+            cartographer.connect(dev).setexpeditionTreasuryAdd(ZEROADD)
         ).to.be.revertedWith(ERR.MISSING_ADDRESS)
     })
-    it(`SUCCESSFUL UPDATE: Calling setExpedAdd with correct parameters should update exped add`, async function () {
+    it(`SUCCESSFUL UPDATE: Calling setexpeditionTreasuryAdd with correct parameters should update exped add`, async function () {
         const { dev, exped, user2 } = await getNamedSigners(hre) 
 
         const cartographer = await getCartographer()
 
-        const expedTreasuryAddInit = await cartographer.expedAdd()
+        const expedTreasuryAddInit = await cartographer.expeditionTreasuryAdd()
         expect(expedTreasuryAddInit).to.equal(exped.address)
         
         await expect(
-            cartographer.connect(dev).setExpedAdd(user2.address)
+            cartographer.connect(dev).setexpeditionTreasuryAdd(user2.address)
         ).to.emit(cartographer, EVENT.SetExpeditionTreasuryAddress).withArgs(dev.address, user2.address)
         
-        const expedTreasuryAddFinal = await cartographer.expedAdd()
+        const expedTreasuryAddFinal = await cartographer.expeditionTreasuryAdd()
         expect(expedTreasuryAddFinal).to.equal(user2.address)
     })
 })

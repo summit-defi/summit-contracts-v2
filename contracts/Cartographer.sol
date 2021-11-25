@@ -288,8 +288,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Updating the total emission of the ecosystem
     /// @param _amount New total emission
     function setTotalSummitPerSecond(uint256 _amount) public onlyOwner {
-        // Require non-zero and less than 1 SUMMIT per second
-        require(_amount > 0 && _amount < 1e18, "Invalid emission");
+        // Must be less than 1 SUMMIT per second
+        require(_amount >= 0 && _amount < 1e18, "Invalid emission");
 
         summitPerSecond = _amount;
     }

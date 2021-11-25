@@ -466,7 +466,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         }
 
         // Mint Summit according to time delta, pools token share and elevation, and tokens allocation share
-        uint256 summitReward = cartographer.mintPoolSummit(pool.lastRewardTimestamp, pool.token, elevation);
+        uint256 summitReward = cartographer.poolSummitEmission(pool.lastRewardTimestamp, pool.token, elevation);
 
         // Update accSummitPerShare with amount of summit minted for pool
         pool.accSummitPerShare += summitReward * 1e12 / pool.supply;

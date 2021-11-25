@@ -101,21 +101,21 @@ contract BeefyVaultV6NativePassthrough is IPassthrough {
         return minDepositedAmount;
     }
 
-    function distributeRemainingBalance(address _expedAdd, address _devAdd) internal {
+    function distributeRemainingBalance(address _expeditionTreasuryAdd, address _treasuryAdd) internal {
         uint256 toDistribute = passthroughToken.balanceOf(address(this));
 
         if (toDistribute == 0) return;
 
-        passthroughToken.safeTransfer(_expedAdd, toDistribute * 92 / 100);
-        passthroughToken.safeTransfer(_devAdd, toDistribute * 8 / 100);
+        passthroughToken.safeTransfer(_expeditionTreasuryAdd, toDistribute * 92 / 100);
+        passthroughToken.safeTransfer(_treasuryAdd, toDistribute * 8 / 100);
     }
 
 
     /// @dev Withdraw passthrough token back to cartographer, send any extra rewards to accumulator addresses
     /// @param _amount Amount to withdraw for user
-    /// @param _expedAdd Address of expedition accumulator
-    /// @param _devAdd Address of dev fund accumulator
-    function withdraw(uint256 _amount, address _expedAdd, address _devAdd)
+    /// @param _expeditionTreasuryAdd Address of expedition accumulator
+    /// @param _treasuryAdd Address of dev fund accumulator
+    function withdraw(uint256 _amount, address _expeditionTreasuryAdd, address _treasuryAdd)
         external override
         onlyCartographer
         returns (uint256)
@@ -142,12 +142,12 @@ contract BeefyVaultV6NativePassthrough is IPassthrough {
         passthroughToken.safeTransfer(cartographer, usersTrueWithdrawnAmount);
 
         // Distribute remaining rewards in this contract
-        distributeRemainingBalance(_expedAdd, _devAdd);
+        distributeRemainingBalance(_expeditionTreasuryAdd, _treasuryAdd);
 
         return usersTrueWithdrawnAmount;
     }
 
-    function retire(address _expedAdd, address _devAdd)
+    function retire(address _expeditionTreasuryAdd, address _treasuryAdd)
         external override
         onlyCartographer
     {
@@ -167,6 +167,6 @@ contract BeefyVaultV6NativePassthrough is IPassthrough {
         balance = 0;
 
         // Distribute the remaining rewards in this contract
-        distributeRemainingBalance(_expedAdd, _devAdd);
+        distributeRemainingBalance(_expeditionTreasuryAdd, _treasuryAdd);
     }
 }

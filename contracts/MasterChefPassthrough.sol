@@ -84,14 +84,14 @@ contract MasterChefPassthrough is IPassthrough, Ownable {
     }
 
 
-    function distributeRewards(address _expedAdd, address _devAdd) internal {
+    function distributeRewards(address _expeditionTreasuryAdd, address _treasuryAdd) internal {
         uint256 toDistribute = rewardToken.balanceOf(address(this));
 
         // Early exit if nothing to distribute
         if (toDistribute == 0) return;
 
-        rewardToken.safeTransfer(_expedAdd, toDistribute * 92 / 100);
-        rewardToken.safeTransfer(_devAdd, toDistribute * 8 / 100);
+        rewardToken.safeTransfer(_expeditionTreasuryAdd, toDistribute * 92 / 100);
+        rewardToken.safeTransfer(_treasuryAdd, toDistribute * 8 / 100);
     }
 
 
@@ -108,9 +108,9 @@ contract MasterChefPassthrough is IPassthrough, Ownable {
 
     /// @dev Deposit the amount of passthrough token in contract to the masterChef and take deposit fee, distribute any fees / rewards that are harvested
     /// @param _amount Amount the user is attempting to deposit
-    /// @param _expedAdd Expedition accumulator
-    /// @param _devAdd Dev fund accumulator
-    function deposit(uint256 _amount, address _expedAdd, address _devAdd)
+    /// @param _expeditionTreasuryAdd Expedition accumulator
+    /// @param _treasuryAdd Dev fund accumulator
+    function deposit(uint256 _amount, address _expeditionTreasuryAdd, address _treasuryAdd)
         external override
         onlyCartographer
         returns (uint256)
@@ -126,7 +126,7 @@ contract MasterChefPassthrough is IPassthrough, Ownable {
         // True amount deposited in masterChef
         uint256 trueDepositedAmount = balanceFinal - balanceInit;
 
-        distributeRewards(_expedAdd, _devAdd);
+        distributeRewards(_expeditionTreasuryAdd, _treasuryAdd);
 
         return trueDepositedAmount;
     }
@@ -134,9 +134,9 @@ contract MasterChefPassthrough is IPassthrough, Ownable {
 
     /// @dev Withdraw passthrough token back to cartographer, send any extra rewards to accumulator addresses
     /// @param _amount Amount to withdraw for user
-    /// @param _expedAdd Address of expedition accumulator
-    /// @param _devAdd Address of dev fund accumulator
-    function withdraw(uint256 _amount, address _expedAdd, address _devAdd)
+    /// @param _expeditionTreasuryAdd Address of expedition accumulator
+    /// @param _treasuryAdd Address of dev fund accumulator
+    function withdraw(uint256 _amount, address _expeditionTreasuryAdd, address _treasuryAdd)
         external override
         onlyCartographer
         returns (uint256)
@@ -152,15 +152,15 @@ contract MasterChefPassthrough is IPassthrough, Ownable {
         passthroughToken.safeTransfer(cartographer, withdrawnAmount);
         
         // Distribute the remaining rewards in this contract
-        distributeRewards(_expedAdd, _devAdd);
+        distributeRewards(_expeditionTreasuryAdd, _treasuryAdd);
 
         return withdrawnAmount;
     }
 
     /// @dev Retire this passthrough strategy, send all user's funds back to cartographer and distribute any rewards
-    /// @param _expedAdd Address of expedition accumulator
-    /// @param _devAdd Address of the dev fund accumulator
-    function retire(address _expedAdd, address _devAdd)
+    /// @param _expeditionTreasuryAdd Address of expedition accumulator
+    /// @param _treasuryAdd Address of the dev fund accumulator
+    function retire(address _expeditionTreasuryAdd, address _treasuryAdd)
         external override
         onlyCartographer
     {
@@ -173,6 +173,6 @@ contract MasterChefPassthrough is IPassthrough, Ownable {
         passthroughToken.safeTransfer(cartographer, stakedAmount);
 
         // Distribute the remaining rewards in this contract
-        distributeRewards(_expedAdd, _devAdd);
+        distributeRewards(_expeditionTreasuryAdd, _treasuryAdd);
     }
 }

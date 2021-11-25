@@ -133,8 +133,8 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
                 IERC20(summit).safeTransfer(msg.sender, unclaimedWinnings);
             } else {
                 IERC20(summit).safeTransfer(msg.sender, unclaimedWinnings / 2);
-                IERC20(summit).safeTransfer(cartographer.devAdd(), unclaimedWinnings / 4);
-                IERC20(summit).safeTransfer(cartographer.expedAdd(), unclaimedWinnings / 4);
+                IERC20(summit).safeTransfer(cartographer.treasuryAdd(), unclaimedWinnings / 4);
+                IERC20(summit).safeTransfer(cartographer.expeditionTreasuryAdd(), unclaimedWinnings / 4);
             }
         }
 
