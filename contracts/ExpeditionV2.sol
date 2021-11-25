@@ -6,6 +6,7 @@ import "./ElevationHelper.sol";
 import "./SummitToken.sol";
 import "./EverestToken.sol";
 import "./ISubCart.sol";
+import "./SummitLocking.sol";
 import "./libs/IUniswapV2Pair.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -104,6 +105,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     SummitToken public summit;
     EverestToken public everest;
     ElevationHelper elevationHelper;
+    SummitLocking public summitLocking;
     uint8 constant EXPEDITION = 4;
 
     bool expeditionInitialized = false;
@@ -214,15 +216,24 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
 
 
     /// @dev Constructor, setting address of cartographer
-    constructor(address _summit, address _everest, address _elevationHelper, address _expeditionRewardToken) {
+    constructor(
+        address _summit,
+         address _everest,
+         address _elevationHelper,
+         address _expeditionRewardToken,
+         address _summitLocking
+    ) {
         require(_summit != address(0), "Summit required");
         require(_everest != address(0), "Everest required");
         require(_elevationHelper != address(0), "Elevation Helper Required");
+        require(_expeditionRewardToken != address(0), "Reward Token Required");
+        require(_summitLocking != address(0), "SummitLocking Required");
         summit = SummitToken(_summit);
         everest = EverestToken(_everest);
         elevationHelper = ElevationHelper(_elevationHelper);
         everest.approve(burnAdd, type(uint256).max);
         expeditionRewardToken = IERC20(_expeditionRewardToken);
+        summitLocking = SummitLocking(_summitLocking);
 
         rolledOverRounds = elevationHelper.roundNumber(EXPEDITION);
     }
@@ -859,8 +870,11 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         // Early escape if no winnings available to harvest;
         if ((summitWinnings + rewardsWinnings) == 0) return (0, 0);
     
-        // Transfer winnings to user
-        IERC20(summit).safeTransfer(everestInfo.userAdd, summitWinnings);
+        // Claim SUMMIT winnings (lock for 30 days)
+        IERC20(summit).safeTransfer(address(summitLocking), summitWinnings);
+        summitLocking.addLockedWinnings(summitWinnings, 0, everestInfo.userAdd);
+
+        // Transfer rewards to user
         expeditionRewardToken.safeTransfer(everestInfo.userAdd, rewardsWinnings);
 
         // Mark harvested winnings as withdrawn

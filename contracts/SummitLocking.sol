@@ -7,10 +7,11 @@ import "./Cartographer.sol";
 import "./ExpeditionV2.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract SummitLocking is Ownable, ReentrancyGuard {
+contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     SummitToken public summit;
@@ -35,11 +36,11 @@ contract SummitLocking is Ownable, ReentrancyGuard {
     event WinningsLocked(address indexed _userAdd, uint256 _lockedWinnings, uint256 _bonusWinnings);
     event WinningsHarvested(address indexed _userAdd, uint256 _epoch, uint256 _harvestedWinnings, bool _lockForEverest);
 
-    constructor(
+    function initialize(
         address _summit,
         address _cartographer,
         address _expeditionV2
-    ) {
+    ) public onlyOwner {
         require(_summit != address(0), "Missing SummitToken");
         require(_cartographer != address(0), "Missing Cartographer");
         require(_expeditionV2 != address(0), "Missing ExpeditionV2");
