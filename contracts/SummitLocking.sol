@@ -128,7 +128,7 @@ contract SummitLocking is Ownable, ReentrancyGuard {
         // Else check if epoch matured, harvest 100% if true, else harvest 50%, burn 25%, and send 25% to expedition contract to be distributed to EVEREST holders
         } else {
             bool epochMatured = hasEpochMatured(_epoch);
-            if (epochMatured) {
+            if (panicFundsReleased || epochMatured) {
                 IERC20(summit).safeTransfer(msg.sender, unclaimedWinnings);
             } else {
                 IERC20(summit).safeTransfer(msg.sender, unclaimedWinnings / 2);
