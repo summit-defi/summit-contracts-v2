@@ -807,7 +807,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
         // Claim winnings if any available
         if (claimable > 0) {
-            cartographer.claimWinnings(_userAdd, claimable);
+            cartographer.claimWinnings(_userAdd, pool.token, claimable);
         }
 
         return claimable;
@@ -979,11 +979,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
                 userInfo[userInteractingPools[_userAdd].at(index)][_userAdd],
                 _userAdd
             );
-        }
-
-        // Claim available winnings
-        if (claimable > 0) {
-            cartographer.claimWinnings(_userAdd, claimable);
         }
         
         return claimable;

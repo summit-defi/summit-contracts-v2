@@ -115,18 +115,21 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     uint256[4] public elevAlloc;                                                // Total allocation points of all pools at an elevation
     mapping(address => bool) public tokenAllocExistence;                        // Whether an allocation has been created for a specific token
-    mapping(address => uint16) public tokenWithdrawalTax;                                 // Fee for all farms of this token
+    mapping(address => uint16) public tokenWithdrawalTax;                       // Fee for all farms of this token
     address[] tokensWithAllocation;                                             // List of Token Addresses that have been assigned an allocation
     mapping(address => uint256) public tokenAlloc;                              // A tokens underlying allocation, which is modulated for each elevation
 
     mapping(address => mapping(uint8 => bool)) public poolExistence;            // Whether a pool exists for a token at an elevation
     mapping(address => mapping(uint8 => bool)) public tokenElevationIsEarning;  // If a token is earning SUMMIT at a specific elevation
 
-    mapping(address => mapping(address => uint256)) public tokenLastDepositTimestamp; // Users' last deposit timestamp
     mapping(address => bool) public isNativeFarmToken;
+    mapping(address => mapping(address => uint256)) public nativeFarmTokenLastDepositTimestamp; // Users' last deposit timestamp for native farms
+
+    mapping(address => mapping(address => uint256)) public tokenLastDepositTimestampForTax; // Users' last deposit timestamp for tax
     uint16 public baseMinimumWithdrawalFee = 100;
     uint256 public feeDecayDuration = 7 * 86400;
-    uint256 public taxResetOnDepositBP = 500;
+    uint256 public baseTaxResetOnDepositBP = 500;
+    uint256 public nativeTaxResetOnDepositBP = 1000;
 
     struct UserLockedWinnings {
         uint256 winnings;
@@ -332,6 +335,35 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // -----------------------------------------------------------------
     // --   M O D I F I E R S (Many are split to save contract size)
     // -----------------------------------------------------------------
+
+    function _getTaxBP(address _userAdd, address _token)
+        public view
+        returns (uint16)
+    {
+        // Amount user expects to receive after fee taken
+        uint16 tokenTax = tokenWithdrawalTax[_token];
+        uint16 remainingFee = isNativeFarmToken[_token] ? uint16(0) : baseMinimumWithdrawalFee;
+        uint256 timeDiff = block.timestamp - tokenLastDepositTimestampForTax[_userAdd][_token];
+        if (tokenTax > baseMinimumWithdrawalFee && timeDiff < feeDecayDuration) {
+            remainingFee = baseMinimumWithdrawalFee + uint16(((tokenTax - baseMinimumWithdrawalFee) * (feeDecayDuration - timeDiff) * 1e12 / feeDecayDuration) / 1e12);
+        }
+
+        return remainingFee;
+    }
+
+    function _bonusBP(address _userAdd, address _token)
+        public view
+        returns (uint256)
+    {
+        uint256 bonusBP = 0;
+        uint256 nativeFarmTokenLastDepositTimestamp = nativeFarmTokenLastDepositTimestamp[_userAdd][_token];
+        if (nativeFarmTokenLastDepositTimestamp > 0 && nativeFarmTokenLastDepositTimestamp + feeDecayDuration > block.timestamp) {
+            uint256 timeDiff = block.timestamp - nativeFarmTokenLastDepositTimestamp > feeDecayDuration ? feeDecayDuration : block.timestamp - nativeFarmTokenLastDepositTimestamp;
+            bonusBP = (700 * timeDiff * 1e12 / feeDecayDuration) / 1e12;
+        }
+
+        return bonusBP;
+    }
 
     function _onlySubCartographer(address _subCartographer) internal view {
         require(
@@ -836,6 +868,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     {
         return _userTokenStakedAmount(_token, msg.sender);
     }
+
     function _userTokenStakedAmount(address _token, address _userAdd)
         internal
         returns (uint256)
@@ -864,8 +897,18 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
                 false
             );
 
-        if (_amount > (_userTokenStakedAmount(_token, msg.sender) * taxResetOnDepositBP / 10000)) {
-            tokenLastDepositTimestamp[msg.sender][_token] = block.timestamp;
+        // native farm bonus handling
+        if (isNativeFarmToken[_token]) {
+            if (nativeFarmTokenLastDepositTimestamp[msg.sender][_token] == 0) {
+                nativeFarmTokenLastDepositTimestamp[msg.sender][_token] == block.timestamp;
+            }
+        }
+
+        // tax handling
+        uint256 taxResetBP = isNativeFarmToken[_token] ? nativeTaxResetOnDepositBP : baseTaxResetOnDepositBP;
+        uint256 staked = subCartographer(_elevation).userStakedAmount(_token, msg.sender);
+        if (_amount > (staked * taxResetBP / 10000)) {
+            tokenLastDepositTimestampForTax[msg.sender][_token] = block.timestamp;
         }
 
         emit Deposit(msg.sender, _token, _elevation, amountAfterFee);
@@ -900,6 +943,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
                 msg.sender,
                 false
             );
+
+        // native farm bonus handling
+        if (isNativeFarmToken[_token]) {
+            nativeFarmTokenLastDepositTimestamp[msg.sender][_token] == 0;
+        }
 
         emit Withdraw(msg.sender, _token, _elevation, amountAfterFee);
     }
@@ -989,14 +1037,13 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
 
     /// @dev Utility function to handle harvesting Summit rewards with referral rewards
-    function claimWinnings(address _userAdd, uint256 _amount) external onlySubCartographer {
-        uint256 bonus = 700;
-
-        uint256 amountWithBonus = _amount * (10000 + bonus) / 10000;
+    function claimWinnings(address _userAdd, address _token, uint256 _amount) external onlySubCartographer {
+        uint256 bonusBP = _bonusBP(_userAdd, _token);
+        uint256 amountWithBonus = _amount * (10000 + bonusBP) / 10000;
 
         UserLockedWinnings storage userEpochWinnings = userLockedWinnings[_userAdd][_getCurrentEpoch()];
         userEpochWinnings.winnings += amountWithBonus;
-        userEpochWinnings.bonusEarned += _amount * bonus / 10000;
+        userEpochWinnings.bonusEarned += _amount * bonusBP / 10000;
 
         // If the user has been referred, add the 1% bonus to that user and their referrer
         summitReferrals.addReferralRewardsIfNecessary(_userAdd, _amount);
@@ -1102,13 +1149,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         uint256 amountAfterFee = passthroughWithdraw(_token, _amount);
 
         // Amount user expects to receive after fee taken
-        uint16 tokenTax = tokenWithdrawalTax[_token];
-        uint16 remainingFee = tokenIsNativeFarm[_token] ? uint16(0) : baseMinimumWithdrawalFee;
-        uint256 timeDiff = block.timestamp - tokenLastDepositTimestamp[_userAdd][_token];
-        if (tokenTax > baseMinimumWithdrawalFee && timeDiff < feeDecayDuration) {
-            remainingFee = baseMinimumWithdrawalFee + uint16(((tokenTax - baseMinimumWithdrawalFee) * (feeDecayDuration - timeDiff) * 1e12 / feeDecayDuration) / 1e12);
-        }
-        uint256 expectedWithdrawnAmount = (_amount * (10000 - remainingFee)) / 10000;
+        uint256 expectedWithdrawnAmount = (_amount * (10000 - _getTaxBP(_userAdd, _token))) / 10000;
 
         // Take any remaining fee (gap between what was actually withdrawn, and what the user expects to receive)
         if (amountAfterFee > expectedWithdrawnAmount) {
@@ -1206,6 +1247,30 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         public
         onlyOwner
     {
-        tokenIsNativeFarm[_token] = _isNativeFarm;
+        isNativeFarmToken[_token] = _isNativeFarm;
+    }
+
+    // -----------------------------------------------------
+    // --   G E T T E R
+    // -----------------------------------------------------
+
+    /// @dev Get tax BP
+    /// @param _userAdd user address
+    /// @param _token token address
+    function taxBP(address _userAdd, address _token)
+        public view
+        returns (uint16)
+    {
+        return _getTaxBP(_userAdd, _token);
+    }
+
+    /// @dev Get bonus BP
+    /// @param _userAdd user address
+    /// @param _token token address
+    function bonusBP(address _userAdd, address _token)
+        public view
+        returns (uint256)
+    {
+        return _bonusBP(_userAdd, _token);
     }
 }
