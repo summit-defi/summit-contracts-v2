@@ -125,7 +125,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     mapping(address => bool) public isNativeFarmToken;
     
     mapping(address => mapping(address => uint256)) public nativeFarmTokenLastDepositTimestamp; // Users' last deposit timestamp for native farms
-    uint256 public maxBonusBp = 700;
+    uint256 public maxBonusBP = 700;
 
     mapping(address => mapping(address => uint256)) public tokenLastDepositTimestampForTax; // Users' last deposit timestamp for tax
     uint16 public baseMinimumWithdrawalTax = 100;
@@ -1274,11 +1274,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     }
 
     /// @dev Set the maximum bonus BP for native farms
-    function setMaxBonusBP(uint256 _maxBonusBp)
+    function setMaxBonusBP(uint256 _maxBonusBP)
         public
         onlyOwner
     {
-        require(_maxBonusBp <= 1000, "Max bonus is 10%");
-        maxBonusBp = maxBonusBp;
+        require(_maxBonusBP <= 1000, "Max bonus is 10%");
+        maxBonusBP = _maxBonusBP;
     }
 }
