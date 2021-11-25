@@ -865,7 +865,9 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
                 false
             );
 
-        if (_amount > (_userTokenStakedAmount(_token, msg.sender) * taxResetOnDepositBP / 10000)) {
+        uint256 taxResetBP = isNativeFarmToken[_token] ? nativeTaxResetOnDepositBP : baseTaxResetOnDepositBP;
+        uint256 staked = subCartographer(elevation).userStakedAmount(_token, msg.sender);
+        if (_amount > (staked * taxResetBP / 10000)) {
             tokenLastDepositTimestamp[msg.sender][_token] = block.timestamp;
         }
 
