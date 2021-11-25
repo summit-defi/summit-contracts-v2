@@ -115,7 +115,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     uint256[4] public elevAlloc;                                                // Total allocation points of all pools at an elevation
     mapping(address => bool) public tokenAllocExistence;                        // Whether an allocation has been created for a specific token
-    mapping(address => uint16) public tokenWithdrawalTax;                                 // Fee for all farms of this token
+    mapping(address => uint16) public tokenWithdrawalTax;                       // Fee for all farms of this token
     address[] tokensWithAllocation;                                             // List of Token Addresses that have been assigned an allocation
     mapping(address => uint256) public tokenAlloc;                              // A tokens underlying allocation, which is modulated for each elevation
 
@@ -126,7 +126,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     mapping(address => bool) public isNativeFarmToken;
     uint16 public baseMinimumWithdrawalFee = 100;
     uint256 public feeDecayDuration = 7 * 86400;
-    uint256 public taxResetOnDepositBP = 500;
+    uint256 public baseTaxResetOnDepositBP = 500;
+    uint256 public nativeTaxResetOnDepositBP = 1000;
 
     struct UserLockedWinnings {
         uint256 winnings;
