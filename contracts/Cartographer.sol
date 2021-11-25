@@ -6,6 +6,7 @@ import "./CartographerElevation.sol";
 import "./ExpeditionV2.sol";
 import "./ElevationHelper.sol";
 import "./SummitReferrals.sol";
+import "./SummitLocking.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -103,6 +104,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     SummitReferrals summitReferrals;
     address[4] subCartographers;
     ExpeditionV2 expeditionV2;
+    SummitLocking summitLocking;
 
     uint256 public launchTimestamp = 1641028149;                                // 2022-1-1, will be updated when summit ecosystem switched on
     uint256 public summitPerSecond;                                             // Amount of Summit minted per second to be distributed to users
@@ -131,17 +133,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     uint16 public baseMinimumWithdrawalTax = 100;
     uint256 public taxDecayDuration = 7 * 86400;
     uint256 public taxResetOnDepositBP = 500;
-
-    struct UserLockedWinnings {
-        uint256 winnings;
-        uint256 bonusEarned;
-        uint256 claimedWinnings;
-    }
-
-    uint8 public yieldLockEpochCount = 5;
-    mapping(address => mapping(uint256 => UserLockedWinnings)) public userLockedWinnings;
-
-    mapping(address => bool) public tokenIsNativeFarm;
 
 
 
@@ -198,7 +189,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         address _CartographerPlains,
         address _CartographerMesa,
         address _CartographerSummit,
-        address _expeditionV2
+        address _expeditionV2,
+        address _summitLocking
     )
         external
         initializer onlyOwner
@@ -212,7 +204,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
             _CartographerPlains != address(0) &&
             _CartographerMesa != address(0) &&
             _CartographerSummit != address(0) &&
-            _expeditionV2 != address(0),
+            _expeditionV2 != address(0) &&
+            _summitLocking != address(0),
             "Contract is zero"
         );
 
@@ -230,6 +223,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         subCartographers[SUMMIT] = _CartographerSummit;
 
         expeditionV2 = ExpeditionV2(_expeditionV2);
+        summitLocking = SummitLocking(_summitLocking);
 
         // Initialize the subCarts with the address of elevationHelper
         for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
@@ -1031,82 +1025,24 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
 
     // -----------------------------------------------------
-    // --   Y I E L D   L O C K
+    // --   Y I E L D   L O C K I N G
     // -----------------------------------------------------
-
-    /// @dev Update yield lock epoch count
-    function setYieldLockEpochCount(uint8 _count)
-        public onlyOwner
-    {
-        require(_count <= 12, "Invalid lock epoch count");
-        yieldLockEpochCount = _count;
-    }
-
-    /// @dev Get current epoch
-    function _getCurrentEpoch()
-        internal view
-        returns (uint256)
-    {
-        return block.timestamp / (3600 * 24 * 7);
-    }
-
-    /// @dev Test if epoch has matured
-    function _hasEpochMatured(uint256 _epoch)
-        internal view
-        returns (bool)
-    {
-        return (_getCurrentEpoch() - _epoch) >= yieldLockEpochCount;
-    }
 
 
     /// @dev Utility function to handle claiming Summit rewards with referral rewards
     function claimWinnings(address _userAdd, address _token, uint256 _amount) external onlySubCartographer {
         uint256 tokenBonusBP = _bonusBP(_userAdd, _token);
-        uint256 amountWithBonus = _amount * (10000 + tokenBonusBP) / 10000;
+        uint256 bonusWinnings = _amount * tokenBonusBP / 10000;
+        uint256 totalWinnings = _amount + bonusWinnings;
 
-        UserLockedWinnings storage userEpochWinnings = userLockedWinnings[_userAdd][_getCurrentEpoch()];
-        userEpochWinnings.winnings += amountWithBonus;
-        userEpochWinnings.bonusEarned += _amount * tokenBonusBP / 10000;
+        // Send users claimable winnings to SummitLocking.sol
+        summitLocking.addLockedWinnings(totalWinnings, bonusWinnings, _userAdd);
 
         // If the user has been referred, add the 1% bonus to that user and their referrer
         summitReferrals.addReferralRewardsIfNecessary(_userAdd, _amount);
 
-        emit ClaimWinnings(_userAdd, amountWithBonus);
+        emit ClaimWinnings(_userAdd, totalWinnings);
     }
-
-    /// @dev Harvest locked winnings, 50% tax taken on early harvest
-    function harvestWinnings(uint256 _epoch, uint256 _amount, bool _lockForEverest)
-        public
-        nonReentrant
-    {
-        UserLockedWinnings storage userEpochWinnings = userLockedWinnings[msg.sender][_epoch];
-
-        // Winnings that haven't yet been claimed
-        uint256 unclaimedWinnings = userEpochWinnings.winnings - userEpochWinnings.claimedWinnings;
-
-        // Validate harvest amount
-        require(_amount > 0 && _amount <= unclaimedWinnings, "Bad Harvest");
-
-        // Harvest winnings by locking for everest in the expedition
-        if (_lockForEverest) {
-            expeditionV2.lockClaimableSummit(unclaimedWinnings, msg.sender);
-
-        // Else check if epoch matured, harvest 100% if true, else harvest 50%, burn 25%, and send 25% to expedition contract to be distributed to EVEREST holders
-        } else {
-            bool epochMatured = _hasEpochMatured(_epoch);
-            if (epochMatured) {
-                IERC20(summit).safeTransfer(msg.sender, unclaimedWinnings);
-            } else {
-                IERC20(summit).safeTransfer(msg.sender, unclaimedWinnings / 2);
-                IERC20(summit).safeTransfer(burnAdd, unclaimedWinnings / 4);
-                IERC20(summit).safeTransfer(expedAdd, unclaimedWinnings / 4);
-            }
-        }
-
-        userEpochWinnings.claimedWinnings += unclaimedWinnings;
-    }
-
-
 
 
 
@@ -1243,7 +1179,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         public
         onlyOwner
     {
-        // Taxs will never be higher than 5%
+        // Taxes will never be higher than 10%
         require(_taxBP <= 1000, "Invalid tax > 10%");
         tokenWithdrawalTax[_token] = _taxBP;
     }
