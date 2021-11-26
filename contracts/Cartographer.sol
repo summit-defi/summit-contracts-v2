@@ -830,9 +830,9 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         public view
         returns (uint256)
     {
-        return _bonusBP(_userAdd, _token);
+        return _getBonusBP(_userAdd, _token);
     }
-    function _bonusBP(address _userAdd, address _token)
+    function _getBonusBP(address _userAdd, address _token)
         public view
         returns (uint256)
     {
@@ -1000,7 +1000,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     /// @dev Utility function to handle claiming Summit rewards with referral rewards
     function claimWinnings(address _userAdd, address _token, uint256 _amount) external onlySubCartographer {
-        uint256 tokenBonusBP = _bonusBP(_userAdd, _token);
+        uint256 tokenBonusBP = _getBonusBP(_userAdd, _token);
         uint256 bonusWinnings = _amount * tokenBonusBP / 10000;
         uint256 totalWinnings = _amount + bonusWinnings;
 
