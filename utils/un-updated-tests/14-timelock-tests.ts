@@ -243,7 +243,7 @@
 //     // Valid TX to be cancelled
 //     let testTxParams: TimelockTxFunctionParams = {
 //         targetContract: cartographer,
-//         txName: TimelockedTransaction.Cartographer_SetExpedAdd,
+//         txName: TimelockedTransaction.Cartographer_SetexpeditionTreasuryAdd,
 //         txParams: [dev.address],
 //         queuedTxEta: timestamp + 60 + (24 * 3600),
 //     }
@@ -283,14 +283,14 @@
 //     const timelock = await getTimelock()
 //     const cartographer = await getCartographer()
     
-//     const expedAddInit = await cartographer.expedAdd()
-//     expect(expedAddInit).to.equal(exped.address)
+//     const expeditionTreasuryAddInit = await cartographer.expeditionTreasuryAdd()
+//     expect(expeditionTreasuryAddInit).to.equal(exped.address)
     
-//     // Valid TX to be executed and verified: Switch Cartographer ExpedAdd --> User1 address
+//     // Valid TX to be executed and verified: Switch Cartographer expeditionTreasuryAdd --> User1 address
 //     const timestamp = await getTimestamp()
 //     let testTxParams: TimelockTxFunctionParams = {
 //         targetContract: cartographer,
-//         txName: TimelockedTransaction.Cartographer_SetExpedAdd,
+//         txName: TimelockedTransaction.Cartographer_SetexpeditionTreasuryAdd,
 //         txParams: [user1.address],
 //         queuedTxEta: timestamp + 60 + (24 * 3600),
 //     }
@@ -311,8 +311,8 @@
 //     const txQueuedFinal = await timelock.queuedTransactions(txHash)
 //     expect(txQueuedFinal).to.be.false
 
-//     const expedAddFinal = await cartographer.expedAdd()
-//     expect(expedAddFinal).to.equal(user1.address)
+//     const expeditionTreasuryAddFinal = await cartographer.expeditionTreasuryAdd()
+//     expect(expeditionTreasuryAddFinal).to.equal(user1.address)
 //   })
 
 //   it(`TIMELOCK SYNC POOLS: The syncing pool flow should succeed`, async function () {

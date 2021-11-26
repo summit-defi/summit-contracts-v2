@@ -129,7 +129,7 @@ export enum TimelockedTransaction {
 
     // Cartographer
     Cartographer_Enable = 'enable',
-    Cartographer_SetExpedAdd = 'setExpedAdd',
+    Cartographer_SetexpeditionTreasuryAdd = 'setexpeditionTreasuryAdd',
     Cartographer_SetRolloverRewardInNativeToken = 'setRolloverRewardInNativeToken',
     Cartographer_SetTrustedSeederAdd = 'setTrustedSeederAdd',
     Cartographer_SetTotalSummitPerSecond = 'setTotalSummitPerSecond',

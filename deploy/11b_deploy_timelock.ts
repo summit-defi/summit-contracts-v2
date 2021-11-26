@@ -40,10 +40,10 @@ const deployTimelock: DeployFunction = async function ({
     const setFunctionSpecificDelaySignature = 'setFunctionSpecificDelay(string,uint)'
 
     // Set Expedition Treasury Address
-    const setExpedAddSignature = 'setExpedAdd(address)'
-    const setExpedAddData = abiCoder.encode(
+    const setexpeditionTreasuryAddSignature = 'setexpeditionTreasuryAdd(address)'
+    const setexpeditionTreasuryAddData = abiCoder.encode(
       ['string', 'uint'],
-      [setExpedAddSignature, 72 * 3600],
+      [setexpeditionTreasuryAddSignature, 72 * 3600],
     )
     await execute(
       'Timelock',
@@ -52,7 +52,7 @@ const deployTimelock: DeployFunction = async function ({
       Timelock.address,
       0,
       setFunctionSpecificDelaySignature,
-      setExpedAddData,
+      setexpeditionTreasuryAddData,
       timestampWithDelay,
     )
 

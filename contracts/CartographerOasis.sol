@@ -253,10 +253,11 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         // Ensure that pool doesn't earn rewards from before summit ecosystem launched
         if (pool.lastRewardTimestamp < launchTimestamp) {
             pool.lastRewardTimestamp = launchTimestamp;
+            return;
         }
 
         // Mint Summit according to pool allocation and token share in pool, retrieve amount of summit minted for staking
-        uint256 summitReward = cartographer.mintPoolSummit(pool.lastRewardTimestamp, pool.token, OASIS);
+        uint256 summitReward = cartographer.poolSummitEmission(pool.lastRewardTimestamp, pool.token, OASIS);
 
         // Update accSummitPerShare with the amount of staking summit minted.
         pool.accSummitPerShare = pool.accSummitPerShare + (summitReward * 1e12 / pool.supply);
