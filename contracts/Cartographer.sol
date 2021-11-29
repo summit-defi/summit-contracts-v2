@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "./ISubCart.sol";
 import "./IPassthrough.sol";
 import "./SummitToken.sol";
 import "./libs/IUniswapV2Pair.sol";
@@ -89,6 +90,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     uint8 constant MESA = 2;
     uint8 constant SUMMIT = 3;
     address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
+    uint256 constant e12 = 1e12;
 
 
     SummitToken public summit;
@@ -256,7 +258,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     /// @dev Updating the dev address, can only be called by the current dev address
     /// @param _treasuryAdd New dev address
-    function settreasuryAdd(address _treasuryAdd) public {
+    function setTreasuryAdd(address _treasuryAdd) public {
         require(_treasuryAdd != address(0), "Missing address");
         require(msg.sender == treasuryAdd, "Forbidden");
 
@@ -267,7 +269,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     /// @dev Updating the expedition accumulator address
     /// @param _expeditionTreasuryAdd New expedition accumulator address
-    function setexpeditionTreasuryAdd(address _expeditionTreasuryAdd) public onlyOwner {
+    function setExpeditionTreasuryAdd(address _expeditionTreasuryAdd) public onlyOwner {
         require(_expeditionTreasuryAdd != address(0), "Missing address");
         expeditionTreasuryAdd = _expeditionTreasuryAdd;
         emit SetExpeditionTreasuryAddress(msg.sender, _expeditionTreasuryAdd);
@@ -710,7 +712,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         if (totalTokenShares == 0) { return 0; }
 
         // Divide the target pool (token + elevation) shares by total shares (as calculated above)
-        return tokenElevationShares(_token, _elevation) * 1e12 / totalTokenShares;
+        return tokenElevationShares(_token, _elevation) * e12 / totalTokenShares;
     }
 
 
@@ -732,7 +734,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         if (totalAlloc == 0) return 0;
 
-        return tokenTotalAlloc * 1e12 / totalAlloc;
+        return tokenTotalAlloc * e12 / totalAlloc;
     }
 
 
@@ -748,7 +750,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         //   . Time difference from last reward timestamp
         //   . Tokens allocation as a fraction of total allocation
         //   . Pool's emission multiplier
-        return timeDiffSeconds(_lastRewardTimestamp, block.timestamp) * tokenAllocEmissionMultiplier(_token) * tokenElevationEmissionMultiplier(_token, _elevation) / 1e12;
+        return timeDiffSeconds(_lastRewardTimestamp, block.timestamp) * tokenAllocEmissionMultiplier(_token) * tokenElevationEmissionMultiplier(_token, _elevation) / e12;
     }
 
 
@@ -765,7 +767,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         if (_lastRewardTimestamp == block.timestamp) { return 0; }
 
         // Emission multiplier multiplied by summitPerSecond, finally reducing back to true exponential
-        return poolEmissionMultiplier(_lastRewardTimestamp, _token, _elevation) * summitPerSecond / 1e12;
+        return poolEmissionMultiplier(_lastRewardTimestamp, _token, _elevation) * summitPerSecond / e12;
     }
 
 
@@ -819,7 +821,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         // Return current decaying taxBP amount if token's tax is greater than base tax and hasn't fully decayed
         if (tokenTax > tokenMinTax && timeDiff < taxDecayDuration) {
-            return tokenMinTax + uint16(((tokenTax - tokenMinTax) * (taxDecayDuration - timeDiff) * 1e12 / taxDecayDuration) / 1e12);
+            return tokenMinTax + uint16(((tokenTax - tokenMinTax) * (taxDecayDuration - timeDiff) * e12 / taxDecayDuration) / e12);
         }
 
         // Return minimum tax for this farm
@@ -843,7 +845,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         uint256 lastWithdrawTimestamp = tokenLastWithdrawTimestampForBonus[_userAdd][_token];
         if (lastWithdrawTimestamp > 0 && (lastWithdrawTimestamp + taxDecayDuration) < block.timestamp) {
             uint256 timeDiff = Math.min((lastWithdrawTimestamp + taxDecayDuration) - block.timestamp, taxDecayDuration);
-            return (maxBonusBP * timeDiff * 1e12 / taxDecayDuration) / 1e12;
+            return (maxBonusBP * timeDiff * e12 / taxDecayDuration) / e12;
         }
 
         return 0;
