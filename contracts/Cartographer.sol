@@ -12,6 +12,7 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./IPassthrough.sol";
 import "./SummitToken.sol";
 import "./libs/IUniswapV2Pair.sol";
@@ -97,8 +98,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     uint256 public rolloverRewardInNativeToken = 5e18;                          // Amount of native token which will be rewarded for rolling over a round (will be converted into summit and minted)
 
-    address public treasuryAdd;                                                      // Treasury address, see docs for spend breakdown
-    address public expeditionTreasuryAdd;                                                    // Expedition Treasury address, intermediate address to convert to stablecoins
+    address public treasuryAdd;                                                 // Treasury address, see docs for spend breakdown
+    address public expeditionTreasuryAdd;                                       // Expedition Treasury address, intermediate address to convert to stablecoins
     address public trustedSeederAdd;                                            // Address that seeds the random number generation every 2 hours
     ElevationHelper elevationHelper;
     SummitReferrals summitReferrals;
@@ -117,6 +118,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     uint256[4] public elevAlloc;                                                // Total allocation points of all pools at an elevation
     mapping(address => bool) public tokenAllocExistence;                        // Whether an allocation has been created for a specific token
+    mapping(address => uint16) public tokenDepositFee;                          // Deposit fee for all farms of this token
     mapping(address => uint16) public tokenWithdrawalTax;                       // Tax for all farms of this token
     address[] tokensWithAllocation;                                             // List of Token Addresses that have been assigned an allocation
     mapping(address => uint256) public tokenAlloc;                              // A tokens underlying allocation, which is modulated for each elevation
@@ -126,7 +128,9 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     mapping(address => bool) public isNativeFarmToken;
     
-    mapping(address => mapping(address => uint256)) public nativeFarmTokenLastDepositTimestamp; // Users' last deposit timestamp for native farms
+    // First {taxDecayDuration} days from the last withdraw timestamp, no bonus builds. 7 days after that it builds by 1% each day
+    // Any withdraw resets the bonus to 0% but starts building immediately, which sets the last withdraw timestamp to (current timestamp - {taxDecayDuration})
+    mapping(address => mapping(address => uint256)) public tokenLastWithdrawTimestampForBonus; // Users' last withdraw timestamp for farm emission bonus
     uint256 public maxBonusBP = 700;
 
     mapping(address => mapping(address => uint256)) public tokenLastDepositTimestampForTax; // Users' last deposit timestamp for tax
@@ -836,11 +840,9 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         public view
         returns (uint256)
     {
-        uint256 lastNativeDepositTimestamp = nativeFarmTokenLastDepositTimestamp[_userAdd][_token];
-        if (lastNativeDepositTimestamp > 0 && lastNativeDepositTimestamp + taxDecayDuration > block.timestamp) {
-            uint256 timeDiff = (block.timestamp - lastNativeDepositTimestamp) > taxDecayDuration ?
-                taxDecayDuration :
-                block.timestamp - lastNativeDepositTimestamp;
+        uint256 lastWithdrawTimestamp = tokenLastWithdrawTimestampForBonus[_userAdd][_token];
+        if (lastWithdrawTimestamp > 0 && (lastWithdrawTimestamp + taxDecayDuration) < block.timestamp) {
+            uint256 timeDiff = Math.min((lastWithdrawTimestamp + taxDecayDuration) - block.timestamp, taxDecayDuration);
             return (maxBonusBP * timeDiff * 1e12 / taxDecayDuration) / 1e12;
         }
 
@@ -885,14 +887,12 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
                 false
             );
 
-        // native farm bonus handling
-        if (isNativeFarmToken[_token]) {
-            if (nativeFarmTokenLastDepositTimestamp[msg.sender][_token] == 0) {
-                nativeFarmTokenLastDepositTimestamp[msg.sender][_token] == block.timestamp;
-            }
+        // Set initial value of token last withdraw timestamp (for bonus) if it hasn't already been set
+        if (tokenLastWithdrawTimestampForBonus[msg.sender][_token] == 0) {
+            tokenLastWithdrawTimestampForBonus[msg.sender][_token] == block.timestamp;
         }
 
-        // tax handling
+        // Reset tax timestamp if user is depositing greater than {taxResetOnDepositBP}% of current staked amount
         if (_amount > (_userTokenStakedAmount(_token, msg.sender) * taxResetOnDepositBP / 10000)) {
             tokenLastDepositTimestampForTax[msg.sender][_token] = block.timestamp;
         }
@@ -930,10 +930,10 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
                 false
             );
 
-        // native farm bonus handling
-        if (isNativeFarmToken[_token]) {
-            nativeFarmTokenLastDepositTimestamp[msg.sender][_token] == 0;
-        }
+        // Farm bonus handling, sets the last withdraw timestamp to 7 days ago (tax decay duration) to begin earning bonuses immediately
+        // Update to the max of (current last withdraw timestamp, current timestamp - 7 days), which ensures the first 7 days are never building bonus
+        uint256 currentLastWithdrawTimestamp = tokenLastWithdrawTimestampForBonus[msg.sender][_token];
+        tokenLastWithdrawTimestampForBonus[msg.sender][_token] = Math.max(currentLastWithdrawTimestamp, (block.timestamp - taxDecayDuration));
 
         emit Withdraw(msg.sender, _token, _elevation, amountAfterTax);
     }
@@ -1053,15 +1053,22 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         // Transfers total deposit amount
         IERC20(_token).safeTransferFrom(_userAdd, address(this), _amount);
 
+        // Take and distribute deposit fee
+        uint256 amountAfterFee = _amount;
+        if (tokenDepositFee[_token] > 0) {
+            amountAfterFee = _amount * (10000 - tokenDepositFee[_token]) / 10000;
+            _distributeTaxesAndFees(_token, _amount * tokenDepositFee[_token] / 10000);
+        }
+
         // Deposit full amount to passthrough, return amount deposited
-        return passthroughDeposit(_token, _amount);
+        return passthroughDeposit(_token, amountAfterFee);
     }
 
 
     /// @dev Takes the remaining withdrawal tax (difference between total withdrawn amount and the amount expected to be withdrawn after the remaining tax)
     /// @param _token Token to withdraw
     /// @param _amount Funds above the amount after remaining withdrawal tax that was returned from the passthrough strategy
-    function _distributeWithdrawalTax(address _token, uint256 _amount)
+    function _distributeTaxesAndFees(address _token, uint256 _amount)
         internal
     {
         IERC20(_token).safeTransfer(treasuryAdd, _amount / 2);
@@ -1086,7 +1093,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         // Take any remaining tax (gap between what was actually withdrawn, and what the user expects to receive)
         if (amountAfterTax > expectedWithdrawnAmount) {
-            _distributeWithdrawalTax(_token, amountAfterTax - expectedWithdrawnAmount);
+            _distributeTaxesAndFees(_token, amountAfterTax - expectedWithdrawnAmount);
             amountAfterTax = expectedWithdrawnAmount;
         }
 
@@ -1146,6 +1153,17 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // ---------------------------------------
     // --   W I T H D R A W A L   T A X
     // ---------------------------------------
+
+
+    /// @dev Set the tax for a token
+    function setTokenDepositFee(address _token, uint16 _feeBP)
+        public
+        onlyOwner
+    {
+        // Deposit fee will never be higher than 4%
+        require(_feeBP <= 400, "Invalid fee > 4%");
+        tokenDepositFee[_token] = _feeBP;
+    }
 
 
     /// @dev Set the tax for a token
