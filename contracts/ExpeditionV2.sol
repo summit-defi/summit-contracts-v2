@@ -121,11 +121,15 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     uint256 public expeditionDeityWinningsMult = 125;
     uint256 public expeditionRunwayRounds = 60;
 
+    uint256 public totalSummitLocked;
+    uint256 public avgSummitLockDuration;
+
     struct UserEverestInfo {
         address userAdd;
 
         uint256 everestOwned;
         uint256 everestLockMultiplier;
+        uint256 lockDuration;
         uint256 lockRelease;
         uint256 summitLocked;
 
@@ -677,6 +681,25 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     // --   E V E R E S T
     // ------------------------------------------------------------
 
+
+    /// @dev Update the average lock duration
+    function _updateAvgSummitLockDuration(uint256 _amount, uint256 _lockDuration, bool _isLocking)
+        internal
+    {
+        // Current multiplier to add / subtract against
+        uint256 currentMul = totalSummitLocked * avgSummitLockDuration;
+
+        // How much the multiplier will change by
+        uint256 deltaMul = _amount * _lockDuration;
+        uint256 newMul = currentMul + (_isLocking ? deltaMul : 0) - (_isLocking ? 0 : deltaMul);
+
+        // How much summit is being added / subtracted
+        totalSummitLocked = totalSummitLocked + (_isLocking ? _amount : 0) - (_isLocking ? 0 : _amount);
+
+        // Update average lock duration with new computed multiplier and new summit locked amount
+        avgSummitLockDuration = totalSummitLocked == 0 ? 0 : newMul / totalSummitLocked;
+    }
+
     /// @dev Lock period multiplier
     function _lockPeriodMultiplier(uint256 _lockPeriod)
         internal view
@@ -730,7 +753,11 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         everestInfo.everestOwned = everestAward;
         everestInfo.everestLockMultiplier = everestLockMultiplier;
         everestInfo.lockRelease = block.timestamp + _lockPeriod;
+        everestInfo.lockDuration = _lockPeriod;
         everestInfo.summitLocked = _summitAmount;
+
+        // Update average lock duration with new summit locked
+        _updateAvgSummitLockDuration(_summitAmount, _lockPeriod, true);
 
         // Update the EVEREST in the expedition
         _updateExpeditionInteraction(everestInfo);
@@ -752,6 +779,11 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         returns (uint256)
     {
         UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
+        require(_lockPeriod > everestInfo.lockDuration, "Lock duration must strictly increase");
+
+        // Update average lock duration by removing existing lock duration, and adding new duration
+        _updateAvgSummitLockDuration(everestInfo.summitLocked, everestInfo.lockDuration, false);
+        _updateAvgSummitLockDuration(everestInfo.summitLocked, _lockPeriod, true);
 
         // Calculate and validate the new everest lock multiplier
         uint256 everestLockMultiplier = _lockPeriodMultiplier(_lockPeriod);
@@ -770,6 +802,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         everestInfo.everestOwned += additionalEverestAward;
         everestInfo.everestLockMultiplier = everestLockMultiplier;
         everestInfo.lockRelease = lockRelease;
+        everestInfo.lockDuration = _lockPeriod;
 
         // Update the expedition with the user's new EVEREST amount
         _updateExpeditionInteraction(everestInfo);
@@ -798,6 +831,9 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         // Increase running balances of EVEREST and SUMMIT
         everestInfo.everestOwned += additionalEverestAward;
         everestInfo.summitLocked += _summitAmount;
+
+        // Update average lock duration with new summit locked
+        _updateAvgSummitLockDuration(_summitAmount, everestInfo.lockDuration, true);
 
         // Update the expedition with the users new EVEREST info
         _updateExpeditionInteraction(everestInfo);
@@ -852,7 +888,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     }
 
     /// @dev Decrease the Summit and burn everest
-    function decreaseLockedSummit(uint256 _everestAmount)
+    function withdrawLockedSummit(uint256 _everestAmount)
         public
         nonReentrant userEverestInfoExists userOwnsEverest userLockPeriodSatisfied validEverestAmountToBurn(_everestAmount)
     {
@@ -863,6 +899,9 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
 
         everestInfo.everestOwned -= _everestAmount;
         everestInfo.summitLocked -= summitToWithdraw;
+
+        // Update average summit lock duration with removed summit
+        _updateAvgSummitLockDuration(summitToWithdraw, everestInfo.lockDuration, false);
 
         IERC20(summit).safeTransfer(msg.sender, summitToWithdraw);
         _burnEverest(msg.sender, _everestAmount);
@@ -888,6 +927,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         everestInfo.everestOwned = 0;
         everestInfo.summitLocked = 0;
         everestInfo.lockRelease = 0;
+        everestInfo.lockDuration = 0;
         everestInfo.everestLockMultiplier = 0;
         everestInfo.deity = 0;
         everestInfo.deitySelected = false;
