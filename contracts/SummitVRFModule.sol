@@ -3,6 +3,9 @@ pragma solidity 0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "./interfaces/ISummitVRFModule.sol";
+
+
 
 /*
 ---------------------------------------------------------------------------------------------
@@ -38,7 +41,7 @@ RANDOM NUMBER GENERATION
     . Webservice sends the original unsealed seed to `receiveUnsealedSeed`
 */
 
-contract SummitVRFModule is Ownable {
+contract SummitVRFModule is Ownable, ISummitVRFModule {
     // ---------------------------------------
     // --   V A R I A B L E S
     // ---------------------------------------
@@ -103,7 +106,7 @@ contract SummitVRFModule is Ownable {
 
     /// @dev Update trusted seeder
     /// @param _trustedSeeder Address of trustedSeeder
-    function setTrustedSeederAdd(address _trustedSeeder) public onlyCartographer {
+    function setTrustedSeederAdd(address _trustedSeeder) public override onlyCartographer {
         require(_trustedSeeder != address(0), "Trusted seeder missing");
         trustedSeeder = _trustedSeeder;
     }
@@ -111,7 +114,7 @@ contract SummitVRFModule is Ownable {
 
     /// @dev Update seedRoundEndTimestamp
     /// @param _seedRoundEndTimestamp amount of seedRoundEndTimestamp
-    function setSeedRoundEndTimestamp(uint256 _seedRoundEndTimestamp) public onlyElevationHelper {
+    function setSeedRoundEndTimestamp(uint256 _seedRoundEndTimestamp) public override onlyElevationHelper {
         seedRoundEndTimestamp = _seedRoundEndTimestamp;
     }
     
@@ -146,7 +149,7 @@ contract SummitVRFModule is Ownable {
 
 
     /// @dev Get random number
-    function getRandomNumber(uint256 roundNumber) public view returns (uint256) {
+    function getRandomNumber(uint256 roundNumber) public view override returns (uint256) {
         return uint256(keccak256(abi.encode(roundNumber, unsealedSeed[seedRound], futureBlockHash[seedRound])));
     }
 
