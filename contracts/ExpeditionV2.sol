@@ -225,9 +225,9 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     /// @dev Constructor, setting address of cartographer
     constructor(
         address _summit,
-         address _everest,
-         address _elevationHelper,
-         address _summitLocking
+        address _everest,
+        address _elevationHelper,
+        address _summitLocking
     ) {
         require(_summit != address(0), "Summit required");
         require(_everest != address(0), "Everest required");

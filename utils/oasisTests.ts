@@ -22,7 +22,6 @@ const standardDepositShouldSucceed = (tokenName: string, depositFee: number = 0)
       tokenAddress: token.address,
       elevation: OASIS,
       amount: e18(5),
-      crossCompound: false,
     })
     
     const finalStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
@@ -81,11 +80,10 @@ const pendingSUMMITRedeemedOnDeposit = (tokenName: string, depositFee: number = 
 
         const initialStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
 
-        await cartographerMethod.harvestSingleFarm({
+        await cartographerMethod.claimSingleFarm({
           user: user1,
           tokenAddress: token.address,
           elevation: OASIS,
-          crossCompound: false,
         })
           
         const finalStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
@@ -112,11 +110,10 @@ const redeemTransfersCorrectSUMMITToAddresses = (tokenName: string) => {
       const referralPending = totalSummitPending.mul(92).div(100).mul(2).div(100)
       const devPending = totalSummitPending.mul(8).div(100)
 
-      await cartographerMethod.harvestSingleFarm({
+      await cartographerMethod.claimSingleFarm({
         user: user1,
         tokenAddress: token.address,
         elevation: OASIS,
-        crossCompound: false,
       })
 
       const userSummitFinal = await token.balanceOf(user1.address)
@@ -149,7 +146,6 @@ const pendingSUMMITRedeemedOnWithdrawal = (tokenName: string) => {
         tokenAddress: token.address,
         elevation: OASIS,
         amount: initialStaked.div(3),
-        crossCompound: false,
       })
 
       const midStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
@@ -160,7 +156,6 @@ const pendingSUMMITRedeemedOnWithdrawal = (tokenName: string) => {
         tokenAddress: token.address,
         elevation: OASIS,
         amount: midStaked,
-        crossCompound: false,
       })
 
       const finalStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
@@ -198,7 +193,6 @@ const pendingSUMMITRedeemedOnWithdrawal = (tokenName: string) => {
               tokenAddress: token.address,
               elevation: OASIS,
               amount: tx.amount,
-              crossCompound: false,
             }
             await tx.deposit ? cartographerMethod.deposit(args) : cartographerMethod.withdraw(args)
             const expectedLpSupply = tx.deposit ?

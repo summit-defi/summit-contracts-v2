@@ -77,7 +77,7 @@ describe("Referrals", function() {
         await mineBlocks(5)
 
         const userSummitInit = await summitToken.balanceOf(user1.address)
-        await cartographerMethod.harvestSingleFarm({
+        await cartographerMethod.claimSingleFarm({
             user: user1,
             tokenAddress: summitToken.address,
             elevation: OASIS,
@@ -162,7 +162,7 @@ describe("Referrals", function() {
 
         await userPromiseSequenceMap(
             async (user) => {
-                await cartographerMethod.harvestSingleFarm({
+                await cartographerMethod.claimSingleFarm({
                     user,
                     tokenAddress: summitToken.address,
                     elevation: OASIS,

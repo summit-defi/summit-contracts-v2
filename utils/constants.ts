@@ -17,6 +17,8 @@ export const Contracts = {
 
     EverestToken: 'EverestToken',
     ExpeditionV2: 'ExpeditionV2',
+
+    SummitLocking: 'SummitLocking',
 }
 
 export const hardhatChainId = '31337'
@@ -200,7 +202,8 @@ export const EVENT = {
     SetExpeditionTreasuryAddress: 'SetExpeditionTreasuryAddress',
     SetFeeAddressSt: 'SetFeeAddressSt',
     Setdevress: 'Setdevress',
-    RedeemRewards: 'RedeemRewards',
+    ClaimElevation: 'ClaimElevation',
+    ClaimWinnings: 'ClaimWinnings',
     ReferralCreated: 'ReferralCreated',
     Rollover: 'Rollover',
     RolloverReferral: 'RolloverReferral',

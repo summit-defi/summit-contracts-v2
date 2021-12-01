@@ -15,12 +15,7 @@ const deployExpeditionV2: DeployFunction = async function ({
   const SummitToken = await deployments.get(Contracts.SummitToken);
   const CakeToken = await deployments.get(Contracts.DummyCAKE)
   const ElevationHelper = await deployments.get(Contracts.ElevationHelper)
-
-  const ammFactory = await chainIdAMMFactory(chainId)
-  const wrappedNativeToken = await chainIdWrappedNativeToken(chainId)
-  const summitLpAddress = ammFactory != null && wrappedNativeToken != null ?
-    await createLpPair(SummitToken.address, wrappedNativeToken, ammFactory, false) :
-    (await deployments.get('DummySUMMITLP')).address
+  const SummitLocking = await deployments.get(Contracts.SummitLocking)
 
   const EverestToken = await deploy(Contracts.EverestToken, {
       from: dev,
@@ -30,7 +25,7 @@ const deployExpeditionV2: DeployFunction = async function ({
 
   const ExpeditionV2 = await deploy('ExpeditionV2', {
     from: dev,
-    args: [SummitToken.address, EverestToken.address, ElevationHelper.address, CakeToken.address],
+    args: [SummitToken.address, EverestToken.address, ElevationHelper.address, SummitLocking.address],
     log: true,
   });
 
@@ -38,7 +33,7 @@ const deployExpeditionV2: DeployFunction = async function ({
     await delay(10000)
     await run("verify:verify", {
       address: ExpeditionV2.address,
-      constructorArguments: [SummitToken.address, EverestToken.address, ElevationHelper.address, CakeToken.address],
+      constructorArguments: [SummitToken.address, EverestToken.address, ElevationHelper.address, SummitLocking.address],
     })
   }
 

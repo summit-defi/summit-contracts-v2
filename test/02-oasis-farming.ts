@@ -62,7 +62,6 @@ describe("OASIS Pools", function() {
         tokenAddress: (await getSummitToken()).address,
         elevation: OASIS,
         amount: e18(0),
-        crossCompound: false,
         revertErr: ERR.BAD_WITHDRAWAL,        
       })
     })
@@ -73,7 +72,6 @@ describe("OASIS Pools", function() {
         tokenAddress: (await getSummitToken()).address,
         elevation: OASIS,
         amount: e18(5),
-        crossCompound: false,
         revertErr: ERR.BAD_WITHDRAWAL,        
       })
     })
@@ -84,7 +82,6 @@ describe("OASIS Pools", function() {
         tokenAddress: (await getSummitToken()).address,
         elevation: OASIS,
         amount: e18(100),
-        crossCompound: false,
         revertErr: ERR.BAD_WITHDRAWAL,        
       })
     })
@@ -95,7 +92,6 @@ describe("OASIS Pools", function() {
         tokenAddress: (await getCartographer()).address,
         elevation: OASIS,
         amount: e18(0),
-        crossCompound: false,
         revertErr: ERR.POOL_DOESNT_EXIST,        
       })
     })
