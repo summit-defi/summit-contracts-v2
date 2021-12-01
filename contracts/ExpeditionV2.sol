@@ -841,27 +841,26 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         return additionalEverestAward;
     }
 
-    /// @dev Increase the duration of already locked SUMMIT to 30 days, exit early if user is already locked for longer than 30 days
-    function _increaseLockReleaseOnClaimableLocked(UserEverestInfo storage everestInfo)
+    /// @dev Increase the duration of already locked SUMMIT, exit early if user is already locked for a longer duration
+    function _increaseLockReleaseOnClaimableLocked(UserEverestInfo storage everestInfo, uint256 _lockDuration)
         internal
         returns (uint256)
     {
         // Early escape if lock release already satisfies requirement
-        if (block.timestamp + lockTimeRequiredForClaimableSummitLock <= everestInfo.lockRelease) return 0;
+        if ((block.timestamp + _lockDuration) <= everestInfo.lockRelease) return 0;
 
         // Update lock release and return the extra EVEREST that is earned by this extension
-        return _increaseLockDuration(lockTimeRequiredForClaimableSummitLock, everestInfo.userAdd);
+        return _increaseLockDuration(_lockDuration, everestInfo.userAdd);
     }
 
-    /// @dev Exchange Summit for Everest, extend lock duration to 30 days (used by SummitLocking.sol)
-    function lockClaimableSummit(uint256 _summitAmount, address _userAdd)
-        public
-        nonReentrant userEverestInfoExists userOwnsEverest
+    /// @dev Internal function to lock additional summit and extend duration to arbitrary duration
+    function _lockAndExtendLockDuration(uint256 _summitAmount, uint256 _lockDuration, address _userAdd)
+        internal
     {
         UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
 
         // Increase the lock duration of the current locked SUMMIT
-        uint256 additionalEverestAward = _increaseLockReleaseOnClaimableLocked(everestInfo);
+        uint256 additionalEverestAward = _increaseLockReleaseOnClaimableLocked(everestInfo, _lockDuration);
 
         // Increase the amount of locked summit by {_summitAmount} and increase the EVEREST award
         additionalEverestAward += _increaseLockedSummit(
@@ -871,6 +870,23 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         );
         
         emit LockedSummitIncreased(msg.sender, true, _summitAmount, additionalEverestAward);
+    }
+
+    /// @dev Exchange Summit for Everest, extend lock duration to 30 days (used by SummitLocking.sol)
+    function lockClaimableSummit(uint256 _summitAmount, address _userAdd)
+        public
+        nonReentrant userEverestInfoExists userOwnsEverest
+    {
+        _lockAndExtendLockDuration(_summitAmount, lockTimeRequiredForClaimableSummitLock, _userAdd);
+    }
+
+
+    /// @dev Elevate Summit from elevation farms to Expedition and lock for Everest, extends lock duration to 7 days
+    function lockElevatableSummit(uint256 _summitAmount, address _userAdd)
+        public
+        nonReentrant userEverestInfoExists userOwnsEverest
+    {
+        _lockAndExtendLockDuration(_summitAmount, minLockTime, _userAdd);
     }
 
     /// @dev Increase the users Locked Summit and earn everest

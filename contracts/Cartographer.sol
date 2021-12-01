@@ -157,6 +157,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     event SwitchTotem(address indexed user, uint8 indexed elevation, uint8 totem);
     event Elevate(address indexed user, address indexed token, uint8 sourceElevation, uint8 targetElevation, uint256 amount);
     event Withdraw(address indexed user, address indexed token, uint8 indexed elevation, uint256 amount);
+    event ElevateAndLockStakedSummit(address indexed user, uint8 indexed elevation, uint256 amount);
     event ClaimWinnings(address indexed user, uint256 amount);
     event SetExpeditionTreasuryAddress(address indexed user, address indexed newAddress);
     event SetTreasuryAddress(address indexed user, address indexed newAddress);
@@ -941,14 +942,42 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     }
 
 
+    /// @dev Elevate SUMMIT from the Elevation farms to the Expedition without paying any withdrawal tax
+    /// @param _elevation Elevation to elevate from
+    /// @param _amount Amount of SUMMIT to elevate
+    function elevateAndLockStakedSummit(uint8 _elevation, uint256 _amount)
+        public
+        nonReentrant poolExists(address(summit), _elevation)
+    {
+        require(_amount > 0, "Elevate non zero amount");
+
+        // Withdraw {_amount} of {_token} from {_elevation} pool
+        uint256 elevatedAmount = subCartographer(_elevation)
+            .withdraw(
+                address(summit),
+                _amount,
+                msg.sender,
+                true
+            );
+
+        // Lock withdrawn SUMMIT for EVEREST
+        expeditionV2.lockElevatableSummit(
+            elevatedAmount,
+            msg.sender
+        );
+
+        emit ElevateAndLockStakedSummit(msg.sender, _elevation, _amount);
+    }
+
+
     /// @dev Validation step of Elevate into separate function
     /// @param _token Token to elevate
     /// @param _sourceElevation Elevation to withdraw from
     /// @param _targetElevation Elevation to deposit into
     /// @param _amount Amount to elevate
     function validateElevate(address _token, uint8 _sourceElevation, uint8 _targetElevation, uint256 _amount)
-        internal
-        nonReentrant poolExists(_token, _sourceElevation) poolExists(_token, _targetElevation)
+        internal view
+        poolExists(_token, _sourceElevation) poolExists(_token, _targetElevation)
     {
         require(_amount > 0, "Transfer non zero amount");
         require(_sourceElevation != _targetElevation, "Must change elev");
@@ -967,6 +996,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _amount Amount to elevate
     function elevate(address _token, uint8 _sourceElevation, uint8 _targetElevation, uint256 _amount)
         public
+        nonReentrant
     {
         validateElevate(_token, _sourceElevation, _targetElevation, _amount);
 
