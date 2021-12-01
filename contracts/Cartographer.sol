@@ -5,7 +5,6 @@ import "./CartographerOasis.sol";
 import "./CartographerElevation.sol";
 import "./ExpeditionV2.sol";
 import "./ElevationHelper.sol";
-import "./SummitVRFModule.sol";
 import "./SummitReferrals.sol";
 import "./SummitLocking.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -16,6 +15,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "./interfaces/ISubCart.sol";
 import "./interfaces/IPassthrough.sol";
+import "./interfaces/ISummitVRFModule.sol";
 import "./SummitToken.sol";
 import "./libs/IUniswapV2Pair.sol";
 import "./libs/IPriceOracle.sol";
@@ -105,7 +105,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     address public expeditionTreasuryAdd;                                       // Expedition Treasury address, intermediate address to convert to stablecoins
     address public trustedSeederAdd;                                            // Address that seeds the random number generation every 2 hours
     ElevationHelper elevationHelper;
-    SummitVRFModule summitVRFModule;
+    address summitVRFModuleAdd;
     SummitReferrals summitReferrals;
     address[4] subCartographers;
     ExpeditionV2 expeditionV2;
@@ -193,7 +193,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         address _summit,
         address _summitLp,
         address _ElevationHelper,
-        address _SummitVRFModule,
+        address _SummitVRFModuleAdd,
         address _SummitReferrals,
         address _CartographerOasis,
         address _CartographerPlains,
@@ -224,8 +224,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         require(summitLp.token0() == address(_summit) || summitLp.token1() == _summit, "SUMMITLP is not SUMMIT liq pair");
 
         elevationHelper = ElevationHelper(_ElevationHelper);
-        summitVRFModule = SummitVRFModule(_SummitVRFModule);
-        summitVRFModule.setTrustedSeederAdd(trustedSeederAdd);
+        summitVRFModuleAdd = _SummitVRFModuleAdd;
+        ISummitVRFModule(summitVRFModuleAdd).setTrustedSeederAdd(trustedSeederAdd);
         summitReferrals = SummitReferrals(_SummitReferrals);
 
         subCartographers[OASIS] = _CartographerOasis;
@@ -292,7 +292,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         require(_trustedSeederAdd != address(0), "Missing address");
 
         trustedSeederAdd = _trustedSeederAdd;
-        summitVRFModule.setTrustedSeederAdd(_trustedSeederAdd);
+        ISummitVRFModule(summitVRFModuleAdd).setTrustedSeederAdd(_trustedSeederAdd);
         emit SetTrustedSeederAddress(msg.sender, _trustedSeederAdd);
     }
 

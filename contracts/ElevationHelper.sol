@@ -4,7 +4,8 @@ pragma solidity 0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 
-import "./SummitVRFModule.sol";
+import "./interfaces/ISummitVRFModule.sol";
+
 
 /*
 ---------------------------------------------------------------------------------------------
@@ -76,7 +77,7 @@ contract ElevationHelper is Ownable {
     uint256 public referralBurnTimestamp;                                   // Time at which burning unclaimed referral rewards becomes available
 
 
-    SummitVRFModule public summitVRFModule;                                 // VRF module address
+    address public summitVRFModuleAdd;                                 // VRF module address
 
 
 
@@ -128,7 +129,7 @@ contract ElevationHelper is Ownable {
         referralBurnTimestamp = nextHourTimestamp + 7 days;    
 
         // Timestamp of the first seed round starting
-        summitVRFModule.setSeedRoundEndTimestamp(nextHourTimestamp - roundEndLockoutDuration);
+        ISummitVRFModule(summitVRFModuleAdd).setSeedRoundEndTimestamp(nextHourTimestamp - roundEndLockoutDuration);
     }
 
 
@@ -261,12 +262,12 @@ contract ElevationHelper is Ownable {
     // ------------------------------------------------------------------
 
     /// @dev Set summitVRFModule
-    /// @param _summitVRFModule Address of SummitVRFModule contract
-    function setSummitVRFModule (address _summitVRFModule)
+    /// @param _summitVRFModuleAdd Address of SummitVRFModule contract
+    function setSummitVRFModuleAdd (address _summitVRFModuleAdd)
         public onlyOwner
     {
-        require(_summitVRFModule != address(0), "SummitVRFModule missing");
-        summitVRFModule = SummitVRFModule(_summitVRFModule);
+        require(_summitVRFModuleAdd != address(0), "SummitVRFModule missing");
+        summitVRFModuleAdd = _summitVRFModuleAdd;
     }
 
 
@@ -320,7 +321,7 @@ contract ElevationHelper is Ownable {
         // No winning totem should be selected for round 0, which takes place when the elevation is locked
         if (roundNumber[_elevation] == 0) { return; }
 
-        uint256 rand = summitVRFModule.getRandomNumber(roundNumber[_elevation]);
+        uint256 rand = ISummitVRFModule(summitVRFModuleAdd).getRandomNumber(roundNumber[_elevation]);
 
         // Uses the random number to select the winning totem
         uint8 winner = chooseWinningTotem(_elevation, rand);
