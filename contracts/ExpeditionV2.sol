@@ -8,11 +8,13 @@ import "./EverestToken.sol";
 import "./ISubCart.sol";
 import "./SummitLocking.sol";
 import "./libs/IUniswapV2Pair.sol";
+import "./BaseEverestExtension.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "hardhat/console.sol";
 
 /*
@@ -91,6 +93,7 @@ WINNINGS:
 
 contract ExpeditionV2 is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
 
     // ---------------------------------------
@@ -184,9 +187,11 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     }
     ExpeditionInfo public expeditionInfo;   // Expedition info
 
+    // Other contracts that hook into the user's amount of everest, max 3 extensions
+    // Will be used for the DAO, as well as everest pools in the future
+    EnumerableSet.AddressSet everestExtensions;
 
-
-
+    
 
 
 
@@ -1095,6 +1100,51 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         emit UserHarvestedExpedition(msg.sender, summitHarvested, usdcHarvested);
     }
 
+
+
+    // ----------------------------------------------------------------------
+    // --   E V E R E S T   E X T E N S I O N S
+    // ----------------------------------------------------------------------
+
+
+
+    /// @dev Add an everest extension
+    function addEverestExtension(address _extension)
+        public
+        onlyOwner
+    {
+        require(_extension != address(0), "Missing extension");
+        require(everestExtensions.length() < 3, "Max extension cap reached");
+        everestExtensions.add(_extension);
+    }
+
+    /// @dev Remove an everest extension
+    function removeEverestExtension(address _extension)
+        public
+        onlyOwner
+    {
+        require(_extension != address(0), "Missing extension");
+        require(everestExtensions.contains(_extension), "Extension not added");
+        everestExtensions.remove(_extension);
+    }
+
+    /// @dev Get user everest owned
+    function getUserEverestOwned(address _userAdd)
+        public view
+        returns (uint256)
+    {
+        return userEverestInfo[_userAdd].everestOwned;
+    }
+
+    /// @dev Internal function to update all everest extensions
+    function _updateEverestExtensionsUserEverest(uint256 _everestAmount, address _userAdd)
+        internal
+    {
+        // Iterate through and update each extension with the user's everest amount
+        for (uint8 extensionIndex = 0; extensionIndex < everestExtensions.length(); extensionIndex++) {
+            BaseEverestExtension(everestExtensions.at(extensionIndex)).updateUserEverest(_everestAmount, _userAdd);
+        }
+    }
 
 
     // ----------------------------------------------------------------------
