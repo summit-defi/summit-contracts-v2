@@ -844,7 +844,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         returns (uint256)
     {
         uint256 lastWithdrawTimestamp = tokenLastWithdrawTimestampForBonus[_userAdd][_token];
-        if (lastWithdrawTimestamp > 0 && (lastWithdrawTimestamp + taxDecayDuration) < block.timestamp) {
+        if (lastWithdrawTimestamp > 0 && (lastWithdrawTimestamp + taxDecayDuration) >= block.timestamp) {
             uint256 timeDiff = Math.min((lastWithdrawTimestamp + taxDecayDuration) - block.timestamp, taxDecayDuration);
             return (maxBonusBP * timeDiff * e12 / taxDecayDuration) / e12;
         }

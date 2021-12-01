@@ -80,7 +80,7 @@ const depositShouldUpdatePoolAndTotemInfo = (tokenName: string, elevation: numbe
 
     await userPromiseSequenceMap(
       async (user) => {
-        cartographerMethod.deposit({
+        await cartographerMethod.deposit({
           user,
           tokenAddress: token.address,
           elevation,
@@ -120,7 +120,7 @@ const elevationPoolRewardsShouldIncreaseEachBlock = (tokenName: string, elevatio
 
     await userPromiseSequenceMap(
       async (user) => {
-        cartographerMethod.deposit({
+        await cartographerMethod.deposit({
           user,
           tokenAddress: token.address,
           elevation,
@@ -426,7 +426,7 @@ const withdrawingVestedWinningsRevestsRemaining = (tokenName: string, elevation:
     const availBlockDelta = harvestableInit.sub(harvestable0);
     const balanceInit = await token.balanceOf(winningUser.address)
     
-    await cartographerMethod.harvestSingleFarm({
+    await cartographerMethod.claimSingleFarm({
       user: winningUser,
       tokenAddress: token.address,
       elevation,
@@ -542,7 +542,7 @@ const withdrawingVestedWinningsRevestsRemaining = (tokenName: string, elevation:
     const balanceInit = await token.balanceOf(winningUser.address)
     
 
-    await cartographerMethod.harvestSingleFarm({
+    await cartographerMethod.claimSingleFarm({
       user: winningUser,
       tokenAddress: token.address,
       elevation,
@@ -623,7 +623,7 @@ const winningsVestAndAccumulateOverMultipleRounds = (tokenName: string, elevatio
     } = await subCartGet.rewards(token.address, elevation, winningUser.address)
     expect(vesting6).to.equal(0)
 
-    await cartographerMethod.harvestSingleFarm({
+    await cartographerMethod.claimSingleFarm({
       user: winningUser,
       tokenAddress: token.address,
       elevation,

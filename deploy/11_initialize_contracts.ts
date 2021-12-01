@@ -1,6 +1,6 @@
 import {DeployFunction} from 'hardhat-deploy/types'
 import { createLpPair, getLpPair } from '../scripts/scriptUtils';
-import { chainIdAMMFactory, chainIdAMMPairCodeHash, chainIdWrappedNativeToken, computePairAddress, consoleLog, getCartographer, getElevationName, getSubCartographers, MESA, OASIS, PLAINS, promiseSequenceMap, SUMMIT, ZEROADD } from '../utils'
+import { chainIdAMMFactory, chainIdAMMPairCodeHash, chainIdWrappedNativeToken, computePairAddress, consoleLog, Contracts, getCartographer, getElevationName, getSubCartographers, MESA, OASIS, PLAINS, promiseSequenceMap, SUMMIT, ZEROADD } from '../utils'
 
 const initializeContracts: DeployFunction = async function ({
   getNamedAccounts,
@@ -13,10 +13,10 @@ const initializeContracts: DeployFunction = async function ({
 
   const Cartographer = await getCartographer()
   const cartSummitToken = await Cartographer.summit()
-  consoleLog('Cartographer address', Cartographer.address, 'summitToken', cartSummitToken)
+  consoleLog('Cartographer address', Cartographer.address, Contracts.SummitToken, cartSummitToken)
 
   if (cartSummitToken === ZEROADD) {
-    const SummitToken = await deployments.get('SummitToken')
+    const SummitToken = await deployments.get(Contracts.SummitToken)
     const chainId = await getChainId()
     const ammFactory = await chainIdAMMFactory(chainId)
     const pairInitHash = await chainIdAMMPairCodeHash(chainId)
@@ -29,8 +29,10 @@ const initializeContracts: DeployFunction = async function ({
     console.log('SUMMIT LP ADDRESS:', summitLpAddress)
 
     const SubCartographers = await getSubCartographers()
-    const ElevationHelper = await deployments.get('ElevationHelper')
-    const SummitReferrals = await deployments.get('SummitReferrals')
+    const ElevationHelper = await deployments.get(Contracts.ElevationHelper)
+    const SummitReferrals = await deployments.get(Contracts.SummitReferrals)
+    const ExpeditionV2 = await deployments.get(Contracts.ExpeditionV2)
+    const SummitLocking = await deployments.get(Contracts.SummitLocking)
     
     // Initialize cartographer
     await execute(
@@ -45,8 +47,20 @@ const initializeContracts: DeployFunction = async function ({
       SubCartographers[PLAINS].address,
       SubCartographers[MESA].address,
       SubCartographers[SUMMIT].address,
+      ExpeditionV2.address,
+      SummitLocking.address,
     )
     consoleLog('Cartographer Initialized')
+
+    // Initialize Summit Locking
+    await execute(
+      Contracts.SummitLocking,
+      { from: dev },
+      'initialize',
+      SummitToken.address,
+      Cartographer.address,
+      ExpeditionV2.address
+    )
   } else {
     consoleLog('Cartographer Already Initialized')
   }
@@ -64,5 +78,6 @@ initializeContracts.dependencies = [
   'CartographerExpedition', 
   'ElevationHelper', 
   'SummitReferrals',
+  'SummitLocking',
   'ExpeditionV2',
 ]

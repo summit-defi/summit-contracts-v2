@@ -84,55 +84,51 @@ export const cartographerMethod = {
         tokenAddress,
         elevation,
         amount,
-        crossCompound = false,
         revertErr,
     }: {
         user: SignerWithAddress,
         tokenAddress: string,
         elevation: number,
         amount: BigNumber,
-        crossCompound?: boolean,
         revertErr?: string,
     }) => {
         const cartographer = await getCartographer()
         const expectedAfterFee = amount
         const tx = cartographer.connect(user).deposit
-        const txArgs = [tokenAddress, elevation, amount, crossCompound]
+        const txArgs = [tokenAddress, elevation, amount]
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [user.address, tokenAddress, elevation, expectedAfterFee]
-            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Deposit, eventArgs)
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Deposit, eventArgs, false)
         }
     },
-    harvestSingleFarm: async ({
+    claimSingleFarm: async ({
         user,
         tokenAddress,
         elevation,
-        crossCompound = false,
         revertErr,
         eventOnly = false,
     }: {
         user: SignerWithAddress,
         tokenAddress: string,
         elevation: number,
-        crossCompound?: boolean,
         revertErr?: string,
         eventOnly?: boolean,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(user).deposit
-        const txArgs = [tokenAddress, elevation, 0, crossCompound]
+        const txArgs = [tokenAddress, elevation, 0]
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
-            const expectedRewards = (await subCartGet.rewards(tokenAddress, elevation, user.address)).harvestable
+            const expectedClaimAmount = (await subCartGet.rewards(tokenAddress, elevation, user.address)).harvestable
                 .add(await farmSummitEmissionOverDuration(tokenAddress, elevation, 1))
                 .div(e6(1)).mul(e6(1))
-            const eventArgs = eventOnly ? undefined : [user.address, expectedRewards]
-            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.RedeemRewards, eventArgs)
+            const eventArgs = eventOnly ? null : [user.address, expectedClaimAmount]
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.ClaimWinnings, eventArgs, false)
         }
     },
     withdraw: async ({
@@ -140,7 +136,6 @@ export const cartographerMethod = {
         tokenAddress,
         elevation,
         amount,
-        crossCompound = false,
         revertErr,
         eventOnly = false,
     }: {
@@ -148,19 +143,18 @@ export const cartographerMethod = {
         tokenAddress: string,
         elevation: number,
         amount: BigNumber,
-        crossCompound?: boolean,
         revertErr?: string,
         eventOnly?: boolean,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(user).withdraw
-        const txArgs = [tokenAddress, elevation, amount, crossCompound]
+        const txArgs = [tokenAddress, elevation, amount]
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [user.address, tokenAddress, elevation, amount]
-            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Withdraw, eventOnly ? undefined : eventArgs)
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Withdraw, eventOnly ? null : eventArgs, false)
         }
     },
     setTokenAlloc: async ({
@@ -182,31 +176,29 @@ export const cartographerMethod = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [tokenAddress, alloc]
-            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.TokenAllocUpdated, eventArgs)
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.TokenAllocUpdated, eventArgs, false)
         }
     },
     switchTotem: async ({
         user,
         elevation,
         totem,
-        crossCompound = false,
         revertErr,
     }: {
         user: SignerWithAddress,
         elevation: number,
         totem: number,
-        crossCompound?: boolean,
         revertErr?: string,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(user).switchTotem
-        const txArgs = [elevation, totem, crossCompound]
+        const txArgs = [elevation, totem]
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [user.address, elevation, totem]
-            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.SwitchTotem, eventArgs)
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.SwitchTotem, eventArgs, false)
         }
     },
     rollover: async ({
@@ -225,7 +217,7 @@ export const cartographerMethod = {
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
-            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Rollover)
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Rollover, null, false)
         }
     },
     setTokenPassthroughStrategy: async ({
@@ -247,7 +239,7 @@ export const cartographerMethod = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [tokenAddress, passthroughTargetAddress]
-            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.SET_PASSTHROUGH_STRATEGY, eventArgs)
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.SET_PASSTHROUGH_STRATEGY, eventArgs, false)
         }
     },
     retireTokenPassthroughStrategy: async ({
@@ -266,7 +258,7 @@ export const cartographerMethod = {
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
-            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.RETIRE_PASSTHROUGH_STRATEGY)
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.RETIRE_PASSTHROUGH_STRATEGY, null, false)
         }
     },
     rolloverReferral: async ({
@@ -284,7 +276,7 @@ export const cartographerMethod = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [user.address]
-            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.RolloverReferral, eventArgs)
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.RolloverReferral, eventArgs, false)
         }
     },
 
