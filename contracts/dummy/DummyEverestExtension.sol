@@ -11,6 +11,11 @@ contract DummyEverestExtension is BaseEverestExtension {
 
     mapping(address => uint256) public userEverest;
 
+    constructor(address _expeditionV2) {
+        require(_expeditionV2 != address(0), "Missing ExpeditionV2");
+        expeditionV2 = ExpeditionV2(_expeditionV2);
+    }
+
     function joinDummyExtension()
         public
     {

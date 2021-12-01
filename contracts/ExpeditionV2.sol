@@ -8,7 +8,7 @@ import "./EverestToken.sol";
 import "./ISubCart.sol";
 import "./SummitLocking.sol";
 import "./libs/IUniswapV2Pair.sol";
-import "./IEverestExtension.sol";
+import "./BaseEverestExtension.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -1126,7 +1126,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     {
         // Iterate through and update each extension with the user's everest amount
         for (uint8 extensionIndex = 0; extensionIndex < everestExtensions.length(); extensionIndex++) {
-            IEverestExtension(everestExtensions.at(extensionIndex)).updateUserEverest(_everestAmount, _userAdd);
+            BaseEverestExtension(everestExtensions.at(extensionIndex)).updateUserEverest(_everestAmount, _userAdd);
         }
     }
 
