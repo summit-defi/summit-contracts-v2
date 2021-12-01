@@ -80,7 +80,7 @@ const depositShouldUpdatePoolAndTotemInfo = (tokenName: string, elevation: numbe
 
     await userPromiseSequenceMap(
       async (user) => {
-        cartographerMethod.deposit({
+        await cartographerMethod.deposit({
           user,
           tokenAddress: token.address,
           elevation,
@@ -120,7 +120,7 @@ const elevationPoolRewardsShouldIncreaseEachBlock = (tokenName: string, elevatio
 
     await userPromiseSequenceMap(
       async (user) => {
-        cartographerMethod.deposit({
+        await cartographerMethod.deposit({
           user,
           tokenAddress: token.address,
           elevation,

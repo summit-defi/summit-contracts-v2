@@ -245,7 +245,7 @@ const pendingSUMMITRedeemedOnWithdrawal = (tokenName: string) => {
         )
 
         await userPromiseSequenceMap(
-          async (_, userIndex) => expect(usersStaked[userIndex].mul(e12(1)).div(totalStaked)).to.equal(usersHarvestableDelta[userIndex].mul(e12(1)).div(totalDelta))
+          async (_, userIndex) => await expect(usersStaked[userIndex].mul(e12(1)).div(totalStaked)).to.equal(usersHarvestableDelta[userIndex].mul(e12(1)).div(totalDelta))
         )
     })
 }
