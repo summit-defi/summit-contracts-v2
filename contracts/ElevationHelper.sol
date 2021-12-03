@@ -4,6 +4,8 @@ pragma solidity 0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 
+import "./interfaces/ISummitVRFModule.sol";
+
 
 /*
 ---------------------------------------------------------------------------------------------
@@ -29,17 +31,9 @@ Created with love by Architect and the Summit team
 
 
 ElevationHelper.sol handles shared functionality between the elevations / expedition
-It is also responsible for requesting and receiving the trusted seeds, as well as their decrypted versions after the future block is mined
 Handles the allocation multiplier for each elevation
 Handles the duration of each round
 
-
-RANDOM NUMBER GENERATION
-    . Webservice queries `nextSeedRoundAvailable` every 5 seconds
-    . When true received
-    . Webservice creates a random seed, seals it with the trustedSeeder address, and sends it to `receiveSealedSeed`
-    . When the futureBlockNumber set in `receiveSealedSeed` is mined, `futureBlockMined` will return true
-    . Webservice sends the original unsealed seed to `receiveUnsealedSeed`
 
 
 */
@@ -50,7 +44,6 @@ contract ElevationHelper is Ownable {
     // ---------------------------------------
 
     address public cartographer;                                            // Allows cartographer to act as secondary owner-ish
-    address public trustedSeeder;                                           // Submits trusted sealed seed when round locks 60 before round end
 
     // Constants for elevation comparisons
     uint8 constant OASIS = 0;
@@ -84,16 +77,7 @@ contract ElevationHelper is Ownable {
     uint256 public referralBurnTimestamp;                                   // Time at which burning unclaimed referral rewards becomes available
 
 
-    uint256 seedRoundEndTimestamp;                                          // Timestamp the first seed round ends
-    uint256 seedRoundDurationMult = 2;
-    uint256 seedRound = 0;                                                  // The sealed seed is generated at the top of every hour
-    mapping(uint256 => bytes32) sealedSeed;                                 // Sealed seed for each seed round, provided by trusted seeder webservice                                              
-    mapping(uint256 => bytes32) unsealedSeed;                               // Sealed seed for each seed round, provided by trusted seeder webservice                                              
-    mapping(uint256 => uint256) futureBlockNumber;                          // Future block number for each seed round
-    mapping(uint256 => bytes32) futureBlockHash;                            // Future block hash for each seed round
-
-
-
+    address public summitVRFModuleAdd;                                 // VRF module address
 
 
 
@@ -101,7 +85,6 @@ contract ElevationHelper is Ownable {
     // --   E V E N T S
     // ---------------------------------------
 
-    event SetTrustedSeederAdd(address indexed user, address indexed newAddress);
     event WinningTotemSelected(uint8 indexed elevation, uint256 indexed round, uint8 indexed totem);
     event DeityDividerSelected(uint256 indexed expeditionRound, uint256 indexed deityDivider);
 
@@ -146,19 +129,8 @@ contract ElevationHelper is Ownable {
         referralBurnTimestamp = nextHourTimestamp + 7 days;    
 
         // Timestamp of the first seed round starting
-        seedRoundEndTimestamp = nextHourTimestamp - roundEndLockoutDuration;
+        ISummitVRFModule(summitVRFModuleAdd).setSeedRoundEndTimestamp(nextHourTimestamp - roundEndLockoutDuration);
     }
-
-
-    /// @dev Update trusted seeder
-    function setTrustedSeederAdd(address _trustedSeeder) external onlyCartographer {
-        require(_trustedSeeder != address(0), "Trusted seeder missing");
-        trustedSeeder = _trustedSeeder;
-
-        emit SetTrustedSeederAdd(msg.sender, _trustedSeeder);
-    }
-    
-
 
 
 
@@ -168,10 +140,6 @@ contract ElevationHelper is Ownable {
 
     modifier onlyCartographer() {
         require(msg.sender == cartographer, "Only cartographer");
-        _;
-    }
-    modifier onlyTrustedSeeder() {
-        require(msg.sender == trustedSeeder, "Only trusted seeder");
         _;
     }
     modifier allElevations(uint8 _elevation) {
@@ -293,6 +261,15 @@ contract ElevationHelper is Ownable {
     // --   P A R A M E T E R S
     // ------------------------------------------------------------------
 
+    /// @dev Set summitVRFModule
+    /// @param _summitVRFModuleAdd Address of SummitVRFModule contract
+    function setSummitVRFModuleAdd (address _summitVRFModuleAdd)
+        public onlyOwner
+    {
+        require(_summitVRFModuleAdd != address(0), "SummitVRFModule missing");
+        summitVRFModuleAdd = _summitVRFModuleAdd;
+    }
+
 
     /// @dev Update round duration mult of an elevation
     function setElevationRoundDurationMult(uint8 _elevation, uint8 _mult)
@@ -316,71 +293,6 @@ contract ElevationHelper is Ownable {
         }
     }
 
-
-    
-
-
-    // ------------------------------------------------------------------
-    // --   R A N D O M N E S S   S E E D I N G
-    // ------------------------------------------------------------------
-
-
-    // Flow of seeding:
-    // Webservice queries `nextSeedRoundAvailable` every 5 seconds
-    // When true received
-    // Webservice creates a random seed, seals it with the trustedSeeder address, and sends it to `receiveSealedSeed`
-    // When the futureBlockNumber set in `receiveSealedSeed` is mined, `futureBlockMined` will return true
-    // Webservice sends the original unsealed seed to `receiveUnsealedSeed`
-
-
-    /// @dev Seed round locked
-    function nextSeedRoundAvailable() public view returns (bool) {
-        return block.timestamp >= seedRoundEndTimestamp;
-    }
-
-
-    /// @dev When an elevation reaches the lockout phase 60s before rollover, the sealedseed webserver will send a seed
-    /// If the webserver goes down (99.99% uptime, 3 outages of 1H each over 3 years) the randomness is still secure, and is only vulnerable to a single round of withheld block attack
-    /// @param _sealedSeed random.org backed sealed seed from the trusted address, run by an autonomous webserver
-    function receiveSealedSeed(bytes32 _sealedSeed)
-        public
-        onlyTrustedSeeder
-    {
-        require(nextSeedRoundAvailable(), "Already sealed seeded");
-
-        // Increment seed round and set next seed round end timestamp
-        seedRound += 1;
-        seedRoundEndTimestamp += (baseRoundDuration * seedRoundDurationMult);
-
-        // Store new sealed seed for next round of round rollovers
-        sealedSeed[seedRound] = _sealedSeed;
-        futureBlockNumber[seedRound] = block.number + 1;
-    }
-
-
-    /// @dev Whether the future block has been mined, allowing the unencrypted seed to be received
-    function futureBlockMined() public view returns (bool) {
-        return sealedSeed[seedRound] != "" &&
-            block.number > futureBlockNumber[seedRound] &&
-            unsealedSeed[seedRound] == "";
-    }
-
-
-    /// @dev Receives the unencrypted seed after the future block has been mined
-    /// @param _unsealedSeed Unencrypted seed
-    function receiveUnsealedSeed(bytes32 _unsealedSeed)
-        public
-        onlyTrustedSeeder
-    {
-        require(unsealedSeed[seedRound] == "", "Already unsealed seeded");
-        require(futureBlockMined(), "Future block not reached");
-        require(keccak256(abi.encodePacked(_unsealedSeed, msg.sender)) == sealedSeed[seedRound], "Unsealed seed does not match");
-        unsealedSeed[seedRound] = _unsealedSeed;
-        futureBlockHash[seedRound] = blockhash(futureBlockNumber[seedRound]);
-    }
-
-
-    
 
 
     // ------------------------------------------------------------------
@@ -409,8 +321,7 @@ contract ElevationHelper is Ownable {
         // No winning totem should be selected for round 0, which takes place when the elevation is locked
         if (roundNumber[_elevation] == 0) { return; }
 
-        // Create the random number from the future block hash and newly unsealed seed
-        uint256 rand = uint256(keccak256(abi.encode(roundNumber[_elevation], unsealedSeed[seedRound], futureBlockHash[seedRound])));
+        uint256 rand = ISummitVRFModule(summitVRFModuleAdd).getRandomNumber(roundNumber[_elevation]);
 
         // Uses the random number to select the winning totem
         uint8 winner = chooseWinningTotem(_elevation, rand);
