@@ -7,7 +7,7 @@ import "./SummitToken.sol";
 import "./EverestToken.sol";
 import "./interfaces/ISubCart.sol";
 import "./SummitLocking.sol";
-import "./libs/IUniswapV2Pair.sol";
+import "./interfaces/IUniswapV2Pair.sol";
 import "./BaseEverestExtension.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";

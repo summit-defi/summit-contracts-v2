@@ -17,7 +17,7 @@ import "./interfaces/ISubCart.sol";
 import "./interfaces/IPassthrough.sol";
 import "./interfaces/ISummitVRFModule.sol";
 import "./SummitToken.sol";
-import "./libs/IUniswapV2Pair.sol";
+import "./interfaces/IUniswapV2Pair.sol";
 
 
 
