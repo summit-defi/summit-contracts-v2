@@ -18,7 +18,6 @@ import "./interfaces/IPassthrough.sol";
 import "./interfaces/ISummitVRFModule.sol";
 import "./SummitToken.sol";
 import "./libs/IUniswapV2Pair.sol";
-import "./libs/IPriceOracle.sol";
 
 
 
@@ -95,11 +94,9 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
 
     SummitToken public summit;
-    IUniswapV2Pair public summitLp;
     bool public enabled = false;                                                // Whether the ecosystem has been enabled for earning
-    IPriceOracle priceOracle;                 
 
-    uint256 public rolloverRewardInNativeToken = 5e18;                          // Amount of native token which will be rewarded for rolling over a round (will be converted into summit and minted)
+    uint256 public rolloverReward = 2e18;                                       // Amount of SUMMIT which will be rewarded for rolling over a round
 
     address public treasuryAdd;                                                 // Treasury address, see docs for spend breakdown
     address public expeditionTreasuryAdd;                                       // Expedition Treasury address, intermediate address to convert to stablecoins
@@ -191,7 +188,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Initialize, simply setting addresses, these contracts need the Cartographer address so it must be separate from the constructor
     function initialize(
         address _summit,
-        address _summitLp,
         address _ElevationHelper,
         address _SummitVRFModuleAdd,
         address _SummitReferrals,
@@ -207,7 +203,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     {
         require(
             _summit != address(0) &&
-            _summitLp != address(0) &&
             _ElevationHelper != address(0) &&
             _SummitReferrals != address(0) &&
             _CartographerOasis != address(0) &&
@@ -220,8 +215,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         );
 
         summit = SummitToken(_summit);
-        summitLp = IUniswapV2Pair(_summitLp);
-        require(summitLp.token0() == address(_summit) || summitLp.token1() == _summit, "SUMMITLP is not SUMMIT liq pair");
 
         elevationHelper = ElevationHelper(_ElevationHelper);
         summitVRFModuleAdd = _SummitVRFModuleAdd;
@@ -283,7 +276,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Update the amount of native token equivalent to reward for rolling over a round
     function setRolloverRewardInNativeToken(uint256 _reward) public onlyOwner {
         require(_reward < 10e18, "Exceeds max reward");
-        rolloverRewardInNativeToken = _reward;
+        rolloverReward = _reward;
     }
 
     /// @dev Updating the trusted seeder address, can only be called by the owner
@@ -314,13 +307,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         referralsSummitBP = _referralsBP;
         treasurySummitBP = _treasuryBP;
-    }
-
-
-    /// @dev Update price oracle
-    function setPriceOracle(address _priceOracle) public onlyOwner {
-        require(_priceOracle != address(0), "Missing oracle");
-        priceOracle = IPriceOracle(_priceOracle);
     }
 
 
@@ -615,15 +601,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // ------------------------------------------------------------------
 
 
-    /// @dev Summit amount given as reward for rollover
-    function rolloverRewardSummit() internal {
-        (uint256 reserve0, uint256 reserve1,) = summitLp.getReserves();
-        uint256 summitReserve = summitLp.token0() == address(summit) ? reserve0 : reserve1;
-        uint256 nativeReserve = summitLp.token0() == address(summit) ? reserve1 : reserve0;
-        if (rolloverRewardInNativeToken == 0 || nativeReserve == 0) return;
-        summit.mint(msg.sender, rolloverRewardInNativeToken * summitReserve / nativeReserve);
-    }
-
 
     /// @dev Rolling over a round for an elevation and selecting winning totem.
     ///      Called by the webservice, but can also be called manually by any user (as failsafe)
@@ -645,7 +622,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         subCartographer(_elevation).rollover();
 
         // Give SUMMIT rewards to user that executed the rollover
-        rolloverRewardSummit();
+        summit.mint(msg.sender, rolloverReward);
 
         emit Rollover(msg.sender, _elevation);
     }
@@ -1162,7 +1139,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         elevationHelper.rolloverReferralBurn();
 
         // Give SUMMIT rewards to user that executed the rollover
-        rolloverRewardSummit();
+        summit.mint(msg.sender, rolloverReward);
 
         emit RolloverReferral(msg.sender);
     }

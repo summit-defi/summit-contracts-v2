@@ -17,17 +17,6 @@ const initializeContracts: DeployFunction = async function ({
 
   if (cartSummitToken === ZEROADD) {
     const SummitToken = await deployments.get(Contracts.SummitToken)
-    const chainId = await getChainId()
-    const ammFactory = await chainIdAMMFactory(chainId)
-    const pairInitHash = await chainIdAMMPairCodeHash(chainId)
-    const wrappedNativeToken = await chainIdWrappedNativeToken(chainId)
-    const summitLpAddress = ammFactory != null && wrappedNativeToken != null ?
-      await createLpPair(SummitToken.address, wrappedNativeToken, ammFactory, false) :
-      // computePairAddress(ammFactory!, pairInitHash!, SummitToken.address, wrappedNativeToken) :
-      (await deployments.get('DummySUMMITLP')).address
-
-    console.log('SUMMIT LP ADDRESS:', summitLpAddress)
-
     const SubCartographers = await getSubCartographers()
     const ElevationHelper = await deployments.get(Contracts.ElevationHelper)
     const SummitReferrals = await deployments.get(Contracts.SummitReferrals)
@@ -40,7 +29,6 @@ const initializeContracts: DeployFunction = async function ({
       { from: dev },
       'initialize',
       SummitToken.address,
-      summitLpAddress,
       ElevationHelper.address,
       SummitReferrals.address,
       SubCartographers[OASIS].address,
