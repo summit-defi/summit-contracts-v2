@@ -19,7 +19,8 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
     ExpeditionV2 public expeditionV2;
 
     bool public panicFundsReleased = false;
-    uint256 public epochDuration = 3600 * 24 * 7;
+    uint256 public constant epochDuration = 3600 * 24 * 7;
+    address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
 
     struct UserLockedWinnings {
         uint256 winnings;
@@ -124,23 +125,23 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
 
         // Harvest winnings by locking for everest in the expedition
         if (_lockForEverest) {
-            expeditionV2.lockClaimableSummit(unclaimedWinnings, msg.sender);
+            expeditionV2.lockClaimableSummit(_amount, msg.sender);
 
         // Else check if epoch matured, harvest 100% if true, else harvest 50%, burn 25%, and send 25% to expedition contract to be distributed to EVEREST holders
         } else {
             bool epochMatured = hasEpochMatured(_epoch);
             if (panicFundsReleased || epochMatured) {
-                IERC20(summit).safeTransfer(msg.sender, unclaimedWinnings);
+                IERC20(summit).safeTransfer(msg.sender, _amount);
             } else {
-                IERC20(summit).safeTransfer(msg.sender, unclaimedWinnings / 2);
-                IERC20(summit).safeTransfer(cartographer.treasuryAdd(), unclaimedWinnings / 4);
-                IERC20(summit).safeTransfer(cartographer.expeditionTreasuryAdd(), unclaimedWinnings / 4);
+                IERC20(summit).safeTransfer(msg.sender, _amount / 2);
+                IERC20(summit).safeTransfer(burnAdd, _amount / 4);
+                IERC20(summit).safeTransfer(cartographer.expeditionTreasuryAdd(), _amount / 4);
             }
         }
 
-        userEpochWinnings.claimedWinnings += unclaimedWinnings;
+        userEpochWinnings.claimedWinnings += _amount;
 
-        emit WinningsHarvested(msg.sender, _epoch, unclaimedWinnings, _lockForEverest);
+        emit WinningsHarvested(msg.sender, _epoch, _amount, _lockForEverest);
     }
 
 } 
