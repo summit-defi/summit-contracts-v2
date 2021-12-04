@@ -17,13 +17,13 @@ const deployDummyMasterChef: DeployFunction = async function ({
   const Cartographer = await deployments.get('Cartographer');
   const DummyBIFI = await deployments.get('DummyBIFI')
 
-  const dummyCakeToken = await deploy('DummyCAKE', {
+  const cakeToken = await deploy('DummyCAKE', {
     from: dev,
     log: true,
   });
   const dummyMasterChef = await deploy('MasterChef', {
     from: dev,
-    args: [dummyCakeToken.address, dev, e18(1), 0],
+    args: [cakeToken.address, dev, e18(1), 0],
   })
 
   await execute('MasterChef', { from: dev }, 'add', 100, DummyBIFI.address, true)
@@ -35,12 +35,12 @@ const deployDummyMasterChef: DeployFunction = async function ({
       dummyMasterChef.address,
       1,
       DummyBIFI.address,
-      dummyCakeToken.address,
+      cakeToken.address,
     ],
     log: true,
   })
 
-  if (dummyCakeToken.newlyDeployed) {
+  if (cakeToken.newlyDeployed) {
     await execute('DummyCAKE', { from: dev }, 'mint', dev, e18(20000000))
     await execute('DummyCAKE', { from: dev }, 'transfer', user1, e18(500))
     await execute('DummyCAKE', { from: dev }, 'transfer', user2, e18(500))
@@ -51,7 +51,7 @@ const deployDummyMasterChef: DeployFunction = async function ({
     if (chainIdAllowsVerification(chainId)) {
       await delay(10000)
       await run("verify:verify", {
-        address: dummyCakeToken.address,
+        address: cakeToken.address,
         contract: 'contracts/DummyCAKE.sol:DummyCAKE',
       })
     }

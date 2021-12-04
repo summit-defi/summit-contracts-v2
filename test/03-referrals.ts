@@ -2,6 +2,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers, network } from "hardhat";
 import { cartographerGet, cartographerMethod, e18, elevationHelperGet, ERR, EVENT, EVM, expect6FigBigNumberEquals, getTimestamp, mineBlock, mineBlocks, mineBlockWithTimestamp, OASIS, setTimestamp, toDecimal, ZEROADD } from "../utils";
+import { summitLockingGet } from "../utils/summitLockingUtils";
 import { userPromiseSequenceMap } from "../utils/users";
 import { oasisUnlockedFixture } from "./fixtures";
 
@@ -76,14 +77,14 @@ describe("Referrals", function() {
         })
         await mineBlocks(5)
 
-        const userSummitInit = await summitToken.balanceOf(user1.address)
+        const userSummitInit = await summitLockingGet.getUserCurrentEpochClaimableWinnings(user1.address)
         await cartographerMethod.claimSingleFarm({
             user: user1,
             tokenAddress: summitToken.address,
             elevation: OASIS,
             eventOnly: true,
         })
-        const userSummitFinal = await summitToken.balanceOf(user1.address)
+        const userSummitFinal = await summitLockingGet.getUserCurrentEpochClaimableWinnings(user1.address)
         const deltaSummit = userSummitFinal.sub(userSummitInit)
         const referralRewardAmount = deltaSummit.div(100)
         
@@ -137,13 +138,7 @@ describe("Referrals", function() {
         const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
         const summitReferrals = await ethers.getContract('SummitReferrals')
 
-        // Expected reward
-        const rewardInNativeToken = e18(5)
-        const summitIsToken0InLp = (await dummySummitLpToken.token0()) === summitToken.address
-        const [summitLpToken0Reserves, summitLpToken1Reserves] = await dummySummitLpToken.getReserves() 
-        const summitInLpReserve = summitIsToken0InLp ? summitLpToken0Reserves : summitLpToken1Reserves
-        const nativeInLpReserve = summitIsToken0InLp ? summitLpToken1Reserves : summitLpToken0Reserves
-        const rewardInSummitToken = rewardInNativeToken.mul(summitInLpReserve).div(nativeInLpReserve)
+        const rewardInSummitToken = await cartographerGet.getRolloverReward()
 
         await summitReferrals.connect(user3).createReferral(dev.address)
 

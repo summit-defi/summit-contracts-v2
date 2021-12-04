@@ -241,6 +241,15 @@ export const EVENT = {
     },
 
     WinningsHarvested: 'WinningsHarvested',
+
+    CartographerParam: {
+        SetTokenDepositFee: 'SetTokenDepositFee',
+        SetTokenWithdrawTax: 'SetTokenWithdrawTax',
+        SetTaxDecayDuration: 'SetTaxDecayDuration',
+        SetBaseMinimumWithdrawalTax: 'SetBaseMinimumWithdrawalTax',
+        SetTokenIsNativeFarm: 'SetTokenIsNativeFarm',
+        SetMaxBonusBP: 'SetMaxBonusBP',
+    }
 }
 
 export const EVM = {

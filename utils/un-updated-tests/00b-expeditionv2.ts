@@ -58,7 +58,7 @@ const getUserSafeAndDeitiedAmount = async (user: SignerWithAddress) => {
 const expectUserAndExpedSuppliesToMatch = async () => {
     const { user1, user2, user3 } = await getNamedSigners(hre)
     const expeditionV2 = await getExpedition()
-    const dummyCakeToken = await getCakeToken()
+    const cakeToken = await getCakeToken()
 
     const users = [user1, user2, user3]
 
@@ -72,7 +72,7 @@ const expectUserAndExpedSuppliesToMatch = async () => {
         deity1Supply: acc.deity1Supply.add(everestInfo.deity !== 1 ? 0 : _getUserDeitiedAmount(everestInfo)),
     }), { safeSupply: e18(0), deity0Supply: e18(0), deity1Supply: e18(0) })
 
-    const [expedSafeSupply, expedDeitiedSupply, expedDeity0Supply, expedDeity1Supply] = await expeditionV2.supply(dummyCakeToken.address)
+    const [expedSafeSupply, expedDeitiedSupply, expedDeity0Supply, expedDeity1Supply] = await expeditionV2.supply(cakeToken.address)
 
     consoleLog({
         SafeSupply: `${toDecimal(expedSafeSupply)} should equal ${toDecimal(safeSupply)}`,
@@ -90,7 +90,7 @@ const expectUserAndExpedSuppliesToMatch = async () => {
 
 describe("EXPEDITION V2", async function() {
     before(async function () {
-        const { everestToken, summitToken, dummySummitLpToken, dummyCakeToken, expeditionV2, user1, user2, user3 } = await oasisUnlockedFixture()
+        const { everestToken, summitToken, dummySummitLpToken, cakeToken, expeditionV2, user1, user2, user3 } = await oasisUnlockedFixture()
 
         await everestToken.connect(user1).approve(expeditionV2.address, INF_APPROVE)
         await everestToken.connect(user2).approve(expeditionV2.address, INF_APPROVE)
@@ -104,9 +104,9 @@ describe("EXPEDITION V2", async function() {
         await dummySummitLpToken.connect(user2).approve(expeditionV2.address, INF_APPROVE)
         await dummySummitLpToken.connect(user3).approve(expeditionV2.address, INF_APPROVE)
 
-        await dummyCakeToken.connect(user1).approve(expeditionV2.address, INF_APPROVE)
-        await dummyCakeToken.connect(user2).approve(expeditionV2.address, INF_APPROVE)
-        await dummyCakeToken.connect(user3).approve(expeditionV2.address, INF_APPROVE)
+        await cakeToken.connect(user1).approve(expeditionV2.address, INF_APPROVE)
+        await cakeToken.connect(user2).approve(expeditionV2.address, INF_APPROVE)
+        await cakeToken.connect(user3).approve(expeditionV2.address, INF_APPROVE)
     })
 
 
@@ -388,10 +388,10 @@ describe("EXPEDITION V2", async function() {
         const { user1, dev } = await getNamedSigners(hre)
         const expeditionV2 = await getExpedition()
         const bifiToken = await getBifiToken()
-        const dummyCakeToken = await getCakeToken()
+        const cakeToken = await getCakeToken()
 
         await expect(
-            expeditionV2.connect(user1).addExpedition(dummyCakeToken.address, true, e18(100000), 9)
+            expeditionV2.connect(user1).addExpedition(cakeToken.address, true, e18(100000), 9)
         ).to.be.revertedWith(ERR.NON_OWNER)
         
         await expect(
@@ -400,25 +400,25 @@ describe("EXPEDITION V2", async function() {
         
         await bifiToken.connect(dev).approve(expeditionV2.address, e18(100000))
         await bifiToken.connect(dev).transfer(expeditionV2.address, e18(100000))
-        await dummyCakeToken.connect(dev).approve(expeditionV2.address, e18(50000))
-        await dummyCakeToken.connect(dev).transfer(expeditionV2.address, e18(50000))
+        await cakeToken.connect(dev).approve(expeditionV2.address, e18(50000))
+        await cakeToken.connect(dev).transfer(expeditionV2.address, e18(50000))
         
         await expect(
             expeditionV2.connect(dev).addExpedition(bifiToken.address, true, e18(500), 9)
         ).to.emit(expeditionV2, EVENT.ExpeditionCreated).withArgs(bifiToken.address, e18(500), 9);
         await expect(
-            expeditionV2.connect(dev).addExpedition(dummyCakeToken.address, true, e18(50000), 9)
-        ).to.emit(expeditionV2, EVENT.ExpeditionCreated).withArgs(dummyCakeToken.address, e18(50000), 9);
+            expeditionV2.connect(dev).addExpedition(cakeToken.address, true, e18(50000), 9)
+        ).to.emit(expeditionV2, EVENT.ExpeditionCreated).withArgs(cakeToken.address, e18(50000), 9);
 
         await expect(
-            expeditionV2.connect(dev).addExpedition(dummyCakeToken.address, true, e18(50000), 9)
+            expeditionV2.connect(dev).addExpedition(cakeToken.address, true, e18(50000), 9)
         ).to.be.revertedWith(ERR.DUPLICATED)
     })
 
     it('EXPEDITION: Entering expedition unlocks when expedition becomes active', async function() {
         const { user1, user2 } = await getNamedSigners(hre)
         const expeditionV2 = await getExpedition()
-        const dummyCakeToken = await getCakeToken()
+        const cakeToken = await getCakeToken()
 
         await expeditionV2.connect(user1).lockSummit(e18(5), e18(5), 30 * 24 * 3600)
         await expeditionV2.connect(user1).selectDeity(0)
@@ -431,14 +431,14 @@ describe("EXPEDITION V2", async function() {
         })
         
         await expect(
-            expeditionV2.connect(user1).joinExpedition(dummyCakeToken.address)
+            expeditionV2.connect(user1).joinExpedition(cakeToken.address)
         ).to.be.revertedWith(ERR.EXPEDITION_V2.NOT_ACTIVE)
   
         await rolloverExpedition()
         
         await expect(
-            expeditionV2.connect(user1).joinExpedition(dummyCakeToken.address)
-        ).to.emit(expeditionV2, EVENT.EXPEDITION_V2.UserJoinedExpedition).withArgs(user1.address, dummyCakeToken.address, 0, 50, everestInfoInit.everestOwned)
+            expeditionV2.connect(user1).joinExpedition(cakeToken.address)
+        ).to.emit(expeditionV2, EVENT.EXPEDITION_V2.UserJoinedExpedition).withArgs(user1.address, cakeToken.address, 0, 50, everestInfoInit.everestOwned)
 
         const everestInfoFinal = await expeditionV2.userEverestInfo(user1.address)
         expect(everestInfoFinal.interactingExpedCount).to.equal(1)
@@ -448,8 +448,8 @@ describe("EXPEDITION V2", async function() {
         await expeditionV2.connect(user2).selectSafetyFactor(100)   
         const user2EverestInfo = await expeditionV2.userEverestInfo(user2.address)
         await expect(
-            expeditionV2.connect(user2).joinExpedition(dummyCakeToken.address)
-        ).to.emit(expeditionV2, EVENT.EXPEDITION_V2.UserJoinedExpedition).withArgs(user2.address, dummyCakeToken.address, 0, 100, user2EverestInfo.everestOwned)
+            expeditionV2.connect(user2).joinExpedition(cakeToken.address)
+        ).to.emit(expeditionV2, EVENT.EXPEDITION_V2.UserJoinedExpedition).withArgs(user2.address, cakeToken.address, 0, 100, user2EverestInfo.everestOwned)
     })
 
     it('EXPEDITION: Can only enter an expedition that exists', async function() {
@@ -471,13 +471,13 @@ describe("EXPEDITION V2", async function() {
     it('EXPEDITION: User can only enter expedition if they own everest, have selected a deity, and have selected a safety factor', async function() {
         const { user3 } = await getNamedSigners(hre)
         const expeditionV2 = await getExpedition()
-        const dummyCakeToken = await getCakeToken()
+        const cakeToken = await getCakeToken()
 
         let userEligibleToJoinExpedition = await expeditionV2.connect(user3).userEligibleToJoinExpedition()
         expect(userEligibleToJoinExpedition).to.be.false
         
         await expect(
-            expeditionV2.connect(user3).joinExpedition(dummyCakeToken.address)
+            expeditionV2.connect(user3).joinExpedition(cakeToken.address)
         ).to.be.revertedWith(ERR.EVEREST.MUST_OWN_EVEREST)
 
         await expeditionV2.connect(user3).lockSummit(e18(10), e18(10), 24 * 3600)
@@ -486,7 +486,7 @@ describe("EXPEDITION V2", async function() {
         expect(userEligibleToJoinExpedition).to.be.false
         
         await expect(
-            expeditionV2.connect(user3).joinExpedition(dummyCakeToken.address)
+            expeditionV2.connect(user3).joinExpedition(cakeToken.address)
         ).to.be.revertedWith(ERR.EXPEDITION_V2.NO_DEITY)
 
         await expeditionV2.connect(user3).selectDeity(1)
@@ -495,7 +495,7 @@ describe("EXPEDITION V2", async function() {
         expect(userEligibleToJoinExpedition).to.be.false
         
         await expect(
-            expeditionV2.connect(user3).joinExpedition(dummyCakeToken.address)
+            expeditionV2.connect(user3).joinExpedition(cakeToken.address)
         ).to.be.revertedWith(ERR.EXPEDITION_V2.NO_SAFETY_FACTOR)
 
         await expeditionV2.connect(user3).selectSafetyFactor(50)
@@ -507,8 +507,8 @@ describe("EXPEDITION V2", async function() {
         expect(userEligibleToJoinExpedition).to.be.true
         
         await expect(
-            expeditionV2.connect(user3).joinExpedition(dummyCakeToken.address)
-        ).to.emit(expeditionV2, EVENT.EXPEDITION_V2.UserJoinedExpedition).withArgs(user3.address, dummyCakeToken.address, 1, 50, everestInfoInit.everestOwned)
+            expeditionV2.connect(user3).joinExpedition(cakeToken.address)
+        ).to.emit(expeditionV2, EVENT.EXPEDITION_V2.UserJoinedExpedition).withArgs(user3.address, cakeToken.address, 1, 50, everestInfoInit.everestOwned)
 
         const everestInfoFinal = await expeditionV2.userEverestInfo(user3.address)
         expect(everestInfoFinal.interactingExpedCount).to.equal(1)
@@ -523,11 +523,11 @@ describe("EXPEDITION V2", async function() {
     it('EXPEDITION: Expeditions automatically end after the final round', async function() {
         const { user1 } = await getNamedSigners(hre)
         const expeditionV2 = await getExpedition()
-        const dummyCakeToken = await getCakeToken()
+        const cakeToken = await getCakeToken()
 
         await rolloverExpeditionMultiRounds(8)
 
-        const hypoWinnings0 = (await expeditionV2.hypotheticalRewards(dummyCakeToken.address, user1.address))[1]
+        const hypoWinnings0 = (await expeditionV2.hypotheticalRewards(cakeToken.address, user1.address))[1]
 
         consoleLog({
             hypoWinnings0: toDecimal(hypoWinnings0)
@@ -537,7 +537,7 @@ describe("EXPEDITION V2", async function() {
         
         await rolloverExpedition()
 
-        const hypoWinnings1 = (await expeditionV2.hypotheticalRewards(dummyCakeToken.address, user1.address))[1]
+        const hypoWinnings1 = (await expeditionV2.hypotheticalRewards(cakeToken.address, user1.address))[1]
         
         expect(hypoWinnings1).to.equal(0)
 
@@ -546,23 +546,23 @@ describe("EXPEDITION V2", async function() {
         })
         
         await expect(
-            expeditionV2.connect(user1).joinExpedition(dummyCakeToken.address)
+            expeditionV2.connect(user1).joinExpedition(cakeToken.address)
         ).to.be.revertedWith(ERR.EXPEDITION_V2.NOT_ACTIVE)
     })
 
     it(`EXPEDITION: Harvesting from an ended expedition automatically exits user`, async function() {
         const { user2 } = await getNamedSigners(hre)
         const expeditionV2 = await getExpedition()
-        const dummyCakeToken = await getCakeToken()
+        const cakeToken = await getCakeToken()
 
         const everestInfoInit = await expeditionV2.userEverestInfo(user2.address)
         expect(everestInfoInit.interactingExpedCount).to.equal(1)
 
-        const rewards = await expeditionV2.connect(user2).rewards(dummyCakeToken.address, user2.address)
+        const rewards = await expeditionV2.connect(user2).rewards(cakeToken.address, user2.address)
         
         await expect(
-            expeditionV2.connect(user2).harvestExpedition(dummyCakeToken.address)
-        ).to.emit(expeditionV2, EVENT.EXPEDITION_V2.UserHarvestedExpedition).withArgs(user2.address, dummyCakeToken.address, rewards, true)
+            expeditionV2.connect(user2).harvestExpedition(cakeToken.address)
+        ).to.emit(expeditionV2, EVENT.EXPEDITION_V2.UserHarvestedExpedition).withArgs(user2.address, cakeToken.address, rewards, true)
 
         const everestInfoFinal = await expeditionV2.userEverestInfo(user2.address)
         expect(everestInfoFinal.interactingExpedCount).to.equal(0)
@@ -575,56 +575,56 @@ describe("EXPEDITION V2", async function() {
     it('EXPEDITION: Expeditions can be restarted after they end', async function() {
         const { dev } = await getNamedSigners(hre)
         const expeditionV2 = await getExpedition()
-        const dummyCakeToken = await getCakeToken()
+        const cakeToken = await getCakeToken()
 
         await expect(
-            expeditionV2.connect(dev).restartExpedition(dummyCakeToken.address, e18(50000), 1)
+            expeditionV2.connect(dev).restartExpedition(cakeToken.address, e18(50000), 1)
         ).to.be.revertedWith(ERR.EXPEDITION_FUNDS_REQUIRED)
 
-        await dummyCakeToken.connect(dev).approve(expeditionV2.address, e18(100000))
-        await dummyCakeToken.connect(dev).transfer(expeditionV2.address, e18(100000))
+        await cakeToken.connect(dev).approve(expeditionV2.address, e18(100000))
+        await cakeToken.connect(dev).transfer(expeditionV2.address, e18(100000))
 
         await expect(
-            expeditionV2.connect(dev).restartExpedition(dummyCakeToken.address, e18(50000), 1)
+            expeditionV2.connect(dev).restartExpedition(cakeToken.address, e18(50000), 1)
         ).to.emit(expeditionV2, EVENT.ExpeditionRestarted)
 
         await rolloverExpedition()
 
         await expect(
-            expeditionV2.connect(dev).restartExpedition(dummyCakeToken.address, e18(50000), 1)
+            expeditionV2.connect(dev).restartExpedition(cakeToken.address, e18(50000), 1)
         ).to.be.revertedWith(ERR.EXPEDITION_ALREADY_RUNNING)
     })
 
     it('EXPEDITION: Expeditions can be extended while they are running', async function() {
         const { dev } = await getNamedSigners(hre)
         const expeditionV2 = await getExpedition()
-        const dummyCakeToken = await getCakeToken()
+        const cakeToken = await getCakeToken()
 
-        await dummyCakeToken.connect(dev).approve(expeditionV2.address, e18(50000))
-        await dummyCakeToken.connect(dev).transfer(expeditionV2.address, e18(50000))
+        await cakeToken.connect(dev).approve(expeditionV2.address, e18(50000))
+        await cakeToken.connect(dev).transfer(expeditionV2.address, e18(50000))
         
         await expect(
-            expeditionV2.connect(dev).extendExpedition(dummyCakeToken.address, e18(50000), 200)
+            expeditionV2.connect(dev).extendExpedition(cakeToken.address, e18(50000), 200)
         ).to.emit(expeditionV2, EVENT.ExpeditionExtended)
     })
 
     it(`EXPEDITION: Rounds yield correct winnings`, async function() {
         const { user1, user2, user3 } = await getNamedSigners(hre)
         const expeditionV2 = await getExpedition()
-        const dummyCakeToken = await getCakeToken()
+        const cakeToken = await getCakeToken()
 
-        const roundEmission = (await expeditionV2.expeditionInfo(dummyCakeToken.address)).roundEmission
+        const roundEmission = (await expeditionV2.expeditionInfo(cakeToken.address)).roundEmission
     
         const users = [user1, user2, user3]
 
         await promiseSequenceMap(
             users,
-            async (user) => await expeditionV2.connect(user).harvestExpedition(dummyCakeToken.address)
+            async (user) => await expeditionV2.connect(user).harvestExpedition(cakeToken.address)
         )
 
         const usersHypotheticalRewards = await promiseSequenceMap(
             users,
-            async (user) => await expeditionV2.hypotheticalRewards(dummyCakeToken.address, user.address)
+            async (user) => await expeditionV2.hypotheticalRewards(cakeToken.address, user.address)
         )
         const usersSafeEarnings = usersHypotheticalRewards.map((hypotheticalReward) => hypotheticalReward[0])
         const usersHypoDeitiedWinnings = usersHypotheticalRewards.map((hypotheticalReward) => hypotheticalReward[1])
@@ -634,7 +634,7 @@ describe("EXPEDITION V2", async function() {
 
         const winnings = await promiseSequenceMap(
             users,
-            async (user) => await expeditionV2.connect(user).rewards(dummyCakeToken.address, user.address)
+            async (user) => await expeditionV2.connect(user).rewards(cakeToken.address, user.address)
         )
 
         consoleLog({
@@ -657,30 +657,30 @@ describe("EXPEDITION V2", async function() {
     it(`EXPEDITION: Winnings are withdrawn correctly`, async function() {
         const { user1, user2, user3 } = await getNamedSigners(hre)
         const expeditionV2 = await getExpedition()
-        const dummyCakeToken = await getCakeToken()
+        const cakeToken = await getCakeToken()
 
         const users = [user1, user2, user3]
 
         const rewardsInit = await promiseSequenceMap(
             users,
-            async (user) => await dummyCakeToken.balanceOf(user.address)
+            async (user) => await cakeToken.balanceOf(user.address)
         )
 
         const winnings = await promiseSequenceMap(
             users,
-            async (user) => await expeditionV2.connect(user).rewards(dummyCakeToken.address, user.address)
+            async (user) => await expeditionV2.connect(user).rewards(cakeToken.address, user.address)
         )
 
         await promiseSequenceMap(
             users,
             async (user, index) => await expect(
-                expeditionV2.connect(user).harvestExpedition(dummyCakeToken.address)
-            ).to.emit(expeditionV2, EVENT.EXPEDITION_V2.UserHarvestedExpedition).withArgs(user.address, dummyCakeToken.address, winnings[index], false)
+                expeditionV2.connect(user).harvestExpedition(cakeToken.address)
+            ).to.emit(expeditionV2, EVENT.EXPEDITION_V2.UserHarvestedExpedition).withArgs(user.address, cakeToken.address, winnings[index], false)
         )
 
         const rewardsFinal = await promiseSequenceMap(
             users,
-            async (user) => await dummyCakeToken.balanceOf(user.address)
+            async (user) => await cakeToken.balanceOf(user.address)
         )
 
         users.forEach((_, index) => {
@@ -704,14 +704,14 @@ describe("EXPEDITION V2", async function() {
     it('DEITIES: Users should be able to switch to valid deities', async function() {
         const { user1 } = await getNamedSigners(hre)
         const expeditionV2 = await getExpedition()
-        const dummyCakeToken = await getCakeToken()
+        const cakeToken = await getCakeToken()
 
         await rolloverExpedition()
         
         await expectUserAndExpedSuppliesToMatch()
 
         const everestInfoInit = await expeditionV2.userEverestInfo(user1.address)
-        const userExpedInfoInit = await expeditionV2.userExpeditionInfo(dummyCakeToken.address, user1.address)
+        const userExpedInfoInit = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
 
 
         // SWITCH TOTEM FROM 0 --> TARGET TOTEM
@@ -720,7 +720,7 @@ describe("EXPEDITION V2", async function() {
         await expectUserAndExpedSuppliesToMatch()
 
         const everestInfoMid = await expeditionV2.userEverestInfo(user1.address)
-        const userExpedInfoMid = await expeditionV2.userExpeditionInfo(dummyCakeToken.address, user1.address)
+        const userExpedInfoMid = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         
         
         // SWITCH BACK TO TOTEM 0 FROM TARGET TOTEM
@@ -729,7 +729,7 @@ describe("EXPEDITION V2", async function() {
         await expectUserAndExpedSuppliesToMatch()
 
         const everestInfoFinal = await expeditionV2.userEverestInfo(user1.address)
-        const userExpedInfoFinal = await expeditionV2.userExpeditionInfo(dummyCakeToken.address, user1.address)
+        const userExpedInfoFinal = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
 
         // DEITY changes
         expectAllEqual([0, everestInfoInit.deity, everestInfoFinal.deity])
@@ -752,14 +752,14 @@ describe("EXPEDITION V2", async function() {
     it('SAFETY FACTOR: Users should be able to switch to valid safety factors', async function() {
         const { user1 } = await getNamedSigners(hre)
         const expeditionV2 = await getExpedition()
-        const dummyCakeToken = await getCakeToken()
+        const cakeToken = await getCakeToken()
 
         await rolloverExpedition()
         
         await expectUserAndExpedSuppliesToMatch()
 
         const everestInfoInit = await expeditionV2.userEverestInfo(user1.address)
-        const userExpedInfoInit = await expeditionV2.userExpeditionInfo(dummyCakeToken.address, user1.address)
+        const userExpedInfoInit = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeInit, deitied: deitiedInit } = await getUserSafeAndDeitiedAmount(user1)
 
         expect(safeInit).to.equal(userExpedInfoInit.safeSupply)
@@ -771,7 +771,7 @@ describe("EXPEDITION V2", async function() {
         await expectUserAndExpedSuppliesToMatch()
 
         const everestInfoMid = await expeditionV2.userEverestInfo(user1.address)
-        const userExpedInfoMid = await expeditionV2.userExpeditionInfo(dummyCakeToken.address, user1.address)
+        const userExpedInfoMid = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeMid, deitied: deitiedMid } = await getUserSafeAndDeitiedAmount(user1)
 
         expect(safeMid).to.equal(userExpedInfoMid.safeSupply)
@@ -783,7 +783,7 @@ describe("EXPEDITION V2", async function() {
         await expectUserAndExpedSuppliesToMatch()
 
         const everestInfoMid2 = await expeditionV2.userEverestInfo(user1.address)
-        const userExpedInfoMid2 = await expeditionV2.userExpeditionInfo(dummyCakeToken.address, user1.address)
+        const userExpedInfoMid2 = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeMid2, deitied: deitiedMid2 } = await getUserSafeAndDeitiedAmount(user1)
 
         expect(safeMid2).to.equal(userExpedInfoMid2.safeSupply)
@@ -796,7 +796,7 @@ describe("EXPEDITION V2", async function() {
         await expectUserAndExpedSuppliesToMatch()
 
         const everestInfoFinal = await expeditionV2.userEverestInfo(user1.address)
-        const userExpedInfoFinal = await expeditionV2.userExpeditionInfo(dummyCakeToken.address, user1.address)
+        const userExpedInfoFinal = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeFinal, deitied: deitiedFinal } = await getUserSafeAndDeitiedAmount(user1)
 
         expect(safeFinal).to.equal(userExpedInfoFinal.safeSupply)
@@ -822,14 +822,14 @@ describe("EXPEDITION V2", async function() {
     it('EVEREST CHANGE: Users should be able to increase or remove locked everest and update expeditions', async function() {
         const { user1 } = await getNamedSigners(hre)
         const expeditionV2 = await getExpedition()
-        const dummyCakeToken = await getCakeToken()
+        const cakeToken = await getCakeToken()
 
         await rolloverExpedition()
         
         await expectUserAndExpedSuppliesToMatch()
 
         const everestInfoInit = await expeditionV2.userEverestInfo(user1.address)
-        const userExpedInfoInit = await expeditionV2.userExpeditionInfo(dummyCakeToken.address, user1.address)
+        const userExpedInfoInit = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeInit, deitied: deitiedInit } = await getUserSafeAndDeitiedAmount(user1)
 
         consoleLog({
@@ -848,7 +848,7 @@ describe("EXPEDITION V2", async function() {
         await expectUserAndExpedSuppliesToMatch()
 
         const everestInfoMid = await expeditionV2.userEverestInfo(user1.address)
-        const userExpedInfoMid = await expeditionV2.userExpeditionInfo(dummyCakeToken.address, user1.address)
+        const userExpedInfoMid = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeMid, deitied: deitiedMid } = await getUserSafeAndDeitiedAmount(user1)
 
         expect(safeMid).to.equal(userExpedInfoMid.safeSupply)
@@ -872,7 +872,7 @@ describe("EXPEDITION V2", async function() {
         await expectUserAndExpedSuppliesToMatch()
 
         const everestInfoMid2 = await expeditionV2.userEverestInfo(user1.address)
-        const userExpedInfoMid2 = await expeditionV2.userExpeditionInfo(dummyCakeToken.address, user1.address)
+        const userExpedInfoMid2 = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeMid2, deitied: deitiedMid2 } = await getUserSafeAndDeitiedAmount(user1)
 
         consoleLog({
@@ -892,7 +892,7 @@ describe("EXPEDITION V2", async function() {
         await expectUserAndExpedSuppliesToMatch()
 
         const everestInfoFinal = await expeditionV2.userEverestInfo(user1.address)
-        const userExpedInfoFinal = await expeditionV2.userExpeditionInfo(dummyCakeToken.address, user1.address)
+        const userExpedInfoFinal = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeFinal, deitied: deitiedFinal } = await getUserSafeAndDeitiedAmount(user1)
 
         consoleLog({

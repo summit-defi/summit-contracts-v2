@@ -13,7 +13,7 @@ interface FixtureState {
   readonly trustedSeeder: SignerWithAddress
   readonly summitToken: Contract
   readonly dummySummitLpToken: Contract
-  readonly dummyCakeToken: Contract
+  readonly cakeToken: Contract
   readonly dummyMasterChef: Contract
   readonly masterChefPassthrough: Contract
   readonly bifiToken: Contract
@@ -36,7 +36,7 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
   const { dev, exped, user1, user2, user3, trustedSeeder } = await getNamedSigners(hre)
   const summitToken = await getSummitToken()
   const dummySummitLpToken = await getSummitLpToken()
-  const dummyCakeToken = await getCakeToken()
+  const cakeToken = await getCakeToken()
   const dummyMasterChef = await getMasterChef()
   const masterChefPassthrough = await getMasterChefPassthrough()
   const bifiToken = await getBifiToken()
@@ -56,9 +56,9 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
   await summitToken.connect(user2).approve(cartographer.address, INF_APPROVE)
   await summitToken.connect(user3).approve(cartographer.address, INF_APPROVE)
 
-  await dummyCakeToken.connect(user1).approve(cartographer.address, INF_APPROVE)
-  await dummyCakeToken.connect(user2).approve(cartographer.address, INF_APPROVE)
-  await dummyCakeToken.connect(user3).approve(cartographer.address, INF_APPROVE)
+  await cakeToken.connect(user1).approve(cartographer.address, INF_APPROVE)
+  await cakeToken.connect(user2).approve(cartographer.address, INF_APPROVE)
+  await cakeToken.connect(user3).approve(cartographer.address, INF_APPROVE)
 
   await bifiToken.connect(user1).approve(cartographer.address, INF_APPROVE)
   await bifiToken.connect(user2).approve(cartographer.address, INF_APPROVE)
@@ -73,7 +73,7 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
     trustedSeeder,
     summitToken,
     dummySummitLpToken,
-    dummyCakeToken,
+    cakeToken,
     dummyMasterChef,
     masterChefPassthrough,
     bifiToken,
@@ -93,20 +93,20 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
 export const poolsFixture = deployments.createFixture(async (): Promise<FixtureState> => {
   const baseFixtureState = await baseFixture();
 
-  const { cartographer, subCartographers, summitToken, dummyCakeToken, bifiToken, bifiVaultPassthrough, user1, user2, user3 } = baseFixtureState
+  const { cartographer, subCartographers, summitToken, cakeToken, bifiToken, bifiVaultPassthrough, user1, user2, user3 } = baseFixtureState
 
   // POOLS
   await cartographer.createTokenAllocation(summitToken.address, 4000)
-  await cartographer.createTokenAllocation(dummyCakeToken.address, 100)
+  await cartographer.createTokenAllocation(cakeToken.address, 100)
   await cartographer.createTokenAllocation(bifiToken.address, 150)
   await cartographer.add(summitToken.address, OASIS, true, true)
   await cartographer.add(summitToken.address, PLAINS, true, true)
   await cartographer.add(summitToken.address, MESA, true, true)
   await cartographer.add(summitToken.address, SUMMIT, true, true)
-  await cartographer.add(dummyCakeToken.address, OASIS, true, true)
-  await cartographer.add(dummyCakeToken.address, PLAINS, true, true)
-  await cartographer.add(dummyCakeToken.address, MESA, true, true)
-  await cartographer.add(dummyCakeToken.address, SUMMIT, true, true)
+  await cartographer.add(cakeToken.address, OASIS, true, true)
+  await cartographer.add(cakeToken.address, PLAINS, true, true)
+  await cartographer.add(cakeToken.address, MESA, true, true)
+  await cartographer.add(cakeToken.address, SUMMIT, true, true)
   await cartographer.add(bifiToken.address, OASIS, true, true)
   await cartographer.add(bifiToken.address, PLAINS, true, true)
   await cartographer.add(bifiToken.address, MESA, true, true)

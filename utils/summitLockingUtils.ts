@@ -10,19 +10,38 @@ export interface UserLockedWinnings {
     claimedWinnings: BigNumber
 }
 
-export const epochDuration = 3600 * 24 * 7
+const epochDuration = 3600 * 24 * 7
 
-export const getYieldLockEpochCount = async () => {
+const getYieldLockEpochCount = async () => {
     return (await getSummitLocking()).yieldLockEpochCount()
 }
-export const epochStartTimestamp = (epoch: number) => {
+const epochStartTimestamp = (epoch: number) => {
     return epoch * epochDuration
 }
 
+const getCurrentEpoch = async () => {
+    return (await (await getSummitLocking()).getCurrentEpoch()).toNumber()
+}
+
+const getUserEpochLockedWinnings = async (userAddress: string, epoch: number): Promise<UserLockedWinnings> => {
+    const userLockedWinnings = await (await getSummitLocking()).userLockedWinnings(userAddress, epoch)
+    return {
+        winnings: userLockedWinnings.winnings,
+        bonusEarned: userLockedWinnings.bonusEarned,
+        claimedWinnings: userLockedWinnings.claimedWinnings,
+    }
+}
+const getUserEpochClaimableWinnings = async (userAddress: string, epoch: number) => {
+    const userLockedWinnings = await getUserEpochLockedWinnings(userAddress, epoch)
+    return userLockedWinnings.winnings.sub(userLockedWinnings.claimedWinnings)
+}
+
 export const summitLockingGet = {
-    getCurrentEpoch: async () => {
-        return (await (await getSummitLocking()).getCurrentEpoch()).toNumber()
+    getEpochDuration: async () => {
+        return epochDuration
     },
+    getYieldLockEpochCount,
+    getCurrentEpoch,
     getHasEpochMatured: async (epoch: number) => {
         return (await getSummitLocking()).hasEpochMatured(epoch);
     },
@@ -32,13 +51,11 @@ export const summitLockingGet = {
     getUserLifetimeBonusWinnings: async (userAddress: string) => {
         return (await getSummitLocking()).userLifetimeBonusWinnings(userAddress)
     },
-    getUserEpochLockedWinnings: async (userAddress: string, epoch: number): Promise<UserLockedWinnings> => {
-        const userLockedWinnings = await (await getSummitLocking()).userLockedWinnings(userAddress, epoch)
-        return {
-            winnings: userLockedWinnings.winnings,
-            bonusEarned: userLockedWinnings.bonusEarned,
-            claimedWinnings: userLockedWinnings.claimedWinnings,
-        }
+    getUserEpochLockedWinnings,
+    getUserEpochClaimableWinnings,
+    getUserCurrentEpochClaimableWinnings: async (userAddress: string) => {
+        const currentEpoch = await getCurrentEpoch()
+        return await getUserEpochClaimableWinnings(userAddress, currentEpoch)
     },
     getEpochMatureTimestamp: async (epoch: number) => {
         return epochStartTimestamp(epoch) + (5 * epochDuration)

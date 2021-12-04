@@ -65,17 +65,17 @@ describe("Base Pools", function() {
   })
   describe("- Pool Verification", async function() {
     before(async function () {
-      const { summitToken, dummyCakeToken, cartographer } = await baseFixture()
+      const { summitToken, cakeToken, cartographer } = await baseFixture()
       await cartographer.createTokenAllocation(summitToken.address, 4000)
-      await cartographer.createTokenAllocation(dummyCakeToken.address, 100)
+      await cartographer.createTokenAllocation(cakeToken.address, 100)
       await cartographer.add(summitToken.address, OASIS, true, true)
       await cartographer.add(summitToken.address, PLAINS, true, true)
       await cartographer.add(summitToken.address, MESA, true, true)
       await cartographer.add(summitToken.address, SUMMIT, true, true)
-      await cartographer.add(dummyCakeToken.address, OASIS, true, true)
-      await cartographer.add(dummyCakeToken.address, PLAINS, true, true)
-      await cartographer.add(dummyCakeToken.address, MESA, true, true)
-      await cartographer.add(dummyCakeToken.address, SUMMIT, true, true)
+      await cartographer.add(cakeToken.address, OASIS, true, true)
+      await cartographer.add(cakeToken.address, PLAINS, true, true)
+      await cartographer.add(cakeToken.address, MESA, true, true)
+      await cartographer.add(cakeToken.address, SUMMIT, true, true)
     })
     it('Number of pools should be correct', async function() {  
       const cartographer = await getCartographer()

@@ -1,10 +1,10 @@
 import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat';
-import { cartographerMethod, consoleLog, deltaBN, depositedAfterFee, e18, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getMasterChef, getMasterChefPassthrough, rolloverIfAvailable, toDecimal } from '.';
+import { cartographerGet, cartographerMethod, cartographerSetParam, consoleLog, deltaBN, depositedAfterFee, e18, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getMasterChef, getMasterChefPassthrough, rolloverIfAvailable, toDecimal, tokenAmountAfterWithdrawTax } from '.';
 import { Contracts, EVENT, EXPEDITION, MESA, SUMMIT, PLAINS, OASIS } from './constants';
 import { userPromiseSequenceMap } from './users';
-import { amountAfterFullFee, e16, expect6FigBigNumberAllEqual, expect6FigBigNumberEquals, getBlockNumber, getTimestamp, mineBlock, mineBlockWithTimestamp, promiseSequenceMap, withdrawnAfterFee } from './utils';
+import { amountAfterFullFee, e16, expect6FigBigNumberAllEqual, expect6FigBigNumberEquals, getBlockNumber, getTimestamp, mineBlock, mineBlockWithTimestamp, promiseSequenceMap, tokenAmountAfterDepositFee, withdrawnAfterFee } from './utils';
 
 // VAULT TESTING
 const vaultTests = (elevation: number) => {
@@ -102,16 +102,14 @@ const vaultTests = (elevation: number) => {
         const expedBalanceInit = await bifiToken.balanceOf(exped.address)
         const devBalanceInit = await bifiToken.balanceOf(dev.address)
 
-        await userPromiseSequenceMap(
+        const usersExpectedWithdrawalAfterTax = await userPromiseSequenceMap(
             async (user, index) => {
                 const amount = e18(index + 1)
-                const transferAmountAfterFee = withdrawnAfterFee(amount, 0)
-                consoleLog({
-                    amount: toDecimal(amount),
-                    transferAmountAfterFee: toDecimal(transferAmountAfterFee),
-                })
                 const vaultedBalanceInit = await bifiVaultPassthrough.balance()
 
+                const userTokenWithdrawalTax = await cartographerGet.getUserTokenWithdrawalTax(user.address, bifiToken.address)
+                const expectedWithdrawalAfterTax = tokenAmountAfterWithdrawTax(e18(index + 1), userTokenWithdrawalTax)
+                
                 await cartographerMethod.withdraw({
                     user,
                     tokenAddress: bifiToken.address,
@@ -133,7 +131,7 @@ const vaultTests = (elevation: number) => {
 
                 expect6FigBigNumberEquals(trueBifiInVault, bifiInVault)
 
-                return transferAmountAfterFee
+                return expectedWithdrawalAfterTax
             }
         )
 
@@ -145,7 +143,7 @@ const vaultTests = (elevation: number) => {
         )
 
         await userPromiseSequenceMap(
-            async (_, index) => expect6FigBigNumberEquals(usersBifiDelta[index], amountAfterFullFee(e18(index + 1), 0))
+            async (_, index) => expect6FigBigNumberEquals(usersBifiDelta[index], usersExpectedWithdrawalAfterTax[index])
         )
 
         const expedBalanceFinal = await bifiToken.balanceOf(exped.address)
@@ -239,8 +237,7 @@ const masterChefTests = (elevation: number) => {
         const masterChef = await getMasterChef()
         const masterChefPassthrough = await getMasterChefPassthrough()
         const bifiToken = await getBifiToken()
-        const dummyCakeToken = await getCakeToken()
-
+        const cakeToken = await getCakeToken()
 
         const usersBifiInit = await userPromiseSequenceMap(
             async (user) => await bifiToken.balanceOf(user.address)
@@ -248,13 +245,15 @@ const masterChefTests = (elevation: number) => {
 
         const masterChefBifiInit = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
 
-        const expedBalanceInit = await dummyCakeToken.balanceOf(exped.address)
-        const devBalanceInit = await dummyCakeToken.balanceOf(dev.address)
+        const expedCakeBalanceInit = await cakeToken.balanceOf(exped.address)
+        const devCakeBalanceInit = await cakeToken.balanceOf(dev.address)
 
         const usersDepositedAmount = await userPromiseSequenceMap(
             async (user, index) => {
                 const amount = e18(index + 1)
-                
+                const depositFee = await cartographerGet.getTokenDepositFee(bifiToken.address)
+                const amountAfterFee = tokenAmountAfterDepositFee(amount, depositFee)
+
                 const masterChefBalanceInit = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
                 const balanceInit = await masterChefPassthrough.balance()
 
@@ -269,10 +268,10 @@ const masterChefTests = (elevation: number) => {
                 const balanceFinal = await masterChefPassthrough.balance()
 
                 // Running users tokens in vault increases correctly
-                expect(deltaBN(balanceInit, balanceFinal)).to.equal(amount)
-                expect(deltaBN(masterChefBalanceInit, masterChefBalanceFinal)).to.equal(amount)
+                expect(deltaBN(balanceInit, balanceFinal)).to.equal(amountAfterFee)
+                expect(deltaBN(masterChefBalanceInit, masterChefBalanceFinal)).to.equal(amountAfterFee)
 
-                return amount
+                return amountAfterFee
             }
         )
 
@@ -292,16 +291,16 @@ const masterChefTests = (elevation: number) => {
 
         expect(deltaBN(masterChefBifiInit, masterChefBifiFinal)).to.equal(totalUsersDepositedAfterFee)
 
-        const expedBalanceFinal = await dummyCakeToken.balanceOf(exped.address)
-        const devBalanceFinal = await dummyCakeToken.balanceOf(dev.address)
+        const expedCakeBalanceFinal = await cakeToken.balanceOf(exped.address)
+        const devCakeBalanceFinal = await cakeToken.balanceOf(dev.address)
 
         consoleLog({
-            expedAccum: `${toDecimal(expedBalanceInit)} --> ${toDecimal(expedBalanceFinal)}: ${toDecimal(deltaBN(expedBalanceInit, expedBalanceFinal))}`,
-            devAccum: `${toDecimal(devBalanceInit)} --> ${toDecimal(devBalanceFinal)}: ${toDecimal(deltaBN(devBalanceInit, devBalanceFinal))}`,
+            expedAccum: `${toDecimal(expedCakeBalanceInit)} --> ${toDecimal(expedCakeBalanceFinal)}: ${toDecimal(deltaBN(expedCakeBalanceInit, expedCakeBalanceFinal))}`,
+            devAccum: `${toDecimal(devCakeBalanceInit)} --> ${toDecimal(devCakeBalanceFinal)}: ${toDecimal(deltaBN(devCakeBalanceInit, devCakeBalanceFinal))}`,
         })
 
-        expect(expedBalanceFinal.sub(expedBalanceInit).gt(0)).to.be.true
-        expect(devBalanceFinal.sub(devBalanceInit).gt(0)).to.be.true
+        expect(expedCakeBalanceFinal.sub(expedCakeBalanceInit).gt(0)).to.be.true
+        expect(devCakeBalanceFinal.sub(devCakeBalanceInit).gt(0)).to.be.true
     })
     it('MASTER CHEF WITHDRAW: Withdrawing from passthrough masterChef transfers funds correctly', async function() {
         const { exped, dev } = await getNamedSigners(hre)
@@ -309,7 +308,7 @@ const masterChefTests = (elevation: number) => {
         const masterChef = await getMasterChef()
         const masterChefPassthrough = await getMasterChefPassthrough()
         const bifiToken = await getBifiToken()
-        const dummyCakeToken = await getCakeToken()
+        const cakeToken = await getCakeToken()
 
         const usersBifiInit = await userPromiseSequenceMap(
             async (user) => await bifiToken.balanceOf(user.address)
@@ -317,16 +316,19 @@ const masterChefTests = (elevation: number) => {
 
         const masterChefBifiInit = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
 
-        const expedBalanceInit = await dummyCakeToken.balanceOf(exped.address)
-        const devBalanceInit = await dummyCakeToken.balanceOf(dev.address)
+        const expedBalanceInit = await cakeToken.balanceOf(exped.address)
+        const devBalanceInit = await cakeToken.balanceOf(dev.address)
 
-        await userPromiseSequenceMap(
+        const usersExpectedWithdrawalAfterTax = await userPromiseSequenceMap(
             async (user, index) => {
                 const amount = e18(index + 1)
 
                 const masterChefBalanceInit = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
                 const balanceInit = await masterChefPassthrough.balance()
 
+                const userTokenWithdrawalTax = await cartographerGet.getUserTokenWithdrawalTax(user.address, bifiToken.address)
+                const expectedWithdrawalAfterTax = tokenAmountAfterWithdrawTax(e18(index + 1), userTokenWithdrawalTax)
+                
                 await cartographerMethod.withdraw({
                     user,
                     tokenAddress: bifiToken.address,
@@ -340,6 +342,8 @@ const masterChefTests = (elevation: number) => {
                 // Running users tokens in vault decreases correctly
                 expect6FigBigNumberEquals(deltaBN(balanceInit, balanceFinal), amount)
                 expect6FigBigNumberEquals(deltaBN(masterChefBalanceInit, masterChefBalanceFinal), amount)
+
+                return expectedWithdrawalAfterTax
             }
         )
 
@@ -352,13 +356,13 @@ const masterChefTests = (elevation: number) => {
         const masterChefBifiFinal = (await masterChef.userInfo(1, masterChefPassthrough.address)).amount
 
         await userPromiseSequenceMap(
-            async (_, index) => expect(usersBifiDelta[index]).to.equal(e18(index + 1))
+            async (_, index) => expect6FigBigNumberEquals(usersBifiDelta[index], usersExpectedWithdrawalAfterTax[index])
         )
 
         expect(deltaBN(masterChefBifiInit, masterChefBifiFinal)).to.equal(e18(6))
 
-        const expedBalanceFinal = await dummyCakeToken.balanceOf(exped.address)
-        const devBalanceFinal = await dummyCakeToken.balanceOf(dev.address)
+        const expedBalanceFinal = await cakeToken.balanceOf(exped.address)
+        const devBalanceFinal = await cakeToken.balanceOf(dev.address)
 
         consoleLog({
             expedAccum: `${toDecimal(expedBalanceInit)} --> ${toDecimal(expedBalanceFinal)}: ${toDecimal(deltaBN(expedBalanceInit, expedBalanceFinal))}`,

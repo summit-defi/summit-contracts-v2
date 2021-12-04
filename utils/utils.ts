@@ -113,6 +113,19 @@ export const mineBlocks = async (blockCount: number) => {
         await mineBlock()
     }
 }
+export const getExpectedDistributionsOnClaim = (rewards: BigNumber) => ({
+    referralExpected: rewards.mul(20).div(10000),
+    treasuryExpected: rewards.mul(200).div(10000)
+})
+export const tokenAmountAfterWithdrawTax = (amount: BigNumber, tax: number): BigNumber => {
+    return amount.mul(10000 - tax).div(10000)
+}
+export const tokenAmountAfterDepositFee = (amount: BigNumber, fee: number): BigNumber => {
+    return amount.mul(10000 - fee).div(10000)
+}
+export const claimAmountWithBonusAdded = (amount: BigNumber, bonus: number): BigNumber => {
+    return amount.mul(10000 + bonus).div(10000)
+}
 export const depositedAfterFee = (amount: BigNumber, fee: number): BigNumber => {
     const trueFee = Math.max(0, fee - 50)
     return amount.mul(BigNumber.from(10000 - trueFee)).div("10000")

@@ -160,6 +160,13 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     event PassthroughStrategySet(address indexed token, address indexed passthroughStrategy);
     event PassthroughStrategyRetired(address indexed token, address indexed passthroughStrategy);
 
+    event SetTokenDepositFee(address indexed _token, uint16 _feeBP);
+    event SetTokenWithdrawTax(address indexed _token, uint16 _taxBP);
+    event SetTaxDecayDuration(uint256 _taxDecayDuration);
+    event SetBaseMinimumWithdrawalTax(uint16 _baseMinimumWithdrawalTax);
+    event SetTokenIsNativeFarm(address indexed _token, bool _isNativeFarm);
+    event SetMaxBonusBP(uint256 _maxBonusBP);
+
 
 
 
@@ -777,13 +784,13 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         returns (uint16)
     {
         // Amount user expects to receive after tax taken
-        uint16 tokenTax = tokenWithdrawalTax[_token];
+        uint256 tokenTax = uint256(tokenWithdrawalTax[_token]);
         uint256 timeDiff = block.timestamp - tokenLastDepositTimestampForTax[_userAdd][_token];
         uint16 tokenMinTax = isNativeFarmToken[_token] ? uint16(0) : baseMinimumWithdrawalTax;
 
         // Return current decaying taxBP amount if token's tax is greater than base tax and hasn't fully decayed
         if (tokenTax > tokenMinTax && timeDiff < taxDecayDuration) {
-            return tokenMinTax + uint16(((tokenTax - tokenMinTax) * (taxDecayDuration - timeDiff) * e12 / taxDecayDuration) / e12);
+            return tokenMinTax + uint16(((tokenTax - uint256(tokenMinTax)) * (taxDecayDuration - timeDiff) * e12 / taxDecayDuration) / e12);
         }
 
         // Return minimum tax for this farm
@@ -796,18 +803,18 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _token token address
     function bonusBP(address _userAdd, address _token)
         public view
-        returns (uint256)
+        returns (uint16)
     {
         return _getBonusBP(_userAdd, _token);
     }
     function _getBonusBP(address _userAdd, address _token)
         public view
-        returns (uint256)
+        returns (uint16)
     {
         uint256 lastWithdrawTimestamp = tokenLastWithdrawTimestampForBonus[_userAdd][_token];
         if (lastWithdrawTimestamp > 0 && (lastWithdrawTimestamp + taxDecayDuration) >= block.timestamp) {
             uint256 timeDiff = Math.min((lastWithdrawTimestamp + taxDecayDuration) - block.timestamp, taxDecayDuration);
-            return (maxBonusBP * timeDiff * e12 / taxDecayDuration) / e12;
+            return uint16((maxBonusBP * timeDiff * e12 / taxDecayDuration) / e12);
         }
 
         return 0;
@@ -1156,6 +1163,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         // Deposit fee will never be higher than 4%
         require(_feeBP <= 400, "Invalid fee > 4%");
         tokenDepositFee[_token] = _feeBP;
+        emit SetTokenDepositFee(_token, _feeBP);
     }
 
 
@@ -1167,6 +1175,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         // Taxes will never be higher than 10%
         require(_taxBP <= 1000, "Invalid tax > 10%");
         tokenWithdrawalTax[_token] = _taxBP;
+        emit SetTokenWithdrawTax(_token, _taxBP);
     }
 
     /// @dev Set the tax decaying duration
@@ -1175,6 +1184,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         onlyOwner
     {
         taxDecayDuration = _taxDecayDuration;
+        emit SetTaxDecayDuration(_taxDecayDuration);
     }
 
     /// @dev Set the minimum withdrawal tax
@@ -1184,6 +1194,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     {
         require(_baseMinimumWithdrawalTax <= 100, "Minimum tax outside 0%-10%");
         baseMinimumWithdrawalTax = _baseMinimumWithdrawalTax;
+        emit SetBaseMinimumWithdrawalTax(_baseMinimumWithdrawalTax);
     }
 
     /// @dev Set whether a token is a native farm
@@ -1192,6 +1203,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         onlyOwner
     {
         isNativeFarmToken[_token] = _isNativeFarm;
+        emit SetTokenIsNativeFarm(_token, _isNativeFarm);
     }
 
     /// @dev Set the maximum bonus BP for native farms
@@ -1201,5 +1213,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     {
         require(_maxBonusBP <= 1000, "Max bonus is 10%");
         maxBonusBP = _maxBonusBP;
+        emit SetMaxBonusBP(_maxBonusBP);
     }
 }

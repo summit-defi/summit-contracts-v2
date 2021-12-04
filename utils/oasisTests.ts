@@ -2,10 +2,11 @@ import { BigNumber } from '@ethersproject/bignumber';
 import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat';
-import { cartographerMethod, cartographerSynth, consoleLog, Contracts, depositedAfterFee, e18, EVENT, expect6FigBigNumberEquals, getSubCartographer, mineBlock, OASIS, promiseSequenceMap, subCartGet, subCartMethod, toDecimal } from '.';
+import { cartographerGet, cartographerMethod, cartographerSynth, consoleLog, Contracts, depositedAfterFee, e18, EVENT, expect6FigBigNumberEquals, getSubCartographer, mineBlock, OASIS, promiseSequenceMap, subCartGet, subCartMethod, toDecimal } from '.';
 import { getContract, getSummitReferrals, getSummitToken } from './contracts';
+import { summitLockingGet } from './summitLockingUtils';
 import { userPromiseSequenceMap, userPromiseSequenceReduce } from './users';
-import { e12, getTimestamp, mineBlocks } from './utils';
+import { e12, getExpectedDistributionsOnClaim, getTimestamp, mineBlocks, tokenAmountAfterDepositFee } from './utils';
 
 
 // DEPOSIT
@@ -92,13 +93,13 @@ const pendingSUMMITRedeemedOnDeposit = (tokenName: string, depositFee: number = 
 }
 
 const redeemTransfersCorrectSUMMITToAddresses = (tokenName: string) => {
-    it('REDEEM: Redeeming rewards transfers correct amount to addresses', async function() {
-      const { user1, dev} = await getNamedSigners(hre)
+    it('CLAIM: Claiming rewards transfers correct amount to summitLocking', async function() {
+      const { user1, dev } = await getNamedSigners(hre)
       const token = await getContract(tokenName)
       const summitReferrals = await getSummitReferrals()
 
 
-      const userSummitInit = await token.balanceOf(user1.address)
+      const userClaimedInit = await summitLockingGet.getUserCurrentEpochClaimableWinnings(user1.address)
       const referralSummitInit = await token.balanceOf(summitReferrals.address)
       const devSummitInit = await token.balanceOf(dev.address)
 
@@ -106,9 +107,10 @@ const redeemTransfersCorrectSUMMITToAddresses = (tokenName: string) => {
 
       const expectedRewards = (await subCartGet.rewards(token.address, OASIS, user1.address)).harvestable
         .add(await cartographerSynth.farmSummitEmissionOverDuration(token.address, OASIS, 1))
-      const totalSummitPending = expectedRewards.div(98).mul(100).div(92).mul(100)
-      const referralPending = totalSummitPending.mul(92).div(100).mul(2).div(100)
-      const devPending = totalSummitPending.mul(8).div(100)
+      const {
+        referralExpected,
+        treasuryExpected
+      } = getExpectedDistributionsOnClaim(expectedRewards)
 
       await cartographerMethod.claimSingleFarm({
         user: user1,
@@ -116,26 +118,26 @@ const redeemTransfersCorrectSUMMITToAddresses = (tokenName: string) => {
         elevation: OASIS,
       })
 
-      const userSummitFinal = await token.balanceOf(user1.address)
+      const userClaimedFinal = await summitLockingGet.getUserCurrentEpochClaimableWinnings(user1.address)
       const referralSummitFinal = await token.balanceOf(summitReferrals.address)
       const devSummitFinal = await token.balanceOf(dev.address)
 
       consoleLog({
-        user: `${toDecimal(userSummitInit)} --> ${toDecimal(userSummitFinal)}: Δ ${toDecimal(userSummitFinal.sub(userSummitInit))}`,
+        user: `${toDecimal(userClaimedInit)} --> ${toDecimal(userClaimedFinal)}: Δ ${toDecimal(userClaimedFinal.sub(userClaimedInit))}`,
         dev: `${toDecimal(devSummitInit)} --> ${toDecimal(devSummitFinal)}: Δ ${toDecimal(devSummitFinal.sub(devSummitInit))}`,
         referral: `${toDecimal(referralSummitInit)} --> ${toDecimal(referralSummitFinal)}: Δ ${toDecimal(referralSummitFinal.sub(referralSummitInit))}`,
       })
 
-      expect6FigBigNumberEquals(userSummitFinal, userSummitInit.add(expectedRewards))
-      expect6FigBigNumberEquals(referralSummitFinal, referralSummitInit.add(referralPending))
-      expect6FigBigNumberEquals(devSummitFinal, devSummitInit.add(devPending))
+      expect6FigBigNumberEquals(userClaimedFinal, userClaimedInit.add(expectedRewards))
+      expect6FigBigNumberEquals(referralSummitFinal, referralSummitInit.add(referralExpected))
+      expect6FigBigNumberEquals(devSummitFinal, devSummitInit.add(treasuryExpected))
     })
 }
 
 
 // WITHDRAW
 const pendingSUMMITRedeemedOnWithdrawal = (tokenName: string) => {
-  it('WITHDRAW / REDEEM: User should redeem pending on withdraw', async function() {
+  it('WITHDRAW / CLAIM: User should claim pending rewards on withdraw', async function() {
       const { user1 } = await getNamedSigners(hre)
       const token = await getContract(tokenName)
 
@@ -183,23 +185,34 @@ const pendingSUMMITRedeemedOnWithdrawal = (tokenName: string) => {
         ]
 
         let lpSupply = (await subCartGet.poolInfo(token.address, OASIS)).supply
-        const feeMult = (10000 - depositFee) / 10000
 
         await promiseSequenceMap(
           txs,
-          async (tx) => {
+          async (tx, txIndex) => {
             const args = {
               user: tx.user,
               tokenAddress: token.address,
               elevation: OASIS,
               amount: tx.amount,
             }
-            await tx.deposit ? cartographerMethod.deposit(args) : cartographerMethod.withdraw(args)
+            const depositFee = await cartographerGet.getTokenDepositFee(token.address)
+            if (tx.deposit) {
+              await cartographerMethod.deposit(args)
+            } else {
+              await cartographerMethod.withdraw(args)
+            }
             const expectedLpSupply = tx.deposit ?
-              lpSupply.add(tx.amount.mul(feeMult)) :
-              lpSupply.sub(tx.amount.mul(feeMult))
+              lpSupply.add(tokenAmountAfterDepositFee(tx.amount, depositFee)) :
+              lpSupply.sub(tx.amount) // Don't use withdrawal tax since full amount will be pulled from lp Supply
 
             lpSupply = (await subCartGet.poolInfo(token.address, OASIS)).supply
+
+            console.log({
+              txIndex,
+              deposit: tx.deposit,
+              lpSupply: toDecimal(lpSupply),
+              expectedSupply: toDecimal(expectedLpSupply),
+            })
             expect(expectedLpSupply).to.equal(lpSupply)
           }
         )

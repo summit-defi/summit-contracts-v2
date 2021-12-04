@@ -5,7 +5,6 @@ import "./DummyCAKE.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
 import "../interfaces/IPassthrough.sol";
 
 
@@ -138,7 +137,7 @@ contract MasterChef is Ownable {
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         if (user.amount > 0) {
-            uint256 pending = user.amount * ((pool.accCakePerShare / 1e12) - user.rewardDebt);
+            uint256 pending = (user.amount * pool.accCakePerShare / 1e12) - user.rewardDebt;
             if(pending > 0) {
                 safeCakeTransfer(msg.sender, pending);
             }
@@ -147,7 +146,7 @@ contract MasterChef is Ownable {
             pool.lpToken.safeTransferFrom(address(msg.sender), address(this), _amount);
             user.amount += _amount;
         }
-        user.rewardDebt = user.amount * (pool.accCakePerShare / 1e12);
+        user.rewardDebt = user.amount * pool.accCakePerShare / 1e12;
         emit Deposit(msg.sender, _pid, _amount);
     }
 
@@ -160,7 +159,7 @@ contract MasterChef is Ownable {
         require(user.amount >= _amount, "withdraw: not good");
 
         updatePool(_pid);
-        uint256 pending = user.amount * ((pool.accCakePerShare / 1e12) - user.rewardDebt);
+        uint256 pending = (user.amount * pool.accCakePerShare / 1e12) - user.rewardDebt;
         if(pending > 0) {
             safeCakeTransfer(msg.sender, pending);
         }
