@@ -74,7 +74,7 @@ const pendingSUMMITShouldIncreaseEachBlock = (tokenName: string) => {
 }
 
 const pendingSUMMITRedeemedOnDeposit = (tokenName: string, depositFee: number = 0) => {
-    it('DEPOSIT / REDEEM: User should redeem pending on further deposit', async function() {
+    it('DEPOSIT / CLAIM: User should claim pending rewards on further deposit', async function() {
         const { user1 } = await getNamedSigners(hre)
         const token = await getContract(tokenName)
 

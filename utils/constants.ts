@@ -239,6 +239,8 @@ export const EVENT = {
         UserExitedExpedition: 'UserExitedExpedition',
         UserHarvestedExpedition: 'UserHarvestedExpedition',
     },
+
+    WinningsHarvested: 'WinningsHarvested',
 }
 
 export const EVM = {
