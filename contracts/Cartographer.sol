@@ -1,23 +1,22 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.8.0;
+import "./SummitToken.sol";
 import "./CartographerOasis.sol";
 import "./CartographerElevation.sol";
 import "./ExpeditionV2.sol";
 import "./ElevationHelper.sol";
 import "./SummitReferrals.sol";
 import "./SummitLocking.sol";
+import "./interfaces/ISubCart.sol";
+import "./interfaces/IPassthrough.sol";
+import "./interfaces/IUniswapV2Pair.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "./interfaces/ISubCart.sol";
-import "./interfaces/IPassthrough.sol";
-import "./interfaces/ISummitVRFModule.sol";
-import "./SummitToken.sol";
-import "./interfaces/IUniswapV2Pair.sol";
 
 
 
@@ -100,17 +99,15 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     address public treasuryAdd;                                                 // Treasury address, see docs for spend breakdown
     address public expeditionTreasuryAdd;                                       // Expedition Treasury address, intermediate address to convert to stablecoins
-    address public trustedSeederAdd;                                            // Address that seeds the random number generation every 2 hours
     ElevationHelper elevationHelper;
-    address summitVRFModuleAdd;
     SummitReferrals summitReferrals;
     address[4] subCartographers;
     ExpeditionV2 expeditionV2;
     SummitLocking summitLocking;
 
     uint256 public launchTimestamp = 1641028149;                                // 2022-1-1, will be updated when summit ecosystem switched on
-    uint256 public summitPerSecond;                                             // Amount of Summit minted per second to be distributed to users
-    uint256 public treasurySummitBP = 180;                                      // Amount of Summit minted per second to the treasury
+    uint256 public summitPerSecond = 15e16;                                             // Amount of Summit minted per second to be distributed to users
+    uint256 public treasurySummitBP = 200;                                      // Amount of Summit minted per second to the treasury
     uint256 public referralsSummitBP = 20;                                      // Amount of Summit minted per second as referral rewards
 
     uint16[4] public elevationPoolsCount;                                       // List of all pool identifiers (PIDs)
@@ -160,7 +157,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     event ClaimWinnings(address indexed user, uint256 amount);
     event SetExpeditionTreasuryAddress(address indexed user, address indexed newAddress);
     event SetTreasuryAddress(address indexed user, address indexed newAddress);
-    event SetTrustedSeederAddress(address indexed user, address indexed newAddress);
     event PassthroughStrategySet(address indexed token, address indexed passthroughStrategy);
     event PassthroughStrategyRetired(address indexed token, address indexed passthroughStrategy);
 
@@ -177,19 +173,16 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Constructor simply setting addresses on creation
     constructor(
         address _treasuryAdd,
-        address _expeditionTreasuryAdd,
-        address _trustedSeederAdd
+        address _expeditionTreasuryAdd
     ) {
         treasuryAdd = _treasuryAdd;
         expeditionTreasuryAdd = _expeditionTreasuryAdd;
-        trustedSeederAdd = _trustedSeederAdd;
     }
 
     /// @dev Initialize, simply setting addresses, these contracts need the Cartographer address so it must be separate from the constructor
     function initialize(
         address _summit,
         address _ElevationHelper,
-        address _SummitVRFModuleAdd,
         address _SummitReferrals,
         address _CartographerOasis,
         address _CartographerPlains,
@@ -217,8 +210,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         summit = SummitToken(_summit);
 
         elevationHelper = ElevationHelper(_ElevationHelper);
-        summitVRFModuleAdd = _SummitVRFModuleAdd;
-        ISummitVRFModule(summitVRFModuleAdd).setTrustedSeederAdd(trustedSeederAdd);
         summitReferrals = SummitReferrals(_SummitReferrals);
 
         subCartographers[OASIS] = _CartographerOasis;
@@ -235,7 +226,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         }
 
         // Initial value of summit minting
-        setTotalSummitPerSecond(15e16);
         summit.approve(burnAdd, type(uint256).max);
     }
 
@@ -277,16 +267,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     function setRolloverRewardInNativeToken(uint256 _reward) public onlyOwner {
         require(_reward < 10e18, "Exceeds max reward");
         rolloverReward = _reward;
-    }
-
-    /// @dev Updating the trusted seeder address, can only be called by the owner
-    /// @param _trustedSeederAdd New trustedSeeder address
-    function setTrustedSeederAdd(address _trustedSeederAdd) public onlyOwner {
-        require(_trustedSeederAdd != address(0), "Missing address");
-
-        trustedSeederAdd = _trustedSeederAdd;
-        ISummitVRFModule(summitVRFModuleAdd).setTrustedSeederAdd(_trustedSeederAdd);
-        emit SetTrustedSeederAddress(msg.sender, _trustedSeederAdd);
     }
 
     /// @dev Updating the total emission of the ecosystem

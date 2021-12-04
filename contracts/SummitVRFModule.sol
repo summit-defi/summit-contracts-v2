@@ -106,7 +106,9 @@ contract SummitVRFModule is Ownable, ISummitVRFModule {
 
     /// @dev Update trusted seeder
     /// @param _trustedSeeder Address of trustedSeeder
-    function setTrustedSeederAdd(address _trustedSeeder) public override onlyCartographer {
+    function setTrustedSeederAdd(address _trustedSeeder)
+        public onlyOwner
+    {
         require(_trustedSeeder != address(0), "Trusted seeder missing");
         trustedSeeder = _trustedSeeder;
     }

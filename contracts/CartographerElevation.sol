@@ -101,7 +101,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     Cartographer cartographer;
     ElevationHelper elevationHelper;
     uint8 public elevation;
-    bool public elevationEnabled; // TODO: Setter
     address public summitTokenAddress;
 
 
