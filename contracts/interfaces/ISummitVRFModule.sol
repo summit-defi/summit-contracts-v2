@@ -3,6 +3,6 @@ pragma solidity 0.8.0;
 
 
 interface ISummitVRFModule {
-    function getRandomNumber(uint256 roundNumber) external view returns (uint256);
+    function getRandomNumber(uint8 elevation, uint256 roundNumber) external view returns (uint256);
     function setSeedRoundEndTimestamp(uint256 _seedRoundEndTimestamp) external;
 }

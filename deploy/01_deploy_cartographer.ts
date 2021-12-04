@@ -9,12 +9,12 @@ const deployCartographer: DeployFunction = async function ({
   run,
 }) {
   const {deploy} = deployments;
-  const {dev, exped, trustedSeeder} = await getNamedAccounts()
+  const {dev, exped} = await getNamedAccounts()
   const chainId = await getChainId()
 
   const Cartographer = await deploy('Cartographer', {
     from: dev,
-    args: [dev, exped, trustedSeeder],
+    args: [dev, exped],
     log: true,
   });
 
@@ -23,7 +23,7 @@ const deployCartographer: DeployFunction = async function ({
     await delay(10000)
     await run("verify:verify", {
       address: Cartographer.address,
-      constructorArguments: [dev, exped, trustedSeeder],
+      constructorArguments: [dev, exped],
     })
   }
 };

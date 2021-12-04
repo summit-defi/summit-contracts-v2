@@ -7,6 +7,7 @@ export const getContract = async (contractName: string) => {
 
 export const getCartographer = async () => await getContract(Contracts.Cartographer)
 export const getElevationHelper = async () => await getContract(Contracts.ElevationHelper)
+export const getSummitVRFModule = async () => await getContract(Contracts.SummitVRFModule)
 export const getSummitToken = async () => await getContract(Contracts.SummitToken)
 export const getSummitLpToken = async () => await getContract(Contracts.DummySUMMITLP)
 export const getSummitReferrals = async () => await getContract(Contracts.SummitReferrals)

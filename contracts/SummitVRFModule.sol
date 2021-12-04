@@ -86,9 +86,7 @@ contract SummitVRFModule is Ownable, ISummitVRFModule {
 
     /// @dev Creates SummitVRFModule contract with cartographer as owner of certain functionality
     /// @param _cartographer Address of main Cartographer contract
-    constructor(address _cartographer)
-        onlyOwner
-    {
+    constructor(address _cartographer) {
         require(_cartographer != address(0), "Cartographer missing");
         cartographer = _cartographer;
     }
@@ -96,7 +94,7 @@ contract SummitVRFModule is Ownable, ISummitVRFModule {
 
     /// @dev Set elevationHelper
     /// @param _elevationHelper Address of ElevationHelper contract
-    function setElevationHelper (address _elevationHelper)
+    function setElevationHelper(address _elevationHelper)
         public onlyOwner
     {
         require(_elevationHelper != address(0), "ElevationHelper missing");
@@ -150,9 +148,9 @@ contract SummitVRFModule is Ownable, ISummitVRFModule {
     }
 
 
-    /// @dev Get random number
-    function getRandomNumber(uint256 roundNumber) public view override returns (uint256) {
-        return uint256(keccak256(abi.encode(roundNumber, unsealedSeed[seedRound], futureBlockHash[seedRound])));
+    /// @dev Get random number 0-99 inclusive
+    function getRandomNumber(uint8 elevation, uint256 roundNumber) public view override returns (uint256) {
+        return uint256(keccak256(abi.encode(elevation, roundNumber, unsealedSeed[seedRound], futureBlockHash[seedRound]))) % 100;
     }
 
 

@@ -2,7 +2,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { Contract } from "ethers";
 import { deployments } from "hardhat";
-import { OASIS, PLAINS, MESA, SUMMIT, EXPEDITION, INF_APPROVE, e18, mineBlockWithTimestamp, getSeeds, mineBlocks, TOKEN_FEE, Contracts, getSubCartographers, promiseSequenceMap, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getMasterChef, getMasterChefPassthrough, getSummitLpToken, getSummitReferrals, getSummitToken, getTimelock, elevationHelperGet } from "../utils";
+import { OASIS, PLAINS, MESA, SUMMIT, EXPEDITION, INF_APPROVE, e18, mineBlockWithTimestamp, getSeeds, mineBlocks, TOKEN_FEE, Contracts, getSubCartographers, promiseSequenceMap, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getMasterChef, getMasterChefPassthrough, getSummitLpToken, getSummitReferrals, getSummitToken, getTimelock, elevationHelperGet, getSummitVRFModule } from "../utils";
 
 interface FixtureState {
   readonly dev: SignerWithAddress
@@ -22,6 +22,7 @@ interface FixtureState {
   readonly cartographer: Contract
   readonly subCartographers: Contract[]
   readonly elevationHelper: Contract
+  readonly summitVRFModule: Contract
   readonly summitReferrals: Contract
   readonly timelock: Contract
   readonly everestToken: Contract
@@ -44,6 +45,7 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
   const cartographer = await getCartographer()
   const subCartographers = await getSubCartographers()
   const elevationHelper = await getElevationHelper()
+  const summitVRFModule = await getSummitVRFModule()
   const summitReferrals = await getSummitReferrals()
   const timelock = await getTimelock()
   const everestToken = await getEverestToken()
@@ -80,6 +82,7 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
     cartographer,
     subCartographers,
     elevationHelper,
+    summitVRFModule,
     summitReferrals,
     timelock,
     everestToken,
@@ -124,16 +127,16 @@ export const oasisUnlockedFixture = deployments.createFixture(async (): Promise<
 export const twoThousandUnlockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
   const oasisUnlockedFixtureState = await oasisUnlockedFixture();
 
-  const { elevationHelper, cartographer, trustedSeeder } = oasisUnlockedFixtureState
+  const { summitVRFModule, cartographer, trustedSeeder } = oasisUnlockedFixtureState
   const twoThousandUnlockTime = await elevationHelperGet.unlockTimestamp(PLAINS)
   await mineBlockWithTimestamp(twoThousandUnlockTime)
   await cartographer.rollover(PLAINS)
 
   const { unsealedSeed, sealedSeed } = getSeeds('throwaway', trustedSeeder.address)
 
-  await elevationHelper.connect(trustedSeeder).receiveSealedSeed(sealedSeed)
+  await summitVRFModule.connect(trustedSeeder).receiveSealedSeed(sealedSeed)
   await mineBlocks(3)
-  await elevationHelper.connect(trustedSeeder).receiveUnsealedSeed(unsealedSeed)
+  await summitVRFModule.connect(trustedSeeder).receiveUnsealedSeed(unsealedSeed)
 
 
   return oasisUnlockedFixtureState

@@ -77,7 +77,7 @@ contract ElevationHelper is Ownable {
     uint256 public referralBurnTimestamp;                                   // Time at which burning unclaimed referral rewards becomes available
 
 
-    address public summitVRFModuleAdd;                                 // VRF module address
+    address public summitVRFModuleAdd;                                      // VRF module address
 
 
 
@@ -321,7 +321,7 @@ contract ElevationHelper is Ownable {
         // No winning totem should be selected for round 0, which takes place when the elevation is locked
         if (roundNumber[_elevation] == 0) { return; }
 
-        uint256 rand = ISummitVRFModule(summitVRFModuleAdd).getRandomNumber(roundNumber[_elevation]);
+        uint256 rand = ISummitVRFModule(summitVRFModuleAdd).getRandomNumber(_elevation, roundNumber[_elevation]);
 
         // Uses the random number to select the winning totem
         uint8 winner = chooseWinningTotem(_elevation, rand);
@@ -371,7 +371,8 @@ contract ElevationHelper is Ownable {
     function chooseWinningTotem(uint8 _elevation, uint256 _rand) internal view returns (uint8) {
         if (_elevation == EXPEDITION)
             return (_rand % 100) < currentDeityDivider() ? 0 : 1;
-        return uint8(_rand % totemCount[_elevation]);
+
+        return uint8((_rand * totemCount[_elevation]) / 100);
     }
 
 

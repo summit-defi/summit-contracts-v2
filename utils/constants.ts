@@ -19,6 +19,7 @@ export const Contracts = {
     ExpeditionV2: 'ExpeditionV2',
 
     SummitLocking: 'SummitLocking',
+    SummitVRFModule: 'SummitVRFModule',
 }
 
 export const hardhatChainId = '31337'
