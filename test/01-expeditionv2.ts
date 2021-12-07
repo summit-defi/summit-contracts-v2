@@ -2,9 +2,8 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, toDecimal, Contracts, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, e36, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, e12, e0, consoleLog, expectAllEqual } from "..";
-import { getEverestLockMultiplier, getExpectedEverest } from "../everestUtils";
-import { oasisUnlockedFixture } from "../fixtures";
+import { e18, ERR, EVENT, toDecimal, Contracts, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, e36, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, e12, e0, consoleLog, expectAllEqual, getBifiToken, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getSummitLpToken, getSummitToken, everestGet } from "../utils";
+import { oasisUnlockedFixture } from "./fixtures";
 
 
 const rolloverExpedition = async () => {
@@ -90,7 +89,7 @@ const expectUserAndExpedSuppliesToMatch = async () => {
 
 describe("EXPEDITION V2", async function() {
     before(async function () {
-        const { everestToken, summitToken, dummySummitLpToken, cakeToken, expeditionV2, user1, user2, user3 } = await oasisUnlockedFixture()
+        const { everestToken, summitToken, cakeToken, expeditionV2, user1, user2, user3 } = await oasisUnlockedFixture()
 
         await everestToken.connect(user1).approve(expeditionV2.address, INF_APPROVE)
         await everestToken.connect(user2).approve(expeditionV2.address, INF_APPROVE)
@@ -99,10 +98,6 @@ describe("EXPEDITION V2", async function() {
         await summitToken.connect(user1).approve(expeditionV2.address, INF_APPROVE)
         await summitToken.connect(user2).approve(expeditionV2.address, INF_APPROVE)
         await summitToken.connect(user3).approve(expeditionV2.address, INF_APPROVE)
-
-        await dummySummitLpToken.connect(user1).approve(expeditionV2.address, INF_APPROVE)
-        await dummySummitLpToken.connect(user2).approve(expeditionV2.address, INF_APPROVE)
-        await dummySummitLpToken.connect(user3).approve(expeditionV2.address, INF_APPROVE)
 
         await cakeToken.connect(user1).approve(expeditionV2.address, INF_APPROVE)
         await cakeToken.connect(user2).approve(expeditionV2.address, INF_APPROVE)
@@ -141,19 +136,16 @@ describe("EXPEDITION V2", async function() {
         const { user1, user2 } = await getNamedSigners(hre)
         const expeditionV2 = await getExpedition()
         const summitToken = await getSummitToken()
-        const dummySummitLp = await getSummitLpToken()
         const everestToken = await getEverestToken()
 
-        const user1ExpectedEverest = await getExpectedEverest(e18(1), e18(1), 24 * 3600)
-        const user2ExpectedEverest = await getExpectedEverest(e18(1), e18(1), 365 * 24 * 3600)
-        const user1EverestLockMultiplier = await getEverestLockMultiplier(24 * 3600)
-        const user2EverestLockMultiplier = await getEverestLockMultiplier(365 * 24 * 3600)
+        const user1ExpectedEverest = await everestGet.getExpectedEverestAward(e18(1), 24 * 3600)
+        const user2ExpectedEverest = await everestGet.getExpectedEverestAward(e18(1), 365 * 24 * 3600)
+        const user1EverestLockMultiplier = await everestGet.getLockPeriodMultiplier(24 * 3600)
+        const user2EverestLockMultiplier = await everestGet.getLockPeriodMultiplier(365 * 24 * 3600)
 
         const user1InitSummit = await summitToken.balanceOf(user1.address)
-        const user1InitSummitLp = await dummySummitLp.balanceOf(user1.address)
         const user1InitEverest = await everestToken.balanceOf(user1.address)
         const user2InitSummit = await summitToken.balanceOf(user2.address)
-        const user2InitSummitLp = await dummySummitLp.balanceOf(user2.address)
         const user2InitEverest = await everestToken.balanceOf(user2.address)
 
         consoleLog({
@@ -177,28 +169,22 @@ describe("EXPEDITION V2", async function() {
         const user2EverestInfo = await expeditionV2.userEverestInfo(user2.address)
 
         const user1FinalSummit = await summitToken.balanceOf(user1.address)
-        const user1FinalSummitLp = await dummySummitLp.balanceOf(user1.address)
         const user1FinalEverest = await everestToken.balanceOf(user1.address)
         const user2FinalSummit = await summitToken.balanceOf(user2.address)
-        const user2FinalSummitLp = await dummySummitLp.balanceOf(user2.address)
         const user2FinalEverest = await everestToken.balanceOf(user2.address)
 
         expect(user1EverestInfo.everestOwned).to.equal(user1ExpectedEverest)
         expect(user1EverestInfo.everestLockMultiplier).to.equal(user1EverestLockMultiplier)
         expect(user1EverestInfo.lockRelease).to.equal(user1Timestamp + (24 * 3600) + 1)
         expect(user1EverestInfo.summitLocked).to.equal(e18(1))
-        expect(user1EverestInfo.summitLpLocked).to.equal(e18(1))
         expect(deltaBN(user1InitSummit, user1FinalSummit)).to.equal(e18(1))
-        expect(deltaBN(user1InitSummitLp, user1FinalSummitLp)).to.equal(e18(1))
         expect(deltaBN(user1InitEverest, user1FinalEverest)).to.equal(user1ExpectedEverest)
 
         expect(user2EverestInfo.everestOwned).to.equal(user2ExpectedEverest)
         expect(user2EverestInfo.everestLockMultiplier).to.equal(user2EverestLockMultiplier)
         expect(user2EverestInfo.lockRelease).to.equal(user2Timestamp + (365 * 24 * 3600) + 1)
         expect(user2EverestInfo.summitLocked).to.equal(e18(1))
-        expect(user2EverestInfo.summitLpLocked).to.equal(e18(1))
         expect(deltaBN(user2InitSummit, user2FinalSummit)).to.equal(e18(1))
-        expect(deltaBN(user2InitSummitLp, user2FinalSummitLp)).to.equal(e18(1))
         expect(deltaBN(user2InitEverest, user2FinalEverest)).to.equal(user2ExpectedEverest)
     })
 
@@ -221,7 +207,7 @@ describe("EXPEDITION V2", async function() {
         const everestInit = await everestToken.balanceOf(user1.address)
         const everestInfoInit = await expeditionV2.userEverestInfo(user1.address)
         
-        const user1ExpectedEverest = await getExpectedEverest(e18(5), e18(0), 24 * 3600)
+        const user1ExpectedEverest = await everestGet.getExpectedEverestAward(e18(5), e18(0), 24 * 3600)
 
         consoleLog({
             user1ExpectedEverest: toDecimal(user1ExpectedEverest)
@@ -293,18 +279,16 @@ describe("EXPEDITION V2", async function() {
         ).to.be.revertedWith(ERR.EVEREST.BAD_WITHDRAW)
     })
 
-    it(`REMOVE EVEREST: Valid summit / summit lp withdraw is successful`, async function () {
+    it(`REMOVE EVEREST: Valid summit withdraw is successful`, async function () {
         const { user1 } = await getNamedSigners(hre)
         const expeditionV2 = await getExpedition()
         const everestToken = await getEverestToken()
         const summitToken = await getSummitToken()
-        const dummySummitLp = await getSummitLpToken()
 
         const everestInfoInit = await expeditionV2.userEverestInfo(user1.address)
         const halfEverestAmount = everestInfoInit.everestOwned.div(2)
         const everestInit = await everestToken.balanceOf(user1.address)
         const summitInit = await summitToken.balanceOf(user1.address)
-        const summitLpInit = await dummySummitLp.balanceOf(user1.address)
         expect(halfEverestAmount).to.equal(everestInit.div(2))
 
         // WITHDRAW HALF
@@ -318,7 +302,6 @@ describe("EXPEDITION V2", async function() {
         const everestInfoMid = await expeditionV2.userEverestInfo(user1.address)
         const everestMid = await everestToken.balanceOf(user1.address)
         const summitMid = await summitToken.balanceOf(user1.address)
-        const summitLpMid = await dummySummitLp.balanceOf(user1.address)
 
         expect6FigBigNumberAllEqual([
             expectedSummitWithdrawal1,
@@ -327,7 +310,6 @@ describe("EXPEDITION V2", async function() {
         ])
         expect6FigBigNumberAllEqual([
             expectedSummitLpWithdrawal1,
-            deltaBN(summitLpInit, summitLpMid),
             deltaBN(everestInfoInit.summitLpLocked, everestInfoMid.summitLpLocked)
         ])
         expect6FigBigNumberAllEqual([
@@ -347,17 +329,13 @@ describe("EXPEDITION V2", async function() {
         const everestInfoFinal = await expeditionV2.userEverestInfo(user1.address)
         const everestFinal = await everestToken.balanceOf(user1.address)
         const summitFinal = await summitToken.balanceOf(user1.address)
-        const summitLpFinal = await dummySummitLp.balanceOf(user1.address)
 
         consoleLog({
             summit: `${toDecimal(summitMid)} ==> ${toDecimal(summitFinal)}: ${toDecimal(deltaBN(summitFinal, summitMid))}`,
-            summitLp: `${toDecimal(summitLpMid)} ==> ${toDecimal(summitLpFinal)}: ${toDecimal(deltaBN(summitLpFinal, summitLpMid))}`,
             everest: `${toDecimal(everestMid)} ==> ${toDecimal(everestFinal)}: ${toDecimal(deltaBN(everestFinal, everestMid))}`,
             summitEverestInfo: `${toDecimal(everestInfoMid.summitLocked)} ==> ${toDecimal(everestInfoFinal.summitLocked)}: ${toDecimal(deltaBN(everestInfoMid.summitLocked, everestInfoFinal.summitLocked))}`,
-            summitLpEverestInfo: `${toDecimal(everestInfoMid.summitLpLocked)} ==> ${toDecimal(everestInfoFinal.summitLpLocked)}: ${toDecimal(deltaBN(everestInfoMid.summitLpLocked, everestInfoFinal.summitLpLocked))}`,
             everestEverestInfo: `${toDecimal(everestInfoMid.everestOwned)} ==> ${toDecimal(everestInfoFinal.everestOwned)}: ${toDecimal(deltaBN(everestInfoMid.everestOwned, everestInfoFinal.everestOwned))}`,
             expectedSummitWithdrawal2: toDecimal(expectedSummitWithdrawal2),
-            expectedSummitLpWithdrawal2: toDecimal(expectedSummitLpWithdrawal2),
             everestMid: toDecimal(everestMid),
         })
 
@@ -368,7 +346,6 @@ describe("EXPEDITION V2", async function() {
         ])
         expect6FigBigNumberAllEqual([
             expectedSummitLpWithdrawal2,
-            deltaBN(summitLpFinal, summitLpMid),
             deltaBN(everestInfoFinal.summitLpLocked, everestInfoMid.summitLpLocked)
         ])
         expect6FigBigNumberAllEqual([

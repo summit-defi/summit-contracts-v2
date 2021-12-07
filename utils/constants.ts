@@ -19,7 +19,7 @@ export const Contracts = {
     ExpeditionV2: 'ExpeditionV2',
 
     SummitLocking: 'SummitLocking',
-    SummitVRFModule: 'SummitVRFModule',
+    SummitRandomnessModule: 'SummitRandomnessModule',
 }
 
 export const hardhatChainId = '31337'
@@ -228,16 +228,32 @@ export const EVENT = {
 
     TIMELOCK_EXECUTE_TRANSACTION: 'ExecuteTransaction',
 
-    EVEREST: {
+    Expedition: {
         SummitLocked: 'SummitLocked',
+        LockDurationIncreased: 'LockDurationIncreased',
         LockedSummitIncreased: 'LockedSummitIncreased',
         LockedSummitRemoved: 'LockedSummitRemoved',
-    },
-
-    EXPEDITION_V2: {
         UserJoinedExpedition: 'UserJoinedExpedition',
-        UserExitedExpedition: 'UserExitedExpedition',
         UserHarvestedExpedition: 'UserHarvestedExpedition',
+
+        ExpeditionInitialized: 'ExpeditionInitialized',
+        ExpeditionFundsAdded: 'ExpeditionFundsAdded',
+        ExpeditionDisabled: 'ExpeditionDisabled',
+        ExpeditionEnabled: 'ExpeditionEnabled',
+        Rollover: 'Rollover',
+        DeitySelected: 'DeitySelected',
+        SafetyFactorSelected: 'SafetyFactorSelected',
+
+        Param: {
+            SetMinLockTime: 'SetMinLockTime',
+            SetMaxLockTime: 'SetMaxLockTime',
+            SetLockTimeRequiredForTaxlessSummitWithdraw: 'SetLockTimeRequiredForTaxlessSummitWithdraw',
+            SetLockTimeRequiredForLockedSummitDeposit: 'SetLockTimeRequiredForLockedSummitDeposit',
+            SetMinEverestLockMult: 'SetMinEverestLockMult',
+            SetMaxEverestLockMult: 'SetMaxEverestLockMult',
+            SetExpeditionDeityWinningsMult: 'SetExpeditionDeityWinningsMult',
+            SetExpeditionRunwayRounds: 'SetExpeditionRunwayRounds',
+        }
     },
 
     WinningsHarvested: 'WinningsHarvested',

@@ -122,7 +122,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     uint256 public minEverestLockMult = 1000;
     uint256 public maxEverestLockMult = 10000;
     uint256 public expeditionDeityWinningsMult = 125;
-    uint256 public expeditionRunwayRounds = 60;
+    uint256 public expeditionRunwayRounds = 30;
 
     uint256 public totalSummitLocked;
     uint256 public avgSummitLockDuration;
@@ -208,9 +208,21 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     event UserHarvestedExpedition(address indexed user, uint256 _summitHarvested, uint256 _usdcHarvested);
 
     event ExpeditionInitialized();
-    event ExpeditionExtended(address indexed token, uint256 _rewardAmount, uint256 _rounds);
-    event ExpeditionRestarted(address indexed token, uint256 _rewardAmount, uint256 _rounds);
-    event SetSummitLpEverestIncentiveMult(address indexed user, uint256 indexed newIncentiveMultiplier);
+    event ExpeditionFundsAdded(address indexed token, uint256 _amount);
+    event ExpeditionDisabled();
+    event ExpeditionEnabled();
+    event Rollover(address indexed user);
+    event DeitySelected(address indexed user, uint8 _deity, uint256 _deitySelectionRound);
+    event SafetyFactorSelected(address indexed user, uint8 _safetyFactor);
+
+    event SetMinLockTime(uint256 _lockTimeDays);
+    event SetMaxLockTime(uint256 _lockTimeDays);
+    event SetLockTimeRequiredForTaxlessSummitWithdraw(uint256 _lockTimeDays);
+    event SetLockTimeRequiredForLockedSummitDeposit(uint256 _lockTimeDays);
+    event SetMinEverestLockMult(uint256 _lockMult);
+    event SetMaxEverestLockMult(uint256 _lockMult);
+    event SetExpeditionDeityWinningsMult(uint256 _deityMult);
+    event SetExpeditionRunwayRounds(uint256 _runwayRounds);
     
 
 
@@ -365,34 +377,42 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     function setMinLockTime(uint256 _lockTimeDays) public onlyOwner {
         require(_lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 30, "Invalid minimum lock time (1-30 days)");
         minLockTime = _lockTimeDays * 24 * 365;
+        emit SetMinLockTime(_lockTimeDays);
     }
     function setMaxLockTime(uint256 _lockTimeDays) public onlyOwner {
         require(_lockTimeDays >= minLockTime && _lockTimeDays >= 7 && _lockTimeDays <= 730, "Invalid maximum lock time (7-730 days)");
         maxLockTime = _lockTimeDays * 24 * 365;
+        emit SetMaxLockTime(_lockTimeDays);
     }
     function setLockTimeRequiredForTaxlessSummitWithdraw(uint256 _lockTimeDays) public onlyOwner {
         require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 30, "Invalid taxless summit lock time (1-30 days)");
         lockTimeRequiredForTaxlessSummitWithdraw = _lockTimeDays;
+        emit SetLockTimeRequiredForTaxlessSummitWithdraw(_lockTimeDays);
     }
     function setLockTimeRequiredForLockedSummitDeposit(uint256 _lockTimeDays) public onlyOwner {
         require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 90, "Invalid locked summit lock time (1-90 days)");
         lockTimeRequiredForClaimableSummitLock = _lockTimeDays;
+        emit SetLockTimeRequiredForLockedSummitDeposit(_lockTimeDays);
     }
     function setMinEverestLockMult(uint256 _lockMult) public onlyOwner {
         require(_lockMult >= 100 && _lockMult <= 50000, "Invalid lock mult");
         minEverestLockMult = _lockMult;
+        emit SetMinEverestLockMult(_lockMult);
     }
     function setMaxEverestLockMult(uint256 _lockMult) public onlyOwner {
         require(_lockMult >= 100 && _lockMult <= 50000, "Invalid lock mult");
         maxEverestLockMult = _lockMult;
+        emit SetMaxEverestLockMult(_lockMult);
     }
     function setExpeditionDeityWinningsMult(uint256 _deityMult) public onlyOwner {
         require(_deityMult >= 100 && _deityMult <= 500, "Invalid runway rounds (7-90)");
         expeditionDeityWinningsMult = _deityMult;
+        emit SetExpeditionDeityWinningsMult(_deityMult);
     }
     function setExpeditionRunwayRounds(uint256 _runwayRounds) public onlyOwner {
         require(_runwayRounds >= 7 && _runwayRounds <= 90, "Invalid runway rounds (7-90)");
         expeditionRunwayRounds = _runwayRounds;
+        emit SetExpeditionRunwayRounds(_runwayRounds);
     }
 
 
@@ -454,6 +474,8 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         require (_token == address(expeditionInfo.summit.token) || _token == address(expeditionInfo.usdc.token), "Invalid token to add to expedition");
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         _recalculateExpeditionEmissions();
+
+        emit ExpeditionFundsAdded(_token, _amount);
     }
 
     /// @dev Turn off an expedition
@@ -463,6 +485,8 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     {
         require(expeditionInfo.live, "Expedition already disabled");
         expeditionInfo.live = false;
+
+        emit ExpeditionDisabled();
     }
 
     /// @dev Turn on a turned off expedition
@@ -472,6 +496,8 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     {
         require(!expeditionInfo.live, "Expedition already enabled");
         expeditionInfo.live = true;
+
+        emit ExpeditionEnabled();
     }
 
 
@@ -559,13 +585,23 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     ///      Expeditions set to end are disabled
     function rollover()
         public
-        elevationHelperRoundRolledOver()
     {
+        // Ensure that the expedition is ready to be rolled over, ensures only a single user can perform the rollover
+        elevationHelper.validateRolloverAvailable(EXPEDITION);
+
+        // Selects the winning totem for the round, storing it in the elevationHelper contract
+        elevationHelper.selectWinningTotem(EXPEDITION);
+
+        // Update the round index in the elevationHelper, effectively starting the next round of play
+        elevationHelper.rolloverElevation(EXPEDITION);
+
         uint256 currRound = elevationHelper.roundNumber(EXPEDITION);
 
         _rolloverExpedition(currRound);
 
         rolledOverRounds = currRound;
+
+        emit Rollover(msg.sender);
     }
 
 
@@ -784,7 +820,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         returns (uint256)
     {
         UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
-        require(_lockPeriod > everestInfo.lockDuration, "Lock duration must strictly increase");
+        require(_lockPeriod >= everestInfo.lockDuration, "Lock duration must strictly increase");
 
         // Update average lock duration by removing existing lock duration, and adding new duration
         _updateAvgSummitLockDuration(everestInfo.summitLocked, everestInfo.lockDuration, false);
@@ -792,7 +828,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
 
         // Calculate and validate the new everest lock multiplier
         uint256 everestLockMultiplier = _lockPeriodMultiplier(_lockPeriod);
-        require(everestLockMultiplier > everestInfo.everestLockMultiplier, "New lock period must be greater");
+        require(everestLockMultiplier >= everestInfo.everestLockMultiplier, "New lock period must be greater");
 
         // Calculate the additional EVEREST awarded by the extended lock duration
         uint256 additionalEverestAward = ((everestInfo.summitLocked * everestLockMultiplier) / 10000) - everestInfo.everestOwned;
@@ -914,9 +950,9 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         nonReentrant userEverestInfoExists userOwnsEverest userLockPeriodSatisfied validEverestAmountToBurn(_everestAmount)
     {
         UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
+        require (_everestAmount <= everestInfo.everestOwned, "Bad withdraw");
 
-        uint256 percWithdrawing = (_everestAmount * 1e12) / everestInfo.everestOwned;
-        uint256 summitToWithdraw = (everestInfo.summitLocked * percWithdrawing) / 1e12;
+        uint256 summitToWithdraw = _everestAmount * 10000 / everestInfo.everestLockMultiplier;
 
         everestInfo.everestOwned -= _everestAmount;
         everestInfo.summitLocked -= summitToWithdraw;
@@ -1019,6 +1055,8 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         everestInfo.deity = _deity;
         everestInfo.deitySelected = true;
         everestInfo.deitySelectionRound = elevationHelper.roundNumber(EXPEDITION);
+
+        emit DeitySelected(msg.sender, _deity, everestInfo.deitySelectionRound);
     }
 
 
@@ -1051,6 +1089,8 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         // Update safety factor in state
         everestInfo.safetyFactor = _safetyFactor;
         everestInfo.safetyFactorSelected = true;
+
+        emit SafetyFactorSelected(msg.sender, _safetyFactor);
     }
 
 
@@ -1195,14 +1235,6 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         expeditionInfo.safeSupply = expeditionInfo.safeSupply - _getUserSafeEverest(everestInfo, everestInfo.safetyFactor) + _getUserSafeEverest(everestInfo, _newSafetyFactor);
         expeditionInfo.deitiedSupply = expeditionInfo.deitiedSupply - _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor) + _getUserDeitiedEverest(everestInfo, _newSafetyFactor);
         expeditionInfo.deitySupply[everestInfo.deity] = expeditionInfo.deitySupply[everestInfo.deity] - _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor) + _getUserDeitiedEverest(everestInfo, _newSafetyFactor);
-    }
-    
-
-    function updateExpeditionInteraction()
-        public
-        userEverestInfoExists userOwnsEverest expeditionInteractionsAvailable
-    {
-        _updateExpeditionInteraction(userEverestInfo[msg.sender]);
     }
 
     function _updateExpeditionInteraction(UserEverestInfo storage everestInfo)

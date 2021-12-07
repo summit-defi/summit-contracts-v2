@@ -3,7 +3,7 @@ pragma solidity 0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./interfaces/ISummitVRFModule.sol";
+import "./interfaces/ISummitRNGModule.sol";
 
 
 
@@ -41,7 +41,7 @@ RANDOM NUMBER GENERATION
     . Webservice sends the original unsealed seed to `receiveUnsealedSeed`
 */
 
-contract SummitVRFModule is Ownable, ISummitVRFModule {
+contract SummitTrustedSeederRNGModule is Ownable, ISummitRNGModule {
     // ---------------------------------------
     // --   V A R I A B L E S
     // ---------------------------------------
@@ -53,12 +53,18 @@ contract SummitVRFModule is Ownable, ISummitVRFModule {
     uint256 constant baseRoundDuration = 3600;                              // Duration (seconds) of the smallest round chunk
 
     uint256 seedRoundEndTimestamp;                                          // Timestamp the first seed round ends
-    uint256 seedRoundDurationMult = 2;
+    uint256 constant seedRoundDurationMult = 1;
     uint256 seedRound = 0;                                                  // The sealed seed is generated at the top of every hour
     mapping(uint256 => bytes32) sealedSeed;                                 // Sealed seed for each seed round, provided by trusted seeder webservice                                              
     mapping(uint256 => bytes32) unsealedSeed;                               // Sealed seed for each seed round, provided by trusted seeder webservice                                              
     mapping(uint256 => uint256) futureBlockNumber;                          // Future block number for each seed round
     mapping(uint256 => bytes32) futureBlockHash;                            // Future block hash for each seed round
+
+
+    event SetElevationHelper(address _elevationHelper);
+    event SetTrustedSeederAdd(address _trustedSeeder);
+    event SetSeedRoundEndTimestamp(uint256 _seedRoundEndTimestamp);
+
 
 
     // ---------------------------------------
@@ -84,7 +90,7 @@ contract SummitVRFModule is Ownable, ISummitVRFModule {
     // --   I N I T I A L I Z A T I O N
     // ---------------------------------------
 
-    /// @dev Creates SummitVRFModule contract with cartographer as owner of certain functionality
+    /// @dev Creates SummitRandomnessModule contract with cartographer as owner of certain functionality
     /// @param _cartographer Address of main Cartographer contract
     constructor(address _cartographer) {
         require(_cartographer != address(0), "Cartographer missing");
@@ -99,6 +105,7 @@ contract SummitVRFModule is Ownable, ISummitVRFModule {
     {
         require(_elevationHelper != address(0), "ElevationHelper missing");
         elevationHelper = _elevationHelper;
+        emit SetElevationHelper(_elevationHelper);
     }
 
 
@@ -109,6 +116,7 @@ contract SummitVRFModule is Ownable, ISummitVRFModule {
     {
         require(_trustedSeeder != address(0), "Trusted seeder missing");
         trustedSeeder = _trustedSeeder;
+        emit SetTrustedSeederAdd(_trustedSeeder);
     }
     
 
@@ -116,8 +124,8 @@ contract SummitVRFModule is Ownable, ISummitVRFModule {
     /// @param _seedRoundEndTimestamp amount of seedRoundEndTimestamp
     function setSeedRoundEndTimestamp(uint256 _seedRoundEndTimestamp) public override onlyElevationHelper {
         seedRoundEndTimestamp = _seedRoundEndTimestamp;
+        emit SetSeedRoundEndTimestamp(_seedRoundEndTimestamp);
     }
-    
 
     
 

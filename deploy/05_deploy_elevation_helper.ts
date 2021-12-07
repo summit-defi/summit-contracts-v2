@@ -14,8 +14,8 @@ const deployElevationHelper: DeployFunction = async function ({
   const Cartographer = await deployments.get('Cartographer');
 
 
-  // Deploy SummitVRFModule
-  const SummitVRFModule = await deploy(Contracts.SummitVRFModule, {
+  // Deploy SummitRandomnessModule
+  const SummitRandomnessModule = await deploy(Contracts.SummitRandomnessModule, {
     from: dev,
     args: [Cartographer.address],
     log: true
@@ -29,14 +29,14 @@ const deployElevationHelper: DeployFunction = async function ({
   });
 
   await execute(
-    Contracts.SummitVRFModule,
+    Contracts.SummitRandomnessModule,
     { from: dev },
     'setElevationHelper',
     ElevationHelper.address,
   )
 
   await execute(
-    Contracts.SummitVRFModule,
+    Contracts.SummitRandomnessModule,
     { from: dev },
     'setTrustedSeederAdd',
     trustedSeeder,
@@ -45,14 +45,14 @@ const deployElevationHelper: DeployFunction = async function ({
   await execute(
     Contracts.ElevationHelper,
     { from: dev },
-    'setSummitVRFModuleAdd',
-    SummitVRFModule.address,
+    'setSummitRandomnessModuleAdd',
+    SummitRandomnessModule.address,
   )
 
   if (ElevationHelper.newlyDeployed && chainIdAllowsVerification(chainId)) {
     await delay(10000)
     await run("verify:verify", {
-      address: SummitVRFModule.address,
+      address: SummitRandomnessModule.address,
       constructorArguments: [Cartographer.address],
     })
     await delay(10000)

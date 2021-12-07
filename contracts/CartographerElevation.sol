@@ -283,6 +283,28 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     function userStakedAmount(address _token, address _userAdd) external view override returns (uint256) {
         return userInfo[_token][_userAdd].staked;
     }
+
+    function getUserInteractingPools(address _userAdd) public view returns (address[] memory) {
+        address[] memory pools = new address[](userInteractingPools[_userAdd].length());
+        for (uint16 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
+            pools[index] = userInteractingPools[_userAdd].at(index);
+        }
+        return pools;
+    }
+    function getPools() public view returns (address[] memory) {
+        address[] memory pools = new address[](poolTokens.length());
+        for (uint16 index = 0; index < poolTokens.length(); index++) {
+            pools[index] = poolTokens.at(index);
+        }
+        return pools;
+    }
+    function getActivePools() public view returns (address[] memory) {
+        address[] memory pools = new address[](activePools.length());
+        for (uint16 index = 0; index < activePools.length(); index++) {
+            pools[index] = activePools.at(index);
+        }
+        return pools;
+    }
     
     function totemSupplies(address _token) public view poolExists(_token) returns (uint256[10] memory) {
         ElevationPoolInfo storage pool = poolInfo[_token];
@@ -1159,34 +1181,30 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         // Validate amount attempting to withdraw
         require(_amount > 0 && user.staked >= _amount, "Bad withdrawal");
         
-        updatePool(pool.token);
         uint8 totem = _getUserTotem(_userAdd);
 
-        // Amount to attempt to withdraw
-        uint256 amount = _amount; 
-
         if (_isEmergencyWithdraw) {
-            // Withdraw full staked balance
-            amount = user.staked;
-
             // Reset user back to base state
             _emergencyWithdrawResetUser(pool, _userAdd);
         } else {
 
+            // Bring pool to present
+            updatePool(pool.token);
+
             // Update the users interaction in the pool
-            _updateUserRoundInteraction(pool, user, totem, amount, false);
+            _updateUserRoundInteraction(pool, user, totem, _amount, false);
         }
         
         // Signal cartographer to perform withdrawal function if not elevating funds
         // Elevated funds remain in the cartographer, or in the passthrough target, so no need to withdraw from anywhere as they would be immediately re-deposited
-        uint256 amountAfterFee = amount;
+        uint256 amountAfterFee = _amount;
         if (!_isInternalTransfer) {
-            amountAfterFee = cartographer.withdrawalTokenManagement(_userAdd, pool.token, amount);
+            amountAfterFee = cartographer.withdrawalTokenManagement(_userAdd, pool.token, _amount);
         }
 
         // Remove withdrawn amount from pool's running supply accumulators
-        pool.totemSupplies[totem] -= amount;
-        pool.supply -= amount;
+        pool.totemSupplies[totem] -= _amount;
+        pool.supply -= _amount;
 
         // If the user is interacting with this pool after the meat of the transaction completes
         _markUserInteractingWithPool(pool.token, _userAdd, _userInteractingWithPool(user));

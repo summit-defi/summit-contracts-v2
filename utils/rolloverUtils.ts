@@ -1,10 +1,13 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
-import { cartographerMethod, elevationHelperGet, getTimestamp, mineBlockWithTimestamp } from "."
+import { cartographerMethod, elevationHelperGet, EXPEDITION, expeditionMethod, getTimestamp, mineBlockWithTimestamp } from "."
 
 export const rolloverRound = async (elevation: number) => {
     const nextRoundTime = await elevationHelperGet.roundEndTimestamp(elevation)
     await mineBlockWithTimestamp(nextRoundTime)
-    await cartographerMethod.rollover({ elevation })
+    if (elevation === EXPEDITION) {
+      await expeditionMethod.rollover({})
+    } else {
+      await cartographerMethod.rollover({ elevation })
+    }
   }
   export const rolloverRounds = async (elevation: number, rounds: number) => {
     for (let i = 0; i < rounds; i++) {

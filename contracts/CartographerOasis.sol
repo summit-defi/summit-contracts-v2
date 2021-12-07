@@ -52,7 +52,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     // --   V A R I A B L E S
     // ---------------------------------------
 
-    Cartographer cartographer;
+    Cartographer public cartographer;
     uint256 public launchTimestamp = 1641028149;                        // 2022-1-1, will be updated when summit ecosystem switched on
     uint8 constant OASIS = 0;                                           // Named constant to make reusable elevation functions easier to parse visually
     address public summitTokenAddress;
@@ -73,8 +73,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         uint256 accSummitPerShare;                                      // Accumulated SUMMIT per share, raised to 1e12
     }
 
-    EnumerableSet.AddressSet private poolTokens;
-    EnumerableSet.AddressSet private activePools;
+    EnumerableSet.AddressSet poolTokens;
 
     mapping(address => OasisPoolInfo) public poolInfo;              // Pool info for each oasis pool
     mapping(address => mapping(address => UserInfo)) public userInfo;    // Users running staking information
@@ -160,6 +159,21 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     }
     function userStakedAmount(address _token, address _userAdd) external view override returns (uint256) {
         return userInfo[_token][_userAdd].staked;
+    }
+
+    function getUserInteractingPools(address _userAdd) public view returns (address[] memory) {
+        address[] memory pools = new address[](userInteractingPools[_userAdd].length());
+        for (uint16 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
+            pools[index] = userInteractingPools[_userAdd].at(index);
+        }
+        return pools;
+    }
+    function getPools() public view returns (address[] memory) {
+        address[] memory pools = new address[](poolTokens.length());
+        for (uint16 index = 0; index < poolTokens.length(); index++) {
+            pools[index] = poolTokens.at(index);
+        }
+        return pools;
     }
 
 
@@ -413,7 +427,8 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
             userInfo[_token][_userAdd],
             userInfo[_token][_userAdd].staked,
             _userAdd,
-            false
+            false,
+            true
         );
     }
 
@@ -442,7 +457,8 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
             userInfo[_token][_userAdd],
             _amount,
             _userAdd,
-            _isElevate
+            _isElevate,
+            false
         );
     }
 
@@ -521,15 +537,18 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     /// @param _amount Amount to withdraw
     /// @param _userAdd User address
     /// @param _isInternalTransfer Flag to switch off certain functionality for elevate withdraw
+    /// @param _isEmergencyWithdraw Whether the withdraw should have minimum effects
     /// @return Amount withdrawn
-    function _unifiedWithdraw(OasisPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer)
+    function _unifiedWithdraw(OasisPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer, bool _isEmergencyWithdraw)
         internal
         returns (uint256)
     {
         // Validate amount attempting to withdraw
         require(_amount > 0 && user.staked >= _amount, "Bad withdrawal");
 
-        updatePool(pool.token);
+        if (!_isEmergencyWithdraw) {
+            updatePool(pool.token);
+        }
 
         // Signal cartographer to perform withdrawal function if not elevating funds
         // Elevated funds remain in the cartographer, or in the passthrough target, so no need to withdraw from anywhere as they would be immediately re-deposited

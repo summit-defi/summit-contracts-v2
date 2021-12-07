@@ -4,7 +4,7 @@ pragma solidity 0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "hardhat/console.sol";
 
-import "./interfaces/ISummitVRFModule.sol";
+import "./interfaces/ISummitRNGModule.sol";
 
 
 /*
@@ -44,6 +44,7 @@ contract ElevationHelper is Ownable {
     // ---------------------------------------
 
     address public cartographer;                                            // Allows cartographer to act as secondary owner-ish
+    address public expeditionV2;
 
     // Constants for elevation comparisons
     uint8 constant OASIS = 0;
@@ -77,7 +78,7 @@ contract ElevationHelper is Ownable {
     uint256 public referralBurnTimestamp;                                   // Time at which burning unclaimed referral rewards becomes available
 
 
-    address public summitVRFModuleAdd;                                      // VRF module address
+    address public summitRNGModuleAdd;                                      // VRF module address
 
 
 
@@ -87,6 +88,9 @@ contract ElevationHelper is Ownable {
 
     event WinningTotemSelected(uint8 indexed elevation, uint256 indexed round, uint8 indexed totem);
     event DeityDividerSelected(uint256 indexed expeditionRound, uint256 indexed deityDivider);
+    event UpgradeSummitRNGModule(address indexed _summitRNGModuleAdd);
+    event SetElevationRoundDurationMult(uint8 indexed _elevation, uint8 _mult);
+    event SetElevationAllocMultiplier(uint8 indexed _elevation, uint16 _allocMultiplier);
 
 
 
@@ -97,11 +101,12 @@ contract ElevationHelper is Ownable {
 
     /// @dev Creates ElevationHelper contract with cartographer as owner of certain functionality
     /// @param _cartographer Address of main Cartographer contract
-    constructor(address _cartographer)
+    constructor(address _cartographer, address _expeditionV2)
         onlyOwner
     {
         require(_cartographer != address(0), "Cartographer missing");
         cartographer = _cartographer;
+        expeditionV2 = _expeditionV2;
     }
 
     /// @dev Turns on the Summit ecosystem across all contracts
@@ -129,7 +134,7 @@ contract ElevationHelper is Ownable {
         referralBurnTimestamp = nextHourTimestamp + 7 days;    
 
         // Timestamp of the first seed round starting
-        ISummitVRFModule(summitVRFModuleAdd).setSeedRoundEndTimestamp(nextHourTimestamp - roundEndLockoutDuration);
+        ISummitRNGModule(summitRNGModuleAdd).setSeedRoundEndTimestamp(nextHourTimestamp - roundEndLockoutDuration);
     }
 
 
@@ -140,6 +145,10 @@ contract ElevationHelper is Ownable {
 
     modifier onlyCartographer() {
         require(msg.sender == cartographer, "Only cartographer");
+        _;
+    }
+    modifier onlyCartographerOrExpedition() {
+        require(msg.sender == cartographer || msg.sender == expeditionV2, "Only cartographer or expedition");
         _;
     }
     modifier allElevations(uint8 _elevation) {
@@ -261,13 +270,14 @@ contract ElevationHelper is Ownable {
     // --   P A R A M E T E R S
     // ------------------------------------------------------------------
 
-    /// @dev Set summitVRFModule
-    /// @param _summitVRFModuleAdd Address of SummitVRFModule contract
-    function setSummitVRFModuleAdd (address _summitVRFModuleAdd)
+    /// @dev Upgrade the RNG module when VRF becomes available on FTM, will only use `getRandomNumber` functionality
+    /// @param _summitRNGModuleAdd Address of new VRF randomness module
+    function upgradeSummitRNGModule (address _summitRNGModuleAdd)
         public onlyOwner
     {
-        require(_summitVRFModuleAdd != address(0), "SummitVRFModule missing");
-        summitVRFModuleAdd = _summitVRFModuleAdd;
+        require(_summitRNGModuleAdd != address(0), "SummitRandomnessModule missing");
+        summitRNGModuleAdd = _summitRNGModuleAdd;
+        emit UpgradeSummitRNGModule(_summitRNGModuleAdd);
     }
 
 
@@ -278,11 +288,12 @@ contract ElevationHelper is Ownable {
     {
         require(_mult > 0, "Duration mult must be non zero");
         pendingDurationMult[_elevation] = _mult;
+        emit SetElevationRoundDurationMult(_elevation, _mult);
     }
 
 
     /// @dev Update emissions multiplier of an elevation
-    function setElevationAllocMultiplier(uint8 _elevation, uint8 _allocMultiplier)
+    function setElevationAllocMultiplier(uint8 _elevation, uint16 _allocMultiplier)
         public
         onlyOwner allElevations(_elevation)
     {
@@ -291,6 +302,7 @@ contract ElevationHelper is Ownable {
         if (_elevation == OASIS) {
             allocMultiplier[_elevation] = _allocMultiplier;
         }
+        emit SetElevationAllocMultiplier(_elevation, _allocMultiplier);
     }
 
 
@@ -316,12 +328,12 @@ contract ElevationHelper is Ownable {
     /// @param _elevation Which elevation to select winner for
     function selectWinningTotem(uint8 _elevation)
         external
-        onlyCartographer elevationOrExpedition(_elevation)
+        onlyCartographerOrExpedition elevationOrExpedition(_elevation)
     {
         // No winning totem should be selected for round 0, which takes place when the elevation is locked
         if (roundNumber[_elevation] == 0) { return; }
 
-        uint256 rand = ISummitVRFModule(summitVRFModuleAdd).getRandomNumber(_elevation, roundNumber[_elevation]);
+        uint256 rand = ISummitRNGModule(summitRNGModuleAdd).getRandomNumber(_elevation, roundNumber[_elevation]);
 
         // Uses the random number to select the winning totem
         uint8 winner = chooseWinningTotem(_elevation, rand);
@@ -339,7 +351,7 @@ contract ElevationHelper is Ownable {
     /// @param _elevation Which elevation is being updated
     function rolloverElevation(uint8 _elevation)
         external
-        onlyCartographer
+        onlyCartographerOrExpedition
     {
         // Incrementing round number, does not need to be adjusted with overflown rounds
         roundNumber[_elevation] += 1;

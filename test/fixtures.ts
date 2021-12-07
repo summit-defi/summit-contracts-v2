@@ -2,7 +2,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { Contract } from "ethers";
 import { deployments } from "hardhat";
-import { OASIS, PLAINS, MESA, SUMMIT, EXPEDITION, INF_APPROVE, e18, mineBlockWithTimestamp, getSeeds, mineBlocks, TOKEN_FEE, Contracts, getSubCartographers, promiseSequenceMap, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getMasterChef, getMasterChefPassthrough, getSummitLpToken, getSummitReferrals, getSummitToken, getTimelock, elevationHelperGet, getSummitVRFModule } from "../utils";
+import { OASIS, PLAINS, MESA, SUMMIT, EXPEDITION, INF_APPROVE, e18, mineBlockWithTimestamp, getSeeds, mineBlocks, TOKEN_FEE, Contracts, getSubCartographers, promiseSequenceMap, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getMasterChef, getMasterChefPassthrough, getSummitLpToken, getSummitReferrals, getSummitToken, getTimelock, elevationHelperGet, getSummitRandomnessModule } from "../utils";
 
 interface FixtureState {
   readonly dev: SignerWithAddress
@@ -45,7 +45,7 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
   const cartographer = await getCartographer()
   const subCartographers = await getSubCartographers()
   const elevationHelper = await getElevationHelper()
-  const summitVRFModule = await getSummitVRFModule()
+  const summitVRFModule = await getSummitRandomnessModule()
   const summitReferrals = await getSummitReferrals()
   const timelock = await getTimelock()
   const everestToken = await getEverestToken()

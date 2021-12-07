@@ -10,9 +10,12 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
 
 contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
     using SafeERC20 for IERC20;
+    using EnumerableSet for EnumerableSet.UintSet;
 
     SummitToken public summit;
     Cartographer public cartographer;
@@ -29,10 +32,11 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
     }
 
     uint8 public yieldLockEpochCount = 5;
-    mapping(address => mapping(uint256 => UserLockedWinnings)) public userLockedWinnings;
-    mapping(address => uint256) public userLifetimeWinnings;
-    mapping(address => uint256) public userLifetimeBonusWinnings;
 
+    mapping(address => EnumerableSet.UintSet) userInteractingEpochs;    // List of epochs the user is interacting with (to help with frontend / user info)
+    mapping(address => mapping(uint256 => UserLockedWinnings)) public userLockedWinnings;
+    mapping(address => uint256) public userLifetimeWinnings;            // Public value for user information
+    mapping(address => uint256) public userLifetimeBonusWinnings;       // Public value for user information
 
     event WinningsLocked(address indexed _userAdd, uint256 _lockedWinnings, uint256 _bonusWinnings);
     event WinningsHarvested(address indexed _userAdd, uint256 _epoch, uint256 _harvestedWinnings, bool _lockForEverest);
@@ -101,11 +105,13 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
         external
         onlyCartographerOrExpedition
     {
-        UserLockedWinnings storage userEpochWinnings = userLockedWinnings[_userAdd][getCurrentEpoch()];
+        uint256 currentEpoch = getCurrentEpoch();
+        UserLockedWinnings storage userEpochWinnings = userLockedWinnings[_userAdd][currentEpoch];
         userEpochWinnings.winnings += _lockedWinnings;
         userLifetimeWinnings[_userAdd] += _lockedWinnings;
         userEpochWinnings.bonusEarned += _bonusWinnings;
         userLifetimeBonusWinnings[_userAdd] += _bonusWinnings;
+        userInteractingEpochs[_userAdd].add(currentEpoch);
 
         emit WinningsLocked(_userAdd, _lockedWinnings, _bonusWinnings);
     }
@@ -141,7 +147,10 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
 
         userEpochWinnings.claimedWinnings += _amount;
 
+        if ((userEpochWinnings.winnings - userEpochWinnings.claimedWinnings) == 0) {
+            userInteractingEpochs[msg.sender].remove(_epoch);
+        }
+
         emit WinningsHarvested(msg.sender, _epoch, _amount, _lockForEverest);
     }
-
 } 
