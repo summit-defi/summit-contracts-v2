@@ -2,7 +2,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { Contract } from "ethers";
 import { deployments } from "hardhat";
-import { OASIS, PLAINS, MESA, SUMMIT, EXPEDITION, INF_APPROVE, e18, mineBlockWithTimestamp, getSeeds, mineBlocks, TOKEN_FEE, Contracts, getSubCartographers, promiseSequenceMap, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getMasterChef, getMasterChefPassthrough, getSummitLpToken, getSummitReferrals, getSummitToken, getTimelock, elevationHelperGet, getSummitRandomnessModule } from "../utils";
+import { OASIS, PLAINS, MESA, SUMMIT, EXPEDITION, INF_APPROVE, e18, mineBlockWithTimestamp, getSeeds, mineBlocks, TOKEN_FEE, Contracts, getSubCartographers, promiseSequenceMap, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getMasterChef, getMasterChefPassthrough, getSummitReferrals, getSummitToken, getTimelock, elevationHelperGet, getSummitRandomnessModule } from "../utils";
 
 interface FixtureState {
   readonly dev: SignerWithAddress
@@ -12,7 +12,6 @@ interface FixtureState {
   readonly user3: SignerWithAddress
   readonly trustedSeeder: SignerWithAddress
   readonly summitToken: Contract
-  readonly dummySummitLpToken: Contract
   readonly cakeToken: Contract
   readonly dummyMasterChef: Contract
   readonly masterChefPassthrough: Contract
@@ -35,7 +34,6 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
   await deployments.fixture();
   const { dev, exped, user1, user2, user3, trustedSeeder } = await getNamedSigners(hre)
   const summitToken = await getSummitToken()
-  const dummySummitLpToken = await getSummitLpToken()
   const cakeToken = await getCakeToken()
   const dummyMasterChef = await getMasterChef()
   const masterChefPassthrough = await getMasterChefPassthrough()
@@ -72,7 +70,6 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
     user3,
     trustedSeeder,
     summitToken,
-    dummySummitLpToken,
     cakeToken,
     dummyMasterChef,
     masterChefPassthrough,

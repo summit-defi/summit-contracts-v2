@@ -70,8 +70,7 @@ initializeContracts.tags = ['InitializeContracts', 'LOCALHOST', 'TESTNET', 'MAIN
 initializeContracts.runAtTheEnd = true
 initializeContracts.dependencies = [
   'Cartographer', 
-  'SummitToken', 
-  'SummitLpToken',
+  'SummitToken',
   'CartographerOasis', 
   'CartographerElevation', 
   'CartographerExpedition', 

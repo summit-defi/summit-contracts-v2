@@ -135,7 +135,6 @@ describe("Referrals", function() {
     it('REFERRAL BURN: Burning the rewards eliminates users rewards and sends a reward to burner', async function() {
         const { user1, user2, user3, dev } = await getNamedSigners(hre)
         const summitToken = await ethers.getContract('SummitToken')
-        const dummySummitLpToken = await ethers.getContract('DummySUMMITLP')
         const summitReferrals = await ethers.getContract('SummitReferrals')
 
         const rewardInSummitToken = await cartographerGet.getRolloverReward()
