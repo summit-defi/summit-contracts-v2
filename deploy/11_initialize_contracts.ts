@@ -17,6 +17,7 @@ const initializeContracts: DeployFunction = async function ({
 
   if (cartSummitToken === ZEROADD) {
     const SummitToken = await deployments.get(Contracts.SummitToken)
+    const CakeToken = await deployments.get(Contracts.DummyCAKE)
     const SubCartographers = await getSubCartographers()
     const ElevationHelper = await deployments.get(Contracts.ElevationHelper)
     const SummitReferrals = await deployments.get(Contracts.SummitReferrals)
@@ -48,6 +49,16 @@ const initializeContracts: DeployFunction = async function ({
       SummitToken.address,
       Cartographer.address,
       ExpeditionV2.address
+    )
+
+    // Initialize Expedition V2
+    // TODO: Add option for real USDC
+    await execute(
+      Contracts.ExpeditionV2,
+      { from: dev },
+      'initialize',
+      CakeToken.address,
+      ElevationHelper.address,
     )
   } else {
     consoleLog('Cartographer Already Initialized')

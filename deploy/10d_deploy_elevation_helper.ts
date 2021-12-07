@@ -11,11 +11,12 @@ const deployElevationHelper: DeployFunction = async function ({
   const {dev, trustedSeeder} = await getNamedAccounts();
   const chainId = await getChainId()
 
-  const Cartographer = await deployments.get('Cartographer');
+  const Cartographer = await deployments.get(Contracts.Cartographer);
+  const ExpeditionV2 = await deployments.get(Contracts.ExpeditionV2)
 
 
   // Deploy SummitRandomnessModule
-  const SummitRandomnessModule = await deploy(Contracts.SummitRandomnessModule, {
+  const SummitTrustedSeederRNGModule = await deploy(Contracts.SummitTrustedSeederRNGModule, {
     from: dev,
     args: [Cartographer.address],
     log: true
@@ -24,19 +25,19 @@ const deployElevationHelper: DeployFunction = async function ({
 
   const ElevationHelper = await deploy('ElevationHelper', {
     from: dev,
-    args: [Cartographer.address],
+    args: [Cartographer.address, ExpeditionV2.address],
     log: true,
   });
 
   await execute(
-    Contracts.SummitRandomnessModule,
+    Contracts.SummitTrustedSeederRNGModule,
     { from: dev },
     'setElevationHelper',
     ElevationHelper.address,
   )
 
   await execute(
-    Contracts.SummitRandomnessModule,
+    Contracts.SummitTrustedSeederRNGModule,
     { from: dev },
     'setTrustedSeederAdd',
     trustedSeeder,
@@ -45,14 +46,14 @@ const deployElevationHelper: DeployFunction = async function ({
   await execute(
     Contracts.ElevationHelper,
     { from: dev },
-    'setSummitRandomnessModuleAdd',
-    SummitRandomnessModule.address,
+    'upgradeSummitRNGModule',
+    SummitTrustedSeederRNGModule.address,
   )
 
   if (ElevationHelper.newlyDeployed && chainIdAllowsVerification(chainId)) {
     await delay(10000)
     await run("verify:verify", {
-      address: SummitRandomnessModule.address,
+      address: SummitTrustedSeederRNGModule.address,
       constructorArguments: [Cartographer.address],
     })
     await delay(10000)
@@ -64,4 +65,4 @@ const deployElevationHelper: DeployFunction = async function ({
 };
 export default deployElevationHelper;
 deployElevationHelper.tags = ['ElevationHelper', 'LOCALHOST', 'TESTNET', 'MAINNET']
-deployElevationHelper.dependencies = ['Cartographer']
+deployElevationHelper.dependencies = ['Cartographer', 'ExpeditionV2']

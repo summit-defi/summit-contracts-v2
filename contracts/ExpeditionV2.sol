@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "hardhat/console.sol";
@@ -91,7 +92,7 @@ WINNINGS:
 
 
 
-contract ExpeditionV2 is Ownable, ReentrancyGuard {
+contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -111,7 +112,6 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
 
     bool panicReleaseLockedSummit = false;
 
-    bool expeditionInitialized = false;
     uint256 rolledOverRounds;
 
 
@@ -173,7 +173,6 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         uint256[2] deityMult;
     }
     struct ExpeditionInfo {
-        bool launched;                      // If the start round of the pool has passed and it is open for betting
         bool live;                          // If the pool is manually enabled / disabled
 
         uint256 roundsRemaining;            // Number of rounds of this expedition to run.
@@ -207,7 +206,7 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     event UserJoinedExpedition(address indexed user, uint8 _deity, uint8 _safetyFactor, uint256 _everestOwned);
     event UserHarvestedExpedition(address indexed user, uint256 _summitHarvested, uint256 _usdcHarvested);
 
-    event ExpeditionInitialized();
+    event ExpeditionInitialized(address _usdcTokenAddress, address _elevationHelper);
     event ExpeditionFundsAdded(address indexed token, uint256 _amount);
     event ExpeditionDisabled();
     event ExpeditionEnabled();
@@ -238,20 +237,39 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
     constructor(
         address _summit,
         address _everest,
-        address _elevationHelper,
         address _summitLocking
     ) {
         require(_summit != address(0), "Summit required");
         require(_everest != address(0), "Everest required");
-        require(_elevationHelper != address(0), "Elevation Helper Required");
         require(_summitLocking != address(0), "SummitLocking Required");
         summit = SummitToken(_summit);
         everest = EverestToken(_everest);
-        elevationHelper = ElevationHelper(_elevationHelper);
         everest.approve(burnAdd, type(uint256).max);
         summitLocking = SummitLocking(_summitLocking);
+    }
 
+
+    /// @dev Initializes the expedition
+    function initialize(address _usdcTokenAddress, address _elevationHelper)
+        public
+        initializer onlyOwner
+    {
+        require(_usdcTokenAddress != address(0), "USDC token missing");
+        require(_elevationHelper != address(0), "Elevation Helper missing");
+
+        // Initialize expedition itself
+        expeditionInfo.summit.token = IERC20(address(summit));
+        expeditionInfo.usdc.token = IERC20(_usdcTokenAddress);
+
+        expeditionInfo.live = true;
+
+        _recalculateExpeditionEmissions();
+
+        // Initialize Elevation Helper
+        elevationHelper = ElevationHelper(_elevationHelper);
         rolledOverRounds = elevationHelper.roundNumber(EXPEDITION);
+
+        emit ExpeditionInitialized(_usdcTokenAddress, _elevationHelper);
     }
 
 
@@ -446,25 +464,6 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         bool summitFundNonZero = _recalculateExpeditionTokenEmissions(expeditionInfo.summit);
         bool usdcFundNonZero = _recalculateExpeditionTokenEmissions(expeditionInfo.usdc);
         expeditionInfo.roundsRemaining = (summitFundNonZero || usdcFundNonZero) ? expeditionRunwayRounds : 0;
-    }
-
-    /// @dev Initializes the expedition
-    function initializeExpedition(address _usdcTokenAddress)
-        public
-        onlyOwner
-    {
-        require(_usdcTokenAddress != address(0), "USDC token must be passed in");
-        require(!expeditionInitialized, "Expedition not initialized");
-        expeditionInitialized = true;
-
-        expeditionInfo.summit.token = IERC20(address(summit));
-        expeditionInfo.usdc.token = IERC20(_usdcTokenAddress);
-
-        expeditionInfo.live = true;
-
-        _recalculateExpeditionEmissions();
-
-        emit ExpeditionInitialized();
     }
 
     /// @dev Add funds to the expedition
@@ -668,9 +667,6 @@ contract ExpeditionV2 is Ownable, ReentrancyGuard {
         returns (uint256, uint256)
     {
         uint256 currRound = elevationHelper.roundNumber(EXPEDITION);
-
-        // Escape early if no previous round exists with available winnings
-        if (!expeditionInfo.launched) return (0, 0);
 
         // If user interacted in current round, no winnings available
         if (userExpedInfo.prevInteractedRound == currRound) return (0, 0);

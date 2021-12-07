@@ -22,7 +22,7 @@ interface FixtureState {
   readonly cartographer: Contract
   readonly subCartographers: Contract[]
   readonly elevationHelper: Contract
-  readonly summitVRFModule: Contract
+  readonly summitTrustedSeederRNGModule: Contract
   readonly summitReferrals: Contract
   readonly timelock: Contract
   readonly everestToken: Contract
@@ -45,7 +45,7 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
   const cartographer = await getCartographer()
   const subCartographers = await getSubCartographers()
   const elevationHelper = await getElevationHelper()
-  const summitVRFModule = await getSummitRandomnessModule()
+  const summitTrustedSeederRNGModule = await getSummitRandomnessModule()
   const summitReferrals = await getSummitReferrals()
   const timelock = await getTimelock()
   const everestToken = await getEverestToken()
@@ -82,7 +82,7 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
     cartographer,
     subCartographers,
     elevationHelper,
-    summitVRFModule,
+    summitTrustedSeederRNGModule,
     summitReferrals,
     timelock,
     everestToken,
@@ -127,16 +127,16 @@ export const oasisUnlockedFixture = deployments.createFixture(async (): Promise<
 export const twoThousandUnlockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
   const oasisUnlockedFixtureState = await oasisUnlockedFixture();
 
-  const { summitVRFModule, cartographer, trustedSeeder } = oasisUnlockedFixtureState
+  const { summitTrustedSeederRNGModule, cartographer, trustedSeeder } = oasisUnlockedFixtureState
   const twoThousandUnlockTime = await elevationHelperGet.unlockTimestamp(PLAINS)
   await mineBlockWithTimestamp(twoThousandUnlockTime)
   await cartographer.rollover(PLAINS)
 
   const { unsealedSeed, sealedSeed } = getSeeds('throwaway', trustedSeeder.address)
 
-  await summitVRFModule.connect(trustedSeeder).receiveSealedSeed(sealedSeed)
+  await summitTrustedSeederRNGModule.connect(trustedSeeder).receiveSealedSeed(sealedSeed)
   await mineBlocks(3)
-  await summitVRFModule.connect(trustedSeeder).receiveUnsealedSeed(unsealedSeed)
+  await summitTrustedSeederRNGModule.connect(trustedSeeder).receiveUnsealedSeed(unsealedSeed)
 
 
   return oasisUnlockedFixtureState

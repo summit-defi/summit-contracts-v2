@@ -2,8 +2,9 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, toDecimal, Contracts, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, e36, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, e12, e0, consoleLog, expectAllEqual, getBifiToken, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getSummitLpToken, getSummitToken, everestGet } from "../utils";
-import { oasisUnlockedFixture } from "./fixtures";
+import { e18, ERR, EVENT, toDecimal, Contracts, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, e36, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, e12, e0, consoleLog, expectAllEqual, getBifiToken, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getSummitLpToken, getSummitToken, everestGet, everestMethod, expeditionMethod, expeditionGet } from "..";
+import { userPromiseSequenceMap } from "../users";
+import { oasisUnlockedFixture } from "../../test/fixtures";
 
 
 const rolloverExpedition = async () => {
@@ -35,19 +36,19 @@ const _getUserDeitiedAmount = (everestInfo: any) => {
 }
 const getUserSafeAmount = async (user: SignerWithAddress) => {
     const expeditionV2 = await getExpedition()
-    const everestInfo = await expeditionV2.userEverestInfo(user.address)
+    const everestInfo = await everestGet.userEverestInfo(user.address)
 
     return _getUserSafeAmount(everestInfo)
 }
 const getUserDeitiedAmount = async (user: SignerWithAddress) => {
     const expeditionV2 = await getExpedition()
-    const everestInfo = await expeditionV2.userEverestInfo(user.address)
+    const everestInfo = await everestGet.userEverestInfo(user.address)
 
     return _getUserDeitiedAmount(everestInfo)
 }
 const getUserSafeAndDeitiedAmount = async (user: SignerWithAddress) => {
     const expeditionV2 = await getExpedition()
-    const everestInfo = await expeditionV2.userEverestInfo(user.address)
+    const everestInfo = await everestGet.userEverestInfo(user.address)
     
     return {
         safe: _getUserSafeAmount(everestInfo),
@@ -63,7 +64,7 @@ const expectUserAndExpedSuppliesToMatch = async () => {
 
     const usersEverestInfo = await promiseSequenceMap(
         users,
-        async (user) => await expeditionV2.userEverestInfo(user.address)
+        async (user) => await everestGet.userEverestInfo(user.address)
     )
     const { safeSupply, deity0Supply, deity1Supply } = usersEverestInfo.reduce((acc, everestInfo) => ({
         safeSupply: acc.safeSupply.add(everestInfo.everestOwned.mul(everestInfo.safetyFactor).div(100)),
@@ -86,6 +87,27 @@ const expectUserAndExpedSuppliesToMatch = async () => {
     expect(expedDeitiedSupply).to.equal(deity0Supply.add(deity1Supply))
 }
 
+const getSummitBalance = async (address: string) => {
+    return (await (await getSummitToken()).balanceOf(address))
+}
+const getUsdcBalance = async (address: string) => {
+    return (await (await getCakeToken()).balanceOf(address))
+}
+
+const getExpeditionExpectedEmissions = async () => {
+    const expedition = await getExpedition()
+
+    const summitBalance = await getSummitBalance(expedition.address)
+    const usdcBalance = await getUsdcBalance(expedition.address)
+
+    const runwayRounds = await expeditionGet.expeditionRunwayRounds()
+
+    return {
+        summitEmission: summitBalance.div(runwayRounds),
+        usdcEmission: usdcBalance.div(runwayRounds),
+    }
+}
+
 
 describe("EXPEDITION V2", async function() {
     before(async function () {
@@ -98,351 +120,92 @@ describe("EXPEDITION V2", async function() {
         await summitToken.connect(user1).approve(expeditionV2.address, INF_APPROVE)
         await summitToken.connect(user2).approve(expeditionV2.address, INF_APPROVE)
         await summitToken.connect(user3).approve(expeditionV2.address, INF_APPROVE)
-
-        await cakeToken.connect(user1).approve(expeditionV2.address, INF_APPROVE)
-        await cakeToken.connect(user2).approve(expeditionV2.address, INF_APPROVE)
-        await cakeToken.connect(user3).approve(expeditionV2.address, INF_APPROVE)
     })
 
-
-    it(`EVEREST: Locking for less than min time throws error "${ERR.EVEREST.INVALID_LOCK_PERIOD}"`, async function () {
-        const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await getExpedition()
-
-        await expect(
-                expeditionV2.connect(user1).lockSummit(e18(1), e18(1), 12 * 3600)
-        ).to.be.revertedWith(ERR.EVEREST.INVALID_LOCK_PERIOD)
-
-        await expect(
-                expeditionV2.connect(user1).lockSummit(e18(1), e18(1), 400 * 24 * 3600)
-        ).to.be.revertedWith(ERR.EVEREST.INVALID_LOCK_PERIOD)
-    })
-    it(`EVEREST: Locking more than user's balance throws error "${ERR.ERC20.EXCEEDS_BALANCE}"`, async function () {
-        const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await getExpedition()
-
-        await expect(
-                expeditionV2.connect(user1).lockSummit(e18(100000), 0, 36 * 3600)
-        ).to.be.revertedWith(ERR.ERC20.EXCEEDS_BALANCE)
-
-        await expect(
-                expeditionV2.connect(user1).lockSummit(e18(0), e18(100000), 36 * 3600)
-        ).to.be.revertedWith(ERR.ERC20.EXCEEDS_BALANCE)
-    })
-
-
-
-    it(`LOCK EVEREST: Depositing SUMMIT for EVEREST for different lock periods should succeed`, async function() {
-        const { user1, user2 } = await getNamedSigners(hre)
-        const expeditionV2 = await getExpedition()
-        const summitToken = await getSummitToken()
-        const everestToken = await getEverestToken()
-
-        const user1ExpectedEverest = await everestGet.getExpectedEverestAward(e18(1), 24 * 3600)
-        const user2ExpectedEverest = await everestGet.getExpectedEverestAward(e18(1), 365 * 24 * 3600)
-        const user1EverestLockMultiplier = await everestGet.getLockPeriodMultiplier(24 * 3600)
-        const user2EverestLockMultiplier = await everestGet.getLockPeriodMultiplier(365 * 24 * 3600)
-
-        const user1InitSummit = await summitToken.balanceOf(user1.address)
-        const user1InitEverest = await everestToken.balanceOf(user1.address)
-        const user2InitSummit = await summitToken.balanceOf(user2.address)
-        const user2InitEverest = await everestToken.balanceOf(user2.address)
-
-        consoleLog({
-            user1ExpectedEverest: toDecimal(user1ExpectedEverest),
-            user2ExpectedEverest: toDecimal(user2ExpectedEverest),
-            user1EverestLockMultiplier,
-            user2EverestLockMultiplier,
-        })
-
-        const user1Timestamp = await getTimestamp()
-        await expect(
-            expeditionV2.connect(user1).lockSummit(e18(1), e18(1), 24 * 3600)
-        ).to.emit(expeditionV2, EVENT.EVEREST.SummitLocked).withArgs(user1.address, e18(1), e18(1), 24 * 3600, user1ExpectedEverest)
-
-        const user2Timestamp = await getTimestamp()
-        await expect(
-            expeditionV2.connect(user2).lockSummit(e18(1), e18(1), 365 * 24 * 3600)
-        ).to.emit(expeditionV2, EVENT.EVEREST.SummitLocked).withArgs(user2.address, e18(1), e18(1), 365 * 24 * 3600, user2ExpectedEverest)
-
-        const user1EverestInfo = await expeditionV2.userEverestInfo(user1.address)
-        const user2EverestInfo = await expeditionV2.userEverestInfo(user2.address)
-
-        const user1FinalSummit = await summitToken.balanceOf(user1.address)
-        const user1FinalEverest = await everestToken.balanceOf(user1.address)
-        const user2FinalSummit = await summitToken.balanceOf(user2.address)
-        const user2FinalEverest = await everestToken.balanceOf(user2.address)
-
-        expect(user1EverestInfo.everestOwned).to.equal(user1ExpectedEverest)
-        expect(user1EverestInfo.everestLockMultiplier).to.equal(user1EverestLockMultiplier)
-        expect(user1EverestInfo.lockRelease).to.equal(user1Timestamp + (24 * 3600) + 1)
-        expect(user1EverestInfo.summitLocked).to.equal(e18(1))
-        expect(deltaBN(user1InitSummit, user1FinalSummit)).to.equal(e18(1))
-        expect(deltaBN(user1InitEverest, user1FinalEverest)).to.equal(user1ExpectedEverest)
-
-        expect(user2EverestInfo.everestOwned).to.equal(user2ExpectedEverest)
-        expect(user2EverestInfo.everestLockMultiplier).to.equal(user2EverestLockMultiplier)
-        expect(user2EverestInfo.lockRelease).to.equal(user2Timestamp + (365 * 24 * 3600) + 1)
-        expect(user2EverestInfo.summitLocked).to.equal(e18(1))
-        expect(deltaBN(user2InitSummit, user2FinalSummit)).to.equal(e18(1))
-        expect(deltaBN(user2InitEverest, user2FinalEverest)).to.equal(user2ExpectedEverest)
-    })
-
-    it(`INCREASE EVEREST: User with already locked summit cannot do another initial lock, or throws "${ERR.EVEREST.MUST_NOT_OWN_EVEREST}"`, async function () {
-        const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await getExpedition()
-
-        await expect(
-                expeditionV2.connect(user1).lockSummit(e18(5), 0, 36 * 3600)
-        ).to.be.revertedWith(ERR.EVEREST.MUST_NOT_OWN_EVEREST)
-    })
-
-    it(`INCREASE EVEREST: User with already locked summit should be able to lock more summit`, async function() {
-        const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await getExpedition()
-        const summitToken = await getSummitToken()
-        const everestToken = await getEverestToken()
-        
-        const user1InitSummit = await summitToken.balanceOf(user1.address)
-        const everestInit = await everestToken.balanceOf(user1.address)
-        const everestInfoInit = await expeditionV2.userEverestInfo(user1.address)
-        
-        const user1ExpectedEverest = await everestGet.getExpectedEverestAward(e18(5), e18(0), 24 * 3600)
-
-        consoleLog({
-            user1ExpectedEverest: toDecimal(user1ExpectedEverest)
-        })
-        
-        await expect(
-            expeditionV2.connect(user1).increaseLockedSummit(e18(5), e18(0))
-        ).to.emit(expeditionV2, EVENT.EVEREST.LockedSummitIncreased).withArgs(user1.address, e18(5), e18(0), user1ExpectedEverest)
-            
-        const user1FinalSummit = await summitToken.balanceOf(user1.address)
-        const everestFinal = await everestToken.balanceOf(user1.address)
-        const everestInfoFinal = await expeditionV2.userEverestInfo(user1.address)
-
-        expect6FigBigNumberAllEqual([
-            user1ExpectedEverest,
-            deltaBN(everestInit, everestFinal),
-            deltaBN(everestInfoInit.everestOwned, everestInfoFinal.everestOwned),
-        ])
-        expect6FigBigNumberAllEqual([
-        everestFinal,
-        everestInfoFinal.everestOwned,
-        ])
-        expect6FigBigNumberAllEqual([
-            deltaBN(user1InitSummit, user1FinalSummit),
-            deltaBN(everestInfoInit.summitLocked, everestInfoFinal.summitLocked)
-        ])
-    })
-
-    it(`REMOVE EVEREST: User without locked everest cannot withdraw, or throws "${ERR.EVEREST.MUST_OWN_EVEREST}"`, async function () {
-        const { user3 } = await getNamedSigners(hre)
-        const expeditionV2 = await getExpedition()
-
-        await expect(
-                expeditionV2.connect(user3).decreaseLockedSummit(e18(1))
-        ).to.be.revertedWith(ERR.EVEREST.MUST_OWN_EVEREST)
-    })
-
-    it(`REMOVE EVEREST: User's lock must mature before decreasing locked summit, or throws "${ERR.EVEREST.EVEREST_UNLOCKED}"`, async function () {
-        const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await getExpedition()
-
-        await expect(
-                expeditionV2.connect(user1).decreaseLockedSummit(e18(1))
-        ).to.be.revertedWith(ERR.EVEREST.EVEREST_UNLOCKED)
-    })
-
-    it(`REMOVE EVEREST: User's lock must mature before decreasing locked summit, or throws "${ERR.EVEREST.EVEREST_UNLOCKED}"`, async function () {
-        const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await getExpedition()
-
-        await expect(
-                expeditionV2.connect(user1).decreaseLockedSummit(e18(1))
-        ).to.be.revertedWith(ERR.EVEREST.EVEREST_UNLOCKED)
-    })
-
-    it(`REMOVE EVEREST: After lock matured, User cannot withdraw 0 or more than their locked everest, or throws "${ERR.EVEREST.BAD_WITHDRAW}"`, async function () {
-        const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await getExpedition()
-
-        const everestInfo = await expeditionV2.userEverestInfo(user1.address)
-        await mineBlockWithTimestamp(everestInfo.lockRelease)
-
-        await expect(
-                expeditionV2.connect(user1).decreaseLockedSummit(e18(0))
-        ).to.be.revertedWith(ERR.EVEREST.BAD_WITHDRAW)
-
-        await expect(
-                expeditionV2.connect(user1).decreaseLockedSummit(e36(10000))
-        ).to.be.revertedWith(ERR.EVEREST.BAD_WITHDRAW)
-    })
-
-    it(`REMOVE EVEREST: Valid summit withdraw is successful`, async function () {
-        const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await getExpedition()
-        const everestToken = await getEverestToken()
-        const summitToken = await getSummitToken()
-
-        const everestInfoInit = await expeditionV2.userEverestInfo(user1.address)
-        const halfEverestAmount = everestInfoInit.everestOwned.div(2)
-        const everestInit = await everestToken.balanceOf(user1.address)
-        const summitInit = await summitToken.balanceOf(user1.address)
-        expect(halfEverestAmount).to.equal(everestInit.div(2))
-
-        // WITHDRAW HALF
-        const expectedSummitWithdrawal1 = everestInfoInit.summitLocked.div(2)
-        const expectedSummitLpWithdrawal1 = everestInfoInit.summitLpLocked.div(2)
-
-        await expect(
-                expeditionV2.connect(user1).decreaseLockedSummit(halfEverestAmount)
-        ).to.emit(expeditionV2, EVENT.EVEREST.LockedSummitRemoved).withArgs(user1.address, expectedSummitWithdrawal1, expectedSummitLpWithdrawal1, halfEverestAmount)
-
-        const everestInfoMid = await expeditionV2.userEverestInfo(user1.address)
-        const everestMid = await everestToken.balanceOf(user1.address)
-        const summitMid = await summitToken.balanceOf(user1.address)
-
-        expect6FigBigNumberAllEqual([
-            expectedSummitWithdrawal1,
-            deltaBN(summitInit, summitMid),
-            deltaBN(everestInfoInit.summitLocked, everestInfoMid.summitLocked)
-        ])
-        expect6FigBigNumberAllEqual([
-            expectedSummitLpWithdrawal1,
-            deltaBN(everestInfoInit.summitLpLocked, everestInfoMid.summitLpLocked)
-        ])
-        expect6FigBigNumberAllEqual([
-            halfEverestAmount,
-            deltaBN(everestInit, everestMid),
-            deltaBN(everestInfoInit.everestOwned, everestInfoMid.everestOwned)
-        ])
-
-        // WITHDRAW REMAINING
-        const expectedSummitWithdrawal2 = everestInfoMid.summitLocked
-        const expectedSummitLpWithdrawal2 = everestInfoMid.summitLpLocked
-
-        await expect(
-                expeditionV2.connect(user1).decreaseLockedSummit(everestMid)
-        ).to.emit(expeditionV2, EVENT.EVEREST.LockedSummitRemoved).withArgs(user1.address, expectedSummitWithdrawal2, expectedSummitLpWithdrawal2, everestMid)
-
-        const everestInfoFinal = await expeditionV2.userEverestInfo(user1.address)
-        const everestFinal = await everestToken.balanceOf(user1.address)
-        const summitFinal = await summitToken.balanceOf(user1.address)
-
-        consoleLog({
-            summit: `${toDecimal(summitMid)} ==> ${toDecimal(summitFinal)}: ${toDecimal(deltaBN(summitFinal, summitMid))}`,
-            everest: `${toDecimal(everestMid)} ==> ${toDecimal(everestFinal)}: ${toDecimal(deltaBN(everestFinal, everestMid))}`,
-            summitEverestInfo: `${toDecimal(everestInfoMid.summitLocked)} ==> ${toDecimal(everestInfoFinal.summitLocked)}: ${toDecimal(deltaBN(everestInfoMid.summitLocked, everestInfoFinal.summitLocked))}`,
-            everestEverestInfo: `${toDecimal(everestInfoMid.everestOwned)} ==> ${toDecimal(everestInfoFinal.everestOwned)}: ${toDecimal(deltaBN(everestInfoMid.everestOwned, everestInfoFinal.everestOwned))}`,
-            expectedSummitWithdrawal2: toDecimal(expectedSummitWithdrawal2),
-            everestMid: toDecimal(everestMid),
-        })
-
-        expect6FigBigNumberAllEqual([
-            expectedSummitWithdrawal2,
-            deltaBN(summitFinal, summitMid),
-            deltaBN(everestInfoFinal.summitLocked, everestInfoMid.summitLocked)
-        ])
-        expect6FigBigNumberAllEqual([
-            expectedSummitLpWithdrawal2,
-            deltaBN(everestInfoFinal.summitLpLocked, everestInfoMid.summitLpLocked)
-        ])
-        expect6FigBigNumberAllEqual([
-            everestMid,
-            deltaBN(everestFinal, everestMid),
-            deltaBN(everestInfoFinal.everestOwned, everestInfoMid.everestOwned)
-        ])
-    })
-
-
-
-
-
-    
-
-    it('EXPEDITION: Creating a valid expedition works', async function() {
+    it('EXPEDITION: Initializing expedition works', async function() {
         const { user1, dev } = await getNamedSigners(hre)
-        const expeditionV2 = await getExpedition()
-        const bifiToken = await getBifiToken()
         const cakeToken = await getCakeToken()
 
-        await expect(
-            expeditionV2.connect(user1).addExpedition(cakeToken.address, true, e18(100000), 9)
-        ).to.be.revertedWith(ERR.NON_OWNER)
+        const expeditionInitializedInit = await expeditionGet.expeditionInitialized()
+        expect(expeditionInitializedInit).to.be.false
         
-        await expect(
-            expeditionV2.connect(dev).addExpedition(bifiToken.address, true, e18(100000), 9)
-        ).to.be.revertedWith(ERR.EXPEDITION_FUNDS_REQUIRED)
-        
-        await bifiToken.connect(dev).approve(expeditionV2.address, e18(100000))
-        await bifiToken.connect(dev).transfer(expeditionV2.address, e18(100000))
-        await cakeToken.connect(dev).approve(expeditionV2.address, e18(50000))
-        await cakeToken.connect(dev).transfer(expeditionV2.address, e18(50000))
-        
-        await expect(
-            expeditionV2.connect(dev).addExpedition(bifiToken.address, true, e18(500), 9)
-        ).to.emit(expeditionV2, EVENT.ExpeditionCreated).withArgs(bifiToken.address, e18(500), 9);
-        await expect(
-            expeditionV2.connect(dev).addExpedition(cakeToken.address, true, e18(50000), 9)
-        ).to.emit(expeditionV2, EVENT.ExpeditionCreated).withArgs(cakeToken.address, e18(50000), 9);
-
-        await expect(
-            expeditionV2.connect(dev).addExpedition(cakeToken.address, true, e18(50000), 9)
-        ).to.be.revertedWith(ERR.DUPLICATED)
-    })
-
-    it('EXPEDITION: Entering expedition unlocks when expedition becomes active', async function() {
-        const { user1, user2 } = await getNamedSigners(hre)
-        const expeditionV2 = await getExpedition()
-        const cakeToken = await getCakeToken()
-
-        await expeditionV2.connect(user1).lockSummit(e18(5), e18(5), 30 * 24 * 3600)
-        await expeditionV2.connect(user1).selectDeity(0)
-        await expeditionV2.connect(user1).selectSafetyFactor(50)
-
-        const everestInfoInit = await expeditionV2.userEverestInfo(user1.address)
-        expect(everestInfoInit.interactingExpedCount).to.equal(0)
-        consoleLog({
-            user1EverestInfoOwned: toDecimal(everestInfoInit.everestOwned), 
+        await expeditionMethod.initializeExpedition({
+            dev: user1,
+            usdcAddress: cakeToken.address,
+            revertErr: ERR.NON_OWNER
         })
-        
-        await expect(
-            expeditionV2.connect(user1).joinExpedition(cakeToken.address)
-        ).to.be.revertedWith(ERR.EXPEDITION_V2.NOT_ACTIVE)
-  
-        await rolloverExpedition()
-        
-        await expect(
-            expeditionV2.connect(user1).joinExpedition(cakeToken.address)
-        ).to.emit(expeditionV2, EVENT.EXPEDITION_V2.UserJoinedExpedition).withArgs(user1.address, cakeToken.address, 0, 50, everestInfoInit.everestOwned)
+        await expeditionMethod.initializeExpedition({
+            dev,
+            usdcAddress: cakeToken.address,
+        })
 
-        const everestInfoFinal = await expeditionV2.userEverestInfo(user1.address)
-        expect(everestInfoFinal.interactingExpedCount).to.equal(1)
+        const expeditionInitializedFinal = await expeditionGet.expeditionInitialized()
+        expect(expeditionInitializedFinal).to.be.true
 
-
-        await expeditionV2.connect(user2).selectDeity(0)
-        await expeditionV2.connect(user2).selectSafetyFactor(100)   
-        const user2EverestInfo = await expeditionV2.userEverestInfo(user2.address)
-        await expect(
-            expeditionV2.connect(user2).joinExpedition(cakeToken.address)
-        ).to.emit(expeditionV2, EVENT.EXPEDITION_V2.UserJoinedExpedition).withArgs(user2.address, cakeToken.address, 0, 100, user2EverestInfo.everestOwned)
+        await expeditionMethod.initializeExpedition({
+            dev: user1,
+            usdcAddress: cakeToken.address,
+            revertErr: ERR.EXPEDITION_V2.EXPEDITION_ALREADY_INITIALIZED
+        })
     })
 
-    it('EXPEDITION: Can only enter an expedition that exists', async function() {
-        const { user1 } = await getNamedSigners(hre)
-        const expeditionV2 = await getExpedition()
+    it(`EXPEDITION ADD FUNDS: Adding incorrect funds fails with error "${ERR.EXPEDITION_V2.INVALID_EXPED_TOKEN}"`, async function() {
+        const { dev } = await getNamedSigners(hre)
+        const bifiToken = await getBifiToken()
+        
+        await expeditionMethod.addExpeditionFunds({
+            user: dev,
+            tokenAddress: bifiToken.address,
+            amount: e18(500),
+            revertErr: ERR.EXPEDITION_V2.INVALID_EXPED_TOKEN
+        })
+    })
+    it(`EXPEDITION ADD FUNDS: Adding funds to the expedition recalculates emissions correctly`, async function() {
+        const { dev } = await getNamedSigners(hre)
+        const expedition = await getExpedition()
+        const cakeToken = await getCakeToken()
         const summitToken = await getSummitToken()
 
-        const everestInfoInit = await expeditionV2.userEverestInfo(user1.address)
-        expect(everestInfoInit.interactingExpedCount).to.equal(1)
-        
-        await expect(
-            expeditionV2.connect(user1).joinExpedition(summitToken.address)
-        ).to.be.revertedWith(ERR.EXPEDITION_V2.DOESNT_EXIST)
+        const expeditionRunwayRounds = await expeditionGet.expeditionRunwayRounds()
+        const expeditionInfoInit = await expeditionGet.expeditionInfo()
 
-        const everestInfoFinal = await expeditionV2.userEverestInfo(user1.address)
-        expect(everestInfoFinal.interactingExpedCount).to.equal(1)
+        expect(expeditionInfoInit.roundsRemaining).to.equal(0)
+        expect(expeditionInfoInit.summitExpeditionToken.emissionsRemaining).to.equal(e18(0))
+        expect(expeditionInfoInit.summitExpeditionToken.roundEmission).to.equal(e18(0))
+        expect(expeditionInfoInit.usdcExpeditionToken.emissionsRemaining).to.equal(e18(0))
+        expect(expeditionInfoInit.usdcExpeditionToken.roundEmission).to.equal(e18(0))
+
+        await cakeToken.connect(dev).approve(expedition.address, e18(500))
+        await expeditionMethod.addExpeditionFunds({
+            user: dev,
+            tokenAddress: cakeToken.address,
+            amount: e18(500),
+        })
+
+        const expectedEmissionsMid = await getExpeditionExpectedEmissions()
+        const expeditionInfoMid = await expeditionGet.expeditionInfo()
+
+        expect(expeditionInfoMid.roundsRemaining).to.equal(expeditionRunwayRounds)
+        expect(expeditionInfoMid.summitExpeditionToken.emissionsRemaining).to.equal(e18(0))
+        expect(expeditionInfoMid.summitExpeditionToken.roundEmission).to.equal(e18(0))
+        expect(expeditionInfoMid.usdcExpeditionToken.emissionsRemaining).to.equal(e18(500))
+        expect(expeditionInfoMid.usdcExpeditionToken.roundEmission).to.equal(expectedEmissionsMid.usdcEmission)
+
+        await summitToken.connect(dev).approve(expedition.address, e18(300))
+        await expeditionMethod.addExpeditionFunds({
+            user: dev,
+            tokenAddress: summitToken.address,
+            amount: e18(300),
+        })
+
+        const expectedEmissionsFinal = await getExpeditionExpectedEmissions()
+        const expeditionInfoFinal = await expeditionGet.expeditionInfo()
+
+        expect(expeditionInfoFinal.roundsRemaining).to.equal(expeditionRunwayRounds)
+        expect(expeditionInfoFinal.summitExpeditionToken.emissionsRemaining).to.equal(e18(300))
+        expect(expeditionInfoFinal.summitExpeditionToken.roundEmission).to.equal(expectedEmissionsFinal.summitEmission)
+        expect(expeditionInfoFinal.usdcExpeditionToken.emissionsRemaining).to.equal(e18(500))
+        expect(expeditionInfoFinal.usdcExpeditionToken.roundEmission).to.equal(expectedEmissionsFinal.usdcEmission)
     })
 
     it('EXPEDITION: User can only enter expedition if they own everest, have selected a deity, and have selected a safety factor', async function() {
@@ -450,44 +213,72 @@ describe("EXPEDITION V2", async function() {
         const expeditionV2 = await getExpedition()
         const cakeToken = await getCakeToken()
 
-        let userEligibleToJoinExpedition = await expeditionV2.connect(user3).userEligibleToJoinExpedition()
-        expect(userEligibleToJoinExpedition).to.be.false
+        let userExpeditionInfo = await expeditionGet.userExpeditionInfo(user3.address)
+        expect(userExpeditionInfo.entered).to.equal(false)
+
+        let userEligibleToJoinExpedition = await expeditionGet.userSatisfiesExpeditionRequirements(user3.address)
+        expect(userEligibleToJoinExpedition.everest).to.be.false
+        expect(userEligibleToJoinExpedition.deity).to.be.false
+        expect(userEligibleToJoinExpedition.safetyFactor).to.be.false
         
-        await expect(
-            expeditionV2.connect(user3).joinExpedition(cakeToken.address)
-        ).to.be.revertedWith(ERR.EVEREST.MUST_OWN_EVEREST)
+        await expeditionMethod.joinExpedition({
+            user: user3,
+            revertErr: ERR.EVEREST.MUST_OWN_EVEREST
+        })
 
-        await expeditionV2.connect(user3).lockSummit(e18(10), e18(10), 24 * 3600)
+        await everestMethod.lockSummit({
+            user: user3,
+            amount: e18(10),
+            lockPeriod: 24 * 3600
+        })
 
-        userEligibleToJoinExpedition = await expeditionV2.connect(user3).userEligibleToJoinExpedition()
-        expect(userEligibleToJoinExpedition).to.be.false
-        
-        await expect(
-            expeditionV2.connect(user3).joinExpedition(cakeToken.address)
-        ).to.be.revertedWith(ERR.EXPEDITION_V2.NO_DEITY)
+        userEligibleToJoinExpedition = await expeditionGet.userSatisfiesExpeditionRequirements(user3.address)
+        expect(userEligibleToJoinExpedition.everest).to.be.true
+        expect(userEligibleToJoinExpedition.deity).to.be.false
+        expect(userEligibleToJoinExpedition.safetyFactor).to.be.false        
 
-        await expeditionV2.connect(user3).selectDeity(1)
+        await expeditionMethod.joinExpedition({
+            user: user3,
+            revertErr: ERR.EXPEDITION_V2.NO_DEITY
+        })
 
-        userEligibleToJoinExpedition = await expeditionV2.connect(user3).userEligibleToJoinExpedition()
-        expect(userEligibleToJoinExpedition).to.be.false
-        
-        await expect(
-            expeditionV2.connect(user3).joinExpedition(cakeToken.address)
-        ).to.be.revertedWith(ERR.EXPEDITION_V2.NO_SAFETY_FACTOR)
+        await expeditionMethod.selectDeity({
+            user: user3,
+            deity: 1,
+        })
 
-        await expeditionV2.connect(user3).selectSafetyFactor(50)
+        userEligibleToJoinExpedition = await expeditionGet.userSatisfiesExpeditionRequirements(user3.address)
+        expect(userEligibleToJoinExpedition.everest).to.be.true
+        expect(userEligibleToJoinExpedition.deity).to.be.true
+        expect(userEligibleToJoinExpedition.safetyFactor).to.be.false        
 
-        const everestInfoInit = await expeditionV2.userEverestInfo(user3.address)
+
+        await expeditionMethod.joinExpedition({
+            user: user3,
+            revertErr: ERR.EXPEDITION_V2.NO_SAFETY_FACTOR
+        })
+
+        await expeditionMethod.selectSafetyFactor({
+            user: user3,
+            safetyFactor: 50,
+        })
+
+        userEligibleToJoinExpedition = await expeditionGet.userSatisfiesExpeditionRequirements(user3.address)
+        expect(userEligibleToJoinExpedition.everest).to.be.true
+        expect(userEligibleToJoinExpedition.deity).to.be.true
+        expect(userEligibleToJoinExpedition.safetyFactor).to.be.true  
+
+        const everestInfoInit = await everestGet.userEverestInfo(user3.address)
         expect(everestInfoInit.interactingExpedCount).to.equal(0)
 
-        userEligibleToJoinExpedition = await expeditionV2.connect(user3).userEligibleToJoinExpedition()
+        userEligibleToJoinExpedition = await expeditionGet.userSatisfiesExpeditionRequirements(user3.address)
         expect(userEligibleToJoinExpedition).to.be.true
         
         await expect(
             expeditionV2.connect(user3).joinExpedition(cakeToken.address)
         ).to.emit(expeditionV2, EVENT.EXPEDITION_V2.UserJoinedExpedition).withArgs(user3.address, cakeToken.address, 1, 50, everestInfoInit.everestOwned)
 
-        const everestInfoFinal = await expeditionV2.userEverestInfo(user3.address)
+        const everestInfoFinal = await everestGet.userEverestInfo(user3.address)
         expect(everestInfoFinal.interactingExpedCount).to.equal(1)
 
         await expectUserAndExpedSuppliesToMatch()
@@ -532,7 +323,7 @@ describe("EXPEDITION V2", async function() {
         const expeditionV2 = await getExpedition()
         const cakeToken = await getCakeToken()
 
-        const everestInfoInit = await expeditionV2.userEverestInfo(user2.address)
+        const everestInfoInit = await everestGet.userEverestInfo(user2.address)
         expect(everestInfoInit.interactingExpedCount).to.equal(1)
 
         const rewards = await expeditionV2.connect(user2).rewards(cakeToken.address, user2.address)
@@ -541,7 +332,7 @@ describe("EXPEDITION V2", async function() {
             expeditionV2.connect(user2).harvestExpedition(cakeToken.address)
         ).to.emit(expeditionV2, EVENT.EXPEDITION_V2.UserHarvestedExpedition).withArgs(user2.address, cakeToken.address, rewards, true)
 
-        const everestInfoFinal = await expeditionV2.userEverestInfo(user2.address)
+        const everestInfoFinal = await everestGet.userEverestInfo(user2.address)
         expect(everestInfoFinal.interactingExpedCount).to.equal(0)
     })
     it(`EXPEDITION: Can't join an ended expedition`, async function() {
@@ -670,7 +461,7 @@ describe("EXPEDITION V2", async function() {
         const expeditionV2 = await getExpedition()
         
         await expect(
-          expeditionV2.connect(user1).selectDeity(2)
+            expeditionV2.connect(user1).selectDeity(2)
         ).to.be.revertedWith(ERR.EXPEDITION_V2.INVALID_DEITY)
     })
 
@@ -687,7 +478,7 @@ describe("EXPEDITION V2", async function() {
         
         await expectUserAndExpedSuppliesToMatch()
 
-        const everestInfoInit = await expeditionV2.userEverestInfo(user1.address)
+        const everestInfoInit = await everestGet.userEverestInfo(user1.address)
         const userExpedInfoInit = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
 
 
@@ -696,7 +487,7 @@ describe("EXPEDITION V2", async function() {
 
         await expectUserAndExpedSuppliesToMatch()
 
-        const everestInfoMid = await expeditionV2.userEverestInfo(user1.address)
+        const everestInfoMid = await everestGet.userEverestInfo(user1.address)
         const userExpedInfoMid = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         
         
@@ -705,7 +496,7 @@ describe("EXPEDITION V2", async function() {
         
         await expectUserAndExpedSuppliesToMatch()
 
-        const everestInfoFinal = await expeditionV2.userEverestInfo(user1.address)
+        const everestInfoFinal = await everestGet.userEverestInfo(user1.address)
         const userExpedInfoFinal = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
 
         // DEITY changes
@@ -735,7 +526,7 @@ describe("EXPEDITION V2", async function() {
         
         await expectUserAndExpedSuppliesToMatch()
 
-        const everestInfoInit = await expeditionV2.userEverestInfo(user1.address)
+        const everestInfoInit = await everestGet.userEverestInfo(user1.address)
         const userExpedInfoInit = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeInit, deitied: deitiedInit } = await getUserSafeAndDeitiedAmount(user1)
 
@@ -747,7 +538,7 @@ describe("EXPEDITION V2", async function() {
 
         await expectUserAndExpedSuppliesToMatch()
 
-        const everestInfoMid = await expeditionV2.userEverestInfo(user1.address)
+        const everestInfoMid = await everestGet.userEverestInfo(user1.address)
         const userExpedInfoMid = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeMid, deitied: deitiedMid } = await getUserSafeAndDeitiedAmount(user1)
 
@@ -759,7 +550,7 @@ describe("EXPEDITION V2", async function() {
 
         await expectUserAndExpedSuppliesToMatch()
 
-        const everestInfoMid2 = await expeditionV2.userEverestInfo(user1.address)
+        const everestInfoMid2 = await everestGet.userEverestInfo(user1.address)
         const userExpedInfoMid2 = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeMid2, deitied: deitiedMid2 } = await getUserSafeAndDeitiedAmount(user1)
 
@@ -772,7 +563,7 @@ describe("EXPEDITION V2", async function() {
         
         await expectUserAndExpedSuppliesToMatch()
 
-        const everestInfoFinal = await expeditionV2.userEverestInfo(user1.address)
+        const everestInfoFinal = await everestGet.userEverestInfo(user1.address)
         const userExpedInfoFinal = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeFinal, deitied: deitiedFinal } = await getUserSafeAndDeitiedAmount(user1)
 
@@ -805,7 +596,7 @@ describe("EXPEDITION V2", async function() {
         
         await expectUserAndExpedSuppliesToMatch()
 
-        const everestInfoInit = await expeditionV2.userEverestInfo(user1.address)
+        const everestInfoInit = await everestGet.userEverestInfo(user1.address)
         const userExpedInfoInit = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeInit, deitied: deitiedInit } = await getUserSafeAndDeitiedAmount(user1)
 
@@ -824,7 +615,7 @@ describe("EXPEDITION V2", async function() {
 
         await expectUserAndExpedSuppliesToMatch()
 
-        const everestInfoMid = await expeditionV2.userEverestInfo(user1.address)
+        const everestInfoMid = await everestGet.userEverestInfo(user1.address)
         const userExpedInfoMid = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeMid, deitied: deitiedMid } = await getUserSafeAndDeitiedAmount(user1)
 
@@ -848,7 +639,7 @@ describe("EXPEDITION V2", async function() {
 
         await expectUserAndExpedSuppliesToMatch()
 
-        const everestInfoMid2 = await expeditionV2.userEverestInfo(user1.address)
+        const everestInfoMid2 = await everestGet.userEverestInfo(user1.address)
         const userExpedInfoMid2 = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeMid2, deitied: deitiedMid2 } = await getUserSafeAndDeitiedAmount(user1)
 
@@ -868,7 +659,7 @@ describe("EXPEDITION V2", async function() {
         
         await expectUserAndExpedSuppliesToMatch()
 
-        const everestInfoFinal = await expeditionV2.userEverestInfo(user1.address)
+        const everestInfoFinal = await everestGet.userEverestInfo(user1.address)
         const userExpedInfoFinal = await expeditionV2.userExpeditionInfo(cakeToken.address, user1.address)
         const { safe: safeFinal, deitied: deitiedFinal } = await getUserSafeAndDeitiedAmount(user1)
 

@@ -1,5 +1,6 @@
 import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
+import { string } from "hardhat/internal/core/params/argumentTypes"
 import { elevationHelperGet, EVENT, executeTxExpectEvent, executeTxExpectReversion, EXPEDITION, getExpedition } from "."
 import { everestGet } from "./everestUtils"
 
@@ -22,7 +23,6 @@ export interface ExpeditionToken {
 }
 
 export interface ExpeditionInfo {
-    launched: boolean
     live: boolean
 
     roundsRemaining: number
@@ -38,11 +38,14 @@ export interface ExpeditionInfo {
 
 
 export const expeditionGet = {
+    expeditionInitialized: async () => {
+        return (await getExpedition()).expeditionInitialized()
+    },
     expeditionDeityWinningsMult: async () => {
-        return ((await getExpedition()).expeditionDeityWinningsMult()).toNumber()
+        return (await (await getExpedition()).expeditionDeityWinningsMult()).toNumber()
     },
     expeditionRunwayRounds: async () => {
-        return ((await getExpedition()).expeditionRunwayRounds()).toNumber()
+        return (await (await getExpedition()).expeditionRunwayRounds()).toNumber()
     },
     userExpeditionInfo: async (userAddress: string): Promise<UserExpeditionInfo> => {
         const expedition = await getExpedition()
@@ -59,7 +62,6 @@ export const expeditionGet = {
         const expedition = await getExpedition()
         const fetchedExpedInfo = await expedition.expeditionInfo()
         return {
-            launched: fetchedExpedInfo.launched,
             live: fetchedExpedInfo.live,
 
             roundsRemaining: fetchedExpedInfo.roundsRemaining.toNumber(),
@@ -123,6 +125,26 @@ export const expeditionGet = {
 }
 
 export const expeditionMethod = {
+    initializeExpedition: async ({
+        dev,
+        usdcAddress,
+        revertErr,
+    }: {
+        dev: SignerWithAddress,
+        usdcAddress: string,
+        revertErr?: string,
+    }) => {
+        const expedition = await getExpedition()
+        const tx = expedition.connect(dev).initializeExpedition
+        const txArgs = [usdcAddress]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            const eventArgs = [] as any[]
+            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.ExpeditionInitialized, eventArgs, true)
+        }
+    },
     addExpeditionFunds: async ({
         user,
         tokenAddress,

@@ -19,7 +19,7 @@ export const Contracts = {
     ExpeditionV2: 'ExpeditionV2',
 
     SummitLocking: 'SummitLocking',
-    SummitRandomnessModule: 'SummitRandomnessModule',
+    SummitTrustedSeederRNGModule: 'SummitTrustedSeederRNGModule',
 }
 
 export const hardhatChainId = '31337'
@@ -173,6 +173,8 @@ export const ERR = {
     },
 
     EXPEDITION_V2: {
+        EXPEDITION_ALREADY_INITIALIZED: 'Expedition already initialized',
+        INVALID_EXPED_TOKEN: 'Invalid token to add to expedition',
         NOT_ACTIVE: 'Expedition not active',
         DOESNT_EXIST: 'Expedition doesnt exist',
         NO_DEITY: 'No deity selected',

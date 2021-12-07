@@ -145,11 +145,6 @@ export const cartographerMethod = {
                 .div(e6(1)).mul(e6(1))
             const userTokenBonusBp = await getUserTokenEarningsBonus(user.address, tokenAddress)
             const expectedClaimAmountWithBonus = claimAmountWithBonusAdded(expectedClaimAmount, userTokenBonusBp)
-            console.log({
-                userTokenBonusBp,
-                baseClaim: toDecimal(expectedClaimAmount),
-                claimWithBonus: toDecimal(expectedClaimAmountWithBonus),
-            })
             const eventArgs = eventOnly ? null : [user.address, expectedClaimAmountWithBonus]
             await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.ClaimWinnings, eventArgs, false)
         }
