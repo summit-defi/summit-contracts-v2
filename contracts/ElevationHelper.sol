@@ -105,6 +105,7 @@ contract ElevationHelper is Ownable {
         onlyOwner
     {
         require(_cartographer != address(0), "Cartographer missing");
+        require(_expeditionV2 != address(0), "Expedition missing");
         cartographer = _cartographer;
         expeditionV2 = _expeditionV2;
     }

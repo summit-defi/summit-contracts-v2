@@ -17,7 +17,7 @@ const deployExpeditionV2: DeployFunction = async function ({
 
   const EverestToken = await deploy(Contracts.EverestToken, {
       from: dev,
-      args: [],
+      args: [SummitToken.address],
       log: true
   })
 
@@ -43,6 +43,7 @@ const deployExpeditionV2: DeployFunction = async function ({
       await delay(10000)
       await run("verify:verify", {
         address: EverestToken.address,
+        constructorArguments: [SummitToken.address],
       })
     }
   }

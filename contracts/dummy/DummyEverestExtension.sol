@@ -11,9 +11,9 @@ contract DummyEverestExtension is BaseEverestExtension {
 
     mapping(address => uint256) public userEverest;
 
-    constructor(address _expeditionV2) {
-        require(_expeditionV2 != address(0), "Missing ExpeditionV2");
-        expeditionV2 = ExpeditionV2(_expeditionV2);
+    constructor(address _everest) {
+        require(_everest != address(0), "Missing EverestToken");
+        everest = EverestToken(_everest);
     }
 
     function joinDummyExtension()
@@ -24,7 +24,7 @@ contract DummyEverestExtension is BaseEverestExtension {
 
     function updateUserEverest(uint256 _everestAmount, address _userAdd)
         external override
-        onlyExpeditionV2
+        onlyEverestToken
     {
         userEverest[_userAdd] = _everestAmount;
     }

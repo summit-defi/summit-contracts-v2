@@ -22,6 +22,9 @@ export const flatten = <T>(arr: T[][]): T[] => {
 }
 
 // BIG NUMBERS
+export const days = (n: number) => {
+    return n * 24 * 3600
+}
 export const e36 = (n: number) => {
     return e18(n).mul(e18(1))
 }
@@ -54,9 +57,12 @@ export const deltaBN = (n0: BigNumber, n1: BigNumber): BigNumber => {
 }
 
 // ASSERTIONS
-export const expect6FigBigNumberEquals = (a: BigNumber, b: BigNumber) => {
+export const sixFigBigNumberEquals = (a: BigNumber, b: BigNumber) => {
     const diff = a.gt(b) ? a.sub(b) : b.sub(a)
-    expect(diff.div("10000000000000")).to.equal(0)
+    return diff.div(e12(1)).toNumber() === 0
+}
+export const expect6FigBigNumberEquals = (a: BigNumber, b: BigNumber) => {
+    expect(sixFigBigNumberEquals(a, b)).to.be.true
 }
 export const expect6FigBigNumberAllEqual = (arr: BigNumber[]) => {
     arr.forEach((item) => expect6FigBigNumberEquals(item, arr[0]))
