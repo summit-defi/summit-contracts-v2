@@ -79,5 +79,6 @@ initializeContracts.dependencies = [
   'ElevationHelper', 
   'SummitReferrals',
   'SummitLocking',
+  'EverestToken',
   'ExpeditionV2',
 ]
