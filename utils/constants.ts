@@ -163,13 +163,15 @@ export const ERR = {
     },
 
     EVEREST: {
+        USER_DOESNT_EXIST: 'User doesnt exist',
         MUST_OWN_EVEREST: 'Must own everest',
-        MUST_NOT_OWN_EVEREST: 'Must not own everest',
+        ALREADY_LOCKING_SUMMIT: 'Already locking summit',
         INVALID_LP_INCENTIVE_MULT: 'Incentive multiplier must be between 1x and 4x',
         INVALID_LOCK_PERIOD: 'Invalid lock period',
-        EVEREST_UNLOCKED: 'Lock period still in effect',
+        EVEREST_LOCKED: 'Lock period still in effect',
         BAD_WITHDRAW: 'Bad withdraw',
         INVALID_SAFETY_FACTOR: 'Invalid safety factor',
+        NOT_IN_PANIC_MODE: 'Not in panic',
     },
 
     EXPEDITION_V2: {
@@ -234,7 +236,8 @@ export const EVENT = {
         SummitLocked: 'SummitLocked',
         LockDurationIncreased: 'LockDurationIncreased',
         LockedSummitIncreased: 'LockedSummitIncreased',
-        LockedSummitRemoved: 'LockedSummitRemoved',
+        LockedSummitWithdrawn: 'LockedSummitWithdrawn',
+        PanicFundsRecovered: 'PanicFundsRecovered',
         UserJoinedExpedition: 'UserJoinedExpedition',
         UserHarvestedExpedition: 'UserHarvestedExpedition',
 

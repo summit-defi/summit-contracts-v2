@@ -3,6 +3,466 @@
 pragma solidity 0.8.0;
 
 import "./libs/ERC20Mintable.sol";
+import "./BaseEverestExtension.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
 
 // EverestToken, governance token of Summit DeFi
-contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST') {}
+contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGuard {
+    using SafeERC20 for IERC20;
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    // ---------------------------------------
+    // --   V A R I A B L E S
+    // ---------------------------------------
+
+    address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
+
+    IERC20 public summit;
+
+    bool public panicReleaseLockedSummit = false;
+
+    uint256 public minLockTime = 3600 * 24 * 7;
+    uint256 public maxLockTime = 3600 * 24 * 365;
+    uint256 public minEverestLockMult = 1000;
+    uint256 public maxEverestLockMult = 10000;
+
+    uint256 public lockTimeRequiredForTaxlessSummitWithdraw = 3600 * 24 * 7;
+    uint256 public lockTimeRequiredForClaimableSummitLock = 3600 * 24 * 30;
+
+    uint256 public totalSummitLocked;
+    uint256 public avgSummitLockDuration;
+
+    struct UserEverestInfo {
+        address userAdd;
+
+        uint256 everestOwned;
+        uint256 everestLockMultiplier;
+        uint256 lockDuration;
+        uint256 lockRelease;
+        uint256 summitLocked;
+    }
+    mapping(address => UserEverestInfo) public userEverestInfo;
+
+    // Other contracts that hook into the user's amount of everest, max 3 extensions
+    // Will be used for the DAO, as well as everest pools in the future
+    EnumerableSet.AddressSet everestExtensions;
+
+
+    constructor(address _summit) {
+        require(_summit != address(0), "SummitToken missing");
+        summit = IERC20(_summit);
+    }
+    
+    
+    // ---------------------------------------
+    // --   E V E N T S
+    // ---------------------------------------
+
+    event SummitLocked(address indexed user, uint256 _summitLocked, uint256 _lockPeriod, uint256 _everestAwarded);
+    event LockDurationIncreased(address indexed user, uint256 _lockPeriod, uint256 _additionalEverestAwarded);
+    event LockedSummitIncreased(address indexed user, bool indexed _increasedWithClaimableWinnings, uint256 _summitLocked, uint256 _everestAwarded);
+    event LockedSummitWithdrawn(address indexed user, uint256 _summitRemoved, uint256 _everestBurned);
+    event PanicFundsRecovered(address indexed user, uint256 _summitRecovered);
+
+    event SetMinLockTime(uint256 _lockTimeDays);
+    event SetMaxLockTime(uint256 _lockTimeDays);
+    event SetMinEverestLockMult(uint256 _lockMult);
+    event SetMaxEverestLockMult(uint256 _lockMult);
+    event SetLockTimeRequiredForTaxlessSummitWithdraw(uint256 _lockTimeDays);
+    event SetLockTimeRequiredForLockedSummitDeposit(uint256 _lockTimeDays);
+    event SetPanic(bool _panic);
+
+
+
+
+    // ------------------------------------------------------
+    // --   M O D I F I E R S 
+    // ------------------------------------------------------
+
+    modifier validLockPeriod(uint256 _lockPeriod) {
+        require (_lockPeriod >= minLockTime && _lockPeriod <= maxLockTime, "Invalid lock period");
+        _;
+    }
+    modifier userNotAlreadyLockingSummit() {
+        require (userEverestInfo[msg.sender].everestOwned == 0, "Already locking summit");
+        _;
+    }
+    modifier userLockPeriodSatisfied() {
+        require(userEverestInfo[msg.sender].lockRelease != 0, "User doesnt have a lock release");
+        require(block.timestamp >= userEverestInfo[msg.sender].lockRelease, "Lock period still in effect");
+        _;
+    }
+    modifier userEverestInfoExists() {
+        require(userEverestInfo[msg.sender].userAdd != address(0), "User doesnt exist");
+        _;
+    }
+    modifier userOwnsEverest() {
+        require (userEverestInfo[msg.sender].everestOwned > 0, "Must own everest");
+        _;
+    }
+    modifier validEverestAmountToBurn(uint256 _everestAmount) {
+        require (_everestAmount > 0 && _everestAmount <= userEverestInfo[msg.sender].everestOwned, "Bad withdraw");
+        _;
+    }
+    function _validUserAdd(address _userAdd) internal pure {
+        require(_userAdd != address(0), "User address is zero");
+    }
+    modifier validUserAdd(address _userAdd) {
+        _validUserAdd(_userAdd);
+        _;
+    }
+
+
+    // ---------------------------------------
+    // --   A D J U S T M E N T S
+    // ---------------------------------------
+
+
+
+    function setMinLockTime(uint256 _lockTimeDays) public onlyOwner {
+        require(_lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 30, "Invalid minimum lock time (1-30 days)");
+        minLockTime = _lockTimeDays * 24 * 365;
+        emit SetMinLockTime(_lockTimeDays);
+    }
+    function setMaxLockTime(uint256 _lockTimeDays) public onlyOwner {
+        require(_lockTimeDays >= minLockTime && _lockTimeDays >= 7 && _lockTimeDays <= 730, "Invalid maximum lock time (7-730 days)");
+        maxLockTime = _lockTimeDays * 24 * 365;
+        emit SetMaxLockTime(_lockTimeDays);
+    }
+    function setMinEverestLockMult(uint256 _lockMult) public onlyOwner {
+        require(_lockMult >= 100 && _lockMult <= 50000, "Invalid lock mult");
+        minEverestLockMult = _lockMult;
+        emit SetMinEverestLockMult(_lockMult);
+    }
+    function setMaxEverestLockMult(uint256 _lockMult) public onlyOwner {
+        require(_lockMult >= 100 && _lockMult <= 50000, "Invalid lock mult");
+        maxEverestLockMult = _lockMult;
+        emit SetMaxEverestLockMult(_lockMult);
+    }
+    function setLockTimeRequiredForTaxlessSummitWithdraw(uint256 _lockTimeDays) public onlyOwner {
+        require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 30, "Invalid taxless summit lock time (1-30 days)");
+        lockTimeRequiredForTaxlessSummitWithdraw = _lockTimeDays;
+        emit SetLockTimeRequiredForTaxlessSummitWithdraw(_lockTimeDays);
+    }
+    function setLockTimeRequiredForLockedSummitDeposit(uint256 _lockTimeDays) public onlyOwner {
+        require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 90, "Invalid locked summit lock time (1-90 days)");
+        lockTimeRequiredForClaimableSummitLock = _lockTimeDays;
+        emit SetLockTimeRequiredForLockedSummitDeposit(_lockTimeDays);
+    }
+
+
+
+
+
+    // ------------------------------------------------------------
+    // --   F U N C T I O N A L I T Y
+    // ------------------------------------------------------------
+
+
+    /// @dev Update the average lock duration
+    function _updateAvgSummitLockDuration(uint256 _amount, uint256 _lockDuration, bool _isLocking)
+        internal
+    {
+        // Current multiplier to add / subtract against
+        uint256 currentMul = totalSummitLocked * avgSummitLockDuration;
+
+        // How much the multiplier will change by
+        uint256 deltaMul = _amount * _lockDuration;
+        uint256 newMul = currentMul + (_isLocking ? deltaMul : 0) - (_isLocking ? 0 : deltaMul);
+
+        // How much summit is being added / subtracted
+        totalSummitLocked = totalSummitLocked + (_isLocking ? _amount : 0) - (_isLocking ? 0 : _amount);
+
+        // Update average lock duration with new computed multiplier and new summit locked amount
+        avgSummitLockDuration = totalSummitLocked == 0 ? 0 : newMul / totalSummitLocked;
+    }
+
+    /// @dev Lock period multiplier
+    function _lockPeriodMultiplier(uint256 _lockPeriod)
+        internal view
+        returns (uint256)
+    {
+        return (((_lockPeriod - minLockTime) * (maxEverestLockMult - minEverestLockMult) * 1e12) /
+            (maxLockTime - minLockTime) /
+            1e12) +
+            minEverestLockMult;
+    }
+
+    /// @dev Transfer everest to the burn address.
+    function _burnEverest(address _userAdd, uint256 _everestAmount)
+        internal
+    {
+        IERC20(address(this)).safeTransferFrom(_userAdd, address(this), _everestAmount);
+        IERC20(address(this)).safeTransfer(burnAdd, _everestAmount);
+    }
+
+    function _getOrCreateUserEverestInfo(address _userAdd)
+        internal
+        returns (UserEverestInfo storage)
+    {
+        UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
+        everestInfo.userAdd = _userAdd;
+        return everestInfo;
+    }
+
+    /// @dev Lock Summit for a duration and earn everest
+    /// @param _summitAmount Amount of SUMMIT to deposit
+    /// @param _lockPeriod Duration the SUMMIT will be locked for
+    function lockSummit(uint256 _summitAmount, uint256 _lockPeriod)
+        public
+        nonReentrant userNotAlreadyLockingSummit validLockPeriod(_lockPeriod)
+    {
+        // Validate and deposit user's SUMMIT
+        require(_summitAmount <= summit.balanceOf(msg.sender), "Exceeds balance");
+        if (_summitAmount > 0) {    
+            summit.safeTransferFrom(msg.sender, address(this), _summitAmount);
+        }
+
+        // Calculate the lock multiplier and EVEREST award
+        uint256 everestLockMultiplier = _lockPeriodMultiplier(_lockPeriod);
+        uint256 everestAward = (_summitAmount * everestLockMultiplier) / 10000;
+        
+        // Mint EVEREST to the user's wallet
+        _mint(msg.sender, everestAward);
+
+        // Create and initialize the user's everestInfo
+        UserEverestInfo storage everestInfo = _getOrCreateUserEverestInfo(msg.sender);
+        everestInfo.everestOwned = everestAward;
+        everestInfo.everestLockMultiplier = everestLockMultiplier;
+        everestInfo.lockRelease = block.timestamp + _lockPeriod;
+        everestInfo.lockDuration = _lockPeriod;
+        everestInfo.summitLocked = _summitAmount;
+
+        // Update average lock duration with new summit locked
+        _updateAvgSummitLockDuration(_summitAmount, _lockPeriod, true);
+
+        // Update the EVEREST in the expedition
+        _updateEverestExtensions(everestInfo);
+
+        emit SummitLocked(msg.sender, _summitAmount, _lockPeriod, everestAward);
+    }
+
+
+    /// @dev Increase the lock duration of user's locked SUMMIT
+    function increaseLockDuration(uint256 _lockPeriod)
+        public
+        nonReentrant userEverestInfoExists userOwnsEverest
+    {
+        uint256 additionalEverestAward = _increaseLockDuration(_lockPeriod, msg.sender);
+        emit LockDurationIncreased(msg.sender, _lockPeriod, additionalEverestAward);
+    }
+    function _increaseLockDuration(uint256 _lockPeriod, address _userAdd)
+        internal
+        returns (uint256)
+    {
+        UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
+        require(_lockPeriod >= everestInfo.lockDuration, "Lock duration must strictly increase");
+
+        // Update average lock duration by removing existing lock duration, and adding new duration
+        _updateAvgSummitLockDuration(everestInfo.summitLocked, everestInfo.lockDuration, false);
+        _updateAvgSummitLockDuration(everestInfo.summitLocked, _lockPeriod, true);
+
+        // Calculate and validate the new everest lock multiplier
+        uint256 everestLockMultiplier = _lockPeriodMultiplier(_lockPeriod);
+        require(everestLockMultiplier >= everestInfo.everestLockMultiplier, "New lock period must be greater");
+
+        // Calculate the additional EVEREST awarded by the extended lock duration
+        uint256 additionalEverestAward = ((everestInfo.summitLocked * everestLockMultiplier) / 10000) - everestInfo.everestOwned;
+
+        // Increase the lock release
+        uint256 lockRelease = block.timestamp + _lockPeriod;
+
+        // Mint EVEREST to the user's address
+        _mint(_userAdd, additionalEverestAward);
+
+        // Update the user's running state
+        everestInfo.everestOwned += additionalEverestAward;
+        everestInfo.everestLockMultiplier = everestLockMultiplier;
+        everestInfo.lockRelease = lockRelease;
+        everestInfo.lockDuration = _lockPeriod;
+
+        // Update the expedition with the user's new EVEREST amount
+        _updateEverestExtensions(everestInfo);
+
+        return additionalEverestAward;
+    }
+
+
+    /// @dev Internal locked SUMMIT amount increase, returns the extra EVEREST earned by the increased lock duration
+    function _increaseLockedSummit(uint256 _summitAmount, UserEverestInfo storage everestInfo, address _summitOriginAdd)
+        internal
+        returns (uint256)
+    {
+        // Validate and deposit user's funds
+        require(_summitAmount <= summit.balanceOf(_summitOriginAdd), "Exceeds balance");
+        if (_summitAmount > 0) {
+            summit.safeTransferFrom(_summitOriginAdd, address(this), _summitAmount);
+        }
+
+        // Calculate the extra EVEREST that is awarded by the deposited SUMMIT
+        uint256 additionalEverestAward = (_summitAmount * everestInfo.everestLockMultiplier) / 10000;
+        
+        // Mint EVEREST to the user's address
+        _mint(everestInfo.userAdd, additionalEverestAward);
+
+        // Increase running balances of EVEREST and SUMMIT
+        everestInfo.everestOwned += additionalEverestAward;
+        everestInfo.summitLocked += _summitAmount;
+
+        // Update average lock duration with new summit locked
+        _updateAvgSummitLockDuration(_summitAmount, everestInfo.lockDuration, true);
+
+        // Update the expedition with the users new EVEREST info
+        _updateEverestExtensions(everestInfo);
+
+        return additionalEverestAward;
+    }
+
+    /// @dev Increase the duration of already locked SUMMIT, exit early if user is already locked for a longer duration
+    function _increaseLockReleaseOnClaimableLocked(UserEverestInfo storage everestInfo, uint256 _lockDuration)
+        internal
+        returns (uint256)
+    {
+        // Early escape if lock release already satisfies requirement
+        if ((block.timestamp + _lockDuration) <= everestInfo.lockRelease) return 0;
+
+        // Update lock release and return the extra EVEREST that is earned by this extension
+        return _increaseLockDuration(_lockDuration, everestInfo.userAdd);
+    }
+
+    /// @dev Lock additional summit and extend duration to arbitrary duration
+    function lockAndExtendLockDuration(uint256 _summitAmount, uint256 _lockDuration, address _userAdd)
+        public
+        nonReentrant userEverestInfoExists userOwnsEverest
+    {
+        UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
+
+        // Increase the lock duration of the current locked SUMMIT
+        uint256 additionalEverestAward = _increaseLockReleaseOnClaimableLocked(everestInfo, _lockDuration);
+
+        // Increase the amount of locked summit by {_summitAmount} and increase the EVEREST award
+        additionalEverestAward += _increaseLockedSummit(
+            _summitAmount,
+            everestInfo,
+            msg.sender
+        );
+        
+        emit LockedSummitIncreased(msg.sender, true, _summitAmount, additionalEverestAward);
+    }
+
+    /// @dev Increase the users Locked Summit and earn everest
+    function increaseLockedSummit(uint256 _summitAmount)
+        public
+        nonReentrant userEverestInfoExists userOwnsEverest
+    {
+        uint256 additionalEverestAward = _increaseLockedSummit(
+            _summitAmount,
+            userEverestInfo[msg.sender],
+            msg.sender
+        );
+
+        emit LockedSummitIncreased(msg.sender, false, _summitAmount, additionalEverestAward);
+    }
+
+    /// @dev Decrease the Summit and burn everest
+    function withdrawLockedSummit(uint256 _everestAmount)
+        public
+        nonReentrant userEverestInfoExists userOwnsEverest userLockPeriodSatisfied validEverestAmountToBurn(_everestAmount)
+    {
+        UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
+        require (_everestAmount <= everestInfo.everestOwned, "Bad withdraw");
+
+        uint256 summitToWithdraw = _everestAmount * 10000 / everestInfo.everestLockMultiplier;
+
+        everestInfo.everestOwned -= _everestAmount;
+        everestInfo.summitLocked -= summitToWithdraw;
+
+        // Update average summit lock duration with removed summit
+        _updateAvgSummitLockDuration(summitToWithdraw, everestInfo.lockDuration, false);
+
+        summit.safeTransfer(msg.sender, summitToWithdraw);
+        _burnEverest(msg.sender, _everestAmount);
+
+        _updateEverestExtensions(everestInfo);
+
+        emit LockedSummitWithdrawn(msg.sender, summitToWithdraw, _everestAmount);
+    }
+
+
+    /// @dev Panic recover locked SUMMIT if something has gone wrong
+    function panicRecoverFunds()
+        public
+        nonReentrant userEverestInfoExists
+    {
+        require(panicReleaseLockedSummit, "Not in panic");
+
+        UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
+
+        uint256 recoverableSummit = everestInfo.summitLocked;
+        summit.safeTransfer(msg.sender, recoverableSummit);
+
+        everestInfo.userAdd = address(0);
+        everestInfo.everestOwned = 0;
+        everestInfo.summitLocked = 0;
+        everestInfo.lockRelease = 0;
+        everestInfo.lockDuration = 0;
+        everestInfo.everestLockMultiplier = 0;
+
+        emit PanicFundsRecovered(msg.sender, recoverableSummit);
+    }
+
+    
+    
+    
+    
+    
+    // ----------------------------------------------------------------------
+    // --   E V E R E S T   E X T E N S I O N S
+    // ----------------------------------------------------------------------
+
+
+
+    /// @dev Add an everest extension
+    function addEverestExtension(address _extension)
+        public
+        onlyOwner
+    {
+        require(_extension != address(0), "Missing extension");
+        require(everestExtensions.length() < 3, "Max extension cap reached");
+        everestExtensions.add(_extension);
+    }
+
+    /// @dev Remove an everest extension
+    function removeEverestExtension(address _extension)
+        public
+        onlyOwner
+    {
+        require(_extension != address(0), "Missing extension");
+        require(everestExtensions.contains(_extension), "Extension not added");
+        everestExtensions.remove(_extension);
+    }
+
+    /// @dev Get user everest owned
+    function getUserEverestOwned(address _userAdd)
+        public view
+        returns (uint256)
+    {
+        return userEverestInfo[_userAdd].everestOwned;
+    }
+
+
+
+    function _updateEverestExtensions(UserEverestInfo storage user)
+        internal
+    {
+        // Iterate through and update each extension with the user's everest amount
+        for (uint8 extensionIndex = 0; extensionIndex < everestExtensions.length(); extensionIndex++) {
+            BaseEverestExtension(everestExtensions.at(extensionIndex)).updateUserEverest(user.everestOwned, user.userAdd);
+        }
+    }
+
+}

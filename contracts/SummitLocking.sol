@@ -5,6 +5,7 @@ pragma solidity 0.8.0;
 import "./SummitToken.sol";
 import "./Cartographer.sol";
 import "./ExpeditionV2.sol";
+import "./EverestToken.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
@@ -18,6 +19,7 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
 
     SummitToken public summit;
+    EverestToken public everest;
     Cartographer public cartographer;
     ExpeditionV2 public expeditionV2;
 
@@ -43,13 +45,16 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
 
     function initialize(
         address _summit,
+        address _everest,
         address _cartographer,
         address _expeditionV2
     ) public onlyOwner {
         require(_summit != address(0), "Missing SummitToken");
+        require(_everest != address(0), "Missing EverestToken");
         require(_cartographer != address(0), "Missing Cartographer");
         require(_expeditionV2 != address(0), "Missing ExpeditionV2");
         summit = SummitToken(_summit);
+        everest = EverestToken(_everest);
         cartographer = Cartographer(_cartographer);
         expeditionV2 = ExpeditionV2(_expeditionV2);
     }
@@ -131,7 +136,11 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
 
         // Harvest winnings by locking for everest in the expedition
         if (_lockForEverest) {
-            expeditionV2.lockClaimableSummit(_amount, msg.sender);
+            everest.lockAndExtendLockDuration(
+                _amount,
+                everest.lockTimeRequiredForClaimableSummitLock(),
+                msg.sender
+            );
 
         // Else check if epoch matured, harvest 100% if true, else harvest 50%, burn 25%, and send 25% to expedition contract to be distributed to EVEREST holders
         } else {

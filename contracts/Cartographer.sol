@@ -4,7 +4,7 @@ pragma solidity 0.8.0;
 import "./SummitToken.sol";
 import "./CartographerOasis.sol";
 import "./CartographerElevation.sol";
-import "./ExpeditionV2.sol";
+import "./EverestToken.sol";
 import "./ElevationHelper.sol";
 import "./SummitReferrals.sol";
 import "./SummitLocking.sol";
@@ -88,7 +88,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     uint8 constant PLAINS = 1;
     uint8 constant MESA = 2;
     uint8 constant SUMMIT = 3;
-    address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
     uint256 constant e12 = 1e12;
 
 
@@ -99,11 +98,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     address public treasuryAdd;                                                 // Treasury address, see docs for spend breakdown
     address public expeditionTreasuryAdd;                                       // Expedition Treasury address, intermediate address to convert to stablecoins
-    ElevationHelper elevationHelper;
-    SummitReferrals summitReferrals;
-    address[4] subCartographers;
-    ExpeditionV2 expeditionV2;
-    SummitLocking summitLocking;
+    ElevationHelper public elevationHelper;
+    SummitReferrals public summitReferrals;
+    address[4] public subCartographers;
+    EverestToken public everest;
+    SummitLocking public summitLocking;
 
     uint256 public launchTimestamp = 1641028149;                                // 2022-1-1, will be updated when summit ecosystem switched on
     uint256 public summitPerSecond = 15e16;                                             // Amount of Summit minted per second to be distributed to users
@@ -195,7 +194,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         address _CartographerPlains,
         address _CartographerMesa,
         address _CartographerSummit,
-        address _expeditionV2,
+        address _everest,
         address _summitLocking
     )
         external
@@ -209,7 +208,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
             _CartographerPlains != address(0) &&
             _CartographerMesa != address(0) &&
             _CartographerSummit != address(0) &&
-            _expeditionV2 != address(0) &&
+            _everest != address(0) &&
             _summitLocking != address(0),
             "Contract is zero"
         );
@@ -224,16 +223,13 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         subCartographers[MESA] = _CartographerMesa;
         subCartographers[SUMMIT] = _CartographerSummit;
 
-        expeditionV2 = ExpeditionV2(_expeditionV2);
+        everest = EverestToken(_everest);
         summitLocking = SummitLocking(_summitLocking);
 
         // Initialize the subCarts with the address of elevationHelper
         for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
             subCartographer(elevation).initialize(_ElevationHelper, address(_summit));
         }
-
-        // Initial value of summit minting
-        summit.approve(burnAdd, type(uint256).max);
     }
 
 
@@ -929,8 +925,9 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
             );
 
         // Lock withdrawn SUMMIT for EVEREST
-        expeditionV2.lockElevatableSummit(
+        everest.lockAndExtendLockDuration(
             elevatedAmount,
+            everest.lockTimeRequiredForTaxlessSummitWithdraw(),
             msg.sender
         );
 

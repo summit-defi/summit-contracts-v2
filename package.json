@@ -1,7 +1,7 @@
 {
   "name": "hardhat-project",
   "scripts": {
-    "test": "npx hardhat test",
+    "test": "npx hardhat test --show-stack-traces",
     "seed": "npx hardhat run scripts/trusted-seeder-remote.ts --network ftm_mainnet",
     "execute-queued-timelock-txs": "npx hardhat run scripts/execute-queued-timelock-transactions.ts --network ftm_mainnet",
     "queue-sync-farms": "npx hardhat run scripts/timelocked-update-pools-from-config.ts --network ftm_mainnet",

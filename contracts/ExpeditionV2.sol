@@ -92,7 +92,7 @@ WINNINGS:
 
 
 
-contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
+contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExtension {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -101,57 +101,32 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
     // --   V A R I A B L E S
     // ---------------------------------------
 
-
-    address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
-
     SummitToken public summit;
-    EverestToken public everest;
     ElevationHelper elevationHelper;
     SummitLocking public summitLocking;
     uint8 constant EXPEDITION = 4;
 
-    bool panicReleaseLockedSummit = false;
-
     uint256 rolledOverRounds;
 
-
-    uint256 public minLockTime = 3600 * 24 * 7;
-    uint256 public maxLockTime = 3600 * 24 * 365;
-    uint256 public lockTimeRequiredForTaxlessSummitWithdraw = 3600 * 24 * 7;
-    uint256 public lockTimeRequiredForClaimableSummitLock = 3600 * 24 * 30;
-    uint256 public minEverestLockMult = 1000;
-    uint256 public maxEverestLockMult = 10000;
     uint256 public expeditionDeityWinningsMult = 125;
     uint256 public expeditionRunwayRounds = 30;
-
-    uint256 public totalSummitLocked;
-    uint256 public avgSummitLockDuration;
-
-    struct UserEverestInfo {
-        address userAdd;
-
-        uint256 everestOwned;
-        uint256 everestLockMultiplier;
-        uint256 lockDuration;
-        uint256 lockRelease;
-        uint256 summitLocked;
-
-        bool compoundClaimableSummitAsEverest;
-
-        uint8 deity;
-        bool deitySelected;
-        uint256 deitySelectionRound;
-        uint8 safetyFactor;
-        bool safetyFactorSelected;
-    }
-    mapping(address => UserEverestInfo) public userEverestInfo;
-
     
     struct UserTokenInteraction {
         uint256 safeDebt;
         uint256 deityDebt;
     }
     struct UserExpeditionInfo {
+        address userAdd;
+
+        // Entry Requirements
+        uint256 everestOwned;
+        uint8 deity;
+        bool deitySelected;
+        uint256 deitySelectionRound;
+        uint8 safetyFactor;
+        bool safetyFactorSelected;
+
+        // Expedition Interaction
         bool entered;
         uint256 prevInteractedRound;
 
@@ -162,6 +137,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
         UserTokenInteraction usdc;
     }
     mapping(address => UserExpeditionInfo) public userExpeditionInfo;        // Users running staked information
+    mapping(address => bool) public userCompoundClaimableAsEverest;
 
     struct ExpeditionToken {
         IERC20 token;
@@ -186,10 +162,6 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
     }
     ExpeditionInfo public expeditionInfo;   // Expedition info
 
-    // Other contracts that hook into the user's amount of everest, max 3 extensions
-    // Will be used for the DAO, as well as everest pools in the future
-    EnumerableSet.AddressSet everestExtensions;
-
     
 
 
@@ -197,11 +169,6 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
     // ---------------------------------------
     // --   E V E N T S
     // ---------------------------------------
-
-    event SummitLocked(address indexed user, uint256 _summitLocked, uint256 _lockPeriod, uint256 _everestAwarded);
-    event LockDurationIncreased(address indexed user, uint256 _lockPeriod, uint256 _additionalEverestAwarded);
-    event LockedSummitIncreased(address indexed user, bool indexed _increasedWithClaimableWinnings, uint256 _summitLocked, uint256 _everestAwarded);
-    event LockedSummitRemoved(address indexed user, uint256 _summitRemoved, uint256 _everestBurned);
 
     event UserJoinedExpedition(address indexed user, uint8 _deity, uint8 _safetyFactor, uint256 _everestOwned);
     event UserHarvestedExpedition(address indexed user, uint256 _summitHarvested, uint256 _usdcHarvested);
@@ -214,12 +181,6 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
     event DeitySelected(address indexed user, uint8 _deity, uint256 _deitySelectionRound);
     event SafetyFactorSelected(address indexed user, uint8 _safetyFactor);
 
-    event SetMinLockTime(uint256 _lockTimeDays);
-    event SetMaxLockTime(uint256 _lockTimeDays);
-    event SetLockTimeRequiredForTaxlessSummitWithdraw(uint256 _lockTimeDays);
-    event SetLockTimeRequiredForLockedSummitDeposit(uint256 _lockTimeDays);
-    event SetMinEverestLockMult(uint256 _lockMult);
-    event SetMaxEverestLockMult(uint256 _lockMult);
     event SetExpeditionDeityWinningsMult(uint256 _deityMult);
     event SetExpeditionRunwayRounds(uint256 _runwayRounds);
     
@@ -244,7 +205,6 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
         require(_summitLocking != address(0), "SummitLocking Required");
         summit = SummitToken(_summit);
         everest = EverestToken(_everest);
-        everest.approve(burnAdd, type(uint256).max);
         summitLocking = SummitLocking(_summitLocking);
     }
 
@@ -281,31 +241,6 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
     // --   M O D I F I E R S 
     // ------------------------------------------------------
 
-    modifier validLockPeriod(uint256 _lockPeriod) {
-        require (_lockPeriod >= minLockTime && _lockPeriod <= maxLockTime, "Invalid lock period");
-        _;
-    }
-    modifier userNotAlreadyLockingSummit() {
-        require (userEverestInfo[msg.sender].everestOwned == 0, "Already locking summit");
-        _;
-    }
-    modifier userLockPeriodSatisfied() {
-        require(userEverestInfo[msg.sender].lockRelease != 0, "User doesnt have a lock release");
-        require(block.timestamp >= userEverestInfo[msg.sender].lockRelease, "Lock period still in effect");
-        _;
-    }
-    modifier userEverestInfoExists() {
-        require(userEverestInfo[msg.sender].userAdd != address(0), "User doesnt exist");
-        _;
-    }
-    modifier userOwnsEverest() {
-        require (userEverestInfo[msg.sender].everestOwned > 0, "Must own everest");
-        _;
-    }
-    modifier validEverestAmountToBurn(uint256 _everestAmount) {
-        require (_everestAmount > 0 && _everestAmount <= userEverestInfo[msg.sender].everestOwned, "Bad withdraw");
-        _;
-    }
     modifier validSafetyFactor(uint8 _safetyFactor) {
         require(_safetyFactor >= 0 && _safetyFactor <= 100, "Invalid safety factor");
         _;
@@ -325,9 +260,13 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
         require(!elevationHelper.endOfRoundLockoutActive(EXPEDITION), "Elev locked until rollover");
         _;
     }
+    modifier userOwnsEverest() {
+        require(userExpeditionInfo[msg.sender].everestOwned > 0, "Must own everest");
+        _;
+    }
     modifier userIsEligibleToJoinExpedition() {
-        require(userEverestInfo[msg.sender].deitySelected, "No deity selected");
-        require(userEverestInfo[msg.sender].safetyFactorSelected, "No safety factor selected");
+        require(userExpeditionInfo[msg.sender].deitySelected, "No deity selected");
+        require(userExpeditionInfo[msg.sender].safetyFactorSelected, "No safety factor selected");
         _;
     }
     modifier elevationHelperRoundRolledOver() {
@@ -360,7 +299,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
         public view
         returns (uint8)
     {
-        return userEverestInfo[_userAdd].deity;
+        return userExpeditionInfo[_userAdd].deity;
     }
 
     /// @dev Divider is random number 50 - 90 that sets the random chance of each of the deities winning the round
@@ -391,37 +330,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
     // ---------------------------------------
 
 
-
-    function setMinLockTime(uint256 _lockTimeDays) public onlyOwner {
-        require(_lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 30, "Invalid minimum lock time (1-30 days)");
-        minLockTime = _lockTimeDays * 24 * 365;
-        emit SetMinLockTime(_lockTimeDays);
-    }
-    function setMaxLockTime(uint256 _lockTimeDays) public onlyOwner {
-        require(_lockTimeDays >= minLockTime && _lockTimeDays >= 7 && _lockTimeDays <= 730, "Invalid maximum lock time (7-730 days)");
-        maxLockTime = _lockTimeDays * 24 * 365;
-        emit SetMaxLockTime(_lockTimeDays);
-    }
-    function setLockTimeRequiredForTaxlessSummitWithdraw(uint256 _lockTimeDays) public onlyOwner {
-        require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 30, "Invalid taxless summit lock time (1-30 days)");
-        lockTimeRequiredForTaxlessSummitWithdraw = _lockTimeDays;
-        emit SetLockTimeRequiredForTaxlessSummitWithdraw(_lockTimeDays);
-    }
-    function setLockTimeRequiredForLockedSummitDeposit(uint256 _lockTimeDays) public onlyOwner {
-        require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 90, "Invalid locked summit lock time (1-90 days)");
-        lockTimeRequiredForClaimableSummitLock = _lockTimeDays;
-        emit SetLockTimeRequiredForLockedSummitDeposit(_lockTimeDays);
-    }
-    function setMinEverestLockMult(uint256 _lockMult) public onlyOwner {
-        require(_lockMult >= 100 && _lockMult <= 50000, "Invalid lock mult");
-        minEverestLockMult = _lockMult;
-        emit SetMinEverestLockMult(_lockMult);
-    }
-    function setMaxEverestLockMult(uint256 _lockMult) public onlyOwner {
-        require(_lockMult >= 100 && _lockMult <= 50000, "Invalid lock mult");
-        maxEverestLockMult = _lockMult;
-        emit SetMaxEverestLockMult(_lockMult);
-    }
+    
     function setExpeditionDeityWinningsMult(uint256 _deityMult) public onlyOwner {
         require(_deityMult >= 100 && _deityMult <= 500, "Invalid runway rounds (7-90)");
         expeditionDeityWinningsMult = _deityMult;
@@ -438,7 +347,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
 
 
     // ---------------------------------------
-    // --   P O O L   M A N A G E M E N T
+    // --   E X P E D   M A N A G E M E N T
     // ---------------------------------------
 
 
@@ -511,7 +420,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
         returns (uint256, uint256)
     {
         // Calculate and return the harvestable winnings for this expedition
-        return _harvestableWinnings(userEverestInfo[_userAdd], userExpeditionInfo[_userAdd]);
+        return _harvestableWinnings(userExpeditionInfo[_userAdd]);
     }
 
 
@@ -553,21 +462,20 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
         validUserAdd(_userAdd)
         returns (uint256, uint256, uint256, uint256)
     {
-        UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
+        UserExpeditionInfo storage user = userExpeditionInfo[_userAdd];
 
+        if (!user.entered || !expeditionInfo.live) return (0, 0, 0, 0);
 
-        if (!expeditionInfo.live) return (0, 0, 0, 0);
-
-        uint256 userSafeEverest = _getUserSafeEverest(everestInfo, everestInfo.safetyFactor);
-        uint256 userDeitiedEverest = _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor);
+        uint256 userSafeEverest = _getUserSafeEverest(user, user.safetyFactor);
+        uint256 userDeitiedEverest = _getUserDeitiedEverest(user, user.safetyFactor);
 
         (uint256 summitSafeEmissionMultE18, uint256 usdcSafeEmissionMultE18, uint256 summitDeitiedEmissionMultE18, uint256 usdcDeitiedEmissionMultE18) = _calculateEmissionMultipliers();
 
         return(
             expeditionInfo.safeSupply == 0 ? 0 : ((summitSafeEmissionMultE18 * userSafeEverest) / expeditionInfo.safeSupply) / 1e18,
             expeditionInfo.safeSupply == 0 ? 0 : ((usdcSafeEmissionMultE18 * userSafeEverest) / expeditionInfo.safeSupply) / 1e18,
-            expeditionInfo.deitySupply[everestInfo.deity] == 0 ? 0 : ((summitDeitiedEmissionMultE18 * userDeitiedEverest) / expeditionInfo.deitySupply[everestInfo.deity]) / 1e18,
-            expeditionInfo.deitySupply[everestInfo.deity] == 0 ? 0 : ((usdcDeitiedEmissionMultE18 * userDeitiedEverest) / expeditionInfo.deitySupply[everestInfo.deity]) / 1e18
+            expeditionInfo.deitySupply[user.deity] == 0 ? 0 : ((summitDeitiedEmissionMultE18 * userDeitiedEverest) / expeditionInfo.deitySupply[user.deity]) / 1e18,
+            expeditionInfo.deitySupply[user.deity] == 0 ? 0 : ((usdcDeitiedEmissionMultE18 * userDeitiedEverest) / expeditionInfo.deitySupply[user.deity]) / 1e18
         );
     }
 
@@ -644,41 +552,39 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
 
 
     /// @dev User's 'safe' everest that is guaranteed to earn
-    function _getUserSafeEverest(UserEverestInfo storage everestInfo, uint8 _safetyFactor)
+    function _getUserSafeEverest(UserExpeditionInfo storage user, uint8 _safetyFactor)
         internal view
         returns (uint256)
     {
-        return everestInfo.everestOwned * _safetyFactor / 100;
+        return user.everestOwned * _safetyFactor / 100;
     }
     /// @dev User's total everest in the pot
-    function _getUserDeitiedEverest(UserEverestInfo storage everestInfo, uint8 _safetyFactor)
+    function _getUserDeitiedEverest(UserExpeditionInfo storage user, uint8 _safetyFactor)
         internal view
         returns (uint256)
     {
-        return everestInfo.everestOwned * ((100 - _safetyFactor) / 100) * (expeditionDeityWinningsMult / 100);
+        return user.everestOwned * ((100 - _safetyFactor) / 100) * (expeditionDeityWinningsMult / 100);
     }
 
     /// @dev Calculation of winnings that are available to be harvested
-    /// @param everestInfo everestInfo
-    /// @param userExpedInfo UserExpedInfo
     /// @return Total winnings for a user, including vesting on previous round's winnings (if any)
-    function _harvestableWinnings(UserEverestInfo storage everestInfo, UserExpeditionInfo storage userExpedInfo)
+    function _harvestableWinnings(UserExpeditionInfo storage user)
         internal view
         returns (uint256, uint256)
     {
         uint256 currRound = elevationHelper.roundNumber(EXPEDITION);
 
         // If user interacted in current round, no winnings available
-        if (userExpedInfo.prevInteractedRound == currRound) return (0, 0);
+        if (!user.entered || user.prevInteractedRound == currRound) return (0, 0);
 
-        uint256 safeEverest = _getUserSafeEverest(everestInfo, everestInfo.safetyFactor);
-        uint256 deitiedEverest = _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor);
+        uint256 safeEverest = _getUserSafeEverest(user, user.safetyFactor);
+        uint256 deitiedEverest = _getUserDeitiedEverest(user, user.safetyFactor);
 
         return (
-            ((safeEverest * (expeditionInfo.summit.safeMult - userExpedInfo.summit.safeDebt)) / 1e18) +
-            ((deitiedEverest * (expeditionInfo.summit.deityMult[everestInfo.deity] - userExpedInfo.summit.deityDebt)) / 1e18),
-            ((safeEverest * (expeditionInfo.usdc.safeMult - userExpedInfo.usdc.safeDebt)) / 1e18) +
-            ((deitiedEverest * (expeditionInfo.usdc.deityMult[everestInfo.deity] - userExpedInfo.usdc.deityDebt)) / 1e18)
+            ((safeEverest * (expeditionInfo.summit.safeMult - user.summit.safeDebt)) / 1e18) +
+            ((deitiedEverest * (expeditionInfo.summit.deityMult[user.deity] - user.summit.deityDebt)) / 1e18),
+            ((safeEverest * (expeditionInfo.usdc.safeMult - user.usdc.safeDebt)) / 1e18) +
+            ((deitiedEverest * (expeditionInfo.usdc.deityMult[user.deity] - user.usdc.deityDebt)) / 1e18)
         );
     }
     
@@ -692,301 +598,22 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
 
 
     /// @dev Update the users round interaction
-    /// @param everestInfo User's everest info
-    /// @param userExpedInfo User's expedition info
-    function _updateUserRoundInteraction(UserEverestInfo storage everestInfo, UserExpeditionInfo storage userExpedInfo)
+    function _updateUserRoundInteraction(UserExpeditionInfo storage user)
         internal
     {
         uint256 currRound = elevationHelper.roundNumber(EXPEDITION);
 
-        userExpedInfo.safeSupply = _getUserSafeEverest(everestInfo, everestInfo.safetyFactor);
-        userExpedInfo.deitiedSupply = _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor);
+        user.safeSupply = _getUserSafeEverest(user, user.safetyFactor);
+        user.deitiedSupply = _getUserDeitiedEverest(user, user.safetyFactor);
 
         // Acc winnings per share of user's deity of both SUMMIT token and USDC token
-        userExpedInfo.summit.safeDebt = expeditionInfo.summit.safeMult;
-        userExpedInfo.usdc.safeDebt = expeditionInfo.usdc.safeMult;
-        userExpedInfo.summit.deityDebt = expeditionInfo.summit.deityMult[everestInfo.deity];
-        userExpedInfo.usdc.deityDebt = expeditionInfo.usdc.deityMult[everestInfo.deity];
+        user.summit.safeDebt = expeditionInfo.summit.safeMult;
+        user.usdc.safeDebt = expeditionInfo.usdc.safeMult;
+        user.summit.deityDebt = expeditionInfo.summit.deityMult[user.deity];
+        user.usdc.deityDebt = expeditionInfo.usdc.deityMult[user.deity];
 
         // Update the user's previous interacted round to be this round
-        userExpedInfo.prevInteractedRound = currRound;
-    }
-
-
-
-    // ------------------------------------------------------------
-    // --   E V E R E S T
-    // ------------------------------------------------------------
-
-
-    /// @dev Update the average lock duration
-    function _updateAvgSummitLockDuration(uint256 _amount, uint256 _lockDuration, bool _isLocking)
-        internal
-    {
-        // Current multiplier to add / subtract against
-        uint256 currentMul = totalSummitLocked * avgSummitLockDuration;
-
-        // How much the multiplier will change by
-        uint256 deltaMul = _amount * _lockDuration;
-        uint256 newMul = currentMul + (_isLocking ? deltaMul : 0) - (_isLocking ? 0 : deltaMul);
-
-        // How much summit is being added / subtracted
-        totalSummitLocked = totalSummitLocked + (_isLocking ? _amount : 0) - (_isLocking ? 0 : _amount);
-
-        // Update average lock duration with new computed multiplier and new summit locked amount
-        avgSummitLockDuration = totalSummitLocked == 0 ? 0 : newMul / totalSummitLocked;
-    }
-
-    /// @dev Lock period multiplier
-    function _lockPeriodMultiplier(uint256 _lockPeriod)
-        internal view
-        returns (uint256)
-    {
-        return (((_lockPeriod - minLockTime) * (maxEverestLockMult - minEverestLockMult) * 1e12) /
-            (maxLockTime - minLockTime) /
-            1e12) +
-            minEverestLockMult;
-    }
-
-    /// @dev Transfer everest to the burn address.
-    function _burnEverest(address _userAdd, uint256 _everestAmount)
-        internal
-    {
-        IERC20(everest).safeTransferFrom(_userAdd, address(this), _everestAmount);
-        IERC20(everest).safeTransfer(burnAdd, _everestAmount);
-    }
-
-    function _getOrCreateUserEverestInfo(address _userAdd)
-        internal
-        returns (UserEverestInfo storage)
-    {
-        UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
-        everestInfo.userAdd = _userAdd;
-        return everestInfo;
-    }
-
-    /// @dev Lock Summit for a duration and earn everest
-    /// @param _summitAmount Amount of SUMMIT to deposit
-    /// @param _lockPeriod Duration the SUMMIT will be locked for
-    function lockSummit(uint256 _summitAmount, uint256 _lockPeriod)
-        public
-        nonReentrant userNotAlreadyLockingSummit validLockPeriod(_lockPeriod)
-    {
-        // Validate and deposit user's SUMMIT
-        require(_summitAmount <= IERC20(summit).balanceOf(msg.sender), "Exceeds balance");
-        if (_summitAmount > 0) {    
-            IERC20(summit).safeTransferFrom(msg.sender, address(this), _summitAmount);
-        }
-
-        // Calculate the lock multiplier and EVEREST award
-        uint256 everestLockMultiplier = _lockPeriodMultiplier(_lockPeriod);
-        uint256 everestAward = (_summitAmount * everestLockMultiplier) / 10000;
-        
-        // Mint EVEREST to the user's wallet
-        everest.mint(msg.sender, everestAward);
-
-        // Create and initialize the user's everestInfo
-        UserEverestInfo storage everestInfo = _getOrCreateUserEverestInfo(msg.sender);
-        everestInfo.everestOwned = everestAward;
-        everestInfo.everestLockMultiplier = everestLockMultiplier;
-        everestInfo.lockRelease = block.timestamp + _lockPeriod;
-        everestInfo.lockDuration = _lockPeriod;
-        everestInfo.summitLocked = _summitAmount;
-
-        // Update average lock duration with new summit locked
-        _updateAvgSummitLockDuration(_summitAmount, _lockPeriod, true);
-
-        // Update the EVEREST in the expedition
-        _updateExpeditionInteraction(everestInfo);
-
-        emit SummitLocked(msg.sender, _summitAmount, _lockPeriod, everestAward);
-    }
-
-
-    /// @dev Increase the lock duration of user's locked SUMMIT
-    function increaseLockDuration(uint256 _lockPeriod)
-        public
-        nonReentrant userEverestInfoExists userOwnsEverest
-    {
-        uint256 additionalEverestAward = _increaseLockDuration(_lockPeriod, msg.sender);
-        emit LockDurationIncreased(msg.sender, _lockPeriod, additionalEverestAward);
-    }
-    function _increaseLockDuration(uint256 _lockPeriod, address _userAdd)
-        internal
-        returns (uint256)
-    {
-        UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
-        require(_lockPeriod >= everestInfo.lockDuration, "Lock duration must strictly increase");
-
-        // Update average lock duration by removing existing lock duration, and adding new duration
-        _updateAvgSummitLockDuration(everestInfo.summitLocked, everestInfo.lockDuration, false);
-        _updateAvgSummitLockDuration(everestInfo.summitLocked, _lockPeriod, true);
-
-        // Calculate and validate the new everest lock multiplier
-        uint256 everestLockMultiplier = _lockPeriodMultiplier(_lockPeriod);
-        require(everestLockMultiplier >= everestInfo.everestLockMultiplier, "New lock period must be greater");
-
-        // Calculate the additional EVEREST awarded by the extended lock duration
-        uint256 additionalEverestAward = ((everestInfo.summitLocked * everestLockMultiplier) / 10000) - everestInfo.everestOwned;
-
-        // Increase the lock release
-        uint256 lockRelease = block.timestamp + _lockPeriod;
-
-        // Mint EVEREST to the user's address
-        everest.mint(msg.sender, additionalEverestAward);
-
-        // Update the user's running state
-        everestInfo.everestOwned += additionalEverestAward;
-        everestInfo.everestLockMultiplier = everestLockMultiplier;
-        everestInfo.lockRelease = lockRelease;
-        everestInfo.lockDuration = _lockPeriod;
-
-        // Update the expedition with the user's new EVEREST amount
-        _updateExpeditionInteraction(everestInfo);
-
-        return additionalEverestAward;
-    }
-
-
-    /// @dev Internal locked SUMMIT amount increase, returns the extra EVEREST earned by the increased lock duration
-    function _increaseLockedSummit(uint256 _summitAmount, UserEverestInfo storage everestInfo, address _summitOriginAdd)
-        internal
-        returns (uint256)
-    {
-        // Validate and deposit user's funds
-        require(_summitAmount <= IERC20(summit).balanceOf(_summitOriginAdd), "Exceeds balance");
-        if (_summitAmount > 0) {
-            IERC20(summit).safeTransferFrom(_summitOriginAdd, address(this), _summitAmount);
-        }
-
-        // Calculate the extra EVEREST that is awarded by the deposited SUMMIT
-        uint256 additionalEverestAward = (_summitAmount * everestInfo.everestLockMultiplier) / 10000;
-        
-        // Mint EVEREST to the user's address
-        everest.mint(everestInfo.userAdd, additionalEverestAward);
-
-        // Increase running balances of EVEREST and SUMMIT
-        everestInfo.everestOwned += additionalEverestAward;
-        everestInfo.summitLocked += _summitAmount;
-
-        // Update average lock duration with new summit locked
-        _updateAvgSummitLockDuration(_summitAmount, everestInfo.lockDuration, true);
-
-        // Update the expedition with the users new EVEREST info
-        _updateExpeditionInteraction(everestInfo);
-
-        return additionalEverestAward;
-    }
-
-    /// @dev Increase the duration of already locked SUMMIT, exit early if user is already locked for a longer duration
-    function _increaseLockReleaseOnClaimableLocked(UserEverestInfo storage everestInfo, uint256 _lockDuration)
-        internal
-        returns (uint256)
-    {
-        // Early escape if lock release already satisfies requirement
-        if ((block.timestamp + _lockDuration) <= everestInfo.lockRelease) return 0;
-
-        // Update lock release and return the extra EVEREST that is earned by this extension
-        return _increaseLockDuration(_lockDuration, everestInfo.userAdd);
-    }
-
-    /// @dev Internal function to lock additional summit and extend duration to arbitrary duration
-    function _lockAndExtendLockDuration(uint256 _summitAmount, uint256 _lockDuration, address _userAdd)
-        internal
-    {
-        UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
-
-        // Increase the lock duration of the current locked SUMMIT
-        uint256 additionalEverestAward = _increaseLockReleaseOnClaimableLocked(everestInfo, _lockDuration);
-
-        // Increase the amount of locked summit by {_summitAmount} and increase the EVEREST award
-        additionalEverestAward += _increaseLockedSummit(
-            _summitAmount,
-            everestInfo,
-            msg.sender
-        );
-        
-        emit LockedSummitIncreased(msg.sender, true, _summitAmount, additionalEverestAward);
-    }
-
-    /// @dev Exchange Summit for Everest, extend lock duration to 30 days (used by SummitLocking.sol)
-    function lockClaimableSummit(uint256 _summitAmount, address _userAdd)
-        public
-        nonReentrant userEverestInfoExists userOwnsEverest
-    {
-        _lockAndExtendLockDuration(_summitAmount, lockTimeRequiredForClaimableSummitLock, _userAdd);
-    }
-
-
-    /// @dev Elevate Summit from elevation farms to Expedition and lock for Everest, extends lock duration to 7 days
-    function lockElevatableSummit(uint256 _summitAmount, address _userAdd)
-        public
-        nonReentrant userEverestInfoExists userOwnsEverest
-    {
-        _lockAndExtendLockDuration(_summitAmount, minLockTime, _userAdd);
-    }
-
-    /// @dev Increase the users Locked Summit and earn everest
-    function increaseLockedSummit(uint256 _summitAmount)
-        public
-        nonReentrant userEverestInfoExists userOwnsEverest
-    {
-        uint256 additionalEverestAward = _increaseLockedSummit(
-            _summitAmount,
-            userEverestInfo[msg.sender],
-            msg.sender
-        );
-
-        emit LockedSummitIncreased(msg.sender, false, _summitAmount, additionalEverestAward);
-    }
-
-    /// @dev Decrease the Summit and burn everest
-    function withdrawLockedSummit(uint256 _everestAmount)
-        public
-        nonReentrant userEverestInfoExists userOwnsEverest userLockPeriodSatisfied validEverestAmountToBurn(_everestAmount)
-    {
-        UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
-        require (_everestAmount <= everestInfo.everestOwned, "Bad withdraw");
-
-        uint256 summitToWithdraw = _everestAmount * 10000 / everestInfo.everestLockMultiplier;
-
-        everestInfo.everestOwned -= _everestAmount;
-        everestInfo.summitLocked -= summitToWithdraw;
-
-        // Update average summit lock duration with removed summit
-        _updateAvgSummitLockDuration(summitToWithdraw, everestInfo.lockDuration, false);
-
-        IERC20(summit).safeTransfer(msg.sender, summitToWithdraw);
-        _burnEverest(msg.sender, _everestAmount);
-
-        _updateExpeditionInteraction(everestInfo);
-
-        emit LockedSummitRemoved(msg.sender, summitToWithdraw, _everestAmount);
-    }
-
-
-    /// @dev Panic recover locked SUMMIT if something has gone wrong
-    function panicRecoverFunds()
-        public
-        nonReentrant userEverestInfoExists
-    {
-        require(panicReleaseLockedSummit, "Not in panic mode");
-
-        UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
-
-        IERC20(summit).safeTransfer(msg.sender, everestInfo.summitLocked);
-
-        everestInfo.userAdd = address(0);
-        everestInfo.everestOwned = 0;
-        everestInfo.summitLocked = 0;
-        everestInfo.lockRelease = 0;
-        everestInfo.lockDuration = 0;
-        everestInfo.everestLockMultiplier = 0;
-        everestInfo.deity = 0;
-        everestInfo.deitySelected = false;
-        everestInfo.deitySelectionRound = 0;
-        everestInfo.safetyFactor = 0;
-        everestInfo.safetyFactorSelected = false;
+        user.prevInteractedRound = currRound;
     }
 
 
@@ -995,33 +622,73 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
     // --   E X P E D   H E L P E R S
     // ------------------------------------------------------------
 
-    function _harvestExpedition(UserEverestInfo storage everestInfo, UserExpeditionInfo storage userExpedInfo)
+    function _harvestExpedition(UserExpeditionInfo storage user)
         internal
         returns (uint256, uint256)
     {
         // Get calculated harvestable winnings
-        (uint256 summitWinnings, uint256 usdcWinnings) = _harvestableWinnings(everestInfo, userExpedInfo);
+        (uint256 summitWinnings, uint256 usdcWinnings) = _harvestableWinnings(user);
 
         // Handle SUMMIT winnings
         if (summitWinnings > 0) {
-            if (everestInfo.compoundClaimableSummitAsEverest) {
+            if (userCompoundClaimableAsEverest[user.userAdd]) {
                 // Directly lock claimable SUMMIT and earn EVEREST instead
-                lockClaimableSummit(summitWinnings, everestInfo.userAdd);
+                everest.lockAndExtendLockDuration(
+                    summitWinnings,
+                    everest.lockTimeRequiredForClaimableSummitLock(),
+                    user.userAdd
+                );
             } else {
                 // Claim SUMMIT winnings (lock for 30 days)
                 expeditionInfo.summit.token.safeTransfer(address(summitLocking), summitWinnings);
-                summitLocking.addLockedWinnings(summitWinnings, 0, everestInfo.userAdd);
+                summitLocking.addLockedWinnings(summitWinnings, 0, user.userAdd);
             }
             expeditionInfo.summit.markedForDist -= summitWinnings;
         }
 
         // Transfer USDC winnings to user
         if (usdcWinnings > 0) {
-            expeditionInfo.usdc.token.safeTransfer(everestInfo.userAdd, usdcWinnings);
+            expeditionInfo.usdc.token.safeTransfer(user.userAdd, usdcWinnings);
             expeditionInfo.usdc.markedForDist -= usdcWinnings;
         }
 
         return (summitWinnings, usdcWinnings);
+    }
+
+
+
+
+
+    // ---------------------------------------
+    // --   E V E R E S T
+    // ---------------------------------------
+
+
+    function updateUserEverest(uint256 _everestAmount, address _userAdd)
+        external override
+        onlyEverestToken
+    {
+        UserExpeditionInfo storage user = _getOrCreateUserInfo(_userAdd);
+
+        // Harvest winnings from expedition
+        _harvestExpedition(user);
+
+        // Update user's owned everest amount
+        user.everestOwned = _everestAmount;
+
+        // Save user's existing safe and deitied everest supplies
+        uint256 existingSafeSupply = user.safeSupply;
+        uint256 existingDeitiedSupply = user.deitiedSupply;
+
+        // Update user
+        _updateUserRoundInteraction(user);
+
+        // Remove user's existing supplies from expedition, add new supplies
+        if (user.entered) {
+            expeditionInfo.safeSupply = expeditionInfo.safeSupply - existingSafeSupply + user.safeSupply;
+            expeditionInfo.deitiedSupply = expeditionInfo.deitiedSupply - existingDeitiedSupply + user.deitiedSupply;
+            expeditionInfo.deitySupply[user.deity] = expeditionInfo.deitySupply[user.deity] - existingDeitiedSupply + user.deitiedSupply;
+        }
     }
 
 
@@ -1031,28 +698,38 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
     // ----------------------------------------------------------------------
 
 
+    function _getOrCreateUserInfo(address _userAdd)
+        internal
+        returns (UserExpeditionInfo storage)
+    {
+        UserExpeditionInfo storage user = userExpeditionInfo[_userAdd];
+        user.userAdd = _userAdd;
+        return user;
+    }
+
+
     /// @dev Select a user's deity, update the expedition's deities with the switched funds
     function selectDeity(uint8 _deity)
         public
         nonReentrant validDeity(_deity) expeditionInteractionsAvailable
     {
-        UserEverestInfo storage everestInfo = _getOrCreateUserEverestInfo(msg.sender);
+        UserExpeditionInfo storage user = _getOrCreateUserInfo(msg.sender);
 
         // Early exit if deity is same as current
-        require(!everestInfo.deitySelected || everestInfo.deity != _deity, "Deity must be different");
+        require(!user.deitySelected || user.deity != _deity, "Deity must be different");
 
         // Iterate through expeditions and switch deity for each user staked with
         _selectExpeditionDeity(
-            everestInfo,
+            user,
             _deity
         );
 
         // Update user deity in state
-        everestInfo.deity = _deity;
-        everestInfo.deitySelected = true;
-        everestInfo.deitySelectionRound = elevationHelper.roundNumber(EXPEDITION);
+        user.deity = _deity;
+        user.deitySelected = true;
+        user.deitySelectionRound = elevationHelper.roundNumber(EXPEDITION);
 
-        emit DeitySelected(msg.sender, _deity, everestInfo.deitySelectionRound);
+        emit DeitySelected(msg.sender, _deity, user.deitySelectionRound);
     }
 
 
@@ -1061,8 +738,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
         public
         nonReentrant
     {
-        UserEverestInfo storage everestInfo = _getOrCreateUserEverestInfo(msg.sender);
-        everestInfo.compoundClaimableSummitAsEverest = _compound;
+        userCompoundClaimableAsEverest[msg.sender] = _compound;
     }
 
 
@@ -1071,20 +747,20 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
         public
         nonReentrant validSafetyFactor(_safetyFactor) expeditionInteractionsAvailable
     {
-        UserEverestInfo storage everestInfo = _getOrCreateUserEverestInfo(msg.sender);
+        UserExpeditionInfo storage user = _getOrCreateUserInfo(msg.sender);
 
         // Early exit if safety factor is the same
-        require(!everestInfo.safetyFactorSelected || everestInfo.safetyFactor != _safetyFactor, "SafetyFactor must be different");
+        require(!user.safetyFactorSelected || user.safetyFactor != _safetyFactor, "SafetyFactor must be different");
 
         // Update user's safety factor in the Expedition
         _selectExpeditionSafetyFactor(
-            everestInfo,
+            user,
             _safetyFactor
         );
 
         // Update safety factor in state
-        everestInfo.safetyFactor = _safetyFactor;
-        everestInfo.safetyFactorSelected = true;
+        user.safetyFactor = _safetyFactor;
+        user.safetyFactorSelected = true;
 
         emit SafetyFactorSelected(msg.sender, _safetyFactor);
     }
@@ -1095,92 +771,47 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
         returns (bool, bool, bool)
     {
         return (
-            userEverestInfo[msg.sender].everestOwned > 0,
-            userEverestInfo[msg.sender].deitySelected,
-            userEverestInfo[msg.sender].safetyFactorSelected
+            userExpeditionInfo[msg.sender].everestOwned > 0,
+            userExpeditionInfo[msg.sender].deitySelected,
+            userExpeditionInfo[msg.sender].safetyFactorSelected
         );
     }    
 
     function joinExpedition()
         public
-        userEverestInfoExists userOwnsEverest userIsEligibleToJoinExpedition expeditionInteractionsAvailable
+        userOwnsEverest userIsEligibleToJoinExpedition expeditionInteractionsAvailable
     {
-        UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
-        UserExpeditionInfo storage userExpedInfo = userExpeditionInfo[msg.sender];        
+        UserExpeditionInfo storage user = userExpeditionInfo[msg.sender];        
 
         // Mark user interacting with this expedition to the user's expeditions slot
-        require(!userExpedInfo.entered, "Already entered");
-        userExpedInfo.entered = true;
-
-        // Add users everest to exped supplies at current risk rate
-        expeditionInfo.safeSupply += _getUserSafeEverest(everestInfo, everestInfo.safetyFactor);
-        expeditionInfo.deitiedSupply += _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor);
-        expeditionInfo.deitySupply[everestInfo.deity] += _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor);
+        require(!user.entered, "Already entered");
+        user.entered = true;
 
         // Update the user's round interaction with updated info
-        _updateUserRoundInteraction(everestInfo, userExpedInfo);
+        _updateUserRoundInteraction(user);
 
-        emit UserJoinedExpedition(msg.sender, everestInfo.deity, everestInfo.safetyFactor, everestInfo.everestOwned);
+        // Add users everest to exped supplies at current risk rate
+        expeditionInfo.safeSupply += user.safeSupply;
+        expeditionInfo.deitiedSupply += user.deitiedSupply;
+        expeditionInfo.deitySupply[user.deity] += user.deitiedSupply;
+
+        emit UserJoinedExpedition(msg.sender, user.deity, user.safetyFactor, user.everestOwned);
     }
 
     function harvestExpedition()
         public
-        nonReentrant userEverestInfoExists userOwnsEverest expeditionInteractionsAvailable
+        nonReentrant userOwnsEverest expeditionInteractionsAvailable
     {
-        UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
-        UserExpeditionInfo storage userExpedInfo = userExpeditionInfo[msg.sender];        
+        UserExpeditionInfo storage user = userExpeditionInfo[msg.sender];        
+        require(user.entered, "Must be entered to harvest");
 
-        (uint256 summitHarvested, uint256 usdcHarvested) = _harvestExpedition(everestInfo, userExpedInfo);
-        _updateUserRoundInteraction(everestInfo, userExpedInfo);
+        (uint256 summitHarvested, uint256 usdcHarvested) = _harvestExpedition(user);
+        _updateUserRoundInteraction(user);
 
         emit UserHarvestedExpedition(msg.sender, summitHarvested, usdcHarvested);
     }
 
 
-
-    // ----------------------------------------------------------------------
-    // --   E V E R E S T   E X T E N S I O N S
-    // ----------------------------------------------------------------------
-
-
-
-    /// @dev Add an everest extension
-    function addEverestExtension(address _extension)
-        public
-        onlyOwner
-    {
-        require(_extension != address(0), "Missing extension");
-        require(everestExtensions.length() < 3, "Max extension cap reached");
-        everestExtensions.add(_extension);
-    }
-
-    /// @dev Remove an everest extension
-    function removeEverestExtension(address _extension)
-        public
-        onlyOwner
-    {
-        require(_extension != address(0), "Missing extension");
-        require(everestExtensions.contains(_extension), "Extension not added");
-        everestExtensions.remove(_extension);
-    }
-
-    /// @dev Get user everest owned
-    function getUserEverestOwned(address _userAdd)
-        public view
-        returns (uint256)
-    {
-        return userEverestInfo[_userAdd].everestOwned;
-    }
-
-    /// @dev Internal function to update all everest extensions
-    function _updateEverestExtensionsUserEverest(uint256 _everestAmount, address _userAdd)
-        internal
-    {
-        // Iterate through and update each extension with the user's everest amount
-        for (uint8 extensionIndex = 0; extensionIndex < everestExtensions.length(); extensionIndex++) {
-            BaseEverestExtension(everestExtensions.at(extensionIndex)).updateUserEverest(_everestAmount, _userAdd);
-        }
-    }
 
 
     // ----------------------------------------------------------------------
@@ -1190,74 +821,46 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard {
 
 
     /// @dev Switch users funds (if any staked) to the new deity
-    /// @param everestInfo User's everest info
+    /// @param user User's info
     /// @param _newDeity Deity the user is leaving
-    function _selectExpeditionDeity(UserEverestInfo storage everestInfo, uint8 _newDeity)
+    function _selectExpeditionDeity(UserExpeditionInfo storage user, uint8 _newDeity)
         internal
     {
-        UserExpeditionInfo storage userExpedInfo = userExpeditionInfo[everestInfo.userAdd];
-
         // Harvest any winnings in this expedition
-        _harvestExpedition(everestInfo, userExpedInfo);
+        _harvestExpedition(user);
         
         // Update user's interaction in this expedition
-        _updateUserRoundInteraction(everestInfo, userExpedInfo);
+        _updateUserRoundInteraction(user);
         
         // Transfer deitied everest from previous deity to new deity
-        expeditionInfo.deitySupply[everestInfo.deity] -= _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor);
-        expeditionInfo.deitySupply[_newDeity] += _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor);
+        if (user.entered) {
+            expeditionInfo.deitySupply[user.deity] -= user.deitiedSupply;
+            expeditionInfo.deitySupply[_newDeity] += user.deitiedSupply;
+        }
     }
 
 
     /// @dev Switch users funds (if any staked) to the new deity
-    /// @param everestInfo User's everest info
+    /// @param user User's everest info
     /// @param _newSafetyFactor New safety factor of user
-    function _selectExpeditionSafetyFactor(UserEverestInfo storage everestInfo, uint8 _newSafetyFactor)
+    function _selectExpeditionSafetyFactor(UserExpeditionInfo storage user, uint8 _newSafetyFactor)
         internal
     {
-        UserExpeditionInfo storage userExpedInfo = userExpeditionInfo[everestInfo.userAdd];
-
         // Harvest any winnings in this expedition
-        _harvestExpedition(everestInfo, userExpedInfo);
+        _harvestExpedition(user);
         
         // Update user's interaction in this expedition
-        _updateUserRoundInteraction(everestInfo, userExpedInfo);
+        _updateUserRoundInteraction(user);
 
         // Override updated safe supply and deitied supply from updateUserRoundInteraction
-        userExpedInfo.safeSupply = _getUserSafeEverest(everestInfo, _newSafetyFactor);
-        userExpedInfo.deitiedSupply = _getUserDeitiedEverest(everestInfo, _newSafetyFactor);
+        user.safeSupply = _getUserSafeEverest(user, _newSafetyFactor);
+        user.deitiedSupply = _getUserDeitiedEverest(user, _newSafetyFactor);
         
         // Remove safe and deitied everest from existing supply states
-        expeditionInfo.safeSupply = expeditionInfo.safeSupply - _getUserSafeEverest(everestInfo, everestInfo.safetyFactor) + _getUserSafeEverest(everestInfo, _newSafetyFactor);
-        expeditionInfo.deitiedSupply = expeditionInfo.deitiedSupply - _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor) + _getUserDeitiedEverest(everestInfo, _newSafetyFactor);
-        expeditionInfo.deitySupply[everestInfo.deity] = expeditionInfo.deitySupply[everestInfo.deity] - _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor) + _getUserDeitiedEverest(everestInfo, _newSafetyFactor);
-    }
-
-    function _updateExpeditionInteraction(UserEverestInfo storage everestInfo)
-        internal
-    {
-        UserExpeditionInfo storage userExpedInfo = userExpeditionInfo[everestInfo.userAdd];        
-
-        // Early exit if user hasn't entered expedition
-        if (!userExpeditionInfo[everestInfo.userAdd].entered) return;
-
-        // Harvest winnings from expedition
-        _harvestExpedition(everestInfo, userExpedInfo);
-
-        // Remove user's existing supplies from expedition, add new supplies
-        expeditionInfo.safeSupply = expeditionInfo.safeSupply - userExpedInfo.safeSupply + _getUserSafeEverest(everestInfo, everestInfo.safetyFactor);
-        expeditionInfo.deitiedSupply = expeditionInfo.deitiedSupply - userExpedInfo.deitiedSupply + _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor);
-        expeditionInfo.deitySupply[everestInfo.deity] = expeditionInfo.deitySupply[everestInfo.deity] - userExpedInfo.deitiedSupply + _getUserDeitiedEverest(everestInfo, everestInfo.safetyFactor);
-
-        _updateUserRoundInteraction(everestInfo, userExpedInfo);
-    }
-
-
-    /// @dev If a problem exists in the Expedition or with Everest, allow users to withdraw their SUMMIT unconditionally (PANIC)
-    function panicReleaseLocking(bool _releaseLockedSummit)
-        public
-        onlyOwner
-    {
-        panicReleaseLockedSummit = _releaseLockedSummit;
+        if (user.entered) {
+            expeditionInfo.safeSupply = expeditionInfo.safeSupply - _getUserSafeEverest(user, user.safetyFactor) + _getUserSafeEverest(user, _newSafetyFactor);
+            expeditionInfo.deitiedSupply = expeditionInfo.deitiedSupply - _getUserDeitiedEverest(user, user.safetyFactor) + _getUserDeitiedEverest(user, _newSafetyFactor);
+            expeditionInfo.deitySupply[user.deity] = expeditionInfo.deitySupply[user.deity] - _getUserDeitiedEverest(user, user.safetyFactor) + _getUserDeitiedEverest(user, _newSafetyFactor);
+        }
     }
 }

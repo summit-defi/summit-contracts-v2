@@ -17,6 +17,7 @@ const initializeContracts: DeployFunction = async function ({
 
   if (cartSummitToken === ZEROADD) {
     const SummitToken = await deployments.get(Contracts.SummitToken)
+    const EverestToken = await deployments.get(Contracts.EverestToken)
     const CakeToken = await deployments.get(Contracts.DummyCAKE)
     const SubCartographers = await getSubCartographers()
     const ElevationHelper = await deployments.get(Contracts.ElevationHelper)
@@ -36,7 +37,7 @@ const initializeContracts: DeployFunction = async function ({
       SubCartographers[PLAINS].address,
       SubCartographers[MESA].address,
       SubCartographers[SUMMIT].address,
-      ExpeditionV2.address,
+      EverestToken.address,
       SummitLocking.address,
     )
     consoleLog('Cartographer Initialized')
@@ -47,6 +48,7 @@ const initializeContracts: DeployFunction = async function ({
       { from: dev },
       'initialize',
       SummitToken.address,
+      EverestToken.address,
       Cartographer.address,
       ExpeditionV2.address
     )
