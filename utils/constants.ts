@@ -92,6 +92,7 @@ export const INF_APPROVE = '1157920892373161954235709850086879078532699846656405
 
 export const ERR = {
     NON_OWNER: 'Ownable: caller is not the owner',
+    ALREADY_INITIALIZED: 'Initializable: contract is already initialized',
     MISSING_ADDRESS: 'Missing address',
     DUPLICATED_TOKEN_ALLOC: 'Duplicated token alloc',
     INVALID_TOKEN_ALLOC: 'Invalid token alloc',
@@ -176,7 +177,6 @@ export const ERR = {
     },
 
     EXPEDITION_V2: {
-        EXPEDITION_ALREADY_INITIALIZED: 'Expedition already initialized',
         INVALID_EXPED_TOKEN: 'Invalid token to add to expedition',
         NOT_ACTIVE: 'Expedition not active',
         DOESNT_EXIST: 'Expedition doesnt exist',

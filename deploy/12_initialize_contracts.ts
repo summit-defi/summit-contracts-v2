@@ -62,6 +62,14 @@ const initializeContracts: DeployFunction = async function ({
       CakeToken.address,
       ElevationHelper.address,
     )
+
+    // Add ExpeditionV2 as an EverestExtension
+    await execute(
+      Contracts.EverestToken,
+      { from: dev },
+      'addEverestExtension',
+      ExpeditionV2.address,
+    )
   } else {
     consoleLog('Cartographer Already Initialized')
   }

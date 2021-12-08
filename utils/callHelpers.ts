@@ -12,7 +12,12 @@ export const executeTxExpectReversion = async (tx: any, txArgs: any[], revertErr
     ).to.be.revertedWith(revertErr)
 }
 export const executeTxExpectEvent = async (tx: any, txArgs: any[], contract: Contract, eventName: string, eventArgs: any[] | null, requireExactBigNumberMatch: boolean) => {
-    const transaction = await tx(...txArgs)
+    let transaction
+    if (txArgs.length > 0) {
+        transaction = await tx(...txArgs)
+    } else {
+        transaction = await tx()
+    }
     const receipt = await transaction.wait()
 
     let emitted = false
