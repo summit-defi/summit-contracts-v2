@@ -37,30 +37,30 @@ const maxEverestLockMult = async () => {
     return (await (await getEverestToken()).maxEverestLockMult()).toNumber()
 }
 
-const getLockPeriodMultiplier = async (lockPeriod: number): Promise<number> => {
+const getLockDurationMultiplier = async (lockDuration: number): Promise<number> => {
     const minLock = await minLockTime()
     const maxLock = await maxLockTime()
     const minEverestMult = await minEverestLockMult()
     const maxEverestMult = await maxEverestLockMult()
 
-    return Math.floor((lockPeriod - minLock) * (maxEverestMult - minEverestMult) / (maxLock - minLock)) + minEverestMult
+    return Math.floor((lockDuration - minLock) * (maxEverestMult - minEverestMult) / (maxLock - minLock)) + minEverestMult
 }
 
-const getExpectedEverestAward = async (summitAmount: BigNumber, lockPeriod: number): Promise<BigNumber> => {
-    const lockPeriodMultiplier = await getLockPeriodMultiplier(lockPeriod)
-    return summitAmount.mul(lockPeriodMultiplier).div(10000)
+const getExpectedEverestAward = async (summitAmount: BigNumber, lockDuration: number): Promise<BigNumber> => {
+    const lockDurationMultiplier = await getLockDurationMultiplier(lockDuration)
+    return summitAmount.mul(lockDurationMultiplier).div(10000)
 }
 
-const getAdditionalEverestAwardForLockDurationIncrease = async (userAddress: string, lockPeriod: number): Promise<BigNumber> => {
-    const newLockPeriodMultiplier = await getLockPeriodMultiplier(lockPeriod)
+const getAdditionalEverestAwardForLockDurationIncrease = async (userAddress: string, lockDuration: number): Promise<BigNumber> => {
+    const newLockDurationMultiplier = await getLockDurationMultiplier(lockDuration)
     const everestInfo = await userEverestInfo(userAddress)
-    return everestInfo.summitLocked.mul(newLockPeriodMultiplier).sub(everestInfo.everestOwned)
+    return everestInfo.summitLocked.mul(newLockDurationMultiplier).sub(everestInfo.everestOwned)
 }
 
 const getAdditionalEverestAwardForIncreaseLockedSummit = async (userAddress: string, amount: BigNumber): Promise<BigNumber> => {
     const everestInfo = await userEverestInfo(userAddress)
-    const lockPeriodMultiplier = await getLockPeriodMultiplier(everestInfo.lockDuration)
-    return amount.mul(lockPeriodMultiplier).div(10000)
+    const lockDurationMultiplier = await getLockDurationMultiplier(everestInfo.lockDuration)
+    return amount.mul(lockDurationMultiplier).div(10000)
 }
 
 const getExpectedWithdrawnSummit = async (userAddress: string, everestAmount: BigNumber): Promise<BigNumber> => {
@@ -73,7 +73,7 @@ export const everestGet = {
     maxLockTime,
     minEverestLockMult,
     maxEverestLockMult,
-    getLockPeriodMultiplier,
+    getLockDurationMultiplier,
     getExpectedEverestAward,
     getExpectedWithdrawnSummit,
     panicReleaseLockedSummit: async () => {
@@ -92,45 +92,45 @@ export const everestMethod = {
     lockSummit: async ({
         user,
         amount,
-        lockPeriod,
+        lockDuration,
         revertErr,
     }: {
         user: SignerWithAddress,
         amount: BigNumber,
-        lockPeriod: number,
+        lockDuration: number,
         revertErr?: string,
     }) => {
         const everestToken = await getEverestToken()
         const tx = everestToken.connect(user).lockSummit
-        const txArgs = [amount, lockPeriod]
+        const txArgs = [amount, lockDuration]
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
-            const expectedEverestAward = await getExpectedEverestAward(amount, lockPeriod)
-            const eventArgs = [user.address, amount, lockPeriod, expectedEverestAward]
-            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Expedition.SummitLocked, eventArgs, false)
+            const expectedEverestAward = await getExpectedEverestAward(amount, lockDuration)
+            const eventArgs = [user.address, amount, lockDuration, expectedEverestAward]
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.SummitLocked, eventArgs, false)
         }
     },
     increaseLockDuration: async ({
         user,
-        lockPeriod,
+        lockDuration,
         revertErr,
     }: {
         user: SignerWithAddress,
-        lockPeriod: number,
+        lockDuration: number,
         revertErr?: string,
     }) => {
         const everestToken = await getEverestToken()
         const tx = everestToken.connect(user).increaseLockDuration
-        const txArgs = [lockPeriod]
+        const txArgs = [lockDuration]
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
-            const expectedEverestAward = await getAdditionalEverestAwardForLockDurationIncrease(user.address, lockPeriod)
-            const eventArgs = [user.address, lockPeriod, expectedEverestAward]
-            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Expedition.SummitLocked, eventArgs, false)
+            const expectedEverestAward = await getAdditionalEverestAwardForLockDurationIncrease(user.address, lockDuration)
+            const eventArgs = [user.address, lockDuration, expectedEverestAward]
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.SummitLocked, eventArgs, false)
         }
     },
     increaseLockedSummit: async ({
@@ -151,7 +151,7 @@ export const everestMethod = {
         } else {
             const additionalEverestAward = await getAdditionalEverestAwardForIncreaseLockedSummit(user.address, amount)
             const eventArgs = [user.address, false, amount, additionalEverestAward]
-            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Expedition.LockedSummitIncreased, eventArgs, false)
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.LockedSummitIncreased, eventArgs, false)
         }
     },
     withdrawLockedSummit: async ({
@@ -172,7 +172,7 @@ export const everestMethod = {
         } else {
             const expectedWithdrawnSummit = await getExpectedWithdrawnSummit(user.address, everestAmount)
             const eventArgs = [user.address, expectedWithdrawnSummit, everestAmount]
-            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Expedition.LockedSummitWithdrawn, eventArgs, false)
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.LockedSummitWithdrawn, eventArgs, false)
         }
     },
     panicRecoverFunds: async ({
@@ -191,7 +191,7 @@ export const everestMethod = {
         } else {
             const recoverableSummit = (await everestGet.userEverestInfo(user.address)).summitLocked
             const eventArgs = [user.address, recoverableSummit]
-            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Expedition.PanicFundsRecovered, eventArgs, false)
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.PanicFundsRecovered, eventArgs, false)
         }
     },
 }
@@ -215,7 +215,7 @@ export const everestSetParams = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [minLockTime]
-            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Expedition.Param.SetMinLockTime, eventArgs, true)
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.SetMinLockTime, eventArgs, true)
         }
     },
     setMaxLockTime: async ({
@@ -235,7 +235,7 @@ export const everestSetParams = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [maxLockTime]
-            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Expedition.Param.SetMaxLockTime, eventArgs, true)
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.SetMaxLockTime, eventArgs, true)
         }
     },
     setLockTimeRequiredForTaxlessSummitWithdraw: async ({
@@ -255,7 +255,7 @@ export const everestSetParams = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [lockTimeRequiredForTaxlessSummitWithdraw]
-            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Expedition.Param.SetLockTimeRequiredForTaxlessSummitWithdraw, eventArgs, true)
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.SetLockTimeRequiredForTaxlessSummitWithdraw, eventArgs, true)
         }
     },
     setLockTimeRequiredForLockedSummitDeposit: async ({
@@ -275,7 +275,7 @@ export const everestSetParams = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [lockTimeRequiredForLockedSummitDeposit]
-            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Expedition.Param.SetLockTimeRequiredForLockedSummitDeposit, eventArgs, true)
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.SetLockTimeRequiredForLockedSummitDeposit, eventArgs, true)
         }
     },
     setMinEverestLockMult: async ({
@@ -295,7 +295,7 @@ export const everestSetParams = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [minEverestLockMult]
-            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Expedition.Param.SetMinEverestLockMult, eventArgs, true)
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.SetMinEverestLockMult, eventArgs, true)
         }
     },
     setMaxEverestLockMult: async ({
@@ -315,26 +315,27 @@ export const everestSetParams = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [maxEverestLockMult]
-            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Expedition.Param.SetMaxEverestLockMult, eventArgs, true)
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.SetMaxEverestLockMult, eventArgs, true)
         }
     },
-    panicReleaseLocking: async ({
+    setPanic: async ({
         dev,
-        releaseLockedSummit,
+        panic,
         revertErr,
     }: {
         dev: SignerWithAddress
-        releaseLockedSummit: boolean,
+        panic: boolean,
         revertErr?: string,
     }) => {
         const everestToken = await getEverestToken()
-        const tx = everestToken.connect(dev).panicReleaseLocking
-        const txArgs = [releaseLockedSummit]
+        const tx = everestToken.connect(dev).setPanic
+        const txArgs = [panic]
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
-            await executeTx(tx, txArgs)
+            const eventArgs = [panic]
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.SetPanic, eventArgs, true)
         }
     },
 }

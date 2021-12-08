@@ -167,11 +167,12 @@ export const ERR = {
         MUST_OWN_EVEREST: 'Must own everest',
         ALREADY_LOCKING_SUMMIT: 'Already locking summit',
         INVALID_LP_INCENTIVE_MULT: 'Incentive multiplier must be between 1x and 4x',
-        INVALID_LOCK_PERIOD: 'Invalid lock period',
-        EVEREST_LOCKED: 'Lock period still in effect',
+        INVALID_LOCK_DURATION: 'Invalid lock duration',
+        EVEREST_LOCKED: 'Lock still in effect',
         BAD_WITHDRAW: 'Bad withdraw',
         INVALID_SAFETY_FACTOR: 'Invalid safety factor',
-        NOT_IN_PANIC_MODE: 'Not in panic',
+        NOT_IN_PANIC: 'Not in panic',
+        NOT_AVAILABLE_DURING_PANIC: 'Not available during panic',
     },
 
     EXPEDITION_V2: {
@@ -232,12 +233,24 @@ export const EVENT = {
 
     TIMELOCK_EXECUTE_TRANSACTION: 'ExecuteTransaction',
 
-    Expedition: {
+    Everest: {
         SummitLocked: 'SummitLocked',
         LockDurationIncreased: 'LockDurationIncreased',
         LockedSummitIncreased: 'LockedSummitIncreased',
         LockedSummitWithdrawn: 'LockedSummitWithdrawn',
         PanicFundsRecovered: 'PanicFundsRecovered',
+
+        SetMinLockTime: 'SetMinLockTime',
+        SetMaxLockTime: 'SetMaxLockTime',
+        SetLockTimeRequiredForTaxlessSummitWithdraw: 'SetLockTimeRequiredForTaxlessSummitWithdraw',
+        SetLockTimeRequiredForLockedSummitDeposit: 'SetLockTimeRequiredForLockedSummitDeposit',
+        SetMinEverestLockMult: 'SetMinEverestLockMult',
+        SetMaxEverestLockMult: 'SetMaxEverestLockMult',
+        SetPanic: 'SetPanic',
+    },
+
+    Expedition: {
+        
         UserJoinedExpedition: 'UserJoinedExpedition',
         UserHarvestedExpedition: 'UserHarvestedExpedition',
 
@@ -249,16 +262,8 @@ export const EVENT = {
         DeitySelected: 'DeitySelected',
         SafetyFactorSelected: 'SafetyFactorSelected',
 
-        Param: {
-            SetMinLockTime: 'SetMinLockTime',
-            SetMaxLockTime: 'SetMaxLockTime',
-            SetLockTimeRequiredForTaxlessSummitWithdraw: 'SetLockTimeRequiredForTaxlessSummitWithdraw',
-            SetLockTimeRequiredForLockedSummitDeposit: 'SetLockTimeRequiredForLockedSummitDeposit',
-            SetMinEverestLockMult: 'SetMinEverestLockMult',
-            SetMaxEverestLockMult: 'SetMaxEverestLockMult',
-            SetExpeditionDeityWinningsMult: 'SetExpeditionDeityWinningsMult',
-            SetExpeditionRunwayRounds: 'SetExpeditionRunwayRounds',
-        }
+        SetExpeditionDeityWinningsMult: 'SetExpeditionDeityWinningsMult',
+        SetExpeditionRunwayRounds: 'SetExpeditionRunwayRounds',
     },
 
     WinningsHarvested: 'WinningsHarvested',

@@ -6,6 +6,13 @@ import { everestGet } from "./everestUtils"
 
 
 export interface UserExpeditionInfo {
+    everestOwned: BigNumber
+    deity: number
+    deitySelected: boolean
+    deitySelectionRound: number
+    safetyFactor: number
+    safetyFactorSelected: boolean
+    
     entered: boolean
     prevInteractedRound: number
     
@@ -51,6 +58,13 @@ export const expeditionGet = {
         const expedition = await getExpedition()
         const fetchedExpedInfo = await expedition.userExpeditionInfo(userAddress)
         return {
+            everestOwned: fetchedExpedInfo.everestOwned,
+            deity: fetchedExpedInfo.deity,
+            deitySelected: fetchedExpedInfo.deitySelected,
+            deitySelectionRound: fetchedExpedInfo.deitySelectionRound.toNumber(),
+            safetyFactor: fetchedExpedInfo.safetyFactor,
+            safetyFactorSelected: fetchedExpedInfo.safetyFactorSelected,
+
             entered: fetchedExpedInfo.entered,
             prevInteractedRound: fetchedExpedInfo.prevInteractedRound,
             
@@ -273,8 +287,8 @@ export const expeditionMethod = {
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
-            const everestInfo = await everestGet.userEverestInfo(user.address)
-            const eventArgs = [user.address, everestInfo.deity, everestInfo.safetyFactor, everestInfo.everestOwned]
+            const userExpeditionInfo = await expeditionGet.userExpeditionInfo(user.address)
+            const eventArgs = [user.address, userExpeditionInfo.deity, userExpeditionInfo.safetyFactor, userExpeditionInfo.everestOwned]
             await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.UserJoinedExpedition, eventArgs, true)
         }
     },
@@ -318,7 +332,7 @@ export const expeditionSetParams = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [expeditionDeityWinningsMult]
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.Param.SetExpeditionDeityWinningsMult, eventArgs, true)
+            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.SetExpeditionDeityWinningsMult, eventArgs, true)
         }
     },
     setExpeditionRunwayRounds: async ({
@@ -338,7 +352,7 @@ export const expeditionSetParams = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [expeditionRunwayRounds]
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.Param.SetExpeditionRunwayRounds, eventArgs, true)
+            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.SetExpeditionRunwayRounds, eventArgs, true)
         }
     },
 }

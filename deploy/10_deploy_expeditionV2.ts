@@ -1,5 +1,4 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { createLpPair } from '../scripts/scriptUtils';
 import { chainIdAllowsVerification, chainIdAMMFactory, chainIdAMMPairCodeHash, chainIdExpectsUserToHaveSummit, chainIdWrappedNativeToken, consoleLog, Contracts, delay, e18 } from '../utils';
 
 const deployExpeditionV2: DeployFunction = async function ({
@@ -36,9 +35,6 @@ const deployExpeditionV2: DeployFunction = async function ({
   }
 
   if (EverestToken.newlyDeployed) {
-    await execute(Contracts.EverestToken, { from: dev }, 'transferOwnership', ExpeditionV2.address)
-    consoleLog('Transferred Ownership of EVEREST Token to ExpeditionV2')
-
     if (chainIdAllowsVerification(chainId)) {
       await delay(10000)
       await run("verify:verify", {

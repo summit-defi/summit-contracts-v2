@@ -3,7 +3,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import hre from 'hardhat'
 import { UserInfo } from "os"
-import { promiseSequenceMap, subCartGet } from "."
+import { getEverestBalance, getSummitBalance, promiseSequenceMap, subCartGet } from "."
 
 
 export const userPromiseSequenceMap = async (transformer: (element: SignerWithAddress, index: number, array: SignerWithAddress[]) => Promise<any>) => {
@@ -41,5 +41,16 @@ export const usersHypotheticalRewards = async (tokenAddress: string, elevation: 
 export const usersRewards = async (tokenAddress: string, elevation: number) => {
     return await userPromiseSequenceMap(
         async (user) => (await subCartGet.rewards(tokenAddress, elevation, user.address))
+    )
+}
+
+export const usersSummitBalances = async () => {
+    return await userPromiseSequenceMap(
+        async (user) => await getSummitBalance(user.address)
+    )
+}
+export const usersEverestBalances = async () => {
+    return await userPromiseSequenceMap(
+        async (user) => await getEverestBalance(user.address)
     )
 }

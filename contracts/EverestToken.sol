@@ -4,14 +4,16 @@ pragma solidity 0.8.0;
 
 import "./libs/ERC20Mintable.sol";
 import "./BaseEverestExtension.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
 // EverestToken, governance token of Summit DeFi
-contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGuard {
+contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -19,11 +21,9 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
     // --   V A R I A B L E S
     // ---------------------------------------
 
-    address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
-
     IERC20 public summit;
 
-    bool public panicReleaseLockedSummit = false;
+    bool public panic = false;
 
     uint256 public minLockTime = 3600 * 24 * 7;
     uint256 public maxLockTime = 3600 * 24 * 365;
@@ -62,8 +62,8 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
     // --   E V E N T S
     // ---------------------------------------
 
-    event SummitLocked(address indexed user, uint256 _summitLocked, uint256 _lockPeriod, uint256 _everestAwarded);
-    event LockDurationIncreased(address indexed user, uint256 _lockPeriod, uint256 _additionalEverestAwarded);
+    event SummitLocked(address indexed user, uint256 _summitLocked, uint256 _lockDuration, uint256 _everestAwarded);
+    event LockDurationIncreased(address indexed user, uint256 _lockDuration, uint256 _additionalEverestAwarded);
     event LockedSummitIncreased(address indexed user, bool indexed _increasedWithClaimableWinnings, uint256 _summitLocked, uint256 _everestAwarded);
     event LockedSummitWithdrawn(address indexed user, uint256 _summitRemoved, uint256 _everestBurned);
     event PanicFundsRecovered(address indexed user, uint256 _summitRecovered);
@@ -83,17 +83,17 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
     // --   M O D I F I E R S 
     // ------------------------------------------------------
 
-    modifier validLockPeriod(uint256 _lockPeriod) {
-        require (_lockPeriod >= minLockTime && _lockPeriod <= maxLockTime, "Invalid lock period");
+    modifier validLockDuration(uint256 _lockDuration) {
+        require (_lockDuration >= minLockTime && _lockDuration <= maxLockTime, "Invalid lock duration");
         _;
     }
     modifier userNotAlreadyLockingSummit() {
         require (userEverestInfo[msg.sender].everestOwned == 0, "Already locking summit");
         _;
     }
-    modifier userLockPeriodSatisfied() {
+    modifier userLockDurationSatisfied() {
         require(userEverestInfo[msg.sender].lockRelease != 0, "User doesnt have a lock release");
-        require(block.timestamp >= userEverestInfo[msg.sender].lockRelease, "Lock period still in effect");
+        require(block.timestamp >= userEverestInfo[msg.sender].lockRelease, "Lock still in effect");
         _;
     }
     modifier userEverestInfoExists() {
@@ -113,6 +113,14 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
     }
     modifier validUserAdd(address _userAdd) {
         _validUserAdd(_userAdd);
+        _;
+    }
+    modifier onlyPanic() {
+        require(panic, "Not in panic");
+        _;
+    }
+    modifier notPanic() {
+        require(!panic, "Not available during panic");
         _;
     }
 
@@ -182,11 +190,11 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
     }
 
     /// @dev Lock period multiplier
-    function _lockPeriodMultiplier(uint256 _lockPeriod)
+    function _lockDurationMultiplier(uint256 _lockDuration)
         internal view
         returns (uint256)
     {
-        return (((_lockPeriod - minLockTime) * (maxEverestLockMult - minEverestLockMult) * 1e12) /
+        return (((_lockDuration - minLockTime) * (maxEverestLockMult - minEverestLockMult) * 1e12) /
             (maxLockTime - minLockTime) /
             1e12) +
             minEverestLockMult;
@@ -197,7 +205,7 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
         internal
     {
         IERC20(address(this)).safeTransferFrom(_userAdd, address(this), _everestAmount);
-        IERC20(address(this)).safeTransfer(burnAdd, _everestAmount);
+        _burn(address(this), _everestAmount);
     }
 
     function _getOrCreateUserEverestInfo(address _userAdd)
@@ -211,10 +219,10 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
 
     /// @dev Lock Summit for a duration and earn everest
     /// @param _summitAmount Amount of SUMMIT to deposit
-    /// @param _lockPeriod Duration the SUMMIT will be locked for
-    function lockSummit(uint256 _summitAmount, uint256 _lockPeriod)
+    /// @param _lockDuration Duration the SUMMIT will be locked for
+    function lockSummit(uint256 _summitAmount, uint256 _lockDuration)
         public
-        nonReentrant userNotAlreadyLockingSummit validLockPeriod(_lockPeriod)
+        nonReentrant notPanic userNotAlreadyLockingSummit validLockDuration(_lockDuration)
     {
         // Validate and deposit user's SUMMIT
         require(_summitAmount <= summit.balanceOf(msg.sender), "Exceeds balance");
@@ -223,7 +231,7 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
         }
 
         // Calculate the lock multiplier and EVEREST award
-        uint256 everestLockMultiplier = _lockPeriodMultiplier(_lockPeriod);
+        uint256 everestLockMultiplier = _lockDurationMultiplier(_lockDuration);
         uint256 everestAward = (_summitAmount * everestLockMultiplier) / 10000;
         
         // Mint EVEREST to the user's wallet
@@ -233,48 +241,48 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
         UserEverestInfo storage everestInfo = _getOrCreateUserEverestInfo(msg.sender);
         everestInfo.everestOwned = everestAward;
         everestInfo.everestLockMultiplier = everestLockMultiplier;
-        everestInfo.lockRelease = block.timestamp + _lockPeriod;
-        everestInfo.lockDuration = _lockPeriod;
+        everestInfo.lockRelease = block.timestamp + _lockDuration;
+        everestInfo.lockDuration = _lockDuration;
         everestInfo.summitLocked = _summitAmount;
 
         // Update average lock duration with new summit locked
-        _updateAvgSummitLockDuration(_summitAmount, _lockPeriod, true);
+        _updateAvgSummitLockDuration(_summitAmount, _lockDuration, true);
 
         // Update the EVEREST in the expedition
-        _updateEverestExtensions(everestInfo);
+        _updateEverestExtensionsUserEverestOwned(everestInfo);
 
-        emit SummitLocked(msg.sender, _summitAmount, _lockPeriod, everestAward);
+        emit SummitLocked(msg.sender, _summitAmount, _lockDuration, everestAward);
     }
 
 
     /// @dev Increase the lock duration of user's locked SUMMIT
-    function increaseLockDuration(uint256 _lockPeriod)
+    function increaseLockDuration(uint256 _lockDuration)
         public
-        nonReentrant userEverestInfoExists userOwnsEverest
+        nonReentrant notPanic userEverestInfoExists userOwnsEverest
     {
-        uint256 additionalEverestAward = _increaseLockDuration(_lockPeriod, msg.sender);
-        emit LockDurationIncreased(msg.sender, _lockPeriod, additionalEverestAward);
+        uint256 additionalEverestAward = _increaseLockDuration(_lockDuration, msg.sender);
+        emit LockDurationIncreased(msg.sender, _lockDuration, additionalEverestAward);
     }
-    function _increaseLockDuration(uint256 _lockPeriod, address _userAdd)
+    function _increaseLockDuration(uint256 _lockDuration, address _userAdd)
         internal
         returns (uint256)
     {
         UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
-        require(_lockPeriod >= everestInfo.lockDuration, "Lock duration must strictly increase");
+        require(_lockDuration >= everestInfo.lockDuration, "Lock duration must strictly increase");
 
         // Update average lock duration by removing existing lock duration, and adding new duration
         _updateAvgSummitLockDuration(everestInfo.summitLocked, everestInfo.lockDuration, false);
-        _updateAvgSummitLockDuration(everestInfo.summitLocked, _lockPeriod, true);
+        _updateAvgSummitLockDuration(everestInfo.summitLocked, _lockDuration, true);
 
         // Calculate and validate the new everest lock multiplier
-        uint256 everestLockMultiplier = _lockPeriodMultiplier(_lockPeriod);
-        require(everestLockMultiplier >= everestInfo.everestLockMultiplier, "New lock period must be greater");
+        uint256 everestLockMultiplier = _lockDurationMultiplier(_lockDuration);
+        require(everestLockMultiplier >= everestInfo.everestLockMultiplier, "New lock duration must be greater");
 
         // Calculate the additional EVEREST awarded by the extended lock duration
         uint256 additionalEverestAward = ((everestInfo.summitLocked * everestLockMultiplier) / 10000) - everestInfo.everestOwned;
 
         // Increase the lock release
-        uint256 lockRelease = block.timestamp + _lockPeriod;
+        uint256 lockRelease = block.timestamp + _lockDuration;
 
         // Mint EVEREST to the user's address
         _mint(_userAdd, additionalEverestAward);
@@ -283,10 +291,10 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
         everestInfo.everestOwned += additionalEverestAward;
         everestInfo.everestLockMultiplier = everestLockMultiplier;
         everestInfo.lockRelease = lockRelease;
-        everestInfo.lockDuration = _lockPeriod;
+        everestInfo.lockDuration = _lockDuration;
 
         // Update the expedition with the user's new EVEREST amount
-        _updateEverestExtensions(everestInfo);
+        _updateEverestExtensionsUserEverestOwned(everestInfo);
 
         return additionalEverestAward;
     }
@@ -317,7 +325,7 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
         _updateAvgSummitLockDuration(_summitAmount, everestInfo.lockDuration, true);
 
         // Update the expedition with the users new EVEREST info
-        _updateEverestExtensions(everestInfo);
+        _updateEverestExtensionsUserEverestOwned(everestInfo);
 
         return additionalEverestAward;
     }
@@ -337,7 +345,7 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
     /// @dev Lock additional summit and extend duration to arbitrary duration
     function lockAndExtendLockDuration(uint256 _summitAmount, uint256 _lockDuration, address _userAdd)
         public
-        nonReentrant userEverestInfoExists userOwnsEverest
+        nonReentrant notPanic userEverestInfoExists userOwnsEverest
     {
         UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
 
@@ -357,7 +365,7 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
     /// @dev Increase the users Locked Summit and earn everest
     function increaseLockedSummit(uint256 _summitAmount)
         public
-        nonReentrant userEverestInfoExists userOwnsEverest
+        nonReentrant notPanic userEverestInfoExists userOwnsEverest
     {
         uint256 additionalEverestAward = _increaseLockedSummit(
             _summitAmount,
@@ -371,7 +379,7 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
     /// @dev Decrease the Summit and burn everest
     function withdrawLockedSummit(uint256 _everestAmount)
         public
-        nonReentrant userEverestInfoExists userOwnsEverest userLockPeriodSatisfied validEverestAmountToBurn(_everestAmount)
+        nonReentrant notPanic userEverestInfoExists userOwnsEverest userLockDurationSatisfied validEverestAmountToBurn(_everestAmount)
     {
         UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
         require (_everestAmount <= everestInfo.everestOwned, "Bad withdraw");
@@ -387,32 +395,9 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
         summit.safeTransfer(msg.sender, summitToWithdraw);
         _burnEverest(msg.sender, _everestAmount);
 
-        _updateEverestExtensions(everestInfo);
+        _updateEverestExtensionsUserEverestOwned(everestInfo);
 
         emit LockedSummitWithdrawn(msg.sender, summitToWithdraw, _everestAmount);
-    }
-
-
-    /// @dev Panic recover locked SUMMIT if something has gone wrong
-    function panicRecoverFunds()
-        public
-        nonReentrant userEverestInfoExists
-    {
-        require(panicReleaseLockedSummit, "Not in panic");
-
-        UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
-
-        uint256 recoverableSummit = everestInfo.summitLocked;
-        summit.safeTransfer(msg.sender, recoverableSummit);
-
-        everestInfo.userAdd = address(0);
-        everestInfo.everestOwned = 0;
-        everestInfo.summitLocked = 0;
-        everestInfo.lockRelease = 0;
-        everestInfo.lockDuration = 0;
-        everestInfo.everestLockMultiplier = 0;
-
-        emit PanicFundsRecovered(msg.sender, recoverableSummit);
     }
 
     
@@ -454,15 +439,53 @@ contract EverestToken is ERC20Mintable('EverestToken', 'EVEREST'), ReentrancyGua
         return userEverestInfo[_userAdd].everestOwned;
     }
 
-
-
-    function _updateEverestExtensions(UserEverestInfo storage user)
+    function _updateEverestExtensionsUserEverestOwned(UserEverestInfo storage user)
         internal
     {
         // Iterate through and update each extension with the user's everest amount
         for (uint8 extensionIndex = 0; extensionIndex < everestExtensions.length(); extensionIndex++) {
             BaseEverestExtension(everestExtensions.at(extensionIndex)).updateUserEverest(user.everestOwned, user.userAdd);
         }
+    }
+
+
+
+
+
+    // -------------------------------------
+    // --   P A N I C
+    // -------------------------------------
+
+
+
+    /// @dev Turn on or off panic mode
+    function setPanic(bool _panic)
+        public
+        onlyOwner
+    {
+        panic = _panic;
+        emit SetPanic(_panic);
+    }
+
+
+    /// @dev Panic recover locked SUMMIT if something has gone wrong
+    function panicRecoverFunds()
+        public
+        nonReentrant userEverestInfoExists onlyPanic
+    {
+        UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
+
+        uint256 recoverableSummit = everestInfo.summitLocked;
+        summit.safeTransfer(msg.sender, recoverableSummit);
+
+        everestInfo.userAdd = address(0);
+        everestInfo.everestOwned = 0;
+        everestInfo.summitLocked = 0;
+        everestInfo.lockRelease = 0;
+        everestInfo.lockDuration = 0;
+        everestInfo.everestLockMultiplier = 0;
+
+        emit PanicFundsRecovered(msg.sender, recoverableSummit);
     }
 
 }
