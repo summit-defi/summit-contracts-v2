@@ -321,7 +321,7 @@ const calcUserSafeEverest = (expedInfo: UserExpeditionInfo) => {
     return expedInfo.everestOwned.mul(expedInfo.safetyFactor).div(100)
 }
 const calcUserDeitiedEverest = (expedInfo: UserExpeditionInfo) => {
-    return expedInfo.everestOwned.mul(e0(100).sub(expedInfo.safetyFactor)).div(100).mul(125).div(100)
+    return expedInfo.everestOwned.mul(e0(100).sub(expedInfo.safetyFactor)).div(100)
 }
 const calcUserSafeAndDeitiedEverest = async (userAddress: string) => {
     const expedInfo = await expeditionGet.userExpeditionInfo(userAddress)

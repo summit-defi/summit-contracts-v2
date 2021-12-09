@@ -234,13 +234,21 @@ describe("EXPEDITION V2", async function() {
         )
 
         const summations = await userPromiseSequenceReduce(
-            (acc, _, userIndex) => ({
+            (acc, user, userIndex) => ({
                 summit: acc.summit.add(rewards[userIndex].summit) as BigNumber,
                 usdc: acc.usdc.add(rewards[userIndex].usdc) as BigNumber,
+                safeSummitRewards: acc.safeSummitRewards.add(hypothetical[userIndex].safeSummit),
+                safeUsdcRewards: acc.safeUsdcRewards.add(hypothetical[userIndex].safeUsdc),
+                deitiedSummitRewards: acc.deitiedSummitRewards.add(prevWinningTotem === userParams[user.address].deity ? hypothetical[userIndex].deitiedSummit : 0),
+                deitiedUsdcRewards: acc.deitiedUsdcRewards.add(prevWinningTotem === userParams[user.address].deity ? hypothetical[userIndex].deitiedUsdc : 0)
             }),
             {
                 summit: e18(0),
-                usdc: e18(0)
+                usdc: e18(0),
+                safeSummitRewards: e18(0),
+                safeUsdcRewards: e18(0),
+                deitiedSummitRewards: e18(0),
+                deitiedUsdcRewards: e18(0),
             }
         )
 
@@ -266,6 +274,38 @@ describe("EXPEDITION V2", async function() {
                 expect6FigBigNumberEquals(rewards[userIndex].usdc, hypothetical[userIndex].safeUsdc.add(prevWinningTotem === userParams[user.address].deity ? hypothetical[userIndex].deitiedUsdc : 0))
             }
         )
+
+
+        // Correct amount is distributed to safe and deitied segments of staking
+        const totalEverestStaked = expeditionInfo.safeSupply.add(expeditionInfo.deitiedSupply.mul(125).div(100))
+        const safePerc = expeditionInfo.safeSupply.mul(100000).div(totalEverestStaked).toNumber() / 100000
+        const deitiedPerc = expeditionInfo.deitiedSupply.mul(125).div(100).mul(100000).div(totalEverestStaked).toNumber() / 100000
+
+        const totalSummit = summations.safeSummitRewards.add(summations.deitiedSummitRewards)
+        const summitSafePerc = summations.safeSummitRewards.mul(100000).div(totalSummit).toNumber() / 100000
+        const summitDeitiedPerc = summations.deitiedSummitRewards.mul(100000).div(totalSummit).toNumber() / 100000
+
+        const totalUsdc = summations.safeUsdcRewards.add(summations.deitiedUsdcRewards)
+        const usdcSafePerc = summations.safeUsdcRewards.mul(100000).div(totalUsdc).toNumber() / 100000
+        const usdcDeitiedPerc = summations.deitiedUsdcRewards.mul(100000).div(totalUsdc).toNumber() / 100000
+
+        expectAllEqual([safePerc, summitSafePerc, usdcSafePerc])
+        expectAllEqual([deitiedPerc, summitDeitiedPerc, usdcDeitiedPerc])
+
+
+        console.log({
+            safePerc,
+            deitiedPerc,
+            summitSafePerc,
+            summitDeitiedPerc,
+            usdcSafePerc,
+            usdcDeitiedPerc,
+            safeSummitRewards: toDecimal(summations.safeSummitRewards),
+            safeUsdcRewards: toDecimal(summations.safeUsdcRewards),
+            deitiedSummitRewards: toDecimal(summations.deitiedSummitRewards),
+            deitiedUsdcRewards: toDecimal(summations.deitiedUsdcRewards),
+        })
+
     })
     it(`EXPEDITION: Winnings are harvested correctly`, async function() {
         const expeditionRewards = await usersExpeditionRewards()
