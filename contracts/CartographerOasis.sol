@@ -338,7 +338,6 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     // ------------------------------------------------------------------
     
 
-    function hypotheticalRewards(address, address) public pure returns (uint256, uint256) { return (uint256(0), 0); }
     function rollover() external override {}
     function switchTotem(uint8, address) external override {}
 

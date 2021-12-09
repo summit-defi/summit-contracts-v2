@@ -539,7 +539,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         if (!userElevationInfo[_userAdd].totemSelected) return (0, 0);
         uint8 userTotem = userElevationInfo[_userAdd].totem;
 
-        // Iterate through active pools of elevation, sum total rewards earned (all totems), and winning totems's rewards
+        // Iterate through active pools of elevation, sums {users yield contributed, total rewards earned (all totems), and winning totems's rewards}
         uint256 userTotalYieldContributed = 0;
         uint256 elevTotalRewards = 0;
         uint256 userTotemTotalWinnings = 0;
@@ -555,7 +555,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
             userTotemTotalWinnings += poolUserTotemWinnings;
         }
 
-        // Calculate the winnings multiplier of the round that just ended from the combined reward amounts
+        // Calculate the winnings multiplier of the users totem (assuming it wins)
         uint256 elevWinningsMult = userTotemTotalWinnings == 0 ? 0 : elevTotalRewards * 1e12 / userTotemTotalWinnings;
 
         return (
