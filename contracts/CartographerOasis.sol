@@ -183,18 +183,6 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     // ---------------------------------------
 
 
-    /// @dev Registers pool everywhere needed
-    /// @param _token Token to register with
-    /// @param _live Whether pool is enabled at time of creation
-    function registerPool(address _token, bool _live) internal {
-        // Marks token as enabled at elevation, and adds token allocation to token's shared allocation and total allocation
-        if (_live) cartographer.setIsTokenEarningAtElevation(_token, OASIS, true);
-
-        // Add token to poolTokens
-        poolTokens.add(_token);
-    }
-
-
     /// @dev Creates a pool at the oasis
     /// @param _token Pool token
     /// @param _live Whether the pool is enabled initially
@@ -202,8 +190,8 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         external override
         onlyCartographer nonDuplicated(_token)
     {
-        // Register pid and token where needed
-        registerPool(_token, _live);
+        // Add token to poolTokens
+        poolTokens.add(_token);
 
         // Create the initial state of the pool
         poolInfo[_token] = OasisPoolInfo({
@@ -227,11 +215,26 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         OasisPoolInfo storage pool = poolInfo[_token];
         updatePool(_token);
 
-        // If live status of pool changes, update cartographer allocations
-        if (pool.live != _live) cartographer.setIsTokenEarningAtElevation(pool.token, OASIS, _live);
+        // Update IsEarning in Cartographer
+        _updateTokenIsEarning(pool);
 
         // Update internal pool states
         pool.live = _live;
+    }
+
+
+    /// @dev Mark whether this token is earning at this elevation in the Cartographer
+    ///   Live must be true
+    ///   Launched must be true
+    ///   Staked supply must be non zero
+    function _updateTokenIsEarning(OasisPoolInfo storage pool)
+        internal
+    {
+        cartographer.setIsTokenEarningAtElevation(
+            pool.token,
+            OASIS,
+            pool.live && pool.supply > 0
+        );
     }
 
 
@@ -335,7 +338,6 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     // ------------------------------------------------------------------
     
 
-    function hypotheticalRewards(address, address) public pure returns (uint256, uint256) { return (uint256(0), 0); }
     function rollover() external override {}
     function switchTotem(uint8, address) external override {}
 
@@ -517,6 +519,9 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
             
             // Increment running pool supply with amount after fee taken
             pool.supply += amountAfterFee;
+
+            // Update IsEarning in Cartographer
+            _updateTokenIsEarning(pool);
         }
         
         // Update user info with new staked value, and calculate new debt
@@ -559,6 +564,9 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
 
         // Update pool running supply total with amount withdrawn
         pool.supply -= _amount;
+
+        // Update IsEarning in Cartographer
+        _updateTokenIsEarning(pool);
 
         // Update user's staked and debt     
         user.staked -= _amount;

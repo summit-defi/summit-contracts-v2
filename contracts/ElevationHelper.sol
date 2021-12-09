@@ -1,10 +1,10 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "hardhat/console.sol";
-
 import "./interfaces/ISummitRNGModule.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
+
 
 
 /*
@@ -431,35 +431,22 @@ contract ElevationHelper is Ownable {
     /// @dev Fetcher of historical data for past winning totems
     /// @param _elevation Which elevation to check historical winners of
     /// @return Array of 20 values, first 10 of which are win count accumulators for each totem, last 10 of which are winners of previous 10 rounds of play
-    function historicalWinningTotems(uint8 _elevation) public view allElevations(_elevation) returns (uint256[20] memory) {
-
-        // Early escape OASIS winners, as they don't exist
-        if (_elevation == OASIS) {
-            return [uint256(0), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        }
+    function historicalWinningTotems(uint8 _elevation) public view allElevations(_elevation) returns (uint256[] memory, uint256[] memory) {
 
         uint256 round = roundNumber[_elevation];
-        return [
-            totemWinsAccum[_elevation][0],
-            totemWinsAccum[_elevation][1],
-            totemWinsAccum[_elevation][2],
-            totemWinsAccum[_elevation][3],
-            totemWinsAccum[_elevation][4],
-            totemWinsAccum[_elevation][5],
-            totemWinsAccum[_elevation][6],
-            totemWinsAccum[_elevation][7],
-            totemWinsAccum[_elevation][8],
-            totemWinsAccum[_elevation][9],
-            winningTotem[_elevation][round - 1],
-            winningTotem[_elevation][round - 2],
-            winningTotem[_elevation][round - 3],
-            winningTotem[_elevation][round - 4],
-            winningTotem[_elevation][round - 5],
-            winningTotem[_elevation][round - 6],
-            winningTotem[_elevation][round - 7],
-            winningTotem[_elevation][round - 8],
-            winningTotem[_elevation][round - 9],
-            winningTotem[_elevation][round - 10]
-        ];
+        uint256 winHistoryDepth = Math.min(10, round);
+
+        uint256[] memory winsAccum = new uint256[](totemCount[_elevation]);
+        uint256[] memory prevWinHistory = new uint256[](winHistoryDepth);
+
+        if (_elevation > OASIS) {
+            uint256 prevRound = round == 0 ? 0 : round - 1;
+            for (uint8 i = 0; i < totemCount[_elevation]; i++) {
+                winsAccum[i] = totemWinsAccum[_elevation][i];
+            }
+            for (uint8 j = 0; j < winHistoryDepth; j++) {
+                prevWinHistory[j] = winningTotem[_elevation][prevRound - j];
+            }
+        }
     }
 }
