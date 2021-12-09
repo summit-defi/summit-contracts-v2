@@ -417,7 +417,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Update the allocation for a token. This modifies existing allocations at each elevation for that token
     /// @param _token Token to update allocation for
     /// @param _allocation Updated allocation
-    function setTokenAlloc(address _token, uint256 _allocation)
+    function setTokenAllocation(address _token, uint256 _allocation)
         public
         onlyOwner tokenAllocExists(_token)  validAllocation(_allocation)
     {

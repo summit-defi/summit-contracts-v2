@@ -114,17 +114,17 @@ describe("OASIS Pools", function() {
       const { dev, user1 } = await getNamedSigners(hre)
       const summitToken = await getSummitToken()
 
-      await cartographerMethod.setTokenAlloc({
-        user: user1,
+      await cartographerMethod.setTokenAllocation({
+        dev: user1,
         tokenAddress: summitToken.address,
-        alloc: 2000,
+        allocation: 2000,
         revertErr: ERR.NON_OWNER
       })
 
-      await cartographerMethod.setTokenAlloc({
-        user: dev,
+      await cartographerMethod.setTokenAllocation({
+        dev: dev,
         tokenAddress: summitToken.address,
-        alloc: 2000,
+        allocation: 2000,
       })
     })
     it('ALLOCPOINT: Updated alloc points is reflected in cartographer', async function () {
@@ -134,10 +134,10 @@ describe("OASIS Pools", function() {
       const tokenAllocInit = await cartographerGet.tokenAlloc(summitToken.address)
       const oasisAllocInit = await cartographerGet.elevAlloc(OASIS)
 
-      await cartographerMethod.setTokenAlloc({
-        user: dev,
+      await cartographerMethod.setTokenAllocation({
+        dev: dev,
         tokenAddress: summitToken.address,
-        alloc: 1000,
+        allocation: 1000,
       })
 
       const tokenAllocFinal = await cartographerGet.tokenAlloc(summitToken.address)
@@ -150,10 +150,10 @@ describe("OASIS Pools", function() {
       const { dev, user1 } = await getNamedSigners(hre)
       const summitToken = await getSummitToken()
       
-      await cartographerMethod.setTokenAlloc({
-        user: dev,
+      await cartographerMethod.setTokenAllocation({
+        dev: dev,
         tokenAddress: summitToken.address,
-        alloc: 0,
+        allocation: 0,
       })
 
       const userHarvestable0 = (await subCartGet.rewards(summitToken.address, OASIS, user1.address)).harvestable

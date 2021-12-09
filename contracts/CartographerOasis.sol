@@ -213,13 +213,14 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         onlyCartographer poolExists(_token)
     {
         OasisPoolInfo storage pool = poolInfo[_token];
-        updatePool(_token);
 
-        // Update IsEarning in Cartographer
-        _updateTokenIsEarning(pool);
+        updatePool(_token);
 
         // Update internal pool states
         pool.live = _live;
+        
+        // Update IsEarning in Cartographer
+        _updateTokenIsEarning(pool);
     }
 
 

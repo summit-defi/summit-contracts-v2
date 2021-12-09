@@ -2,172 +2,295 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { consoleLog, ERR, EVENT, MESA, mineBlockWithTimestamp, OASIS, SUMMIT, PLAINS, ZEROADD, promiseSequenceMap, elevationPromiseSequenceMap, getSubCartographers, Contracts, getCakeToken, getCartographer, getElevationHelper, getSummitToken } from "../utils";
+import { consoleLog, ERR, EVENT, MESA, mineBlockWithTimestamp, OASIS, SUMMIT, PLAINS, ZEROADD, promiseSequenceMap, elevationPromiseSequenceMap, getSubCartographers, Contracts, getCakeToken, getCartographer, getElevationHelper, getSummitToken, cartographerMethod, cartographerGet, elevationHelperGet, e18, subCartMethod, subCartGet } from "../utils";
 import { baseFixture, twoThousandUnlockedFixture } from "./fixtures";
 
-let pid: BigNumber
+const userDepositIntoPools = async () => {
+  const { user1 } = await getNamedSigners(hre)
+  const summitToken = await getSummitToken()
+  const cakeToken = await getCakeToken()
+
+  // Deposit into each pool
+  const pools = [
+    { tokenAddress: summitToken.address },
+    { tokenAddress: cakeToken.address }
+  ]
+
+  await elevationPromiseSequenceMap(
+    async (elevation) => {
+      if ((await subCartGet.userTotemInfo(elevation, user1.address)).totemSelected) return
+      await cartographerMethod.switchTotem({
+        user: user1,
+        elevation,
+        totem: 0,
+      })
+    }
+  )
+
+  await promiseSequenceMap(
+    pools,
+    async (pool) => await elevationPromiseSequenceMap(
+      async (elevation) => await cartographerMethod.deposit({
+        user: user1,
+        ...pool,
+        elevation,
+        amount: e18(0.1),
+      })
+    )
+  )
+}
 
 describe("Base Pools", function() {
   describe('- Pool Creation', async function() {
     it('Pool creation without a token alloc should fail', async function() {
-      const { dev, summitToken, cartographer } = await baseFixture() 
-      await expect(
-        cartographer.connect(dev).add(summitToken.address, OASIS, true, true)
-      ).to.be.revertedWith(ERR.INVALID_TOKEN_ALLOC)
+      const { dev, summitToken } = await baseFixture() 
+
+      await cartographerMethod.add({
+        dev,
+        tokenAddress: summitToken.address,
+        elevation: OASIS,
+        live: true,
+        withUpdate: true,
+        revertErr: ERR.INVALID_TOKEN_ALLOC,
+      })
     })
     it('Creation of tokenAlloc should succeed', async function() {
-      const { dev, summitToken, cartographer } = await baseFixture() 
-      await expect(
-        cartographer.connect(dev).createTokenAllocation(summitToken.address, 4000)
-      ).to.emit(cartographer, EVENT.TokenAllocCreated).withArgs(summitToken.address, 4000)
+      const { dev, summitToken } = await baseFixture() 
+
+      await cartographerMethod.createTokenAllocation({
+        dev,
+        tokenAddress: summitToken.address,
+        allocation: 4000
+      })
     })
     it(`Creation of duplicated tokenAlloc should fail with error ${ERR.DUPLICATED_TOKEN_ALLOC}`, async function() {
-      const { dev, summitToken, cartographer } = await baseFixture() 
-      await expect(
-        cartographer.connect(dev).createTokenAllocation(summitToken.address, 4000)
-      ).to.emit(cartographer, EVENT.TokenAllocCreated).withArgs(summitToken.address, 4000)
-      await expect(
-        cartographer.connect(dev).createTokenAllocation(summitToken.address, 4000)
-      ).to.be.revertedWith(ERR.DUPLICATED_TOKEN_ALLOC)
+      const { dev, summitToken } = await baseFixture() 
+
+      await cartographerMethod.createTokenAllocation({
+        dev,
+        tokenAddress: summitToken.address,
+        allocation: 4000
+      })
+      await cartographerMethod.createTokenAllocation({
+        dev,
+        tokenAddress: summitToken.address,
+        allocation: 4000,
+        revertErr: ERR.DUPLICATED_TOKEN_ALLOC
+      })
     })
     it(`Pool creation without already existing tokenAlloc should fail with error ${ERR.INVALID_TOKEN_ALLOC}`, async function() {
-      const { dev, summitToken, cartographer } = await baseFixture()
-      await expect(
-        cartographer.connect(dev).add(summitToken.address, OASIS, true, true)
-      ).to.be.revertedWith(ERR.INVALID_TOKEN_ALLOC)
+      const { dev, summitToken  } = await baseFixture()
+
+      await cartographerMethod.add({
+        dev,
+        tokenAddress: summitToken.address,
+        elevation: OASIS,
+        live: true,
+        withUpdate: true,
+        revertErr: ERR.INVALID_TOKEN_ALLOC,
+      })
     })
     it('Non-Admin pool creation should fail', async function() {
-      const { dev, user1, summitToken, cartographer } = await baseFixture()
-      await expect(
-        cartographer.connect(dev).createTokenAllocation(summitToken.address, 4000)
-      ).to.emit(cartographer, EVENT.TokenAllocCreated).withArgs(summitToken.address, 4000)
-      await expect(
-        cartographer.connect(user1).add(summitToken.address, OASIS, true, true)
-      ).to.be.revertedWith(ERR.NON_OWNER)
+      const { dev, user1, summitToken } = await baseFixture()
+
+      await cartographerMethod.createTokenAllocation({
+        dev,
+        tokenAddress: summitToken.address,
+        allocation: 4000
+      })
+      await cartographerMethod.add({
+        dev: user1,
+        tokenAddress: summitToken.address,
+        elevation: OASIS,
+        live: true,
+        withUpdate: true,
+        revertErr: ERR.NON_OWNER
+      })
     })
     it('Admin pool creation should succeed', async function() {
-      const { dev, summitToken, cartographer } = await baseFixture()
-      await expect(
-        cartographer.connect(dev).createTokenAllocation(summitToken.address, 4000)
-      ).to.emit(cartographer, EVENT.TokenAllocCreated).withArgs(summitToken.address, 4000)
-      await expect(
-        cartographer.connect(dev).add(summitToken.address, OASIS, true, true)
-      ).to.emit(cartographer, EVENT.PoolCreated).withArgs(summitToken.address, OASIS)
+      const { dev, summitToken } = await baseFixture()
+
+      await cartographerMethod.createTokenAllocation({
+        dev,
+        tokenAddress: summitToken.address,
+        allocation: 4000
+      })
+      await cartographerMethod.add({
+        dev,
+        tokenAddress: summitToken.address,
+        elevation: OASIS,
+        live: true,
+        withUpdate: true,
+      })
     })
     it(`Deploying another OASIS SUMMIT Pool should fail with error ${ERR.DUPLICATED}`, async function() {
       const { dev } = await getNamedSigners(hre)
       const summitToken = await getSummitToken()
-      const cartographer = await getCartographer()
-      await expect(
-        cartographer.connect(dev).add(summitToken.address, OASIS, true, true)
-      ).to.be.revertedWith(ERR.DUPLICATED)
+
+      await cartographerMethod.add({
+        dev,
+        tokenAddress: summitToken.address,
+        elevation: OASIS,
+        live: true,
+        withUpdate: true,
+        revertErr: ERR.DUPLICATED
+      })
     })
   })
   describe("- Pool Verification", async function() {
     before(async function () {
-      const { summitToken, cakeToken, cartographer } = await baseFixture()
-      await cartographer.createTokenAllocation(summitToken.address, 4000)
-      await cartographer.createTokenAllocation(cakeToken.address, 100)
-      await cartographer.add(summitToken.address, OASIS, true, true)
-      await cartographer.add(summitToken.address, PLAINS, true, true)
-      await cartographer.add(summitToken.address, MESA, true, true)
-      await cartographer.add(summitToken.address, SUMMIT, true, true)
-      await cartographer.add(cakeToken.address, OASIS, true, true)
-      await cartographer.add(cakeToken.address, PLAINS, true, true)
-      await cartographer.add(cakeToken.address, MESA, true, true)
-      await cartographer.add(cakeToken.address, SUMMIT, true, true)
+      const { dev, summitToken, cakeToken } = await baseFixture()
+
+      const allocations = [
+        { tokenAddress: summitToken.address, allocation: 4000 },
+        { tokenAddress: cakeToken.address, allocation: 100 },
+      ]
+
+      await promiseSequenceMap(
+        allocations,
+        async (tokenAllocation) => await cartographerMethod.createTokenAllocation({
+          dev,
+          ...tokenAllocation
+        })
+      )
+
+      const pools = [
+        { tokenAddress: summitToken.address },
+        { tokenAddress: cakeToken.address }
+      ]
+
+      await promiseSequenceMap(
+        pools,
+        async (pool) => await elevationPromiseSequenceMap(
+          async (elevation) => await cartographerMethod.add({
+            dev,
+            ...pool,
+            elevation,
+            live: true,
+            withUpdate: true
+          })
+        )
+      )
     })
     it('Number of pools should be correct', async function() {  
-      const cartographer = await getCartographer()
-      expect(await cartographer.poolsCount()).to.equal(8)
+      expect(await cartographerGet.poolsCount()).to.equal(8)
       await elevationPromiseSequenceMap(
-        async (elevation) => expect(await cartographer.elevationPoolsCount(elevation)).to.equal(2)
+        async (elevation) => expect(await cartographerGet.elevationPoolsCount(elevation)).to.equal(2)
       )
     })
     it('Pool Allocation Points should be correct', async function () {
-      const cartographer = await getCartographer()
-      const elevationHelper = await getElevationHelper()
       const summitToken = await getSummitToken()
       const cakeToken = await getCakeToken()
 
-      const oasisAllocSummit = Math.floor(4000 * 100)
-      const twothousandAllocSummit = Math.floor(4000 * 110)
-      const fivethousandAllocSummit = Math.floor(4000 * 125)
-      const tenthousandAllocSummit = Math.floor(4000 * 150)
+      const elevationAllocMultipliers = [100, 110, 125, 150]
 
-      const tenThousandUnlockTime = (await elevationHelper.unlockTimestamp(SUMMIT)).toNumber()
+      const summitAllocations = await elevationPromiseSequenceMap(
+        async (elevation) => Math.floor(4000 * elevationAllocMultipliers[elevation])
+      )
+      const cakeAllocations = await elevationPromiseSequenceMap(
+        async (elevation) => Math.floor(100 * elevationAllocMultipliers[elevation])
+      )
+
+      const tenThousandUnlockTime = await elevationHelperGet.unlockTimestamp(SUMMIT)
       await mineBlockWithTimestamp(tenThousandUnlockTime)
-      await cartographer.rollover(SUMMIT)
-      await cartographer.rollover(MESA)
-      await cartographer.rollover(PLAINS)
+      await elevationPromiseSequenceMap(
+        async (elevation) => await cartographerMethod.rollover({ elevation })
+      )
 
-      expect(await cartographer.elevationModulatedAllocation(summitToken.address, OASIS)).to.equal(oasisAllocSummit)
-      expect(await cartographer.elevationModulatedAllocation(summitToken.address, PLAINS)).to.equal(twothousandAllocSummit)
-      expect(await cartographer.elevationModulatedAllocation(summitToken.address, MESA)).to.equal(fivethousandAllocSummit)
-      expect(await cartographer.elevationModulatedAllocation(summitToken.address, SUMMIT)).to.equal(tenthousandAllocSummit)
+      await userDepositIntoPools()
 
-      const oasisAllocCake = Math.floor(100 * 100)
-      const twothousandAllocCake = Math.floor(100 * 110)
-      const fivethousandAllocCake = Math.floor(100 * 125)
-      const tenthousandAllocCake = Math.floor(100 * 150)
-
-      expect(await cartographer.elevationModulatedAllocation(cakeToken.address, OASIS)).to.equal(oasisAllocCake)
-      expect(await cartographer.elevationModulatedAllocation(cakeToken.address, PLAINS)).to.equal(twothousandAllocCake)
-      expect(await cartographer.elevationModulatedAllocation(cakeToken.address, MESA)).to.equal(fivethousandAllocCake)
-      expect(await cartographer.elevationModulatedAllocation(cakeToken.address, SUMMIT)).to.equal(tenthousandAllocCake)
+      await elevationPromiseSequenceMap(
+        async (elevation) => {
+          expect(await cartographerGet.elevationModulatedAllocation(summitToken.address, elevation)).to.equal(summitAllocations[elevation])
+          expect(await cartographerGet.elevationModulatedAllocation(cakeToken.address, elevation)).to.equal(cakeAllocations[elevation])
+        }
+      )
     })
     it('Pools can be disabled and reenabled', async function() {
       await twoThousandUnlockedFixture()
-      const { dev } = await getNamedSigners(hre)
-      const cartographer = await getCartographer()
+      const { dev, user1 } = await getNamedSigners(hre)
       const summitToken = await getSummitToken()
 
+      await cartographerMethod.deposit({
+        user: user1,
+        tokenAddress: summitToken.address,
+        elevation: OASIS,
+        amount: e18(1)
+      })
+
       const oasisAllocSummit = 4000
-      const oasisAllocBefore = await cartographer.elevAlloc(OASIS)
-      const summitTokenAlloc = await cartographer.tokenAlloc(summitToken.address)
-      expect(await cartographer.elevationModulatedAllocation(summitToken.address, OASIS)).to.equal(oasisAllocSummit * 100)
-      await cartographer.connect(dev).set(summitToken.address, OASIS, false, true)
+      const oasisAllocBefore = await cartographerGet.elevAlloc(OASIS)
+      const summitTokenAlloc = await cartographerGet.tokenAlloc(summitToken.address)
+      expect(await cartographerGet.elevationModulatedAllocation(summitToken.address, OASIS)).to.equal(oasisAllocSummit * 100)
 
-      const oasisAllocAfter = await cartographer.elevAlloc(OASIS)
-      expect(await cartographer.elevationModulatedAllocation(summitToken.address, OASIS)).to.equal(0)
-      expect(oasisAllocBefore.sub(oasisAllocAfter)).to.equal(oasisAllocSummit)
-      expect(await cartographer.tokenAlloc(summitToken.address)).to.equal(summitTokenAlloc)
+      await cartographerMethod.set({
+        dev,
+        tokenAddress: summitToken.address,
+        elevation: OASIS,
+        live: false,
+        withUpdate: true,
+      })
 
-      await cartographer.connect(dev).set(summitToken.address, OASIS, true, true)
+      const oasisAllocAfter = await cartographerGet.elevAlloc(OASIS)
+      expect(await cartographerGet.elevationModulatedAllocation(summitToken.address, OASIS)).to.equal(0)
+      expect(oasisAllocBefore - oasisAllocAfter).to.equal(oasisAllocSummit)
+      expect(await cartographerGet.tokenAlloc(summitToken.address)).to.equal(summitTokenAlloc)
 
-      const oasisAllocFinal = await cartographer.elevAlloc(OASIS)
-      expect(await cartographer.elevationModulatedAllocation(summitToken.address, OASIS)).to.equal(oasisAllocSummit * 100)
-      expect(oasisAllocFinal.sub(oasisAllocAfter)).to.equal(oasisAllocSummit)
-      expect(await cartographer.tokenAlloc(summitToken.address)).to.equal(summitTokenAlloc)
+      await cartographerMethod.set({
+        dev,
+        tokenAddress: summitToken.address,
+        elevation: OASIS,
+        live: true,
+        withUpdate: true,
+      })
+
+      const oasisAllocFinal = await cartographerGet.elevAlloc(OASIS)
+      expect(await cartographerGet.elevationModulatedAllocation(summitToken.address, OASIS)).to.equal(oasisAllocSummit * 100)
+      expect(oasisAllocFinal - oasisAllocAfter).to.equal(oasisAllocSummit)
+      expect(await cartographerGet.tokenAlloc(summitToken.address)).to.equal(summitTokenAlloc)
     })
     it('Tokens total alloc points can be updated', async function() {
       await twoThousandUnlockedFixture()
-      const { dev } = await getNamedSigners(hre)
-      const cartographer = await getCartographer()
+      const { dev, user1 } = await getNamedSigners(hre)
       const summitToken = await getSummitToken()
 
-      const oasisAllocBefore = await cartographer.elevAlloc(OASIS)
+      await cartographerMethod.deposit({
+        user: user1,
+        tokenAddress: summitToken.address,
+        elevation: OASIS,
+        amount: e18(1)
+      })
+
+      const oasisAllocBefore = await cartographerGet.elevAlloc(OASIS)
       const oasisAllocSummit = 4000
-      const summitTokenAlloc = await cartographer.tokenAlloc(summitToken.address)
+      const summitTokenAlloc = await cartographerGet.tokenAlloc(summitToken.address)
       consoleLog({
         summitTokenAlloc: summitTokenAlloc.toString(),
         oasisAllocBefore: oasisAllocBefore.toString(),
         oasisAllocSummit,
       })
-      expect(await cartographer.elevationModulatedAllocation(summitToken.address, OASIS)).to.equal(oasisAllocSummit * 100)
+      expect(await cartographerGet.elevationModulatedAllocation(summitToken.address, OASIS)).to.equal(oasisAllocSummit * 100)
       
-      await cartographer.connect(dev).setTokenAlloc(summitToken.address, 0)
+      await cartographerMethod.setTokenAllocation({
+        dev,
+        tokenAddress: summitToken.address,
+        allocation: 0
+      })
       
-      expect(await cartographer.tokenAlloc(summitToken.address)).to.equal(0)
-      expect(await cartographer.elevationModulatedAllocation(summitToken.address, OASIS)).to.equal(0)
-      const oasisAllocAfter = await cartographer.elevAlloc(OASIS)
-      expect(oasisAllocBefore.sub(oasisAllocAfter)).to.equal(summitTokenAlloc)
+      expect(await cartographerGet.tokenAlloc(summitToken.address)).to.equal(0)
+      expect(await cartographerGet.elevationModulatedAllocation(summitToken.address, OASIS)).to.equal(0)
+      const oasisAllocAfter = await cartographerGet.elevAlloc(OASIS)
+      expect(oasisAllocBefore - oasisAllocAfter).to.equal(summitTokenAlloc)
 
-      await cartographer.connect(dev).setTokenAlloc(summitToken.address, summitTokenAlloc.div(2))
+      await cartographerMethod.setTokenAllocation({
+        dev,
+        tokenAddress: summitToken.address,
+        allocation: summitTokenAlloc / 2
+      })
 
-      expect(await cartographer.elevationModulatedAllocation(summitToken.address, OASIS)).to.equal((oasisAllocSummit * 100) / 2)
-      const oasisAllocFinal = await cartographer.elevAlloc(OASIS)
-      expect(oasisAllocFinal.sub(oasisAllocAfter)).to.equal(summitTokenAlloc.div(2))
+      expect(await cartographerGet.elevationModulatedAllocation(summitToken.address, OASIS)).to.equal((oasisAllocSummit * 100) / 2)
+      const oasisAllocFinal = await cartographerGet.elevAlloc(OASIS)
+      expect(oasisAllocFinal - oasisAllocAfter).to.equal(summitTokenAlloc / 2)
 
       consoleLog({
         oasisAllocBefore: oasisAllocBefore.toString(),
