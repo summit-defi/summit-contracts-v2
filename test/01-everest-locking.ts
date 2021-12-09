@@ -356,11 +356,6 @@ describe("EVEREST RUNNING AVERAGE", async function() {
                 const expectedAvg = weightedTotal.div(totalSummitLocked)
 
                 const trueAverageLockDuration = await everestGet.avgSummitLockDuration()
-                console.log({
-                    expected: expectedAvg,
-                    contract: trueAverageLockDuration,
-                    drift: Math.abs(expectedAvg - trueAverageLockDuration),
-                })
                 expect(expectedAvg.div(60)).to.equal(trueAverageLockDuration.div(60))
             }
         )

@@ -34,7 +34,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     uint256 public lockTimeRequiredForClaimableSummitLock = 3600 * 24 * 30;
 
     uint256 public totalSummitLocked;
-    uint256 public avgSummitLockDuration;
+    uint256 public weightedAvgSummitLockDurations;
 
     struct UserEverestInfo {
         address userAdd;
@@ -175,18 +175,27 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     function _updateAvgSummitLockDuration(uint256 _amount, uint256 _lockDuration, bool _isLocking)
         internal
     {
-        // Current multiplier to add / subtract against
-        uint256 currentMul = totalSummitLocked * avgSummitLockDuration;
+        // The weighted average of the change being applied
+        uint256 deltaWeightedAvg = _amount * _lockDuration;
 
-        // How much the multiplier will change by
-        uint256 deltaMul = _amount * _lockDuration;
-        uint256 newMul = currentMul + (_isLocking ? deltaMul : 0) - (_isLocking ? 0 : deltaMul);
+        // Update the lock multiplier and the total amount locked
+        if (_isLocking) {
+            totalSummitLocked += _amount;
+            weightedAvgSummitLockDurations += deltaWeightedAvg;
+        } else {
+            totalSummitLocked -= _amount;
+            weightedAvgSummitLockDurations -= deltaWeightedAvg;
+        }
+    }
+    function avgSummitLockDuration()
+        public view
+        returns (uint256)
+    {
+        // Early escape if div/0
+        if (totalSummitLocked == 0) return 0;
 
-        // How much summit is being added / subtracted
-        totalSummitLocked = totalSummitLocked + (_isLocking ? _amount : 0) - (_isLocking ? 0 : _amount);
-
-        // Update average lock duration with new computed multiplier and new summit locked amount
-        avgSummitLockDuration = totalSummitLocked == 0 ? 0 : newMul / totalSummitLocked;
+        // Return the average from the weighted average lock duration 
+        return weightedAvgSummitLockDurations / totalSummitLocked;
     }
 
     /// @dev Lock period multiplier

@@ -253,7 +253,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         _;
     }
     modifier poolExistsAndLaunched(address _token) {
-        console.log("Pool Exists and Launched", poolTokens.contains(_token), poolInfo[_token].launched);
         require(poolTokens.contains(_token), "Pool doesnt exist");
         require(poolInfo[_token].launched, "Pool not launched yet");
         _;

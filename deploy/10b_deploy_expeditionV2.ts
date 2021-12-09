@@ -7,7 +7,7 @@ const deployExpeditionV2: DeployFunction = async function ({
   getChainId,
   run,
 }) {
-  const {deploy} = deployments;
+  const {deploy, execute} = deployments;
   const {dev} = await getNamedAccounts();
   const chainId = await getChainId()
 

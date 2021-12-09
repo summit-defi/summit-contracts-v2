@@ -1,7 +1,8 @@
 import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
+import { expect } from "chai"
 import { string } from "hardhat/internal/core/params/argumentTypes"
-import { elevationHelperGet, EVENT, executeTxExpectEvent, executeTxExpectReversion, EXPEDITION, getExpedition } from "."
+import { consoleLog, e0, e18, elevationHelperGet, EVENT, executeTxExpectEvent, executeTxExpectReversion, EXPEDITION, getElevationHelper, getExpedition, getSummitBalance, getUsdcBalance, mineBlockWithTimestamp, toDecimal, usersExpeditionInfo } from "."
 import { everestGet } from "./everestUtils"
 
 
@@ -42,12 +43,21 @@ export interface ExpeditionInfo {
     usdcExpeditionToken: ExpeditionToken
 }
 
+export interface ExpeditionRewards {
+    summit: BigNumber
+    usdc: BigNumber
+}
+
+export interface ExpeditionHypotheticalRewards {
+    safeSummit: BigNumber,
+    safeUsdc: BigNumber,
+    deitiedSummit: BigNumber,
+    deitiedUsdc: BigNumber
+}
+
 
 
 export const expeditionGet = {
-    expeditionInitialized: async () => {
-        return (await getExpedition()).expeditionInitialized()
-    },
     expeditionDeityWinningsMult: async () => {
         return (await (await getExpedition()).expeditionDeityWinningsMult()).toNumber()
     },
@@ -80,11 +90,11 @@ export const expeditionGet = {
 
             roundsRemaining: fetchedExpedInfo.roundsRemaining.toNumber(),
 
-            safeSupply: fetchedExpedInfo.safeSupply,
-            deitiedSupply: fetchedExpedInfo.deitiedSupply,
+            safeSupply: fetchedExpedInfo.supplies.safe,
+            deitiedSupply: fetchedExpedInfo.supplies.deitied,
             deitySupply: [
-                fetchedExpedInfo.deitySupply[0],
-                fetchedExpedInfo.deitySupply[1],
+                fetchedExpedInfo.supplies.deity[0],
+                fetchedExpedInfo.supplies.deity[1],
             ],
 
             summitExpeditionToken: {
@@ -112,15 +122,15 @@ export const expeditionGet = {
             },
         }
     },
-    rewards: async (userAddress: string): Promise<{ summit: BigNumber, usdc: BigNumber }> => {
-        const rewards = (await getExpedition()).rewards(userAddress)
+    rewards: async (userAddress: string): Promise<ExpeditionRewards> => {
+        const rewards = await (await getExpedition()).rewards(userAddress)
         return {
             summit: rewards[0],
             usdc: rewards[1],
         }
     },
-    hypotheticalRewards: async (userAddress: string): Promise<{ safeSummit: BigNumber, safeUsdc: BigNumber, deitiedSummit: BigNumber, deitiedUsdc: BigNumber }> => {
-        const rewards = (await getExpedition()).hypotheticalRewards(userAddress)
+    hypotheticalRewards: async (userAddress: string): Promise<ExpeditionHypotheticalRewards> => {
+        const rewards = await (await getExpedition()).hypotheticalRewards(userAddress)
         return {
             safeSummit: rewards[0],
             safeUsdc: rewards[1],
@@ -129,7 +139,7 @@ export const expeditionGet = {
         }
     },
     userSatisfiesExpeditionRequirements: async (userAddress: string): Promise<{ everest: boolean, deity: boolean, safetyFactor: boolean }> => {
-        const requirements = (await getExpedition()).userSatisfiesExpeditionRequirements(userAddress)
+        const requirements = await (await getExpedition()).userSatisfiesExpeditionRequirements(userAddress)
         return {
             everest: requirements[0],
             deity: requirements[1],
@@ -139,26 +149,6 @@ export const expeditionGet = {
 }
 
 export const expeditionMethod = {
-    initializeExpedition: async ({
-        dev,
-        usdcAddress,
-        revertErr,
-    }: {
-        dev: SignerWithAddress,
-        usdcAddress: string,
-        revertErr?: string,
-    }) => {
-        const expedition = await getExpedition()
-        const tx = expedition.connect(dev).initializeExpedition
-        const txArgs = [usdcAddress]
-        
-        if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
-        } else {
-            const eventArgs = [] as any[]
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.ExpeditionInitialized, eventArgs, true)
-        }
-    },
     addExpeditionFunds: async ({
         user,
         tokenAddress,
@@ -308,9 +298,88 @@ export const expeditionMethod = {
         } else {
             const expectedRewards = await expeditionGet.rewards(user.address)
             const eventArgs = [user.address, expectedRewards.summit, expectedRewards.usdc]
+            console.log({
+                harvestExpectedArgs: eventArgs
+            })
             await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.UserHarvestedExpedition, eventArgs, true)
         }
     },
+}
+
+
+const rolloverExpedition = async () => {
+    const expeditionRoundEndTime = await elevationHelperGet.roundEndTimestamp(EXPEDITION)
+    await mineBlockWithTimestamp(expeditionRoundEndTime)
+    await expeditionMethod.rollover({})
+}
+const rolloverExpeditionMultiRounds = async (roundsToRollover: number) => {
+    for (let i = 0; i < roundsToRollover; i++) {
+        await rolloverExpedition()
+    }
+}
+const calcUserSafeEverest = (expedInfo: UserExpeditionInfo) => {
+    return expedInfo.everestOwned.mul(expedInfo.safetyFactor).div(100)
+}
+const calcUserDeitiedEverest = (expedInfo: UserExpeditionInfo) => {
+    return expedInfo.everestOwned.mul(e0(100).sub(expedInfo.safetyFactor)).div(100)
+}
+const calcUserSafeAndDeitiedEverest = async (userAddress: string) => {
+    const expedInfo = await expeditionGet.userExpeditionInfo(userAddress)
+    return {
+        safe: calcUserSafeEverest(expedInfo),
+        deitied: calcUserDeitiedEverest(expedInfo),
+    }
+}
+
+const sumSafeAndDeitySupplies = async (): Promise<{ safeSupply: BigNumber, deity0Supply: BigNumber, deity1Supply: BigNumber}> => {
+    const usersExpedInfo = await usersExpeditionInfo()
+    return usersExpedInfo.reduce((acc, expedInfo) => ({
+        safeSupply: acc.safeSupply.add(calcUserSafeEverest(expedInfo)),
+        deity0Supply: acc.deity0Supply.add(expedInfo.deity !== 0 ? 0 : calcUserDeitiedEverest(expedInfo)),
+        deity1Supply: acc.deity1Supply.add(expedInfo.deity !== 1 ? 0 : calcUserDeitiedEverest(expedInfo)),
+    }), { safeSupply: e18(0), deity0Supply: e18(0), deity1Supply: e18(0) })
+}
+
+const expectUserAndExpedSuppliesToMatch = async () => {
+    const summedSupplies = await sumSafeAndDeitySupplies()
+    const expedInfo = await expeditionGet.expeditionInfo()
+
+    consoleLog({
+        SafeSupply: `${toDecimal(expedInfo.safeSupply)} should equal ${toDecimal(summedSupplies.safeSupply)}`,
+        Deity0Supply: `${toDecimal(expedInfo.deitySupply[0])} should equal ${toDecimal(summedSupplies.deity0Supply)}`,
+        Deity1Supply: `${toDecimal(expedInfo.deitySupply[1])} should equal ${toDecimal(summedSupplies.deity1Supply)}`,
+        DeitiedSupply: `${toDecimal(expedInfo.deitiedSupply)} should equal ${toDecimal(summedSupplies.deity0Supply.add(summedSupplies.deity1Supply))}`,
+    })
+
+    expect(expedInfo.safeSupply).to.equal(summedSupplies.safeSupply)
+    expect(expedInfo.deitySupply[0]).to.equal(summedSupplies.deity0Supply)
+    expect(expedInfo.deitySupply[1]).to.equal(summedSupplies.deity1Supply)
+    expect(expedInfo.deitiedSupply).to.equal(summedSupplies.deity0Supply.add(summedSupplies.deity1Supply))
+}
+
+const getExpeditionExpectedEmissions = async () => {
+    const expedition = await getExpedition()
+
+    const summitBalance = await getSummitBalance(expedition.address)
+    const usdcBalance = await getUsdcBalance(expedition.address)
+
+    const runwayRounds = await expeditionGet.expeditionRunwayRounds()
+
+    return {
+        summitEmission: summitBalance.div(runwayRounds),
+        usdcEmission: usdcBalance.div(runwayRounds),
+    }
+}
+
+export const expeditionSynth = {
+    rolloverExpedition,
+    rolloverExpeditionMultiRounds,
+    calcUserSafeEverest,
+    calcUserDeitiedEverest,
+    calcUserSafeAndDeitiedEverest,
+    sumSafeAndDeitySupplies,
+    expectUserAndExpedSuppliesToMatch,
+    getExpeditionExpectedEmissions,
 }
 
 

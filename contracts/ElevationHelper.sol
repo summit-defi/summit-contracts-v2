@@ -203,14 +203,12 @@ contract ElevationHelper is Ownable {
     /// @dev Checks whether elevation is is yet to be unlocked for farming
     /// @param _elevation Which elevation to check
     function elevationLocked(uint8 _elevation) external view returns (bool) {
-        console.log("ElevationLocked", _elevation, unlockTimestamp[_elevation], block.timestamp <= unlockTimestamp[_elevation]);
         return block.timestamp <= unlockTimestamp[_elevation];
     }
 
     /// @dev Checks whether elevation is locked due to round ending in next {roundEndLockoutDuration} seconds
     /// @param _elevation Which elevation to check
     function endOfRoundLockoutActive(uint8 _elevation) external view returns (bool) {
-        console.log("Lockout?", _elevation, block.timestamp, roundEndTimestamp[_elevation]);
         if (roundEndTimestamp[_elevation] == 0) return false;
         return block.timestamp >= (roundEndTimestamp[_elevation] - roundEndLockoutDuration);
     }

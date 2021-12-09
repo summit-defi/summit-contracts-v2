@@ -3,7 +3,8 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import hre from 'hardhat'
 import { UserInfo } from "os"
-import { getEverestBalance, getSummitBalance, promiseSequenceMap, subCartGet } from "."
+import { expeditionGet, ExpeditionHypotheticalRewards, ExpeditionRewards, getEverestBalance, getSummitBalance, getUsdcBalance, promiseSequenceMap, subCartGet } from "."
+import { summitLockingGet } from "./summitLockingUtils"
 
 
 export const userPromiseSequenceMap = async (transformer: (element: SignerWithAddress, index: number, array: SignerWithAddress[]) => Promise<any>) => {
@@ -49,8 +50,35 @@ export const usersSummitBalances = async () => {
         async (user) => await getSummitBalance(user.address)
     )
 }
+export const usersClaimedSummitBalances = async () => {
+    return await userPromiseSequenceMap(
+        async (user) => await summitLockingGet.getUserCurrentEpochClaimableWinnings(user.address)
+    )
+}
 export const usersEverestBalances = async () => {
     return await userPromiseSequenceMap(
         async (user) => await getEverestBalance(user.address)
+    )
+}
+export const usersUsdcBalances = async () => {
+    return await userPromiseSequenceMap(
+        async (user) => await getUsdcBalance(user.address)
+    )
+}
+
+export const usersExpeditionInfo = async () => {
+    return await userPromiseSequenceMap(
+        async (user) => await expeditionGet.userExpeditionInfo(user.address)
+    )
+}
+
+export const usersExpeditionRewards = async (): Promise<ExpeditionRewards[]> => {
+    return await userPromiseSequenceMap(
+        async (user) => await expeditionGet.rewards(user.address)
+    )
+}
+export const usersExpeditionHypotheticalRewards = async (): Promise<ExpeditionHypotheticalRewards[]> => {
+    return await userPromiseSequenceMap(
+        async (user) => await expeditionGet.hypotheticalRewards(user.address)
     )
 }
