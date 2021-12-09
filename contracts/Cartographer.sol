@@ -443,6 +443,9 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         external
         onlySubCartographer
     {
+        // Early escape if token earning is already up to date
+        if (tokenElevationIsEarning[_token][_elevation] == _isEarning) return;
+
         // Add the new allocation to the token's shared allocation and total allocation
         if (_isEarning) {
             elevAlloc[_elevation] += tokenAlloc[_token];
@@ -452,7 +455,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
             elevAlloc[_elevation] -= tokenAlloc[_token];
         }
 
-        // Mark the pool as earning
+        // Mark the token-elevation earning
         tokenElevationIsEarning[_token][_elevation] = _isEarning;
     }
 

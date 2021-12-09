@@ -138,10 +138,10 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         bool live;                                  // If the pool is running, in lieu of allocPoint
         bool active;                                // Whether the pool is active, used to keep pool alive until round rollover
 
-        uint256 supply;                             // Running total of the token amount staked in this pool at elevation
         uint256 lastRewardTimestamp;                // Last timestamp that SUMMIT distribution occurs.
         uint256 accSummitPerShare;                  // Accumulated SUMMIT per share, raised 1e12. See below.
 
+        uint256 supply;                             // Running total of the token amount staked in this pool at elevation
         uint256[] totemSupplies;                    // Running total of LP in each totem to calculate rewards
         uint256 roundRewards;                       // Rewards of entire pool accum over round
         uint256[] totemRoundRewards;                // Rewards of each totem accum over round
@@ -304,21 +304,8 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         }
         return pools;
     }
-    
-    function totemSupplies(address _token) public view poolExists(_token) returns (uint256[10] memory) {
-        ElevationPoolInfo storage pool = poolInfo[_token];
-        return [
-            elevation >= 1 ? pool.totemSupplies[0] : 0,
-            elevation >= 1 ? pool.totemSupplies[1] : 0,
-            elevation >= 2 ? pool.totemSupplies[2] : 0,
-            elevation >= 2 ? pool.totemSupplies[3] : 0,
-            elevation >= 2 ? pool.totemSupplies[4] : 0,
-            elevation >= 3 ? pool.totemSupplies[5] : 0,
-            elevation >= 3 ? pool.totemSupplies[6] : 0,
-            elevation >= 3 ? pool.totemSupplies[7] : 0,
-            elevation >= 3 ? pool.totemSupplies[8] : 0,
-            elevation >= 3 ? pool.totemSupplies[9] : 0
-        ];
+    function totemSupplies(address _token) public view poolExists(_token) returns (uint256[] memory) {
+        return poolInfo[_token].totemSupplies;
     }
 
 
@@ -335,42 +322,37 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @dev Calculates up to date pool round rewards and totem round rewards with pool's emission
     /// @param _token Pool identifier
     /// @return Up to date versions of round rewards.
-    ///         [poolRoundRewards, ...totemRoundRewards 1 - 10]
+    ///         [poolRoundRewards, ...totemRoundRewards]
     function totemRoundRewards(address _token)
         public view
         poolExists(_token)
-        returns (uint256[11] memory)
+        returns (uint256[] memory)
     {
         ElevationPoolInfo storage pool = poolInfo[_token];
         uint8 totemCount = elevationHelper.totemCount(elevation);
+        uint256[] memory roundRewards = new uint256[](totemCount + 1);
 
         // Gets emission that would bring the pool current from last reward timestamp
         uint256 emissionToBringCurrent = emissionToBringPoolCurrent(pool);
 
-        // Create return array
-        uint256[11] memory finalTotemRewards;
-
         // Add total emission to bring current to pool round rewards
-        finalTotemRewards[0] = pool.roundRewards + emissionToBringCurrent;
+        roundRewards[0] = pool.roundRewards + emissionToBringCurrent;
 
         // For each totem, increase round rewards proportionally to amount staked in that totem compared to full pool's amount staked
-        for (uint8 i = 0; i < 10; i++) {
-
-            // If totem out of range for elevation, return 0
-            if (i >= totemCount)
-                finalTotemRewards[i + 1] = 0;
+        for (uint8 i = 0; i < totemCount; i++) {
 
             // If pool or totem doesn't have anything staked, the totem's round rewards won't change with the new emission
-            else if (pool.supply == 0 || pool.totemSupplies[i] == 0)
-                finalTotemRewards[i + 1] = pool.totemRoundRewards[i];
+            if (pool.supply == 0 || pool.totemSupplies[i] == 0) {
+                roundRewards[i + 1] = pool.totemRoundRewards[i];
 
             // Increase the totem's round rewards with a proportional amount of the new emission
-            else
-                finalTotemRewards[i + 1] = pool.totemRoundRewards[i] + (emissionToBringCurrent * pool.totemSupplies[i] / pool.supply);
+            } else {
+                roundRewards[i + 1] = pool.totemRoundRewards[i] + (emissionToBringCurrent * pool.totemSupplies[i] / pool.supply);
+            }
         }
 
         // Return up to date round rewards
-        return finalTotemRewards;
+        return roundRewards;
     }
     
 
@@ -441,18 +423,30 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         ElevationPoolInfo storage pool = poolInfo[_token];
         updatePool(_token);
 
-        // If live status changes
-        if (pool.live != _live) {
-            // If pool is already launched when live status changes, update cartographer allocations
-            if (pool.launched) cartographer.setIsTokenEarningAtElevation(pool.token, elevation, _live);
+        // If pool is live, add to active pools list
+        if (_live) _markPoolActive(pool, true);
+        // Else pool is becoming inactive, which will be reflected at the end of the round in pool rollover function
 
-            // If pool is becoming live and isn't already active, add to active pools list
-            if (_live && !pool.active) _markPoolActive(pool, true);
-            // Else pool is becoming inactive, which will be reflected at the end of the round in pool rollover function
-        }
+        // Update IsEarning in Cartographer
+        _updateTokenIsEarning(pool);
 
         // Update internal pool states
         pool.live = _live;
+    }
+
+
+    /// @dev Mark whether this token is earning at this elevation in the Cartographer
+    ///   Active must be true
+    ///   Launched must be true
+    ///   Staked supply must be non zero
+    function _updateTokenIsEarning(ElevationPoolInfo storage pool)
+        internal
+    {
+        cartographer.setIsTokenEarningAtElevation(
+            pool.token,
+            elevation,
+            pool.active && pool.launched && pool.supply > 0
+        );
     }
 
 
@@ -530,46 +524,65 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
 
 
-    /// @dev The hypothetical rewards, and the hypothetical winnings from a given pool
-    /// @param _token Pool token to check
-    /// @param _userAdd User to check
+    /// @dev The user's yield generated across their active pools at this elevation, and the hypothetical winnings based on that yield
+    /// @param _userAdd User to sum and calculate
     /// @return (
-    ///     hypotheticalYield - The yield from staking, which has been risked during the current round
-    ///     hypotheticalWinnings - If the user were to win the round, what their winnings would be based on:
-    ///         . user's staking yield
-    ///         . staking yield of each totem over the round
-    ///         . staking yield of the entire pool over the round
+    ///     elevationYieldContributed - Total yieldContributed across all pools of this elevation
+    ///     elevationPotentialWinnings - Total potential winnings from that yield for the user's selected totem
     /// )
-    function hypotheticalRewards(address _token, address _userAdd)
+    function roundPotentialWinnings(address _userAdd)
         public view
-        poolExists(_token) validUserAdd(_userAdd)
+        validUserAdd(_userAdd)
         returns (uint256, uint256)
     {
-        ElevationPoolInfo memory pool = poolInfo[_token];
-        UserInfo storage user = userInfo[_token][_userAdd];
+        // Early exit if user hasn't selected their totem yet
+        if (!userElevationInfo[_userAdd].totemSelected) return (0, 0);
+        uint8 userTotem = userElevationInfo[_userAdd].totem;
 
-        // Allows hypothetical rewards calls to succeed even if the user isn't staked - frontend optimization
-        if (user.staked == 0) return (0, 0);
+        // Iterate through active pools of elevation, sum total rewards earned (all totems), and winning totems's rewards
+        uint256 userTotalYieldContributed = 0;
+        uint256 elevTotalRewards = 0;
+        uint256 userTotemTotalWinnings = 0;
+        for (uint16 index = 0; index < activePools.length(); index++) {
+            // Add live round rewards of pool and winning totem to elevation round reward accumulators
+            (uint256 poolUserYieldContributed, uint256 poolRewards, uint256 poolUserTotemWinnings) = _liveUserAndPoolRoundRewards(
+                activePools.at(index),
+                userTotem,
+                _userAdd
+            );
+            userTotalYieldContributed += poolUserYieldContributed;
+            elevTotalRewards += poolRewards;
+            userTotemTotalWinnings += poolUserTotemWinnings;
+        }
 
-        uint8 totem = _getUserTotem(_userAdd);
-        
-        // Calculate current accSummitPerShare, and the emission to bring the pool current
-        (uint256 accSummitPerShare, uint256 emissionToBringCurrent) = liveAccSummitPerShare(pool);
+        // Calculate the winnings multiplier of the round that just ended from the combined reward amounts
+        uint256 elevWinningsMult = userTotemTotalWinnings == 0 ? 0 : elevTotalRewards * 1e12 / userTotemTotalWinnings;
 
-        // Get hypothetical yield (what the user would have earned if this was standard staking) with brought current accSummitPerShare
-        uint256 yield = hypotheticalYield(pool, user, accSummitPerShare);
-
-        // Calculate current roundRewards and totemRoundRewards with the emission to bring current
-        // User totem round rewards are the round rewards of the user's selected totem
-        (uint256 roundRewards, uint256 userTotemRoundRewards) = liveRoundRewards(_token, totem, emissionToBringCurrent);
-
-        // Escape early to prevent div by 0 if no yield exists
-        if (yield == 0 || userTotemRoundRewards == 0) return (0, 0);
-
-        // Return hypotheticalYield, hypotheticalWinnings
         return (
-            yield,
-            userTotemRoundRewards > 0 ? (yield * roundRewards / userTotemRoundRewards) : yield
+            userTotalYieldContributed,
+            userTotalYieldContributed * elevWinningsMult / 1e12
+        );
+    }
+
+
+
+    /// @dev The user's yield generated and contributed to this elevations round pot from a specific pool
+    /// @param _token Pool token to check
+    /// @param _userAdd User to check
+    /// @return The yield from staking, which has been contributed during the current round
+    function roundYieldContributed(address _token, address _userAdd)
+        public view
+        poolExists(_token) validUserAdd(_userAdd)
+        returns (uint256)
+    {
+        // Calculate current accSummitPerShare to bring the pool current
+        (uint256 accSummitPerShare,) = _liveAccSummitPerShare(poolInfo[_token]);
+
+        // Return yield generated hypothetical yield (what the user would have earned if this was standard staking) with brought current accSummitPerShare
+        return _liveYieldContributed(
+            poolInfo[_token],
+            userInfo[_token][_userAdd],
+            accSummitPerShare
         );
     }
 
@@ -580,7 +593,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     ///     liveAccSummitPerShare - What the current accSummitPerShare of the pool would be if brought current
     ///     summitEmission - The awarded emission to the pool that would bring it current
     /// )
-    function liveAccSummitPerShare(ElevationPoolInfo memory pool)
+    function _liveAccSummitPerShare(ElevationPoolInfo memory pool)
         internal view
         returns (uint256, uint256)
     {
@@ -588,7 +601,10 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         uint256 emissionToBringCurrent = emissionToBringPoolCurrent(pool);
 
         // Calculate the new accSummitPerShare with the emission to bring current, and return both values
-        return (pool.accSummitPerShare + (emissionToBringCurrent * 1e12 / pool.supply), emissionToBringCurrent);
+        return (
+            pool.accSummitPerShare + (emissionToBringCurrent * 1e12 / pool.supply),
+            emissionToBringCurrent
+        );
     }
 
 
@@ -596,7 +612,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param pool Pool info
     /// @param user User info
     /// @param accSummitPerShare Is brought current before call
-    function hypotheticalYield(ElevationPoolInfo memory pool, UserInfo storage user, uint256 accSummitPerShare)
+    function _liveYieldContributed(ElevationPoolInfo memory pool, UserInfo storage user, uint256 accSummitPerShare)
         internal view
         returns (uint256)
     {
@@ -615,32 +631,41 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     ///      Round rewards are the total amount of yield generated by a pool over the duration of a round
     ///      totemRoundRewards is the total amount of yield generated by the funds staked in each totem of the pool
     /// @param _token Pool token identifier
-    /// @param _totem User's selected totem to bring current
-    /// @param _emissionToBringCurrent The emission that would be granted if the pool was brought current, used to increment the round rewards of the pool and each totem
+    /// @param _userTotem User's totem, gas saving
+    /// @param _userAdd User's address to return yield generated totem to bring current
     /// @return (
+    ///     userPoolYieldContributed - How much yield the user has contributed to the pot from this pool
     ///     liveRoundRewards - The brought current round rewards of the pool
     ///     liveUserTotemRoundRewards - The brought current round rewards of the user's selected totem
     /// )
-    function liveRoundRewards(address _token, uint8 _totem, uint256 _emissionToBringCurrent)
+    function _liveUserAndPoolRoundRewards(address _token, uint8 _userTotem, address _userAdd)
         internal view
-        poolExists(_token)
-        returns (uint256, uint256)
+        returns (uint256, uint256, uint256)
     {
         ElevationPoolInfo storage pool = poolInfo[_token];
 
+        (uint256 liveAccSummitPerShare, uint256 emissionToBringCurrent) = _liveAccSummitPerShare(pool);
+
         return (
+            // User's yield generated
+            userInteractingPools[_userAdd].contains(_token) ? _liveYieldContributed(
+                poolInfo[_token],
+                userInfo[_token][_userAdd],
+                liveAccSummitPerShare
+            ) : 0,
+
             // Round rewards with the total emission to bring current added
-            pool.roundRewards + _emissionToBringCurrent,
+            pool.roundRewards + emissionToBringCurrent,
 
             // Calculate user's totem's round rewards
-            pool.supply == 0 || pool.totemSupplies[_totem] == 0 ? 
+            pool.supply == 0 || pool.totemSupplies[_userTotem] == 0 ? 
                 
                 // Early exit with current round rewards of user's totem if pool or user's totem has 0 supply (would cause div/0 error)
-                pool.totemRoundRewards[_totem] :
+                pool.totemRoundRewards[_userTotem] :
 
                 // Add the proportion of total emission that would be granted to the user's selected totem to that totem's round rewards
                 // Proportion of total emission earned by each totem is (totem's staked supply / pool's staked supply)
-                pool.totemRoundRewards[_totem] + (((_emissionToBringCurrent * 1e12 * pool.totemSupplies[_totem]) / pool.supply) / 1e12)
+                pool.totemRoundRewards[_userTotem] + (((emissionToBringCurrent * 1e12 * pool.totemSupplies[_userTotem]) / pool.supply) / 1e12)
         );
     }
 
@@ -660,7 +685,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     {
         uint256 currRound = elevationHelper.roundNumber(elevation);
         uint8 winningTotem = elevationHelper.winningTotem(elevation, currRound - 1);
-
 
         // Iterate through active pools of elevation, sum total rewards earned (all totems), and winning totems's rewards
         uint256 elevTotalRewards = 0;
@@ -696,26 +720,27 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         ElevationPoolInfo storage pool = poolInfo[_token];
 
         // Remove pool from active pool list if it has been marked for removal
-        if (!pool.live && pool.active) _markPoolActive(pool, false);
+        if (!pool.live) _markPoolActive(pool, false);
 
         // Launch pool if it hasn't been, early exit since it has no earned rewards before launch
         if (!pool.launched) {
             pool.launched = true;
-            if (pool.live) cartographer.setIsTokenEarningAtElevation(pool.token, elevation, true);
+            _updateTokenIsEarning(pool);
             return;
         }
 
         // The change in accSummitPerShare from the end of the previous round to the end of the current round
         uint256 deltaAccSummitPerShare = pool.accSummitPerShare - poolRoundInfo[_token][_prevRound - 1].endAccSummitPerShare;
+        uint256 precomputedFullRoundMult = deltaAccSummitPerShare * _winningsMultiplier / 1e12;
 
-        // Add Winnings to multiplier of winning totem
-        pool.totemRunningPrecomputedMult[elevationHelper.winningTotem(elevation, _prevRound - 1)] += deltaAccSummitPerShare * _winningsMultiplier / 1e12;
+        // Increment running precomputed mult with previous round's data
+        pool.totemRunningPrecomputedMult[elevationHelper.winningTotem(elevation, _prevRound - 1)] += precomputedFullRoundMult;
 
         // Adding a new entry to the pool's poolRoundInfo for the most recently closed round
         poolRoundInfo[_token][_prevRound] = RoundInfo({
             endAccSummitPerShare: pool.accSummitPerShare,
             winningsMultiplier: _winningsMultiplier,
-            precomputedFullRoundMult: deltaAccSummitPerShare * _winningsMultiplier / 1e12
+            precomputedFullRoundMult: precomputedFullRoundMult
         });
 
         // Resetting round reward accumulators to begin accumulating over the next round
@@ -786,8 +811,12 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         // Escape early if user interacted during previous round
         if (user.prevInteractedRound == currRound - 1) return claimable;
 
+        // The change in precomputed mult of the user's first interacting round, this value doesn't exist when user.winningsDebt is set, so must be included here
+        uint256 firstInteractedRoundDeltaPrecomputedMult = poolRoundInfo[pool.token][user.prevInteractedRound].precomputedFullRoundMult;
+        uint256 winningsDebtAtEndOfFirstInteractedRound = user.winningsDebt + firstInteractedRoundDeltaPrecomputedMult;
+
         // Add multiple rounds of precomputed mult delta for all rounds between first interacted and most recent round
-        claimable += user.staked * (pool.totemRunningPrecomputedMult[totem] - user.winningsDebt) / 1e12;
+        claimable += user.staked * (pool.totemRunningPrecomputedMult[totem] - winningsDebtAtEndOfFirstInteractedRound) / 1e12;
 
         return claimable;
     }
@@ -1152,6 +1181,8 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
             // Adding staked amount to running supply accumulators
             pool.totemSupplies[totem] += amountAfterFee;
             pool.supply += amountAfterFee;
+
+            _updateTokenIsEarning(pool);
         }
         
         // Update / create users interaction with the pool
@@ -1183,8 +1214,10 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         uint8 totem = _getUserTotem(_userAdd);
 
         if (_isEmergencyWithdraw) {
+
             // Reset user back to base state
             _emergencyWithdrawResetUser(pool, _userAdd);
+
         } else {
 
             // Bring pool to present
@@ -1204,6 +1237,8 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         // Remove withdrawn amount from pool's running supply accumulators
         pool.totemSupplies[totem] -= _amount;
         pool.supply -= _amount;
+
+        _updateTokenIsEarning(pool);
 
         // If the user is interacting with this pool after the meat of the transaction completes
         _markUserInteractingWithPool(pool.token, _userAdd, _userInteractingWithPool(user));
