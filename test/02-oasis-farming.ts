@@ -156,9 +156,9 @@ describe("OASIS Pools", function() {
         allocation: 0,
       })
 
-      const userHarvestable0 = (await subCartGet.rewards(summitToken.address, OASIS, user1.address)).harvestable
+      const userHarvestable0 = await subCartGet.claimableRewards(summitToken.address, OASIS, user1.address)
       await mineBlock()
-      const userHarvestable1 = (await subCartGet.rewards(summitToken.address, OASIS, user1.address)).harvestable
+      const userHarvestable1 = await subCartGet.claimableRewards(summitToken.address, OASIS, user1.address)
       const userDelta0 = userHarvestable1.sub(userHarvestable0)
 
       expect(userDelta0).to.equal(0)

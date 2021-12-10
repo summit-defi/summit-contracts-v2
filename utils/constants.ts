@@ -30,6 +30,8 @@ export const MESA = 2
 export const SUMMIT = 3
 export const EXPEDITION = 4
 
+export const epochDuration = 3600 * 24 * 7;
+
 export enum NamedElevations {
     OASIS = 'OASIS',
     PLAINS = 'PLAINS',
@@ -88,6 +90,7 @@ export const getTotemCount = (elevation: number): number => {
 }
 
 export const ZEROADD = '0x0000000000000000000000000000000000000000'
+export const BURNADD = '0x000000000000000000000000000000000000dEaD'
 export const INF_APPROVE = '115792089237316195423570985008687907853269984665640564039457584007913129639935'
 
 export const ERR = {
@@ -105,6 +108,7 @@ export const ERR = {
     REFERRAL_BURN_NOT_AVAILABLE: 'Referral burn not available',
     SELF_REFERRER: 'Cant refer yourself',
     NO_REWARDS_TO_REDEEM: 'No referral rewards to redeem',
+    ONLY_CARTOGRAPHER_OR_EXPEDITION: 'Only cartographer or expedition',
 
     // Elevation
     INVALID_ELEV: 'Invalid elev',
@@ -232,6 +236,13 @@ export const EVENT = {
     claimElevation: 'claimElevation',
 
     TIMELOCK_EXECUTE_TRANSACTION: 'ExecuteTransaction',
+
+    SummitLocking: {
+        WinningsLocked: 'WinningsLocked',
+        WinningsHarvested: 'WinningsHarvested',
+        SetPanic: 'SetPanic',
+        SetYieldLockEpochCount: 'SetYieldLockEpochCount',
+    },
 
     Everest: {
         SummitLocked: 'SummitLocked',

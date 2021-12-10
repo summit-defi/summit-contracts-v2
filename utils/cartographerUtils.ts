@@ -1,8 +1,8 @@
 import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { boolean, string } from "hardhat/internal/core/params/argumentTypes"
-import { claimAmountWithBonusAdded, e12, e6, elevationPromiseSequenceReduce, EVENT, executeTxExpectEvent, executeTxExpectReversion, OASIS, subCartGet, toDecimal, tokenAmountAfterDepositFee, tokenAmountAfterWithdrawTax } from "."
-import { getCartographer } from "./contracts"
+import { claimAmountBonus, claimAmountWithBonusAdded, e12, e6, elevationPromiseSequenceReduce, EVENT, executeTxExpectEvent, executeTxExpectReversion, getBifiToken, getCakeToken, OASIS, subCartGet, sumBigNumbers, toDecimal, tokenAmountAfterDepositFee, tokenAmountAfterWithdrawTax, tokenPromiseSequenceMap } from "."
+import { getCartographer, getSummitToken } from "./contracts"
 
 
 // BASE GETTERS
@@ -37,6 +37,20 @@ const getTokenDepositFee = async (tokenAddress: string): Promise<number> => {
 const getUserTokenEarningsBonus = async (userAddress: string, tokenAddress: string): Promise<number> => {
     return await (await getCartographer()).bonusBP(userAddress, tokenAddress)
 }
+const getTokenClaimableWithBonus = async (userAddress: string, tokenAddress: string, elevation: number): Promise<BigNumber> => {
+    const expectedClaimAmount = (await subCartGet.claimableRewards(tokenAddress, elevation, userAddress))
+        .add(await farmSummitEmissionOverDuration(tokenAddress, elevation, 1))
+        .div(e6(1)).mul(e6(1))
+    const userTokenBonusBp = await getUserTokenEarningsBonus(userAddress, tokenAddress)
+    return claimAmountWithBonusAdded(expectedClaimAmount, userTokenBonusBp)
+}
+const getTokenClaimableBonus = async (userAddress: string, tokenAddress: string, elevation: number): Promise<BigNumber> => {
+    const expectedClaimAmount = (await subCartGet.claimableRewards(tokenAddress, elevation, userAddress))
+        .add(await farmSummitEmissionOverDuration(tokenAddress, elevation, 1))
+        .div(e6(1)).mul(e6(1))
+    const userTokenBonusBp = await getUserTokenEarningsBonus(userAddress, tokenAddress)
+    return claimAmountBonus(expectedClaimAmount, userTokenBonusBp)
+}
 
 export const cartographerGet = {
     tokenAlloc,
@@ -49,6 +63,8 @@ export const cartographerGet = {
     getUserTokenWithdrawalTax,
     getTokenDepositFee,
     getUserTokenEarningsBonus,
+    getTokenClaimableWithBonus,
+    getTokenClaimableBonus,
     getRolloverReward: async () => {
         return await (await getCartographer()).rolloverReward()
     },
@@ -243,13 +259,33 @@ export const cartographerMethod = {
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
-            const expectedClaimAmount = (await subCartGet.rewards(tokenAddress, elevation, user.address)).harvestable
-                .add(await farmSummitEmissionOverDuration(tokenAddress, elevation, 1))
-                .div(e6(1)).mul(e6(1))
-            const userTokenBonusBp = await getUserTokenEarningsBonus(user.address, tokenAddress)
-            const expectedClaimAmountWithBonus = claimAmountWithBonusAdded(expectedClaimAmount, userTokenBonusBp)
+            const expectedClaimAmountWithBonus = await getTokenClaimableWithBonus(user.address, tokenAddress, elevation)
             const eventArgs = eventOnly ? null : [user.address, expectedClaimAmountWithBonus]
             await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.ClaimWinnings, eventArgs, false)
+        }
+    },
+    claimElevation: async ({
+        user,
+        elevation,
+        revertErr,
+    }: {
+        user: SignerWithAddress,
+        elevation: number,
+        revertErr?: string,
+    }) => {
+        const cartographer = await getCartographer()
+        const tx = cartographer.connect(user).claimElevation
+        const txArgs = [elevation]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            const tokenClaimableWithBonuses = await tokenPromiseSequenceMap(
+                async (token) => await getTokenClaimableWithBonus(user.address, token.address, elevation)
+            )
+            const totalClaimableWithBonuses = sumBigNumbers(tokenClaimableWithBonuses)
+            const eventArgs = [user.address, elevation, totalClaimableWithBonuses]
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.ClaimElevation, eventArgs, false)
         }
     },
     withdraw: async ({

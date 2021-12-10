@@ -87,17 +87,15 @@ export const subCartGet = {
             totemSelectionRound: userElevationInfo.totemSelectionRound,
         }        
     },
-    rewards: async (tokenAddress: string, elevation: number, userAddress: string) => {
+    claimableRewards: async (tokenAddress: string, elevation: number, userAddress: string): Promise<BigNumber> => {
         const subCart = await getSubCartographer(elevation)
-        const rewards = await subCart.rewards(tokenAddress, userAddress)
-        return {
-            harvestable: rewards[0],
-            vesting: rewards[1],
-            vestDuration: rewards[2],
-            vestStart: rewards[3],
-        }
+        return await subCart.claimableRewards(tokenAddress, userAddress)
     },
-    hypotheticalRewards: async (tokenAddress: string, elevation: number, userAddress: string) => {
+    elevClaimableRewards: async (elevation: number, userAddress: string) => {
+        const subCart = await getSubCartographer(elevation)
+        return await subCart.elevClaimableRewards(userAddress)
+    },
+    potentialWinnings: async (tokenAddress: string, elevation: number, userAddress: string) => {
         const subCart = await getSubCartographer(elevation)
         const hypotheticalRewards = await subCart.hypotheticalRewards(tokenAddress, userAddress)
         return {

@@ -62,6 +62,14 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
   await bifiToken.connect(user2).approve(cartographer.address, INF_APPROVE)
   await bifiToken.connect(user3).approve(cartographer.address, INF_APPROVE)
 
+  await everestToken.connect(user1).approve(everestToken.address, INF_APPROVE)
+  await everestToken.connect(user2).approve(everestToken.address, INF_APPROVE)
+  await everestToken.connect(user3).approve(everestToken.address, INF_APPROVE)
+
+  await summitToken.connect(user1).approve(everestToken.address, INF_APPROVE)
+  await summitToken.connect(user2).approve(everestToken.address, INF_APPROVE)
+  await summitToken.connect(user3).approve(everestToken.address, INF_APPROVE)
+
   return {
     dev,
     exped,

@@ -96,12 +96,12 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         require(block.timestamp >= userEverestInfo[msg.sender].lockRelease, "Lock still in effect");
         _;
     }
-    modifier userEverestInfoExists() {
-        require(userEverestInfo[msg.sender].userAdd != address(0), "User doesnt exist");
+    modifier userEverestInfoExists(address _userAdd) {
+        require(userEverestInfo[_userAdd].userAdd == _userAdd, "User doesnt exist");
         _;
     }
-    modifier userOwnsEverest() {
-        require (userEverestInfo[msg.sender].everestOwned > 0, "Must own everest");
+    modifier userOwnsEverest(address _userAdd) {
+        require (userEverestInfo[_userAdd].everestOwned > 0, "Must own everest");
         _;
     }
     modifier validEverestAmountToBurn(uint256 _everestAmount) {
@@ -217,15 +217,6 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         _burn(address(this), _everestAmount);
     }
 
-    function _getOrCreateUserEverestInfo(address _userAdd)
-        internal
-        returns (UserEverestInfo storage)
-    {
-        UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
-        everestInfo.userAdd = _userAdd;
-        return everestInfo;
-    }
-
     /// @dev Lock Summit for a duration and earn everest
     /// @param _summitAmount Amount of SUMMIT to deposit
     /// @param _lockDuration Duration the SUMMIT will be locked for
@@ -247,7 +238,8 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         _mint(msg.sender, everestAward);
 
         // Create and initialize the user's everestInfo
-        UserEverestInfo storage everestInfo = _getOrCreateUserEverestInfo(msg.sender);
+        UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
+        everestInfo.userAdd = msg.sender;
         everestInfo.everestOwned = everestAward;
         everestInfo.everestLockMultiplier = everestLockMultiplier;
         everestInfo.lockRelease = block.timestamp + _lockDuration;
@@ -267,7 +259,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     /// @dev Increase the lock duration of user's locked SUMMIT
     function increaseLockDuration(uint256 _lockDuration)
         public
-        nonReentrant notPanic userEverestInfoExists userOwnsEverest
+        nonReentrant notPanic userEverestInfoExists(msg.sender) userOwnsEverest(msg.sender)
     {
         uint256 additionalEverestAward = _increaseLockDuration(_lockDuration, msg.sender);
         emit LockDurationIncreased(msg.sender, _lockDuration, additionalEverestAward);
@@ -354,7 +346,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     /// @dev Lock additional summit and extend duration to arbitrary duration
     function lockAndExtendLockDuration(uint256 _summitAmount, uint256 _lockDuration, address _userAdd)
         public
-        nonReentrant notPanic userEverestInfoExists userOwnsEverest
+        nonReentrant notPanic userEverestInfoExists(_userAdd) userOwnsEverest(_userAdd)
     {
         UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
 
@@ -368,13 +360,13 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
             msg.sender
         );
         
-        emit LockedSummitIncreased(msg.sender, true, _summitAmount, additionalEverestAward);
+        emit LockedSummitIncreased(_userAdd, true, _summitAmount, additionalEverestAward);
     }
 
     /// @dev Increase the users Locked Summit and earn everest
     function increaseLockedSummit(uint256 _summitAmount)
         public
-        nonReentrant notPanic userEverestInfoExists userOwnsEverest
+        nonReentrant notPanic userEverestInfoExists(msg.sender) userOwnsEverest(msg.sender)
     {
         uint256 additionalEverestAward = _increaseLockedSummit(
             _summitAmount,
@@ -388,7 +380,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     /// @dev Decrease the Summit and burn everest
     function withdrawLockedSummit(uint256 _everestAmount)
         public
-        nonReentrant notPanic userEverestInfoExists userOwnsEverest userLockDurationSatisfied validEverestAmountToBurn(_everestAmount)
+        nonReentrant notPanic userEverestInfoExists(msg.sender) userOwnsEverest(msg.sender) userLockDurationSatisfied validEverestAmountToBurn(_everestAmount)
     {
         UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
         require (_everestAmount <= everestInfo.everestOwned, "Bad withdraw");
@@ -480,7 +472,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     /// @dev Panic recover locked SUMMIT if something has gone wrong
     function panicRecoverFunds()
         public
-        nonReentrant userEverestInfoExists onlyPanic
+        nonReentrant userEverestInfoExists(msg.sender) onlyPanic
     {
         UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
 

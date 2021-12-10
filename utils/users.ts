@@ -36,12 +36,12 @@ export const usersStaked = async (tokenAddress: string, elevation: number): Prom
 }
 export const usersHypotheticalRewards = async (tokenAddress: string, elevation: number) => {
     return await userPromiseSequenceMap(
-        async (user) => (await subCartGet.hypotheticalRewards(tokenAddress, elevation, user.address))
+        async (user) => (await subCartGet.potentialWinnings(tokenAddress, elevation, user.address))
     )
 }
 export const usersRewards = async (tokenAddress: string, elevation: number) => {
     return await userPromiseSequenceMap(
-        async (user) => (await subCartGet.rewards(tokenAddress, elevation, user.address))
+        async (user) => (await subCartGet.claimableRewards(tokenAddress, elevation, user.address))
     )
 }
 
@@ -52,7 +52,7 @@ export const usersSummitBalances = async () => {
 }
 export const usersClaimedSummitBalances = async () => {
     return await userPromiseSequenceMap(
-        async (user) => await summitLockingGet.getUserCurrentEpochClaimableWinnings(user.address)
+        async (user) => await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user.address)
     )
 }
 export const usersEverestBalances = async () => {
@@ -81,4 +81,13 @@ export const usersExpeditionHypotheticalRewards = async (): Promise<ExpeditionHy
     return await userPromiseSequenceMap(
         async (user) => await expeditionGet.hypotheticalRewards(user.address)
     )
+}
+
+export const getUserTotems = async () => {
+    const { user1, user2, user3 } = await getNamedSigners(hre)
+    return {
+        [user1.address]: 0,
+        [user2.address]: 0,
+        [user3.address]: 1,
+    }
 }

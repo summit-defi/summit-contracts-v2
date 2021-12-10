@@ -811,8 +811,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         returns (uint16)
     {
         uint256 lastWithdrawTimestamp = tokenLastWithdrawTimestampForBonus[_userAdd][_token];
-        if (lastWithdrawTimestamp > 0 && (lastWithdrawTimestamp + taxDecayDuration) >= block.timestamp) {
-            uint256 timeDiff = Math.min((lastWithdrawTimestamp + taxDecayDuration) - block.timestamp, taxDecayDuration);
+        if (lastWithdrawTimestamp > 0 && block.timestamp > (lastWithdrawTimestamp + taxDecayDuration)) {
+            uint256 timeDiff = Math.min(block.timestamp - (lastWithdrawTimestamp + taxDecayDuration), taxDecayDuration);
             return uint16((maxBonusBP * timeDiff * e12 / taxDecayDuration) / e12);
         }
 
@@ -859,7 +859,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         // Set initial value of token last withdraw timestamp (for bonus) if it hasn't already been set
         if (tokenLastWithdrawTimestampForBonus[msg.sender][_token] == 0) {
-            tokenLastWithdrawTimestampForBonus[msg.sender][_token] == block.timestamp;
+            tokenLastWithdrawTimestampForBonus[msg.sender][_token] = block.timestamp;
         }
 
         // Reset tax timestamp if user is depositing greater than {taxResetOnDepositBP}% of current staked amount
@@ -875,7 +875,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _elevation Elevation to claim all rewards from
     function claimElevation(uint8 _elevation)
         public
-        nonReentrant isElevation(_elevation)
+        nonReentrant isOasisOrElevation(_elevation)
     {
         // Harvest across an elevation, return total amount claimed
         uint256 totalClaimed = subCartographer(_elevation).claimElevation(msg.sender);
@@ -999,7 +999,12 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
 
     /// @dev Utility function to handle claiming Summit rewards with referral rewards
-    function claimWinnings(address _userAdd, address _token, uint256 _amount) external onlySubCartographer {
+    /// @return Claimed amount with bonuses included
+    function claimWinnings(address _userAdd, address _token, uint256 _amount)
+        external
+        onlySubCartographer
+        returns (uint256)
+    {
         uint256 tokenBonusBP = _getBonusBP(_userAdd, _token);
         uint256 bonusWinnings = _amount * tokenBonusBP / 10000;
         uint256 totalWinnings = _amount + bonusWinnings;
@@ -1016,6 +1021,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         summitReferrals.addReferralRewardsIfNecessary(_userAdd, _amount);
 
         emit ClaimWinnings(_userAdd, totalWinnings);
+
+        return totalWinnings;
     }
 
 

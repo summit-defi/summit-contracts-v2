@@ -31,7 +31,7 @@ const getUserEpochLockedWinnings = async (userAddress: string, epoch: number): P
         claimedWinnings: userLockedWinnings.claimedWinnings,
     }
 }
-const getUserEpochClaimableWinnings = async (userAddress: string, epoch: number) => {
+const getUserEpochHarvestableWinnings = async (userAddress: string, epoch: number) => {
     const userLockedWinnings = await getUserEpochLockedWinnings(userAddress, epoch)
     return userLockedWinnings.winnings.sub(userLockedWinnings.claimedWinnings)
 }
@@ -43,26 +43,33 @@ export const summitLockingGet = {
     getYieldLockEpochCount,
     getCurrentEpoch,
     getHasEpochMatured: async (epoch: number) => {
-        return (await getSummitLocking()).hasEpochMatured(epoch);
+        return await (await getSummitLocking()).hasEpochMatured(epoch);
     },
-    getUserLifetimeWinnings: async (userAddress: string) => {
-        return (await getSummitLocking()).userLifetimeWinnings(userAddress)
-    },
-    getUserLifetimeBonusWinnings: async (userAddress: string) => {
-        return (await getSummitLocking()).userLifetimeBonusWinnings(userAddress)
-    },
-    getUserEpochLockedWinnings,
-    getUserEpochClaimableWinnings,
-    getUserCurrentEpochClaimableWinnings: async (userAddress: string) => {
-        const currentEpoch = await getCurrentEpoch()
-        return await getUserEpochClaimableWinnings(userAddress, currentEpoch)
+    getEpochStartTimestamp: async (epoch: number) => {
+        return (await (await getSummitLocking()).getEpochStartTimestamp(epoch)).toNumber();
     },
     getEpochMatureTimestamp: async (epoch: number) => {
-        return epochStartTimestamp(epoch) + (5 * epochDuration)
+        return (await (await getSummitLocking()).getEpochMatureTimestamp(epoch)).toNumber();
+    },
+    getUserLifetimeWinnings: async (userAddress: string) => {
+        return await (await getSummitLocking()).userLifetimeWinnings(userAddress)
+    },
+    getUserLifetimeBonusWinnings: async (userAddress: string) => {
+        return await (await getSummitLocking()).userLifetimeBonusWinnings(userAddress)
+    },
+    getUserEpochLockedWinnings,
+    getUserEpochHarvestableWinnings,
+    getUserCurrentEpochHarvestableWinnings: async (userAddress: string) => {
+        const currentEpoch = await getCurrentEpoch()
+        return await getUserEpochHarvestableWinnings(userAddress, currentEpoch)
     },
     getPanicFundsReleased: async () => {
         return (await getSummitLocking()).getPanicFundsReleased()
     },
+    getUserInteractingEpochs: async (userAddress: string): Promise<number[]> => {
+        const interactingEpochs = await (await getSummitLocking()).getUserInteractingEpochs(userAddress)
+        return interactingEpochs.map((epoch: BigNumber) => epoch.toNumber())
+    }
 }
 
 export const summitLockingMethod = {
@@ -87,7 +94,47 @@ export const summitLockingMethod = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [user.address, epoch, amount, lockForEverest]
-            await executeTxExpectEvent(tx, txArgs, summitLocking, EVENT.WinningsHarvested, eventArgs, true)
+            await executeTxExpectEvent(tx, txArgs, summitLocking, EVENT.SummitLocking.WinningsHarvested, eventArgs, true)
+        }
+    },
+    setYieldLockEpochCount: async ({
+        dev,
+        yieldLockEpochCount,
+        revertErr,
+    }: {
+        dev: SignerWithAddress,
+        yieldLockEpochCount: number,
+        revertErr?: string,
+    }) => {
+        const summitLocking = await getSummitLocking()
+        const tx = summitLocking.connect(dev).setYieldLockEpochCount
+        const txArgs = [yieldLockEpochCount]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            const eventArgs = [yieldLockEpochCount]
+            await executeTxExpectEvent(tx, txArgs, summitLocking, EVENT.SummitLocking.SetYieldLockEpochCount, eventArgs, true)
+        }
+    },
+    setPanic: async ({
+        dev,
+        panic,
+        revertErr,
+    }: {
+        dev: SignerWithAddress,
+        panic: boolean,
+        revertErr?: string,
+    }) => {
+        const summitLocking = await getSummitLocking()
+        const tx = summitLocking.connect(dev).setPanic
+        const txArgs = [panic]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            const eventArgs = [panic]
+            await executeTxExpectEvent(tx, txArgs, summitLocking, EVENT.SummitLocking.SetPanic, eventArgs, true)
         }
     },
 }
