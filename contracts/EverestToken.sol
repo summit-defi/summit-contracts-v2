@@ -259,7 +259,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     /// @dev Increase the lock duration of user's locked SUMMIT
     function increaseLockDuration(uint256 _lockDuration)
         public
-        nonReentrant notPanic userEverestInfoExists(msg.sender) userOwnsEverest(msg.sender)
+        nonReentrant notPanic userEverestInfoExists(msg.sender) userOwnsEverest(msg.sender) validLockDuration(_lockDuration)
     {
         uint256 additionalEverestAward = _increaseLockDuration(_lockDuration, msg.sender);
         emit LockDurationIncreased(msg.sender, _lockDuration, additionalEverestAward);
@@ -346,7 +346,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     /// @dev Lock additional summit and extend duration to arbitrary duration
     function lockAndExtendLockDuration(uint256 _summitAmount, uint256 _lockDuration, address _userAdd)
         public
-        nonReentrant notPanic userEverestInfoExists(_userAdd) userOwnsEverest(_userAdd)
+        nonReentrant notPanic userEverestInfoExists(_userAdd) userOwnsEverest(_userAdd) validLockDuration(_lockDuration)
     {
         UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
 
