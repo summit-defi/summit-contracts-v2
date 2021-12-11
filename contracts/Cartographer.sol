@@ -790,7 +790,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         uint256 tokenMinTax = isNativeFarmToken[_token] ? 0 : baseMinimumWithdrawalTax;
 
         // Early exit if min tax is greater than tax of this token
-        if (tokenMinTax <= tokenTax) return uint16(tokenMinTax);
+        if (tokenMinTax >= tokenTax) return uint16(tokenMinTax);
 
         return uint16(SummitMath.scaledValue(
             block.timestamp,

@@ -27,11 +27,17 @@ const userEverestInfo = async (userAddress: string): Promise<UserEverestInfo> =>
 const minLockTime = async () => {
     return (await (await getEverestToken()).minLockTime()).toNumber()
 }
+const inflectionLockTime = async () => {
+    return (await (await getEverestToken()).inflectionLockTime()).toNumber()
+}
 const maxLockTime = async () => {
     return (await (await getEverestToken()).maxLockTime()).toNumber()
 }
 const minEverestLockMult = async () => {
     return (await (await getEverestToken()).minEverestLockMult()).toNumber()
+}
+const inflectionEverestLockMult = async () => {
+    return (await (await getEverestToken()).inflectionEverestLockMult()).toNumber()
 }
 const maxEverestLockMult = async () => {
     return (await (await getEverestToken()).maxEverestLockMult()).toNumber()
@@ -39,11 +45,17 @@ const maxEverestLockMult = async () => {
 
 const getLockDurationMultiplier = async (lockDuration: number): Promise<number> => {
     const minLock = await minLockTime()
+    const inflectionLock = await inflectionLockTime()
     const maxLock = await maxLockTime()
     const minEverestMult = await minEverestLockMult()
+    const inflectionEverestMult = await inflectionEverestLockMult()
     const maxEverestMult = await maxEverestLockMult()
 
-    return Math.floor((lockDuration - minLock) * (maxEverestMult - minEverestMult) / (maxLock - minLock)) + minEverestMult
+    if (lockDuration <= inflectionLock) {
+        return Math.floor((lockDuration - minLock) * (inflectionEverestMult - minEverestMult) / (inflectionLock - minLock)) + minEverestMult
+    }
+
+    return Math.floor((lockDuration - inflectionLock) * (maxEverestMult - inflectionEverestMult) / (maxLock - inflectionLock)) + inflectionEverestMult
 }
 
 const getExpectedEverestAward = async (summitAmount: BigNumber, lockDuration: number): Promise<BigNumber> => {
