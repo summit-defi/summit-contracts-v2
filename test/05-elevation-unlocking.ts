@@ -2,7 +2,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, PLAINS, MESA, SUMMIT, mineBlockWithTimestamp, cartographerMethod, getSummitToken, OASIS, getCartographer, elevationHelperGet, cartographerSynth, cartographerGet, expect6FigBigNumberAllEqual, expectAllEqual, subCartGet } from "../utils";
+import { e18, ERR, EVENT, PLAINS, MESA, SUMMIT, mineBlockWithTimestamp, cartographerMethod, getSummitToken, OASIS, getCartographer, elevationHelperGet, cartographerSynth, cartographerGet, expect6FigBigNumberAllEqual, expectAllEqual, subCartGet, elevationPromiseSequenceMap, getBifiToken, getCakeToken, promiseSequenceMap } from "../utils";
 import { fiveThousandUnlockedFixture, oasisUnlockedFixture, poolsFixture, twoThousandUnlockedFixture } from "./fixtures";
 
 const switchTotemIfNecessary = async (user: SignerWithAddress, elevation: number, totem: number, revertErr?: string) => {
@@ -19,6 +19,44 @@ const initialTotemSelections = async (user: SignerWithAddress) => {
   await switchTotemIfNecessary(user, PLAINS, 0)
   await switchTotemIfNecessary(user, MESA, 0)
   await switchTotemIfNecessary(user, SUMMIT, 0)
+}
+
+const userDepositIntoElevationPools = async (elevation: number) => {
+  const { user1 } = await getNamedSigners(hre)
+  const summitToken = await getSummitToken()
+  const cakeToken = await getCakeToken()
+  const bifiToken = await getBifiToken()
+
+  // Deposit into each pool
+  const pools = [
+    { tokenAddress: summitToken.address },
+    { tokenAddress: cakeToken.address },
+    { tokenAddress: bifiToken.address },
+  ]
+
+  console.log({
+    userElevationTotemInfoBefore: await subCartGet.userTotemInfo(elevation, user1.address)
+  })
+  if (!(await subCartGet.userTotemInfo(elevation, user1.address)).totemSelected) {
+    await cartographerMethod.switchTotem({
+      user: user1,
+      elevation,
+      totem: 0,
+    })
+  }
+  console.log({
+    userElevationTotemInfoAfter: await subCartGet.userTotemInfo(elevation, user1.address)
+  })
+
+  await promiseSequenceMap(
+    pools,
+    async (pool) => await cartographerMethod.deposit({
+      user: user1,
+      ...pool,
+      elevation,
+      amount: e18(0.1),
+    })
+  )
 }
 
 describe("ELEVATION Unlocks", function() {
@@ -104,10 +142,8 @@ describe("ELEVATION Unlocks", function() {
       })
     })
     it(`UNLOCK: Rolling over first 2K round, 2K pools should switch from failing ("${ERR.POOL_NOT_AVAILABLE_YET}") to succeeding`, async function() {
-      const oasisUnlockedFixtureState = await oasisUnlockedFixture()
-
+      const { summitToken, user1 } = await oasisUnlockedFixture()
       
-      const { summitToken, elevationHelper, cartographer, user1 } = oasisUnlockedFixtureState
       await initialTotemSelections(user1)
       const twoThousandUnlockTime = await elevationHelperGet.unlockTimestamp(PLAINS)
       await mineBlockWithTimestamp(twoThousandUnlockTime)
@@ -160,18 +196,18 @@ describe("ELEVATION Unlocks", function() {
       })
     })
     it(`UNLOCK: 2K Rollover should increase totalAllocPoint`, async function() {
-      const oasisUnlockedFixtureState = await oasisUnlockedFixture()
-
-      const { elevationHelper, cartographer } = oasisUnlockedFixtureState
+      await oasisUnlockedFixture()
       
       const totalAllocPointInit = await cartographerSynth.totalAlloc()
-
+      
       const twoThousandUnlockTime = await elevationHelperGet.unlockTimestamp(PLAINS)
       await mineBlockWithTimestamp(twoThousandUnlockTime)
-
+      
       await cartographerMethod.rollover({
         elevation: PLAINS
       })
+
+      await userDepositIntoElevationPools(PLAINS)
 
       const totalAllocPointFinal = await cartographerSynth.totalAlloc()
       const plainsAlloc = await cartographerGet.elevAlloc(PLAINS)
@@ -193,15 +229,12 @@ describe("ELEVATION Unlocks", function() {
 
   describe("- Five Thousand Meters", async function() {
     it(`UNLOCK: 5K Rollover should only be available after 5K elevation unlocks, else fails with error "${ERR.ELEVATION_LOCKED}"`, async function() {
-      const twoThousandUnlockedFixtureState = await twoThousandUnlockedFixture()
-
-      const { elevationHelper, cartographer, user1 } = twoThousandUnlockedFixtureState
+      await twoThousandUnlockedFixture()
       const fiveThousandUnlockTime = await elevationHelperGet.unlockTimestamp(MESA)
       
       await mineBlockWithTimestamp(fiveThousandUnlockTime - 60)
 
       await cartographerMethod.rollover({
-        user: user1,
         elevation: MESA,
         revertErr: ERR.ELEVATION_LOCKED,
       })
@@ -209,14 +242,12 @@ describe("ELEVATION Unlocks", function() {
       await mineBlockWithTimestamp(fiveThousandUnlockTime)
 
       await cartographerMethod.rollover({
-        user: user1,
         elevation: MESA,
       })
     })
     it(`UNLOCK: Rolling over first 5K round, 5K pools should switch from failing ("${ERR.POOL_NOT_AVAILABLE_YET}") to succeeding`, async function() {
-      const twoThousandUnlockedFixtureState = await twoThousandUnlockedFixture()
+      const { summitToken, user1 } = await twoThousandUnlockedFixture()
 
-      const { summitToken, elevationHelper, cartographer, user1 } = twoThousandUnlockedFixtureState
       const fiveThousandUnlockTime = await elevationHelperGet.unlockTimestamp(MESA)
       await initialTotemSelections(user1)
       await mineBlockWithTimestamp(fiveThousandUnlockTime)
@@ -255,9 +286,7 @@ describe("ELEVATION Unlocks", function() {
       })
     })
     it(`UNLOCK: 5K Rollover should increase totalAllocPoint`, async function() {
-      const twoThousandUnlockedFixtureState = await twoThousandUnlockedFixture()
-
-      const { elevationHelper, cartographer, user1 } = twoThousandUnlockedFixtureState
+      await twoThousandUnlockedFixture()
       
       const totalAllocPointInit = await cartographerSynth.totalAlloc()
       
@@ -267,6 +296,7 @@ describe("ELEVATION Unlocks", function() {
       await cartographerMethod.rollover({
         elevation: MESA
       })
+      await userDepositIntoElevationPools(MESA)
       const mesaAlloc = await cartographerGet.elevAlloc(MESA)
       const totalAllocPointFinal = await cartographerSynth.totalAlloc()
       
@@ -286,14 +316,12 @@ describe("ELEVATION Unlocks", function() {
 
   describe('- Ten Thousand Meters', async function() {
     it(`UNLOCK: 10K Rollover should only be available after 10K elevation unlocks, else fails with error "${ERR.ELEVATION_LOCKED}"`, async function() {
-      const fiveThousandUnlockedFixtureState = await fiveThousandUnlockedFixture()
+      await fiveThousandUnlockedFixture()
 
-      const { elevationHelper, cartographer, user1 } = fiveThousandUnlockedFixtureState
       const tenThousandUnlockTime = await elevationHelperGet.unlockTimestamp(SUMMIT)
       await mineBlockWithTimestamp(tenThousandUnlockTime - 60)
 
       await cartographerMethod.rollover({
-        user: user1,
         elevation: SUMMIT,
         revertErr: ERR.ELEVATION_LOCKED,
       })
@@ -301,14 +329,12 @@ describe("ELEVATION Unlocks", function() {
       await mineBlockWithTimestamp(tenThousandUnlockTime)
 
       await cartographerMethod.rollover({
-        user: user1,
         elevation: SUMMIT
       })
     })
     it(`UNLOCK: Rolling over first 10k round, 10k pools should switch from failing ("${ERR.POOL_NOT_AVAILABLE_YET}") to succeeding`, async function() {
-      const fiveThousandUnlockedFixtureState = await fiveThousandUnlockedFixture()
+      const { summitToken, user1 } = await fiveThousandUnlockedFixture()
 
-      const { summitToken, user1 } = fiveThousandUnlockedFixtureState
       const summitUnlockTimestamp = await elevationHelperGet.unlockTimestamp(SUMMIT)
       await switchTotemIfNecessary(user1, SUMMIT, 0)
       await mineBlockWithTimestamp(summitUnlockTimestamp)
@@ -333,18 +359,19 @@ describe("ELEVATION Unlocks", function() {
       })
     })
     it(`UNLOCK: 10K Rollover should increase totalAllocPoint`, async function() {
-      const fiveThousandUnlockedFixtureState = await fiveThousandUnlockedFixture()
-
+      await fiveThousandUnlockedFixture()
+      
       const totalAllocPointInit = await cartographerSynth.totalAlloc()
-
+      
       const tenThousandUnlockTime = await elevationHelperGet.unlockTimestamp(SUMMIT)
       await mineBlockWithTimestamp(tenThousandUnlockTime)
       
       await cartographerMethod.rollover({
         elevation: SUMMIT
       })
+      await userDepositIntoElevationPools(SUMMIT)
 
-      const summitAlloc = await cartographerGet.elevAlloc(PLAINS)
+      const summitAlloc = await cartographerGet.elevAlloc(SUMMIT)
       const totalAllocPointFinal = await cartographerSynth.totalAlloc()
       
       console.log({

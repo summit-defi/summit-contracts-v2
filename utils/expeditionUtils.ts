@@ -2,7 +2,7 @@ import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { expect } from "chai"
 import { string } from "hardhat/internal/core/params/argumentTypes"
-import { consoleLog, e0, e18, elevationHelperGet, EVENT, executeTxExpectEvent, executeTxExpectReversion, EXPEDITION, getElevationHelper, getExpedition, getSummitBalance, getUsdcBalance, mineBlockWithTimestamp, toDecimal, usersExpeditionInfo } from "."
+import { consoleLog, e0, e18, elevationHelperGet, EVENT, executeTxExpectEvent, executeTxExpectReversion, EXPEDITION, getElevationHelper, getExpedition, getSummitBalance, getUsdcBalance, mineBlockWithTimestamp, toDecimal, usersExpeditionInfos } from "."
 import { everestGet } from "./everestUtils"
 
 
@@ -19,6 +19,9 @@ export interface UserExpeditionInfo {
     
     safeSupply: BigNumber
     deitiedSupply: BigNumber
+
+    summitLifetimeWinnings: BigNumber
+    usdcLifetimeWinnings: BigNumber
 }
 
 export interface ExpeditionToken {
@@ -80,6 +83,9 @@ export const expeditionGet = {
             
             safeSupply: fetchedExpedInfo.safeSupply,
             deitiedSupply: fetchedExpedInfo.deitiedSupply,
+
+            summitLifetimeWinnings: fetchedExpedInfo.summit.lifetimeWinnings,
+            usdcLifetimeWinnings: fetchedExpedInfo.usdc.lifetimeWinnings,
         }
     },
     expeditionInfo: async (): Promise<ExpeditionInfo> => {
@@ -129,8 +135,8 @@ export const expeditionGet = {
             usdc: rewards[1],
         }
     },
-    hypotheticalRewards: async (userAddress: string): Promise<ExpeditionHypotheticalRewards> => {
-        const rewards = await (await getExpedition()).hypotheticalRewards(userAddress)
+    potentialWinnings: async (userAddress: string): Promise<ExpeditionHypotheticalRewards> => {
+        const rewards = await (await getExpedition()).potentialWinnings(userAddress)
         return {
             safeSummit: rewards[0],
             safeUsdc: rewards[1],
@@ -145,7 +151,7 @@ export const expeditionGet = {
             deity: requirements[1],
             safetyFactor: requirements[2],
         }
-    }
+    },
 }
 
 export const expeditionMethod = {
@@ -298,9 +304,6 @@ export const expeditionMethod = {
         } else {
             const expectedRewards = await expeditionGet.rewards(user.address)
             const eventArgs = [user.address, expectedRewards.summit, expectedRewards.usdc]
-            console.log({
-                harvestExpectedArgs: eventArgs
-            })
             await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.UserHarvestedExpedition, eventArgs, true)
         }
     },
@@ -331,8 +334,8 @@ const calcUserSafeAndDeitiedEverest = async (userAddress: string) => {
     }
 }
 
-const sumSafeAndDeitySupplies = async (): Promise<{ safeSupply: BigNumber, deity0Supply: BigNumber, deity1Supply: BigNumber}> => {
-    const usersExpedInfo = await usersExpeditionInfo()
+const sumUsersSafeAndDeitySupplies = async (): Promise<{ safeSupply: BigNumber, deity0Supply: BigNumber, deity1Supply: BigNumber}> => {
+    const usersExpedInfo = await usersExpeditionInfos()
     return usersExpedInfo.reduce((acc, expedInfo) => ({
         safeSupply: acc.safeSupply.add(calcUserSafeEverest(expedInfo)),
         deity0Supply: acc.deity0Supply.add(expedInfo.deity !== 0 ? 0 : calcUserDeitiedEverest(expedInfo)),
@@ -341,7 +344,7 @@ const sumSafeAndDeitySupplies = async (): Promise<{ safeSupply: BigNumber, deity
 }
 
 const expectUserAndExpedSuppliesToMatch = async () => {
-    const summedSupplies = await sumSafeAndDeitySupplies()
+    const summedSupplies = await sumUsersSafeAndDeitySupplies()
     const expedInfo = await expeditionGet.expeditionInfo()
 
     consoleLog({
@@ -377,7 +380,7 @@ export const expeditionSynth = {
     calcUserSafeEverest,
     calcUserDeitiedEverest,
     calcUserSafeAndDeitiedEverest,
-    sumSafeAndDeitySupplies,
+    sumUsersSafeAndDeitySupplies,
     expectUserAndExpedSuppliesToMatch,
     getExpeditionExpectedEmissions,
 }

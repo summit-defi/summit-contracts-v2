@@ -3,7 +3,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import hre from 'hardhat'
 import { UserInfo } from "os"
-import { expeditionGet, ExpeditionHypotheticalRewards, ExpeditionRewards, getEverestBalance, getSummitBalance, getUsdcBalance, promiseSequenceMap, subCartGet } from "."
+import { everestGet, expeditionGet, ExpeditionHypotheticalRewards, ExpeditionInfo, ExpeditionRewards, getEverestBalance, getSummitBalance, getUsdcBalance, promiseSequenceMap, subCartGet, UserEverestInfo, UserExpeditionInfo } from "."
 import { summitLockingGet } from "./summitLockingUtils"
 
 
@@ -36,39 +36,44 @@ export const usersStaked = async (tokenAddress: string, elevation: number): Prom
 }
 export const usersHypotheticalRewards = async (tokenAddress: string, elevation: number) => {
     return await userPromiseSequenceMap(
-        async (user) => (await subCartGet.hypotheticalRewards(tokenAddress, elevation, user.address))
+        async (user) => (await subCartGet.potentialWinnings(tokenAddress, elevation, user.address))
     )
 }
 export const usersRewards = async (tokenAddress: string, elevation: number) => {
     return await userPromiseSequenceMap(
-        async (user) => (await subCartGet.rewards(tokenAddress, elevation, user.address))
+        async (user) => (await subCartGet.claimableRewards(tokenAddress, elevation, user.address))
     )
 }
 
-export const usersSummitBalances = async () => {
+export const usersSummitBalances = async (): Promise<BigNumber[]> => {
     return await userPromiseSequenceMap(
         async (user) => await getSummitBalance(user.address)
     )
 }
-export const usersClaimedSummitBalances = async () => {
+export const usersLockedSummitBalances = async (): Promise<BigNumber[]> => {
     return await userPromiseSequenceMap(
-        async (user) => await summitLockingGet.getUserCurrentEpochClaimableWinnings(user.address)
+        async (user) => await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user.address)
     )
 }
-export const usersEverestBalances = async () => {
+export const usersEverestBalances = async (): Promise<BigNumber[]> => {
     return await userPromiseSequenceMap(
         async (user) => await getEverestBalance(user.address)
     )
 }
-export const usersUsdcBalances = async () => {
+export const usersUsdcBalances = async (): Promise<BigNumber[]> => {
     return await userPromiseSequenceMap(
         async (user) => await getUsdcBalance(user.address)
     )
 }
 
-export const usersExpeditionInfo = async () => {
+export const usersExpeditionInfos = async (): Promise<UserExpeditionInfo[]> => {
     return await userPromiseSequenceMap(
         async (user) => await expeditionGet.userExpeditionInfo(user.address)
+    )
+}
+export const usersEverestInfos = async (): Promise<UserEverestInfo[]> => {
+    return await userPromiseSequenceMap(
+        async (user) => await everestGet.userEverestInfo(user.address)
     )
 }
 
@@ -79,6 +84,15 @@ export const usersExpeditionRewards = async (): Promise<ExpeditionRewards[]> => 
 }
 export const usersExpeditionHypotheticalRewards = async (): Promise<ExpeditionHypotheticalRewards[]> => {
     return await userPromiseSequenceMap(
-        async (user) => await expeditionGet.hypotheticalRewards(user.address)
+        async (user) => await expeditionGet.potentialWinnings(user.address)
     )
+}
+
+export const getUserTotems = async () => {
+    const { user1, user2, user3 } = await getNamedSigners(hre)
+    return {
+        [user1.address]: 0,
+        [user2.address]: 0,
+        [user3.address]: 1,
+    }
 }

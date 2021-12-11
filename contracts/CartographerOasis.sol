@@ -213,13 +213,14 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         onlyCartographer poolExists(_token)
     {
         OasisPoolInfo storage pool = poolInfo[_token];
-        updatePool(_token);
 
-        // Update IsEarning in Cartographer
-        _updateTokenIsEarning(pool);
+        updatePool(_token);
 
         // Update internal pool states
         pool.live = _live;
+        
+        // Update IsEarning in Cartographer
+        _updateTokenIsEarning(pool);
     }
 
 
@@ -292,22 +293,12 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     // ---------------------------------------
 
 
-    /// @dev Fetch guaranteed yield rewards of the pool
-    /// @param _token Pool to fetch rewards from
-    /// @param _userAdd User requesting rewards info
-    /// @return (
-    ///     claimableRewards - Amount of Summit available to Claim
-    ///     vestingWinnings - Not applicable in OASIS
-    ///     vestingDuration - Not applicable in OASIS
-    ///     vestingStart - Not applicable in OASIS
-    /// )
-    function rewards(address _token, address _userAdd)
-        public view
-        poolExists(_token) validUserAdd(_userAdd)
-    returns (uint256, uint256, uint256, uint256) {
-        OasisPoolInfo storage pool = poolInfo[_token];
-        UserInfo storage user = userInfo[_token][_userAdd];
-
+    /// @dev Claimable rewards of a pool
+    function _poolClaimableRewards(OasisPoolInfo storage pool, UserInfo storage user)
+        internal view
+        poolExists(pool.token)
+        returns (uint256)
+    {
         // Temporary accSummitPerShare to bring rewards current if last reward timestamp is behind current timestamp
         uint256 accSummitPerShare = pool.accSummitPerShare;
 
@@ -324,8 +315,48 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
             accSummitPerShare = accSummitPerShare + (poolSummitEmission * 1e12 / pool.supply);
         }
 
-        // Return claimableRewards, other rewards variables are not applicable in the OASIS
-        return ((user.staked * accSummitPerShare / 1e12) - user.debt, 0, 0, 0);
+        return (user.staked * accSummitPerShare / 1e12) - user.debt;
+    }
+
+
+    /// @dev Fetch guaranteed yield rewards of the pool
+    /// @param _token Pool to fetch rewards from
+    /// @param _userAdd User requesting rewards info
+    /// @return claimableRewards: Amount of Summit available to Claim
+    function claimableRewards(address _token, address _userAdd)
+        public view
+        poolExists(_token) validUserAdd(_userAdd)
+        returns (uint256)
+    {
+        return _poolClaimableRewards(
+            poolInfo[_token],
+            userInfo[_token][_userAdd]
+        );
+    }
+
+
+
+
+    /// @dev Claimable rewards across an entire elevation
+    /// @param _userAdd User Claiming
+    function elevClaimableRewards(address _userAdd)
+        public view
+        validUserAdd(_userAdd)
+        returns (uint256)
+    {
+        // Claim rewards of users active pools
+        uint256 claimable = 0;
+
+        // Iterate through pools the user is interacting, get claimable amount, update pool
+        for (uint8 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
+            // Claim winnings
+            claimable += _poolClaimableRewards(
+                poolInfo[userInteractingPools[_userAdd].at(index)],
+                userInfo[userInteractingPools[_userAdd].at(index)][_userAdd]
+            );
+        }
+        
+        return claimable;
     }
 
 
@@ -481,9 +512,9 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         // Check claimable rewards and withdraw if applicable
         uint256 claimable = (user.staked * pool.accSummitPerShare / 1e12) - user.debt;
 
-        // Claim rewards
+        // Claim rewards, replace claimable with true claimed amount with bonuses included
         if (claimable > 0) {
-            cartographer.claimWinnings(_userAdd, pool.token, claimable);
+            claimable = cartographer.claimWinnings(_userAdd, pool.token, claimable);
         }
 
         // Set debt, may be overwritten in subsequent deposit / withdraw, but may not so it needs to be set here

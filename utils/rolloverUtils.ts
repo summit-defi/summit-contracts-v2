@@ -1,4 +1,4 @@
-import { cartographerMethod, elevationHelperGet, EXPEDITION, expeditionMethod, getTimestamp, mineBlockWithTimestamp } from "."
+import { cartographerMethod, elevationHelperGet, EXPEDITION, expeditionMethod, getTimestamp, mineBlockWithTimestamp, OASIS } from "."
 
 export const rolloverRound = async (elevation: number) => {
     const nextRoundTime = await elevationHelperGet.roundEndTimestamp(elevation)
@@ -33,6 +33,7 @@ export const rolloverRound = async (elevation: number) => {
     } while (winningTotem === targetLosingTotem)
   }
   export const rolloverIfAvailable = async (elevation: number) => {
+    if (elevation === OASIS) return
     const timestamp = await getTimestamp()
     const roundEndTimestamp = await elevationHelperGet.roundEndTimestamp(elevation)
     const elevationUnlock = await elevationHelperGet.unlockTimestamp(elevation)

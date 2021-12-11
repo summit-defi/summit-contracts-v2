@@ -8,6 +8,7 @@ import "./EverestToken.sol";
 import "./ElevationHelper.sol";
 import "./SummitReferrals.sol";
 import "./SummitLocking.sol";
+import "./libs/SummitMath.sol";
 import "./interfaces/ISubCart.sol";
 import "./interfaces/IPassthrough.sol";
 import "./interfaces/IUniswapV2Pair.sol";
@@ -224,6 +225,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         subCartographers[SUMMIT] = _CartographerSummit;
 
         everest = EverestToken(_everest);
+        summit.approve(_everest, type(uint256).max);
         summitLocking = SummitLocking(_summitLocking);
 
         // Initialize the subCarts with the address of elevationHelper
@@ -417,7 +419,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Update the allocation for a token. This modifies existing allocations at each elevation for that token
     /// @param _token Token to update allocation for
     /// @param _allocation Updated allocation
-    function setTokenAlloc(address _token, uint256 _allocation)
+    function setTokenAllocation(address _token, uint256 _allocation)
         public
         onlyOwner tokenAllocExists(_token)  validAllocation(_allocation)
     {
@@ -769,7 +771,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // -----------------------------------------------------
 
 
-    /// @dev Get tax BP
+    /// @dev Get the user's tax for a token
     /// @param _userAdd user address
     /// @param _token token address
     function taxBP(address _userAdd, address _token)
@@ -782,18 +784,19 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         public view
         returns (uint16)
     {
-        // Amount user expects to receive after tax taken
+        uint256 lastDepositTimestampForTax = tokenLastDepositTimestampForTax[_userAdd][_token];
+
         uint256 tokenTax = uint256(tokenWithdrawalTax[_token]);
-        uint256 timeDiff = block.timestamp - tokenLastDepositTimestampForTax[_userAdd][_token];
-        uint16 tokenMinTax = isNativeFarmToken[_token] ? uint16(0) : baseMinimumWithdrawalTax;
+        uint256 tokenMinTax = isNativeFarmToken[_token] ? 0 : baseMinimumWithdrawalTax;
 
-        // Return current decaying taxBP amount if token's tax is greater than base tax and hasn't fully decayed
-        if (tokenTax > tokenMinTax && timeDiff < taxDecayDuration) {
-            return tokenMinTax + uint16(((tokenTax - uint256(tokenMinTax)) * (taxDecayDuration - timeDiff) * e12 / taxDecayDuration) / e12);
-        }
+        // Early exit if min tax is greater than tax of this token
+        if (tokenMinTax >= tokenTax) return uint16(tokenMinTax);
 
-        // Return minimum tax for this farm
-        return tokenMinTax;
+        return uint16(SummitMath.scaledValue(
+            block.timestamp,
+            lastDepositTimestampForTax, lastDepositTimestampForTax + taxDecayDuration,
+            tokenTax, tokenMinTax
+        ));
     }
 
 
@@ -811,12 +814,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         returns (uint16)
     {
         uint256 lastWithdrawTimestamp = tokenLastWithdrawTimestampForBonus[_userAdd][_token];
-        if (lastWithdrawTimestamp > 0 && (lastWithdrawTimestamp + taxDecayDuration) >= block.timestamp) {
-            uint256 timeDiff = Math.min((lastWithdrawTimestamp + taxDecayDuration) - block.timestamp, taxDecayDuration);
-            return uint16((maxBonusBP * timeDiff * e12 / taxDecayDuration) / e12);
-        }
-
-        return 0;
+        return uint16(SummitMath.scaledValue(
+            block.timestamp,
+            lastWithdrawTimestamp + taxDecayDuration, lastWithdrawTimestamp + (taxDecayDuration * 2),
+            0, maxBonusBP
+        ));
     }
 
 
@@ -859,7 +861,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         // Set initial value of token last withdraw timestamp (for bonus) if it hasn't already been set
         if (tokenLastWithdrawTimestampForBonus[msg.sender][_token] == 0) {
-            tokenLastWithdrawTimestampForBonus[msg.sender][_token] == block.timestamp;
+            tokenLastWithdrawTimestampForBonus[msg.sender][_token] = block.timestamp;
         }
 
         // Reset tax timestamp if user is depositing greater than {taxResetOnDepositBP}% of current staked amount
@@ -875,7 +877,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _elevation Elevation to claim all rewards from
     function claimElevation(uint8 _elevation)
         public
-        nonReentrant isElevation(_elevation)
+        nonReentrant isOasisOrElevation(_elevation)
     {
         // Harvest across an elevation, return total amount claimed
         uint256 totalClaimed = subCartographer(_elevation).claimElevation(msg.sender);
@@ -930,7 +932,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         // Lock withdrawn SUMMIT for EVEREST
         everest.lockAndExtendLockDuration(
             elevatedAmount,
-            everest.lockTimeRequiredForTaxlessSummitWithdraw(),
+            everest.minLockTime(),
             msg.sender
         );
 
@@ -999,7 +1001,12 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
 
     /// @dev Utility function to handle claiming Summit rewards with referral rewards
-    function claimWinnings(address _userAdd, address _token, uint256 _amount) external onlySubCartographer {
+    /// @return Claimed amount with bonuses included
+    function claimWinnings(address _userAdd, address _token, uint256 _amount)
+        external
+        onlySubCartographer
+        returns (uint256)
+    {
         uint256 tokenBonusBP = _getBonusBP(_userAdd, _token);
         uint256 bonusWinnings = _amount * tokenBonusBP / 10000;
         uint256 totalWinnings = _amount + bonusWinnings;
@@ -1016,6 +1023,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         summitReferrals.addReferralRewardsIfNecessary(_userAdd, _amount);
 
         emit ClaimWinnings(_userAdd, totalWinnings);
+
+        return totalWinnings;
     }
 
 

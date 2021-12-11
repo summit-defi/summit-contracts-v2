@@ -1,6 +1,6 @@
 import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
-import { EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getEverestToken } from "."
+import { e18, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getEverestToken } from "."
 
 
 export interface UserEverestInfo {
@@ -27,11 +27,17 @@ const userEverestInfo = async (userAddress: string): Promise<UserEverestInfo> =>
 const minLockTime = async () => {
     return (await (await getEverestToken()).minLockTime()).toNumber()
 }
+const inflectionLockTime = async () => {
+    return (await (await getEverestToken()).inflectionLockTime()).toNumber()
+}
 const maxLockTime = async () => {
     return (await (await getEverestToken()).maxLockTime()).toNumber()
 }
 const minEverestLockMult = async () => {
     return (await (await getEverestToken()).minEverestLockMult()).toNumber()
+}
+const inflectionEverestLockMult = async () => {
+    return (await (await getEverestToken()).inflectionEverestLockMult()).toNumber()
 }
 const maxEverestLockMult = async () => {
     return (await (await getEverestToken()).maxEverestLockMult()).toNumber()
@@ -39,11 +45,17 @@ const maxEverestLockMult = async () => {
 
 const getLockDurationMultiplier = async (lockDuration: number): Promise<number> => {
     const minLock = await minLockTime()
+    const inflectionLock = await inflectionLockTime()
     const maxLock = await maxLockTime()
     const minEverestMult = await minEverestLockMult()
+    const inflectionEverestMult = await inflectionEverestLockMult()
     const maxEverestMult = await maxEverestLockMult()
 
-    return Math.floor((lockDuration - minLock) * (maxEverestMult - minEverestMult) / (maxLock - minLock)) + minEverestMult
+    if (lockDuration <= inflectionLock) {
+        return Math.floor((lockDuration - minLock) * (inflectionEverestMult - minEverestMult) / (inflectionLock - minLock)) + minEverestMult
+    }
+
+    return Math.floor((lockDuration - inflectionLock) * (maxEverestMult - inflectionEverestMult) / (maxLock - inflectionLock)) + inflectionEverestMult
 }
 
 const getExpectedEverestAward = async (summitAmount: BigNumber, lockDuration: number): Promise<BigNumber> => {
@@ -54,7 +66,8 @@ const getExpectedEverestAward = async (summitAmount: BigNumber, lockDuration: nu
 const getAdditionalEverestAwardForLockDurationIncrease = async (userAddress: string, lockDuration: number): Promise<BigNumber> => {
     const newLockDurationMultiplier = await getLockDurationMultiplier(lockDuration)
     const everestInfo = await userEverestInfo(userAddress)
-    return everestInfo.summitLocked.mul(newLockDurationMultiplier).sub(everestInfo.everestOwned)
+    if (lockDuration <= everestInfo.lockDuration) return e18(0)
+    return everestInfo.summitLocked.mul(newLockDurationMultiplier).div(10000).sub(everestInfo.everestOwned)
 }
 
 const getAdditionalEverestAwardForIncreaseLockedSummit = async (userAddress: string, amount: BigNumber): Promise<BigNumber> => {
@@ -76,16 +89,21 @@ export const everestGet = {
     getLockDurationMultiplier,
     getExpectedEverestAward,
     getExpectedWithdrawnSummit,
-    panicReleaseLockedSummit: async () => {
-        return (await getEverestToken()).panicReleaseLockedSummit()
+    getAdditionalEverestAwardForLockDurationIncrease,
+    getAdditionalEverestAwardForIncreaseLockedSummit,
+    panic: async () => {
+        return await (await getEverestToken()).panic()
     },
     totalSummitLocked: async () => {
-        return (await getEverestToken()).totalSummitLocked()
+        return await (await getEverestToken()).totalSummitLocked()
     },
     avgSummitLockDuration: async () => {
-        return (await getEverestToken()).avgSummitLockDuration()
+        return await (await getEverestToken()).avgSummitLockDuration()
     },
     userEverestInfo,
+    getEverestExtensions: async (): Promise<string[]> => {
+        return await (await getEverestToken()).getEverestExtensions()
+    }
 }
 
 export const everestMethod = {
@@ -130,7 +148,7 @@ export const everestMethod = {
         } else {
             const expectedEverestAward = await getAdditionalEverestAwardForLockDurationIncrease(user.address, lockDuration)
             const eventArgs = [user.address, lockDuration, expectedEverestAward]
-            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.SummitLocked, eventArgs, false)
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.LockDurationIncreased, eventArgs, false)
         }
     },
     increaseLockedSummit: async ({
@@ -194,6 +212,51 @@ export const everestMethod = {
             await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.PanicFundsRecovered, eventArgs, false)
         }
     },
+
+
+
+
+    
+    addEverestExtension: async ({
+        dev,
+        extension,
+        revertErr,
+    }: {
+        dev: SignerWithAddress
+        extension: string,
+        revertErr?: string,
+    }) => {
+        const everestToken = await getEverestToken()
+        const tx = everestToken.connect(dev).addEverestExtension
+        const txArgs = [extension]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            const eventArgs = [extension]
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.EverestExtensionAdded, eventArgs, true)
+        }
+    },
+    removeEverestExtension: async ({
+        dev,
+        extension,
+        revertErr,
+    }: {
+        dev: SignerWithAddress
+        extension: string,
+        revertErr?: string,
+    }) => {
+        const everestToken = await getEverestToken()
+        const tx = everestToken.connect(dev).removeEverestExtension
+        const txArgs = [extension]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            const eventArgs = [extension]
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.EverestExtensionRemoved, eventArgs, true)
+        }
+    },
 }
 
 
@@ -240,21 +303,21 @@ export const everestSetParams = {
     },
     setLockTimeRequiredForTaxlessSummitWithdraw: async ({
         dev,
-        lockTimeRequiredForTaxlessSummitWithdraw,
+        inflectionLockTime,
         revertErr,
     }: {
         dev: SignerWithAddress
-        lockTimeRequiredForTaxlessSummitWithdraw: number,
+        inflectionLockTime: number,
         revertErr?: string,
     }) => {
         const everestToken = await getEverestToken()
         const tx = everestToken.connect(dev).setLockTimeRequiredForTaxlessSummitWithdraw
-        const txArgs = [lockTimeRequiredForTaxlessSummitWithdraw]
+        const txArgs = [inflectionLockTime]
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
-            const eventArgs = [lockTimeRequiredForTaxlessSummitWithdraw]
+            const eventArgs = [inflectionLockTime]
             await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.SetLockTimeRequiredForTaxlessSummitWithdraw, eventArgs, true)
         }
     },
@@ -337,5 +400,5 @@ export const everestSetParams = {
             const eventArgs = [panic]
             await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.SetPanic, eventArgs, true)
         }
-    },
+    },    
 }

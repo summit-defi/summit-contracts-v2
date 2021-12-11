@@ -4,6 +4,7 @@ pragma solidity 0.8.0;
 
 import "./libs/ERC20Mintable.sol";
 import "./BaseEverestExtension.sol";
+import "./libs/SummitMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -26,12 +27,11 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     bool public panic = false;
 
     uint256 public minLockTime = 3600 * 24 * 7;
+    uint256 public inflectionLockTime = 3600 * 24 * 30;
     uint256 public maxLockTime = 3600 * 24 * 365;
     uint256 public minEverestLockMult = 1000;
-    uint256 public maxEverestLockMult = 10000;
-
-    uint256 public lockTimeRequiredForTaxlessSummitWithdraw = 3600 * 24 * 7;
-    uint256 public lockTimeRequiredForClaimableSummitLock = 3600 * 24 * 30;
+    uint256 public inflectionEverestLockMult = 10000;
+    uint256 public maxEverestLockMult = 25000;
 
     uint256 public totalSummitLocked;
     uint256 public weightedAvgSummitLockDurations;
@@ -69,13 +69,17 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     event PanicFundsRecovered(address indexed user, uint256 _summitRecovered);
 
     event SetMinLockTime(uint256 _lockTimeDays);
+    event SetInflectionLockTime(uint256 _lockTimeDays);
     event SetMaxLockTime(uint256 _lockTimeDays);
     event SetMinEverestLockMult(uint256 _lockMult);
+    event SetInflectionEverestLockMult(uint256 _lockMult);
     event SetMaxEverestLockMult(uint256 _lockMult);
     event SetLockTimeRequiredForTaxlessSummitWithdraw(uint256 _lockTimeDays);
     event SetLockTimeRequiredForLockedSummitDeposit(uint256 _lockTimeDays);
     event SetPanic(bool _panic);
 
+    event EverestExtensionAdded(address indexed extension);
+    event EverestExtensionRemoved(address indexed extension);
 
 
 
@@ -96,12 +100,12 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         require(block.timestamp >= userEverestInfo[msg.sender].lockRelease, "Lock still in effect");
         _;
     }
-    modifier userEverestInfoExists() {
-        require(userEverestInfo[msg.sender].userAdd != address(0), "User doesnt exist");
+    modifier userEverestInfoExists(address _userAdd) {
+        require(userEverestInfo[_userAdd].userAdd == _userAdd, "User doesnt exist");
         _;
     }
-    modifier userOwnsEverest() {
-        require (userEverestInfo[msg.sender].everestOwned > 0, "Must own everest");
+    modifier userOwnsEverest(address _userAdd) {
+        require (userEverestInfo[_userAdd].everestOwned > 0, "Must own everest");
         _;
     }
     modifier validEverestAmountToBurn(uint256 _everestAmount) {
@@ -136,6 +140,11 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         minLockTime = _lockTimeDays * 24 * 365;
         emit SetMinLockTime(_lockTimeDays);
     }
+    function setInflectionLockTime(uint256 _lockTimeDays) public onlyOwner {
+        require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 7 && _lockTimeDays <= 365, "Invalid inflection lock time (7-365 days)");
+        minLockTime = _lockTimeDays * 24 * 365;
+        emit SetInflectionLockTime(_lockTimeDays);
+    }
     function setMaxLockTime(uint256 _lockTimeDays) public onlyOwner {
         require(_lockTimeDays >= minLockTime && _lockTimeDays >= 7 && _lockTimeDays <= 730, "Invalid maximum lock time (7-730 days)");
         maxLockTime = _lockTimeDays * 24 * 365;
@@ -146,20 +155,15 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         minEverestLockMult = _lockMult;
         emit SetMinEverestLockMult(_lockMult);
     }
+    function setInflectionEverestLockMult(uint256 _lockMult) public onlyOwner {
+        require(_lockMult >= 100 && _lockMult <= 50000, "Invalid lock mult");
+        inflectionEverestLockMult = _lockMult;
+        emit SetInflectionEverestLockMult(_lockMult);
+    }
     function setMaxEverestLockMult(uint256 _lockMult) public onlyOwner {
         require(_lockMult >= 100 && _lockMult <= 50000, "Invalid lock mult");
         maxEverestLockMult = _lockMult;
         emit SetMaxEverestLockMult(_lockMult);
-    }
-    function setLockTimeRequiredForTaxlessSummitWithdraw(uint256 _lockTimeDays) public onlyOwner {
-        require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 30, "Invalid taxless summit lock time (1-30 days)");
-        lockTimeRequiredForTaxlessSummitWithdraw = _lockTimeDays;
-        emit SetLockTimeRequiredForTaxlessSummitWithdraw(_lockTimeDays);
-    }
-    function setLockTimeRequiredForLockedSummitDeposit(uint256 _lockTimeDays) public onlyOwner {
-        require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 90, "Invalid locked summit lock time (1-90 days)");
-        lockTimeRequiredForClaimableSummitLock = _lockTimeDays;
-        emit SetLockTimeRequiredForLockedSummitDeposit(_lockTimeDays);
     }
 
 
@@ -203,10 +207,18 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         internal view
         returns (uint256)
     {
-        return (((_lockDuration - minLockTime) * (maxEverestLockMult - minEverestLockMult) * 1e12) /
-            (maxLockTime - minLockTime) /
-            1e12) +
-            minEverestLockMult;
+        if (_lockDuration <= inflectionLockTime) {
+            return SummitMath.scaledValue(
+                _lockDuration,
+                minLockTime, inflectionLockTime,
+                minEverestLockMult, inflectionEverestLockMult
+            );
+        }
+        return SummitMath.scaledValue(
+            _lockDuration,
+            inflectionLockTime, maxLockTime,
+            inflectionEverestLockMult, maxEverestLockMult
+        );
     }
 
     /// @dev Transfer everest to the burn address.
@@ -215,15 +227,6 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     {
         IERC20(address(this)).safeTransferFrom(_userAdd, address(this), _everestAmount);
         _burn(address(this), _everestAmount);
-    }
-
-    function _getOrCreateUserEverestInfo(address _userAdd)
-        internal
-        returns (UserEverestInfo storage)
-    {
-        UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
-        everestInfo.userAdd = _userAdd;
-        return everestInfo;
     }
 
     /// @dev Lock Summit for a duration and earn everest
@@ -247,7 +250,8 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         _mint(msg.sender, everestAward);
 
         // Create and initialize the user's everestInfo
-        UserEverestInfo storage everestInfo = _getOrCreateUserEverestInfo(msg.sender);
+        UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
+        everestInfo.userAdd = msg.sender;
         everestInfo.everestOwned = everestAward;
         everestInfo.everestLockMultiplier = everestLockMultiplier;
         everestInfo.lockRelease = block.timestamp + _lockDuration;
@@ -267,7 +271,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     /// @dev Increase the lock duration of user's locked SUMMIT
     function increaseLockDuration(uint256 _lockDuration)
         public
-        nonReentrant notPanic userEverestInfoExists userOwnsEverest
+        nonReentrant notPanic userEverestInfoExists(msg.sender) userOwnsEverest(msg.sender) validLockDuration(_lockDuration)
     {
         uint256 additionalEverestAward = _increaseLockDuration(_lockDuration, msg.sender);
         emit LockDurationIncreased(msg.sender, _lockDuration, additionalEverestAward);
@@ -340,26 +344,32 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     }
 
     /// @dev Increase the duration of already locked SUMMIT, exit early if user is already locked for a longer duration
-    function _increaseLockReleaseOnClaimableLocked(UserEverestInfo storage everestInfo, uint256 _lockDuration)
+    function _increaseLockDurationAndReleaseIfNecessary(UserEverestInfo storage everestInfo, uint256 _lockDuration)
         internal
         returns (uint256)
     {
         // Early escape if lock release already satisfies requirement
         if ((block.timestamp + _lockDuration) <= everestInfo.lockRelease) return 0;
 
-        // Update lock release and return the extra EVEREST that is earned by this extension
+        // If required lock duration is satisfied, but lock release needs to be extended: Update lockRelease exclusively
+        if (_lockDuration <= everestInfo.lockDuration) {
+            everestInfo.lockRelease = block.timestamp + _lockDuration;
+            return 0;
+        }
+
+        // Lock duration increased: earn additional EVEREST and update lockDuration and lockRelease
         return _increaseLockDuration(_lockDuration, everestInfo.userAdd);
     }
 
     /// @dev Lock additional summit and extend duration to arbitrary duration
     function lockAndExtendLockDuration(uint256 _summitAmount, uint256 _lockDuration, address _userAdd)
         public
-        nonReentrant notPanic userEverestInfoExists userOwnsEverest
+        nonReentrant notPanic userEverestInfoExists(_userAdd) userOwnsEverest(_userAdd) validLockDuration(_lockDuration)
     {
         UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
 
         // Increase the lock duration of the current locked SUMMIT
-        uint256 additionalEverestAward = _increaseLockReleaseOnClaimableLocked(everestInfo, _lockDuration);
+        uint256 additionalEverestAward = _increaseLockDurationAndReleaseIfNecessary(everestInfo, _lockDuration);
 
         // Increase the amount of locked summit by {_summitAmount} and increase the EVEREST award
         additionalEverestAward += _increaseLockedSummit(
@@ -368,13 +378,13 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
             msg.sender
         );
         
-        emit LockedSummitIncreased(msg.sender, true, _summitAmount, additionalEverestAward);
+        emit LockedSummitIncreased(_userAdd, true, _summitAmount, additionalEverestAward);
     }
 
     /// @dev Increase the users Locked Summit and earn everest
     function increaseLockedSummit(uint256 _summitAmount)
         public
-        nonReentrant notPanic userEverestInfoExists userOwnsEverest
+        nonReentrant notPanic userEverestInfoExists(msg.sender) userOwnsEverest(msg.sender)
     {
         uint256 additionalEverestAward = _increaseLockedSummit(
             _summitAmount,
@@ -388,7 +398,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     /// @dev Decrease the Summit and burn everest
     function withdrawLockedSummit(uint256 _everestAmount)
         public
-        nonReentrant notPanic userEverestInfoExists userOwnsEverest userLockDurationSatisfied validEverestAmountToBurn(_everestAmount)
+        nonReentrant notPanic userEverestInfoExists(msg.sender) userOwnsEverest(msg.sender) userLockDurationSatisfied validEverestAmountToBurn(_everestAmount)
     {
         UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
         require (_everestAmount <= everestInfo.everestOwned, "Bad withdraw");
@@ -427,7 +437,10 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     {
         require(_extension != address(0), "Missing extension");
         require(everestExtensions.length() < 3, "Max extension cap reached");
+        require(!everestExtensions.contains(_extension), "Extension already exists");
         everestExtensions.add(_extension);
+
+        emit EverestExtensionAdded(_extension);
     }
 
     /// @dev Remove an everest extension
@@ -436,8 +449,23 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         onlyOwner
     {
         require(_extension != address(0), "Missing extension");
-        require(everestExtensions.contains(_extension), "Extension not added");
+        require(everestExtensions.contains(_extension), "Extension doesnt exist");
+
         everestExtensions.remove(_extension);
+
+        emit EverestExtensionRemoved(_extension);
+    }
+
+    /// @dev Return list of everest extensions
+    function getEverestExtensions()
+        public view
+        returns (address[] memory)
+    {
+        address[] memory extensions = new address[](everestExtensions.length());
+        for (uint8 index = 0; index < everestExtensions.length(); index++) {
+            extensions[index] = everestExtensions.at(index);
+        }
+        return extensions;
     }
 
     /// @dev Get user everest owned
@@ -480,7 +508,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     /// @dev Panic recover locked SUMMIT if something has gone wrong
     function panicRecoverFunds()
         public
-        nonReentrant userEverestInfoExists onlyPanic
+        nonReentrant userEverestInfoExists(msg.sender) onlyPanic
     {
         UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
 

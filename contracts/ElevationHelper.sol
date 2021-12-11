@@ -448,5 +448,7 @@ contract ElevationHelper is Ownable {
                 prevWinHistory[j] = winningTotem[_elevation][prevRound - j];
             }
         }
+
+        return (winsAccum, prevWinHistory);
     }
 }

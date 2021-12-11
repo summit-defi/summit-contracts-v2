@@ -243,113 +243,113 @@ const elevationPoolRewardsShouldIncreaseEachBlock = (tokenName: string, elevatio
 // PENDING INTER ROUND
 const vestedWinningsIncreaseOverDurationOfRound = (tokenName: string, elevation: number) => {
   it('VESTING: Winnings vest over duration of round', async function() {
-    const { dev, user1, user3 } = await getNamedSigners(hre)
-    const token = await getContract(tokenName)
+    // const { dev, user1, user3 } = await getNamedSigners(hre)
+    // const token = await getContract(tokenName)
 
-    const roundDuration = await elevationHelperGet.roundDurationSeconds(elevation)
-    const quarterRoundDuration = roundDuration / 4
+    // const roundDuration = await elevationHelperGet.roundDurationSeconds(elevation)
+    // const quarterRoundDuration = roundDuration / 4
 
-    await rolloverRound(elevation)
+    // await rolloverRound(elevation)
     
-    const roundNumber = await elevationHelperGet.roundNumber(elevation)
-    const prevRound = roundNumber - 1
+    // const roundNumber = await elevationHelperGet.roundNumber(elevation)
+    // const prevRound = roundNumber - 1
 
-    const prevWinningTotem = await elevationHelperGet.winningTotem(elevation, prevRound)
-    const winningUser = prevWinningTotem === 0 ? user1 : user3
-    const {
-      harvestable: harvestable0,
-      vesting: vesting0,
-      vestDuration: vestDuration0,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
+    // const prevWinningTotem = await elevationHelperGet.winningTotem(elevation, prevRound)
+    // const winningUser = prevWinningTotem === 0 ? user1 : user3
+    // const {
+    //   harvestable: harvestable0,
+    //   vesting: vesting0,
+    //   vestDuration: vestDuration0,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
 
-    consoleLog({
-      PERC_THROUGH_ROUND: `${((roundDuration - vestDuration0.toNumber()) * 100) / roundDuration}%`,
-      harvestableRewards: toDecimal(harvestable0),
-      vesting: toDecimal(vesting0),
-      vestDurationSeconds: vestDuration0.toString(),
-      timestamp: await getTimestamp(),
-      quarterRoundDuration,
-    })
+    // consoleLog({
+    //   PERC_THROUGH_ROUND: `${((roundDuration - vestDuration0.toNumber()) * 100) / roundDuration}%`,
+    //   harvestableRewards: toDecimal(harvestable0),
+    //   vesting: toDecimal(vesting0),
+    //   vestDurationSeconds: vestDuration0.toString(),
+    //   timestamp: await getTimestamp(),
+    //   quarterRoundDuration,
+    // })
 
-    await increaseTimestampAndMine(quarterRoundDuration)
+    // await increaseTimestampAndMine(quarterRoundDuration)
 
-    const {
-      harvestable: harvestable1,
-      vesting: vesting1,
-      vestDuration: vestDuration1,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-
-
-    consoleLog({
-      PERC_THROUGH_ROUND: `${((roundDuration - vestDuration1.toNumber()) * 100) / roundDuration}%`,
-      harvestableRewards: toDecimal(harvestable1),
-      vesting: toDecimal(vesting1),
-      vestDurationSeconds: vestDuration1.toString(),
-      timestamp: await getTimestamp(),
-    })
-
-    expectBigNumberGreaterThan(harvestable1, harvestable0)
-    expectBigNumberLessThan(vesting1, vesting0)
+    // const {
+    //   harvestable: harvestable1,
+    //   vesting: vesting1,
+    //   vestDuration: vestDuration1,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
 
 
-    await increaseTimestampAndMine(quarterRoundDuration)
+    // consoleLog({
+    //   PERC_THROUGH_ROUND: `${((roundDuration - vestDuration1.toNumber()) * 100) / roundDuration}%`,
+    //   harvestableRewards: toDecimal(harvestable1),
+    //   vesting: toDecimal(vesting1),
+    //   vestDurationSeconds: vestDuration1.toString(),
+    //   timestamp: await getTimestamp(),
+    // })
 
-    const {
-      harvestable: harvestable2,
-      vesting: vesting2,
-      vestDuration: vestDuration2,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
+    // expectBigNumberGreaterThan(harvestable1, harvestable0)
+    // expectBigNumberLessThan(vesting1, vesting0)
 
-    consoleLog({
-      PERC_THROUGH_ROUND: `${((roundDuration - vestDuration2.toNumber()) * 100) / roundDuration}%`,
-      harvestableRewards: toDecimal(harvestable2),
-      vesting: toDecimal(vesting2),
-      vestDurationSeconds: vestDuration2.toString(),
-      timestamp: await getTimestamp(),
-    })
 
-    expectBigNumberGreaterThan(harvestable2, harvestable1)
-    expectBigNumberLessThan(vesting2, vesting1)
+    // await increaseTimestampAndMine(quarterRoundDuration)
+
+    // const {
+    //   harvestable: harvestable2,
+    //   vesting: vesting2,
+    //   vestDuration: vestDuration2,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+
+    // consoleLog({
+    //   PERC_THROUGH_ROUND: `${((roundDuration - vestDuration2.toNumber()) * 100) / roundDuration}%`,
+    //   harvestableRewards: toDecimal(harvestable2),
+    //   vesting: toDecimal(vesting2),
+    //   vestDurationSeconds: vestDuration2.toString(),
+    //   timestamp: await getTimestamp(),
+    // })
+
+    // expectBigNumberGreaterThan(harvestable2, harvestable1)
+    // expectBigNumberLessThan(vesting2, vesting1)
 
     
-    await increaseTimestampAndMine(quarterRoundDuration)
+    // await increaseTimestampAndMine(quarterRoundDuration)
 
-    const {
-      harvestable: harvestable3,
-      vesting: vesting3,
-      vestDuration: vestDuration3,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
+    // const {
+    //   harvestable: harvestable3,
+    //   vesting: vesting3,
+    //   vestDuration: vestDuration3,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
 
-    consoleLog({
-      PERC_THROUGH_ROUND: `${((roundDuration - vestDuration3.toNumber()) * 100) / roundDuration}%`,
-      harvestableRewards: toDecimal(harvestable3),
-      vesting: toDecimal(vesting3),
-      vestDurationSeconds: vestDuration3.toString(),
-      timestamp: await getTimestamp(),
-    })
+    // consoleLog({
+    //   PERC_THROUGH_ROUND: `${((roundDuration - vestDuration3.toNumber()) * 100) / roundDuration}%`,
+    //   harvestableRewards: toDecimal(harvestable3),
+    //   vesting: toDecimal(vesting3),
+    //   vestDurationSeconds: vestDuration3.toString(),
+    //   timestamp: await getTimestamp(),
+    // })
 
-    expectBigNumberGreaterThan(harvestable3, harvestable2)
-    expectBigNumberLessThan(vesting3, vesting2)
+    // expectBigNumberGreaterThan(harvestable3, harvestable2)
+    // expectBigNumberLessThan(vesting3, vesting2)
 
 
-    await increaseTimestampAndMine(quarterRoundDuration)
+    // await increaseTimestampAndMine(quarterRoundDuration)
 
-    const {
-      harvestable: harvestable4,
-      vesting: vesting4,
-      vestDuration: vestDuration4,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
+    // const {
+    //   harvestable: harvestable4,
+    //   vesting: vesting4,
+    //   vestDuration: vestDuration4,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
 
-    consoleLog({
-      PERC_THROUGH_ROUND: `${((roundDuration - vestDuration4.toNumber()) * 100) / roundDuration}%`,
-      harvestableRewards: toDecimal(harvestable4),
-      vesting: toDecimal(vesting4),
-      vestDurationSeconds: vestDuration4.toString(),
-      timestamp: await getTimestamp(),
-    })
+    // consoleLog({
+    //   PERC_THROUGH_ROUND: `${((roundDuration - vestDuration4.toNumber()) * 100) / roundDuration}%`,
+    //   harvestableRewards: toDecimal(harvestable4),
+    //   vesting: toDecimal(vesting4),
+    //   vestDurationSeconds: vestDuration4.toString(),
+    //   timestamp: await getTimestamp(),
+    // })
 
-    expectBigNumberGreaterThan(harvestable4, harvestable3)
-    expectBigNumberLessThan(vesting4, vesting3)
+    // expectBigNumberGreaterThan(harvestable4, harvestable3)
+    // expectBigNumberLessThan(vesting4, vesting3)
   })
 }
 const winningsMatchHypotheticalWinnings = (tokenName: string, elevation: number) => {
@@ -399,365 +399,365 @@ const winningsMatchHypotheticalWinnings = (tokenName: string, elevation: number)
 }
 const withdrawingVestedWinningsRevestsRemaining = (tokenName: string, elevation: number) => {
   it('VESTING: Withdrawing partially vesting winnings re-vests remaining', async function() {
-    const { user1, user3 } = await getNamedSigners(hre)
-    const token = await getContract(tokenName)
+    // const { user1, user3 } = await getNamedSigners(hre)
+    // const token = await getContract(tokenName)
 
-    const prevWinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
-    const roundDuration = await elevationHelperGet.roundDurationSeconds(elevation)
-    const quarterRoundDuration = roundDuration / 4
+    // const prevWinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
+    // const roundDuration = await elevationHelperGet.roundDurationSeconds(elevation)
+    // const quarterRoundDuration = roundDuration / 4
 
-    await increaseTimestampAndMine(quarterRoundDuration)
-    await subCartMethod.updatePool(token.address, elevation)
+    // await increaseTimestampAndMine(quarterRoundDuration)
+    // await subCartMethod.updatePool(token.address, elevation)
 
-    const winningUser = prevWinningTotem === 0 ? user1 : user3
+    // const winningUser = prevWinningTotem === 0 ? user1 : user3
 
-    const {
-      harvestable: harvestable0
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
+    // const {
+    //   harvestable: harvestable0
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
 
-    await subCartMethod.updatePool(token.address, elevation)
+    // await subCartMethod.updatePool(token.address, elevation)
 
-    const {
-      harvestable: harvestableInit,
-      vesting: vestingInit,
-      vestDuration: vestDurationInit,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
+    // const {
+    //   harvestable: harvestableInit,
+    //   vesting: vestingInit,
+    //   vestDuration: vestDurationInit,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
 
-    const availBlockDelta = harvestableInit.sub(harvestable0);
-    const balanceInit = await token.balanceOf(winningUser.address)
+    // const availBlockDelta = harvestableInit.sub(harvestable0);
+    // const balanceInit = await token.balanceOf(winningUser.address)
     
-    await cartographerMethod.claimSingleFarm({
-      user: winningUser,
-      tokenAddress: token.address,
-      elevation,
-    })
+    // await cartographerMethod.claimSingleFarm({
+    //   user: winningUser,
+    //   tokenAddress: token.address,
+    //   elevation,
+    // })
     
-    const {
-      harvestable: harvestableFinal,
-      vesting: vestingFinal,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    const balanceFinal = await token.balanceOf(winningUser.address)
+    // const {
+    //   harvestable: harvestableFinal,
+    //   vesting: vestingFinal,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // const balanceFinal = await token.balanceOf(winningUser.address)
 
-    expect6FigBigNumberEquals(balanceFinal.sub(balanceInit), harvestableInit.add(availBlockDelta))
-    expect(harvestableFinal).to.equal(0)
-    expect6FigBigNumberEquals(vestingInit.sub(vestingFinal), vestingInit.div(vestDurationInit))
+    // expect6FigBigNumberEquals(balanceFinal.sub(balanceInit), harvestableInit.add(availBlockDelta))
+    // expect(harvestableFinal).to.equal(0)
+    // expect6FigBigNumberEquals(vestingInit.sub(vestingFinal), vestingInit.div(vestDurationInit))
   })
   it('VESTING: Re-vested winnings increase over duration of vesting', async function() {
-    const { dev, user1, user3 } = await getNamedSigners(hre)
-    const token = await getContract(tokenName)
+    // const { dev, user1, user3 } = await getNamedSigners(hre)
+    // const token = await getContract(tokenName)
 
-    await rolloverRound(elevation)
+    // await rolloverRound(elevation)
 
-    const winningTotem = await elevationHelperGet.prevWinningTotem(elevation)
-    const roundStart = await elevationHelperGet.currentRoundStartTime(elevation)
+    // const winningTotem = await elevationHelperGet.prevWinningTotem(elevation)
+    // const roundStart = await elevationHelperGet.currentRoundStartTime(elevation)
 
-    const winningUser = winningTotem === 0 ? user1 : user3
+    // const winningUser = winningTotem === 0 ? user1 : user3
 
-    await subCartMethod.updatePool(token.address, elevation)
+    // await subCartMethod.updatePool(token.address, elevation)
 
-    const {
-      harvestable: harvestable0,
-      vesting: vesting0,
-      vestStart: vestStart0,
-      vestDuration: vestDuration0,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    const totalAmount0 = harvestable0.add(vesting0)
-    const vestAmtToDurRatio0 = vesting0.div(vestDuration0)
+    // const {
+    //   harvestable: harvestable0,
+    //   vesting: vesting0,
+    //   vestStart: vestStart0,
+    //   vestDuration: vestDuration0,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // const totalAmount0 = harvestable0.add(vesting0)
+    // const vestAmtToDurRatio0 = vesting0.div(vestDuration0)
 
-    const quarterVestingDuration = vestDuration0.div(4).toNumber() + 1
+    // const quarterVestingDuration = vestDuration0.div(4).toNumber() + 1
 
-    await increaseTimestampAndMine(quarterVestingDuration)
-    await subCartMethod.updatePool(token.address, elevation)
+    // await increaseTimestampAndMine(quarterVestingDuration)
+    // await subCartMethod.updatePool(token.address, elevation)
 
-    const {
-      harvestable: harvestable1,
-      vesting: vesting1,
-      vestStart: vestStart1,
-      vestDuration: vestDuration1,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    expect(vestStart0).to.equal(vestStart1)
+    // const {
+    //   harvestable: harvestable1,
+    //   vesting: vesting1,
+    //   vestStart: vestStart1,
+    //   vestDuration: vestDuration1,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // expect(vestStart0).to.equal(vestStart1)
 
-    const totalAmount1 = harvestable1.add(vesting1)
-    const vestAmtToDurRatio1 = vesting1.div(vestDuration1)
+    // const totalAmount1 = harvestable1.add(vesting1)
+    // const vestAmtToDurRatio1 = vesting1.div(vestDuration1)
 
-    await increaseTimestampAndMine(quarterVestingDuration)
-    await subCartMethod.updatePool(token.address, elevation)
+    // await increaseTimestampAndMine(quarterVestingDuration)
+    // await subCartMethod.updatePool(token.address, elevation)
 
-    const {
-      harvestable: harvestable2,
-      vesting: vesting2,
-      vestStart: vestStart2,
-      vestDuration: vestDuration2,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    const totalAmount2 = harvestable2.add(vesting2)
-    const vestAmtToDurRatio2 = vesting2.div(vestDuration2)
+    // const {
+    //   harvestable: harvestable2,
+    //   vesting: vesting2,
+    //   vestStart: vestStart2,
+    //   vestDuration: vestDuration2,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // const totalAmount2 = harvestable2.add(vesting2)
+    // const vestAmtToDurRatio2 = vesting2.div(vestDuration2)
 
-    await increaseTimestampAndMine(quarterVestingDuration)
-    await subCartMethod.updatePool(token.address, elevation)
+    // await increaseTimestampAndMine(quarterVestingDuration)
+    // await subCartMethod.updatePool(token.address, elevation)
 
-    const {
-      harvestable: harvestable3,
-      vesting: vesting3,
-      vestStart: vestStart3,
-      vestDuration: vestDuration3,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    const totalAmount3 = harvestable3.add(vesting3)
-    const vestAmtToDurRatio3 = vesting3.div(vestDuration3)
+    // const {
+    //   harvestable: harvestable3,
+    //   vesting: vesting3,
+    //   vestStart: vestStart3,
+    //   vestDuration: vestDuration3,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // const totalAmount3 = harvestable3.add(vesting3)
+    // const vestAmtToDurRatio3 = vesting3.div(vestDuration3)
 
-    await increaseTimestampAndMine(quarterVestingDuration)
-    await subCartMethod.updatePool(token.address, elevation)
+    // await increaseTimestampAndMine(quarterVestingDuration)
+    // await subCartMethod.updatePool(token.address, elevation)
 
-    const {
-      harvestable: harvestable4,
-      vesting: vesting4,
-      vestStart: vestStart4,
-      vestDuration: vestDuration4,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    expect(vestStart4).to.equal(roundStart)
+    // const {
+    //   harvestable: harvestable4,
+    //   vesting: vesting4,
+    //   vestStart: vestStart4,
+    //   vestDuration: vestDuration4,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // expect(vestStart4).to.equal(roundStart)
 
-    await rolloverRound(elevation)
+    // await rolloverRound(elevation)
 
-    const {
-      harvestable: harvestable5,
-      vesting: vesting5,
-      vestStart: vestStart5,
-      vestDuration: vestDuration5,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    const oneBlockVestAmount = vestDuration5.gt(0) ? vesting5.div(vestDuration5) : vestDuration5
-    const totalAmount4 = harvestable4.add(vesting4)
+    // const {
+    //   harvestable: harvestable5,
+    //   vesting: vesting5,
+    //   vestStart: vestStart5,
+    //   vestDuration: vestDuration5,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // const oneBlockVestAmount = vestDuration5.gt(0) ? vesting5.div(vestDuration5) : vestDuration5
+    // const totalAmount4 = harvestable4.add(vesting4)
 
-    consoleLog({
-      totalAmount0: toDecimal(totalAmount0),
-      totalAmount1: toDecimal(totalAmount1),
-      totalAmount2: toDecimal(totalAmount2),
-      totalAmount3: toDecimal(totalAmount3),
-      totalAmount4: toDecimal(totalAmount4),
-      harvestable4: toDecimal(harvestable4),
-      vesting4: toDecimal(vesting4),
-    })
+    // consoleLog({
+    //   totalAmount0: toDecimal(totalAmount0),
+    //   totalAmount1: toDecimal(totalAmount1),
+    //   totalAmount2: toDecimal(totalAmount2),
+    //   totalAmount3: toDecimal(totalAmount3),
+    //   totalAmount4: toDecimal(totalAmount4),
+    //   harvestable4: toDecimal(harvestable4),
+    //   vesting4: toDecimal(vesting4),
+    // })
 
-    expect6FigBigNumberAllEqual([totalAmount0, totalAmount1, totalAmount2, totalAmount3, totalAmount4, harvestable4])
-    expect6FigBigNumberAllEqual([vestAmtToDurRatio0, vestAmtToDurRatio1, vestAmtToDurRatio2, vestAmtToDurRatio3])
+    // expect6FigBigNumberAllEqual([totalAmount0, totalAmount1, totalAmount2, totalAmount3, totalAmount4, harvestable4])
+    // expect6FigBigNumberAllEqual([vestAmtToDurRatio0, vestAmtToDurRatio1, vestAmtToDurRatio2, vestAmtToDurRatio3])
 
-    const balanceInit = await token.balanceOf(winningUser.address)
+    // const balanceInit = await token.balanceOf(winningUser.address)
     
 
-    await cartographerMethod.claimSingleFarm({
-      user: winningUser,
-      tokenAddress: token.address,
-      elevation,
-    })
+    // await cartographerMethod.claimSingleFarm({
+    //   user: winningUser,
+    //   tokenAddress: token.address,
+    //   elevation,
+    // })
 
-    const balanceFinal = await token.balanceOf(winningUser.address)
-    expect6FigBigNumberEquals(balanceFinal.sub(balanceInit), harvestable5.add(oneBlockVestAmount))
+    // const balanceFinal = await token.balanceOf(winningUser.address)
+    // expect6FigBigNumberEquals(balanceFinal.sub(balanceInit), harvestable5.add(oneBlockVestAmount))
   })
 }
 const winningsVestAndAccumulateOverMultipleRounds = (tokenName: string, elevation: number) => {
   it('VESTING: Vest and accumulate over multiple rounds', async function() {
-    const { user1, user3 } = await getNamedSigners(hre)
-    const token = await getContract(tokenName)
+    // const { user1, user3 } = await getNamedSigners(hre)
+    // const token = await getContract(tokenName)
 
-    await rolloverRound(elevation)
+    // await rolloverRound(elevation)
 
-    const prevWinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
-    const winningUser = prevWinningTotem === 0 ? user1 : user3
-    const {
-      harvestable: harvestable0,
-      vesting: vesting0,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    await mineBlock()
+    // const prevWinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
+    // const winningUser = prevWinningTotem === 0 ? user1 : user3
+    // const {
+    //   harvestable: harvestable0,
+    //   vesting: vesting0,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // await mineBlock()
 
-    const {
-      harvestable: harvestable1,
-      vesting: vesting1,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    consoleLog({
-      harvestable: `${toDecimal(harvestable0)} --> ${toDecimal(harvestable1)}`,
-      vesting: `${toDecimal(vesting0)} --> ${toDecimal(vesting1)}`,
-    })
-    expectBigNumberGreaterThan(harvestable1, harvestable0)
-    expectBigNumberLessThan(vesting1, vesting0)
-    expect6FigBigNumberEquals(harvestable0.add(vesting0), harvestable1.add(vesting1))
+    // const {
+    //   harvestable: harvestable1,
+    //   vesting: vesting1,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // consoleLog({
+    //   harvestable: `${toDecimal(harvestable0)} --> ${toDecimal(harvestable1)}`,
+    //   vesting: `${toDecimal(vesting0)} --> ${toDecimal(vesting1)}`,
+    // })
+    // expectBigNumberGreaterThan(harvestable1, harvestable0)
+    // expectBigNumberLessThan(vesting1, vesting0)
+    // expect6FigBigNumberEquals(harvestable0.add(vesting0), harvestable1.add(vesting1))
 
-    await rolloverRoundUntilWinningTotem(elevation, prevWinningTotem)
+    // await rolloverRoundUntilWinningTotem(elevation, prevWinningTotem)
 
-    await mineBlock()
-    const {
-      harvestable: harvestable2,
-      vesting: vesting2,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    await mineBlock()
-    const {
-      harvestable: harvestable3,
-      vesting: vesting3,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    consoleLog({
-      harvestable: `${toDecimal(harvestable2)} --> ${toDecimal(harvestable3)}`,
-      vesting: `${toDecimal(vesting2)} --> ${toDecimal(vesting3)}`,
-    })
-    expectBigNumberGreaterThan(harvestable3, harvestable2)
-    expectBigNumberLessThan(vesting3, vesting2)
-    expect6FigBigNumberEquals(harvestable2.add(vesting2), harvestable3.add(vesting3))
+    // await mineBlock()
+    // const {
+    //   harvestable: harvestable2,
+    //   vesting: vesting2,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // await mineBlock()
+    // const {
+    //   harvestable: harvestable3,
+    //   vesting: vesting3,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // consoleLog({
+    //   harvestable: `${toDecimal(harvestable2)} --> ${toDecimal(harvestable3)}`,
+    //   vesting: `${toDecimal(vesting2)} --> ${toDecimal(vesting3)}`,
+    // })
+    // expectBigNumberGreaterThan(harvestable3, harvestable2)
+    // expectBigNumberLessThan(vesting3, vesting2)
+    // expect6FigBigNumberEquals(harvestable2.add(vesting2), harvestable3.add(vesting3))
 
-    await rolloverRoundUntilWinningTotem(elevation, prevWinningTotem)
+    // await rolloverRoundUntilWinningTotem(elevation, prevWinningTotem)
 
-    await mineBlock()
-    const {
-      harvestable: harvestable4,
-      vesting: vesting4,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    await mineBlock()
-    const {
-      harvestable: harvestable5,
-      vesting: vesting5,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    expectBigNumberGreaterThan(harvestable5, harvestable4)
-    expectBigNumberLessThan(vesting5, vesting4)
-    expect6FigBigNumberEquals(harvestable4.add(vesting4), harvestable5.add(vesting5))
+    // await mineBlock()
+    // const {
+    //   harvestable: harvestable4,
+    //   vesting: vesting4,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // await mineBlock()
+    // const {
+    //   harvestable: harvestable5,
+    //   vesting: vesting5,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // expectBigNumberGreaterThan(harvestable5, harvestable4)
+    // expectBigNumberLessThan(vesting5, vesting4)
+    // expect6FigBigNumberEquals(harvestable4.add(vesting4), harvestable5.add(vesting5))
 
-    await rolloverRoundUntilLosingTotem(elevation, prevWinningTotem)
+    // await rolloverRoundUntilLosingTotem(elevation, prevWinningTotem)
 
-    const {
-      harvestable: harvestable6,
-      vesting: vesting6,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    expect(vesting6).to.equal(0)
+    // const {
+    //   harvestable: harvestable6,
+    //   vesting: vesting6,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // expect(vesting6).to.equal(0)
 
-    await cartographerMethod.claimSingleFarm({
-      user: winningUser,
-      tokenAddress: token.address,
-      elevation,
-    })
+    // await cartographerMethod.claimSingleFarm({
+    //   user: winningUser,
+    //   tokenAddress: token.address,
+    //   elevation,
+    // })
 
-    const {
-      harvestable: harvestable7,
-      vesting: vesting7,
-    } = await subCartGet.rewards(token.address, elevation, winningUser.address)
-    consoleLog({
-      harvestable6: toDecimal(harvestable6),
-      vesting6: toDecimal(vesting6),
-      harvestable7: toDecimal(harvestable7),
-      vesting7: toDecimal(vesting7),
-    })
-    expect(harvestable7).to.equal(0)
-    expect(vesting7).to.equal(0)
+    // const {
+    //   harvestable: harvestable7,
+    //   vesting: vesting7,
+    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
+    // consoleLog({
+    //   harvestable6: toDecimal(harvestable6),
+    //   vesting6: toDecimal(vesting6),
+    //   harvestable7: toDecimal(harvestable7),
+    //   vesting7: toDecimal(vesting7),
+    // })
+    // expect(harvestable7).to.equal(0)
+    // expect(vesting7).to.equal(0)
   })
 }
 
 const rolloverMultipleRounds = (tokenName: string, elevation: number) => {
   it('ROLLOVER: Rolling over multiple rounds yields correct rewards', async function() {
-    const { user1, user3 } = await getNamedSigners(hre)
-    const token = await getContract(tokenName)
+    // const { user1, user3 } = await getNamedSigners(hre)
+    // const token = await getContract(tokenName)
 
-    await rolloverRound(elevation)
+    // await rolloverRound(elevation)
 
-    // DETERMINE FULL ROUND ROLLOVER BASELINE
-    let totem0baselineSet = false
-    let totem1baselineSet = false
+    // // DETERMINE FULL ROUND ROLLOVER BASELINE
+    // let totem0baselineSet = false
+    // let totem1baselineSet = false
 
-    let user1BaselineAvailRewardsInit
-    let user1BaselineVestingRewardsInit
-    let user3BaselineAvailRewardsInit
-    let user3BaselineVestingRewardsInit
+    // let user1BaselineAvailRewardsInit
+    // let user1BaselineVestingRewardsInit
+    // let user3BaselineAvailRewardsInit
+    // let user3BaselineVestingRewardsInit
 
-    let user1BaselineWinDelta
-    let user3BaselineWinDelta
+    // let user1BaselineWinDelta
+    // let user3BaselineWinDelta
 
-    while (!totem1baselineSet || !totem0baselineSet) {
-      if (!totem0baselineSet) {
-        const {
-          harvestable: u1harvestable,
-          vesting: u1vesting,
-        } = await subCartGet.rewards(token.address, elevation, user1.address)
-        user1BaselineAvailRewardsInit = u1harvestable
-        user1BaselineVestingRewardsInit = u1vesting
-      }
+    // while (!totem1baselineSet || !totem0baselineSet) {
+    //   if (!totem0baselineSet) {
+    //     const {
+    //       harvestable: u1harvestable,
+    //       vesting: u1vesting,
+    //     } = await subCartGet.claimableRewards(token.address, elevation, user1.address)
+    //     user1BaselineAvailRewardsInit = u1harvestable
+    //     user1BaselineVestingRewardsInit = u1vesting
+    //   }
 
-      if (!totem1baselineSet) {
-        const {
-          harvestable: u3harvestable,
-          vesting: u3vesting,
-        } = await subCartGet.rewards(token.address, elevation, user3.address)
-        user3BaselineAvailRewardsInit = u3harvestable
-        user3BaselineVestingRewardsInit = u3vesting
-      }
+    //   if (!totem1baselineSet) {
+    //     const {
+    //       harvestable: u3harvestable,
+    //       vesting: u3vesting,
+    //     } = await subCartGet.claimableRewards(token.address, elevation, user3.address)
+    //     user3BaselineAvailRewardsInit = u3harvestable
+    //     user3BaselineVestingRewardsInit = u3vesting
+    //   }
 
-      await rolloverRound(elevation)
-      const winningTotem = await elevationHelperGet.prevWinningTotem(elevation)
+    //   await rolloverRound(elevation)
+    //   const winningTotem = await elevationHelperGet.prevWinningTotem(elevation)
 
-      if (!totem0baselineSet && winningTotem === 0) {
-        const {
-          harvestable: user1BaselineAvailRewardsMid,
-          vesting: user1BaselineVestingRewardsMid,
-        } = await subCartGet.rewards(token.address, elevation, user1.address)
-        user1BaselineWinDelta = user1BaselineAvailRewardsMid.add(user1BaselineVestingRewardsMid).sub(user1BaselineAvailRewardsInit).sub(user1BaselineVestingRewardsInit)
-        totem0baselineSet = true
-      }
-      if (!totem1baselineSet && winningTotem === 1) {
-        const {
-          harvestable: user3BaselineAvailRewardsMid,
-          vesting: user3BaselineVestingRewardsMid,
-        } = await subCartGet.rewards(token.address, elevation, user1.address)
-        user3BaselineWinDelta = user3BaselineAvailRewardsMid.add(user3BaselineVestingRewardsMid).sub(user3BaselineAvailRewardsInit).sub(user3BaselineVestingRewardsInit)
-        totem1baselineSet = true
-      }
-    }
+    //   if (!totem0baselineSet && winningTotem === 0) {
+    //     const {
+    //       harvestable: user1BaselineAvailRewardsMid,
+    //       vesting: user1BaselineVestingRewardsMid,
+    //     } = await subCartGet.claimableRewards(token.address, elevation, user1.address)
+    //     user1BaselineWinDelta = user1BaselineAvailRewardsMid.add(user1BaselineVestingRewardsMid).sub(user1BaselineAvailRewardsInit).sub(user1BaselineVestingRewardsInit)
+    //     totem0baselineSet = true
+    //   }
+    //   if (!totem1baselineSet && winningTotem === 1) {
+    //     const {
+    //       harvestable: user3BaselineAvailRewardsMid,
+    //       vesting: user3BaselineVestingRewardsMid,
+    //     } = await subCartGet.claimableRewards(token.address, elevation, user1.address)
+    //     user3BaselineWinDelta = user3BaselineAvailRewardsMid.add(user3BaselineVestingRewardsMid).sub(user3BaselineAvailRewardsInit).sub(user3BaselineVestingRewardsInit)
+    //     totem1baselineSet = true
+    //   }
+    // }
 
-    // MULTI ROUND ROLLOVER
-    await rolloverRound(elevation)
+    // // MULTI ROUND ROLLOVER
+    // await rolloverRound(elevation)
 
     
-    const {
-      harvestable: user1AvailRewardsInit,
-      vesting: user1VestingRewardsInit,
-    } = await subCartGet.rewards(token.address, elevation, user1.address)
-    const {
-      harvestable: user3AvailRewardsInit,
-      vesting: user3VestingRewardsInit,
-    } = await subCartGet.rewards(token.address, elevation, user3.address)
+    // const {
+    //   harvestable: user1AvailRewardsInit,
+    //   vesting: user1VestingRewardsInit,
+    // } = await subCartGet.claimableRewards(token.address, elevation, user1.address)
+    // const {
+    //   harvestable: user3AvailRewardsInit,
+    //   vesting: user3VestingRewardsInit,
+    // } = await subCartGet.claimableRewards(token.address, elevation, user3.address)
 
-    const nextRoundTime = await elevationHelperGet.roundEndTimestamp(elevation)
-    const roundDuration = await elevationHelperGet.roundDurationSeconds(elevation)
-    await mineBlockWithTimestamp(nextRoundTime + (roundDuration * 4))
+    // const nextRoundTime = await elevationHelperGet.roundEndTimestamp(elevation)
+    // const roundDuration = await elevationHelperGet.roundDurationSeconds(elevation)
+    // await mineBlockWithTimestamp(nextRoundTime + (roundDuration * 4))
     
-    await rollover(elevation)
+    // await rollover(elevation)
 
-    await subCartMethod.updatePool(token.address, elevation)
+    // await subCartMethod.updatePool(token.address, elevation)
     
     
-    const {
-      harvestable: user1AvailRewardsFinal,
-      vesting: user1VestingRewardsFinal,
-    } = await subCartGet.rewards(token.address, elevation, user1.address)
-    const {
-      harvestable: user3AvailRewardsFinal,
-      vesting: user3VestingRewardsFinal,
-    } = await subCartGet.rewards(token.address, elevation, user3.address)
+    // const {
+    //   harvestable: user1AvailRewardsFinal,
+    //   vesting: user1VestingRewardsFinal,
+    // } = await subCartGet.claimableRewards(token.address, elevation, user1.address)
+    // const {
+    //   harvestable: user3AvailRewardsFinal,
+    //   vesting: user3VestingRewardsFinal,
+    // } = await subCartGet.claimableRewards(token.address, elevation, user3.address)
 
-    const user1MultiRoundDelta = user1AvailRewardsFinal.add(user1VestingRewardsFinal).sub(user1AvailRewardsInit).sub(user1VestingRewardsInit)
-    const user3MultiRoundDelta = user3AvailRewardsFinal.add(user3VestingRewardsFinal).sub(user3AvailRewardsInit).sub(user3VestingRewardsInit)
+    // const user1MultiRoundDelta = user1AvailRewardsFinal.add(user1VestingRewardsFinal).sub(user1AvailRewardsInit).sub(user1VestingRewardsInit)
+    // const user3MultiRoundDelta = user3AvailRewardsFinal.add(user3VestingRewardsFinal).sub(user3AvailRewardsInit).sub(user3VestingRewardsInit)
 
-    const prevWinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
+    // const prevWinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
 
-    consoleLog({
-      prevWinningTotem,
-      user1WinDelta: toDecimal(user1BaselineWinDelta),
-      user3WinDelta: toDecimal(user3BaselineWinDelta),
-      user1MultiRoundDelta: toDecimal(user1MultiRoundDelta),
-      user3MultiRoundDelta: toDecimal(user3MultiRoundDelta),
-      user1Mult: user1BaselineWinDelta.eq(0) ? 'null' : user1MultiRoundDelta.mul('100000').div(user1BaselineWinDelta).toString(),
-      user3Mult: user3BaselineWinDelta.eq(0) ? 'null' : user3MultiRoundDelta.mul('100000').div(user3BaselineWinDelta).toString(),
-      user1AvailRewards: `${toDecimal(user1AvailRewardsInit)} --> ${toDecimal(user1AvailRewardsFinal)}`,
-      user1VestingRewards: `${toDecimal(user1VestingRewardsInit)} --> ${toDecimal(user1VestingRewardsFinal)}`,
-      user3AvailRewards: `${toDecimal(user3AvailRewardsInit)} --> ${toDecimal(user3AvailRewardsFinal)}`,
-      user3VestingRewards: `${toDecimal(user3VestingRewardsInit)} --> ${toDecimal(user3VestingRewardsFinal)}`,
-    })
+    // consoleLog({
+    //   prevWinningTotem,
+    //   user1WinDelta: toDecimal(user1BaselineWinDelta),
+    //   user3WinDelta: toDecimal(user3BaselineWinDelta),
+    //   user1MultiRoundDelta: toDecimal(user1MultiRoundDelta),
+    //   user3MultiRoundDelta: toDecimal(user3MultiRoundDelta),
+    //   user1Mult: user1BaselineWinDelta.eq(0) ? 'null' : user1MultiRoundDelta.mul('100000').div(user1BaselineWinDelta).toString(),
+    //   user3Mult: user3BaselineWinDelta.eq(0) ? 'null' : user3MultiRoundDelta.mul('100000').div(user3BaselineWinDelta).toString(),
+    //   user1AvailRewards: `${toDecimal(user1AvailRewardsInit)} --> ${toDecimal(user1AvailRewardsFinal)}`,
+    //   user1VestingRewards: `${toDecimal(user1VestingRewardsInit)} --> ${toDecimal(user1VestingRewardsFinal)}`,
+    //   user3AvailRewards: `${toDecimal(user3AvailRewardsInit)} --> ${toDecimal(user3AvailRewardsFinal)}`,
+    //   user3VestingRewards: `${toDecimal(user3VestingRewardsInit)} --> ${toDecimal(user3VestingRewardsFinal)}`,
+    // })
 
-    if (prevWinningTotem === 0) {
-      expect6FigBigNumberEquals(user1MultiRoundDelta.mul(e18(1)).div(user1BaselineWinDelta), e18(5))
-    } else {
-      expect6FigBigNumberEquals(user3MultiRoundDelta.mul(e18(1)).div(user3BaselineWinDelta), e18(5))
-    }
+    // if (prevWinningTotem === 0) {
+    //   expect6FigBigNumberEquals(user1MultiRoundDelta.mul(e18(1)).div(user1BaselineWinDelta), e18(5))
+    // } else {
+    //   expect6FigBigNumberEquals(user3MultiRoundDelta.mul(e18(1)).div(user3BaselineWinDelta), e18(5))
+    // }
   })
 }
 

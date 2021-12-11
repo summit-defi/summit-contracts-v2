@@ -77,14 +77,14 @@ describe("Referrals", function() {
         })
         await mineBlocks(5)
 
-        const userSummitInit = await summitLockingGet.getUserCurrentEpochClaimableWinnings(user1.address)
+        const userSummitInit = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
         await cartographerMethod.claimSingleFarm({
             user: user1,
             tokenAddress: summitToken.address,
             elevation: OASIS,
             eventOnly: true,
         })
-        const userSummitFinal = await summitLockingGet.getUserCurrentEpochClaimableWinnings(user1.address)
+        const userSummitFinal = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
         const deltaSummit = userSummitFinal.sub(userSummitInit)
         const referralRewardAmount = deltaSummit.div(100)
         

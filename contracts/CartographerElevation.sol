@@ -523,6 +523,31 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     }
 
 
+    /// @dev Fetch claimable yield rewards amount of the elevation
+    /// @param _userAdd User requesting rewards info
+    /// @return elevClaimableRewards: Amount of Summit available to claim across the elevation
+    function elevClaimableRewards(address _userAdd)
+        public view
+        onlyCartographer validUserAdd(_userAdd)
+        returns (uint256)
+    {
+        // Claim rewards of users active pools
+        uint256 claimable = 0;
+
+        // Iterate through pools the user is interacting, get claimable amount, update pool
+        for (uint8 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
+            // Claim winnings
+            claimable += _claimableWinnings(
+                poolInfo[userInteractingPools[_userAdd].at(index)],
+                userInfo[userInteractingPools[_userAdd].at(index)][_userAdd],
+                _userAdd
+            );
+        }
+        
+        return claimable;
+    }
+
+
 
     /// @dev The user's yield generated across their active pools at this elevation, and the hypothetical winnings based on that yield
     /// @param _userAdd User to sum and calculate
@@ -530,7 +555,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     ///     elevationYieldContributed - Total yieldContributed across all pools of this elevation
     ///     elevationPotentialWinnings - Total potential winnings from that yield for the user's selected totem
     /// )
-    function roundPotentialWinnings(address _userAdd)
+    function potentialWinnings(address _userAdd)
         public view
         validUserAdd(_userAdd)
         returns (uint256, uint256)
@@ -854,9 +879,9 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         // Get user's winnings available for claim
         uint256 claimable = _claimableWinnings(pool, user, _userAdd);
 
-        // Claim winnings if any available
+        // Claim winnings if any available, return claimed amount with bonuses applied
         if (claimable > 0) {
-            cartographer.claimWinnings(_userAdd, pool.token, claimable);
+            return cartographer.claimWinnings(_userAdd, pool.token, claimable);
         }
 
         return claimable;
@@ -1141,7 +1166,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     {
         updatePool(pool.token);
 
-        // Get claimable amount or claim available winnings
+        // Claim available winnings, returns claimed amount with bonuses applied
         uint256 claimable = _claimWinnings(pool, user, _userAdd);
 
         // Update the users round interaction, may be updated again in the same tx, but must be updated here to maintain state

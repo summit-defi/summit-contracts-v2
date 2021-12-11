@@ -113,6 +113,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
     struct UserTokenInteraction {
         uint256 safeDebt;
         uint256 deityDebt;
+        uint256 lifetimeWinnings;
     }
     struct UserExpeditionInfo {
         address userAdd;
@@ -136,7 +137,6 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
         UserTokenInteraction usdc;
     }
     mapping(address => UserExpeditionInfo) public userExpeditionInfo;        // Users running staked information
-    mapping(address => bool) public userCompoundClaimableAsEverest;
 
     struct ExpeditionToken {
         IERC20 token;
@@ -460,7 +460,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
     ///     deitiedSummitYield
     ///     deitiedUSDCYield
     /// )
-    function hypotheticalRewards(address _userAdd)
+    function potentialWinnings(address _userAdd)
         public view
         validUserAdd(_userAdd)
         returns (uint256, uint256, uint256, uint256)
@@ -634,23 +634,17 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
 
         // Handle SUMMIT winnings
         if (summitWinnings > 0) {
-            if (userCompoundClaimableAsEverest[user.userAdd]) {
-                // Directly lock claimable SUMMIT and earn EVEREST instead
-                everest.lockAndExtendLockDuration(
-                    summitWinnings,
-                    everest.lockTimeRequiredForClaimableSummitLock(),
-                    user.userAdd
-                );
-            } else {
-                // Claim SUMMIT winnings (lock for 30 days)
-                expeditionInfo.summit.token.safeTransfer(address(summitLocking), summitWinnings);
-                summitLocking.addLockedWinnings(summitWinnings, 0, user.userAdd);
-            }
+            user.summit.lifetimeWinnings += summitWinnings;
+
+            // Claim SUMMIT winnings (lock for 30 days)
+            expeditionInfo.summit.token.safeTransfer(address(summitLocking), summitWinnings);
+            summitLocking.addLockedWinnings(summitWinnings, 0, user.userAdd);
             expeditionInfo.summit.markedForDist -= summitWinnings;
         }
 
         // Transfer USDC winnings to user
         if (usdcWinnings > 0) {
+            user.usdc.lifetimeWinnings += usdcWinnings;
             expeditionInfo.usdc.token.safeTransfer(user.userAdd, usdcWinnings);
             expeditionInfo.usdc.markedForDist -= usdcWinnings;
         }
@@ -739,15 +733,6 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
         }
 
         emit DeitySelected(msg.sender, _newDeity, user.deitySelectionRound);
-    }
-
-
-    /// @dev Select whether to compound SUMMIT directly into EVEREST
-    function selectCompoundClaimableSummitAsEverest(bool _compound)
-        public
-        nonReentrant
-    {
-        userCompoundClaimableAsEverest[msg.sender] = _compound;
     }
 
 

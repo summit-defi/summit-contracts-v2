@@ -22,6 +22,9 @@ export const flatten = <T>(arr: T[][]): T[] => {
 }
 
 // BIG NUMBERS
+export const sumBigNumbers = (arr: BigNumber[]) => {
+    return arr.reduce((acc, n) => acc.add(n), e18(0))
+}
 export const days = (n: number) => {
     return n * 24 * 3600
 }
@@ -67,7 +70,7 @@ export const expect6FigBigNumberEquals = (a: BigNumber, b: BigNumber) => {
 export const expect6FigBigNumberAllEqual = (arr: BigNumber[]) => {
     arr.forEach((item) => expect6FigBigNumberEquals(item, arr[0]))
 }
-export const expectAllEqual = (arr: number[]) => {
+export const expectAllEqual = (arr: Array<number | BigNumber>) => {
     arr.forEach((item) => expect(item).to.equal(arr[0]))
 }
 export const expectBigNumberGreaterThan = (a: BigNumber, b: BigNumber) => {
@@ -128,6 +131,9 @@ export const tokenAmountAfterWithdrawTax = (amount: BigNumber, tax: number): Big
 }
 export const tokenAmountAfterDepositFee = (amount: BigNumber, fee: number): BigNumber => {
     return amount.mul(10000 - fee).div(10000)
+}
+export const claimAmountBonus = (amount: BigNumber, bonus: number): BigNumber => {
+    return amount.mul(bonus).div(10000)
 }
 export const claimAmountWithBonusAdded = (amount: BigNumber, bonus: number): BigNumber => {
     return amount.mul(10000 + bonus).div(10000)

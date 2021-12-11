@@ -16,6 +16,8 @@ export const Contracts = {
     Timelock: 'Timelock',
 
     EverestToken: 'EverestToken',
+    DummyEverestExtension: 'DummyEverestExtension',
+
     ExpeditionV2: 'ExpeditionV2',
 
     SummitLocking: 'SummitLocking',
@@ -29,6 +31,8 @@ export const PLAINS = 1
 export const MESA = 2
 export const SUMMIT = 3
 export const EXPEDITION = 4
+
+export const epochDuration = 3600 * 24 * 7;
 
 export enum NamedElevations {
     OASIS = 'OASIS',
@@ -88,6 +92,7 @@ export const getTotemCount = (elevation: number): number => {
 }
 
 export const ZEROADD = '0x0000000000000000000000000000000000000000'
+export const BURNADD = '0x000000000000000000000000000000000000dEaD'
 export const INF_APPROVE = '115792089237316195423570985008687907853269984665640564039457584007913129639935'
 
 export const ERR = {
@@ -105,6 +110,7 @@ export const ERR = {
     REFERRAL_BURN_NOT_AVAILABLE: 'Referral burn not available',
     SELF_REFERRER: 'Cant refer yourself',
     NO_REWARDS_TO_REDEEM: 'No referral rewards to redeem',
+    ONLY_CARTOGRAPHER_OR_EXPEDITION: 'Only cartographer or expedition',
 
     // Elevation
     INVALID_ELEV: 'Invalid elev',
@@ -169,11 +175,17 @@ export const ERR = {
         ALREADY_LOCKING_SUMMIT: 'Already locking summit',
         INVALID_LP_INCENTIVE_MULT: 'Incentive multiplier must be between 1x and 4x',
         INVALID_LOCK_DURATION: 'Invalid lock duration',
+        LOCK_DURATION_STRICTLY_INCREASE: 'Lock duration must strictly increase',
         EVEREST_LOCKED: 'Lock still in effect',
         BAD_WITHDRAW: 'Bad withdraw',
         INVALID_SAFETY_FACTOR: 'Invalid safety factor',
         NOT_IN_PANIC: 'Not in panic',
         NOT_AVAILABLE_DURING_PANIC: 'Not available during panic',
+
+        MISSING_EXTENSION: 'Missing extension',
+        EXTENSION_CAP_REACHED: 'Max extension cap reached',
+        EXPEDITION_ALREADY_EXISTS: 'Extension already exists',
+        EXTENSION_DOESNT_EXIST: 'Extension doesnt exist',
     },
 
     EXPEDITION_V2: {
@@ -214,6 +226,7 @@ export const EVENT = {
     Rollover: 'Rollover',
     RolloverReferral: 'RolloverReferral',
     Elevate: 'Elevate',
+    ElevateAndLockStakedSummit: 'ElevateAndLockStakedSummit',
     
     ExpeditionCreated: 'ExpeditionCreated',
     ExpeditionExtended: 'ExpeditionExtended',
@@ -233,6 +246,13 @@ export const EVENT = {
 
     TIMELOCK_EXECUTE_TRANSACTION: 'ExecuteTransaction',
 
+    SummitLocking: {
+        WinningsLocked: 'WinningsLocked',
+        WinningsHarvested: 'WinningsHarvested',
+        SetPanic: 'SetPanic',
+        SetYieldLockEpochCount: 'SetYieldLockEpochCount',
+    },
+
     Everest: {
         SummitLocked: 'SummitLocked',
         LockDurationIncreased: 'LockDurationIncreased',
@@ -247,6 +267,9 @@ export const EVENT = {
         SetMinEverestLockMult: 'SetMinEverestLockMult',
         SetMaxEverestLockMult: 'SetMaxEverestLockMult',
         SetPanic: 'SetPanic',
+
+        EverestExtensionAdded: 'EverestExtensionAdded',
+        EverestExtensionRemoved: 'EverestExtensionRemoved',
     },
 
     Expedition: {

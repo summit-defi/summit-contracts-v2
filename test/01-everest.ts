@@ -2,7 +2,7 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre from "hardhat";
-import { e18, ERR, toDecimal, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, promiseSequenceMap, consoleLog, getSummitToken, everestGet, everestMethod, days, everestSetParams, getSummitBalance, getEverestBalance, userPromiseSequenceMap, usersSummitBalances, usersEverestBalances, userPromiseSequenceReduce, getEverestToken } from "../utils";
+import { e18, ERR, toDecimal, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, promiseSequenceMap, consoleLog, getSummitToken, everestGet, everestMethod, days, everestSetParams, getSummitBalance, getEverestBalance, userPromiseSequenceMap, usersSummitBalances, usersEverestBalances, userPromiseSequenceReduce, getEverestToken, getDummyEverestExtension, ZEROADD, expectAllEqual } from "../utils";
 import { oasisUnlockedFixture } from "./fixtures";
 
 
@@ -121,6 +121,42 @@ describe("EVEREST", async function() {
             lockDuration: days(300),
             revertErr: ERR.EVEREST.ALREADY_LOCKING_SUMMIT
         })
+    })
+
+    it(`INCREASE LOCK DURATION: Users should be able to increase their lock duration and earn more EVEREST`, async function() {
+        const { user2 } = await getNamedSigners(hre)
+
+        await everestMethod.increaseLockDuration({
+            user: user2,
+            lockDuration: days(30) - 1,
+            revertErr: ERR.EVEREST.LOCK_DURATION_STRICTLY_INCREASE,
+        })
+
+        const userEverestInit = await getEverestBalance(user2.address)
+        const userEverestInfoInit = await everestGet.userEverestInfo(user2.address)
+        const expectedEverestAward = await everestGet.getAdditionalEverestAwardForLockDurationIncrease(user2.address, days(60))
+
+        await everestMethod.increaseLockDuration({
+            user: user2,
+            lockDuration: days(60),
+        })
+        const increaseLockTimestamp = await getTimestamp()
+
+        const userEverestFinal = await getEverestBalance(user2.address)
+        const userEverestInfoFinal = await everestGet.userEverestInfo(user2.address)
+
+        expectAllEqual([
+            deltaBN(userEverestInit, userEverestFinal),
+            deltaBN(userEverestInfoInit.everestOwned, userEverestInfoFinal.everestOwned),
+            expectedEverestAward
+        ])
+        expectAllEqual([
+            userEverestInfoInit.summitLocked,
+            userEverestInfoFinal.summitLocked
+        ])
+        expect(userEverestInfoInit.lockDuration).to.equal(days(30))
+        expect(userEverestInfoFinal.lockDuration).to.equal(days(60))
+        expect(userEverestInfoFinal.lockRelease).to.equal(increaseLockTimestamp + days(60))
     })
 
     it(`INCREASE EVEREST: User with already locked summit should be able to lock more summit`, async function() {
@@ -385,18 +421,38 @@ describe("EVEREST PANIC", async function() {
         })
     })
     it('PANIC: Panic can be turned on', async function () {
-        const { dev } = await getNamedSigners(hre)
+        const { user1, dev } = await getNamedSigners(hre)
 
-        const owner = await (await getEverestToken()).owner()
-        console.log({
-            owner,
-            dev: dev.address,
+        expect(await everestGet.panic()).to.be.false
+
+        await everestSetParams.setPanic({
+            dev: user1,
+            panic: true,
+            revertErr: ERR.NON_OWNER
         })
+
+        expect(await everestGet.panic()).to.be.false
 
         await everestSetParams.setPanic({
             dev,
-            panic: true
+            panic: true,
         })
+
+        expect(await everestGet.panic()).to.be.true
+
+        await everestSetParams.setPanic({
+            dev,
+            panic: false,
+        })
+
+        expect(await everestGet.panic()).to.be.false
+
+        await everestSetParams.setPanic({
+            dev,
+            panic: true,
+        })
+
+        expect(await everestGet.panic()).to.be.true
     })
     it('PANIC: Users can recover their SUMMIT without it maturing in panic mode', async function() {
         const { user1 } = await getNamedSigners(hre)
@@ -441,6 +497,173 @@ describe("EVEREST PANIC", async function() {
             user: user1,
             everestAmount: e18(1),
             revertErr: ERR.EVEREST.NOT_AVAILABLE_DURING_PANIC,
+        })
+    })
+})
+
+
+describe("EVEREST EXTENSIONS", async function() {
+    before(async function () {
+        const { everestToken, summitToken, user1 } = await oasisUnlockedFixture()
+
+        await everestToken.connect(user1).approve(everestToken.address, INF_APPROVE)
+        await summitToken.connect(user1).approve(everestToken.address, INF_APPROVE)
+    })
+    it(`EXTENSION: Adding an extension is successful`, async function() {
+        const { dev, user1 } = await getNamedSigners(hre)
+        const dummyEverestExtension = await getDummyEverestExtension()
+
+        const everestExtensionsInit = await everestGet.getEverestExtensions()
+        
+        await everestMethod.addEverestExtension({
+            dev: user1,
+            extension: dummyEverestExtension.address,
+            revertErr: ERR.NON_OWNER
+        })
+
+        await everestMethod.addEverestExtension({
+            dev,
+            extension: ZEROADD,
+            revertErr: ERR.EVEREST.MISSING_EXTENSION
+        })
+
+        await everestMethod.addEverestExtension({
+            dev,
+            extension: dummyEverestExtension.address,
+        })
+
+        await everestMethod.addEverestExtension({
+            dev,
+            extension: dummyEverestExtension.address,
+            revertErr: ERR.EVEREST.EXPEDITION_ALREADY_EXISTS
+        })   
+        
+        const everestExtensionsFinal = await everestGet.getEverestExtensions()
+
+        console.log({
+            everestExtensionsInit,
+            everestExtensionsFinal,
+            dummyEverestExtension: dummyEverestExtension.address
+        })
+
+        expect(everestExtensionsInit.includes(dummyEverestExtension.address)).to.be.false
+        expect(everestExtensionsInit.length + 1).to.equal(everestExtensionsFinal.length)
+        expect(everestExtensionsFinal.includes(dummyEverestExtension.address)).to.be.true
+    })
+    it(`EXTENSION: Removing an everest extension is successful`, async function() {
+        const { dev, user1 } = await getNamedSigners(hre)
+        const dummyEverestExtension = await getDummyEverestExtension()
+
+        const everestExtensionsInit = await everestGet.getEverestExtensions()
+        
+        await everestMethod.removeEverestExtension({
+            dev: user1,
+            extension: dummyEverestExtension.address,
+            revertErr: ERR.NON_OWNER
+        })
+
+        await everestMethod.removeEverestExtension({
+            dev,
+            extension: ZEROADD,
+            revertErr: ERR.EVEREST.MISSING_EXTENSION
+        })
+
+        await everestMethod.removeEverestExtension({
+            dev,
+            extension: dummyEverestExtension.address,
+        })
+
+        await everestMethod.removeEverestExtension({
+            dev,
+            extension: dummyEverestExtension.address,
+            revertErr: ERR.EVEREST.EXTENSION_DOESNT_EXIST
+        })   
+        
+        const everestExtensionsFinal = await everestGet.getEverestExtensions()
+
+        console.log({
+            everestExtensionsInit,
+            everestExtensionsFinal,
+            dummyEverestExtension: dummyEverestExtension.address
+        })
+
+        expect(everestExtensionsInit.includes(dummyEverestExtension.address)).to.be.true
+        expect(everestExtensionsInit.length - 1).to.equal(everestExtensionsFinal.length)
+        expect(everestExtensionsFinal.includes(dummyEverestExtension.address)).to.be.false
+    })
+    it(`EXTENSION: Updating user's everest amount updates extension's everest amounts`, async function() {
+        const { dev, user1 } = await getNamedSigners(hre)
+        const dummyEverestExtension = await getDummyEverestExtension()
+
+        const userDummyExtEverest0 = await dummyEverestExtension.userEverest(user1.address)
+        expect(userDummyExtEverest0).to.equal(0)
+
+        // User Lock Summit
+        await everestMethod.lockSummit({
+            user: user1,
+            amount: e18(5),
+            lockDuration: days(7)
+        })
+
+        // Add Extension
+        await everestMethod.addEverestExtension({
+            dev,
+            extension: dummyEverestExtension.address,
+        })
+        
+        const userDummyExtEverest1 = await dummyEverestExtension.userEverest(user1.address)
+        expect(userDummyExtEverest1).to.equal(0)
+
+
+        // Join Dummy Extension
+        const userEverestBalance2 = (await everestGet.userEverestInfo(user1.address)).everestOwned
+        await dummyEverestExtension.connect(user1).joinDummyExtension()
+
+        const userDummyExtEverest2 = await dummyEverestExtension.userEverest(user1.address)
+        expect(userDummyExtEverest2).to.equal(userEverestBalance2)
+
+
+        // Increase Lock Duration
+        await everestMethod.increaseLockDuration({
+            user: user1,
+            lockDuration: days(30),
+        })
+        const userEverestBalance3 = (await everestGet.userEverestInfo(user1.address)).everestOwned
+        const userDummyExtEverest3 = await dummyEverestExtension.userEverest(user1.address)
+        expect(userDummyExtEverest3).to.equal(userEverestBalance3)
+
+
+        // Increase Lock Duration
+        await everestMethod.increaseLockedSummit({
+            user: user1,
+            amount: e18(20),
+        })
+        const userEverestInfo4 = await everestGet.userEverestInfo(user1.address)
+        const userEverestBalance4 = userEverestInfo4.everestOwned
+        const userDummyExtEverest4 = await dummyEverestExtension.userEverest(user1.address)
+        expect(userDummyExtEverest4).to.equal(userEverestBalance4)
+
+
+        // Withdraw Locked Summit
+        const lockMatureTimestamp = userEverestInfo4.lockRelease
+        await mineBlockWithTimestamp(lockMatureTimestamp)
+        const halfEverestAmount = userEverestBalance4.div(2)
+        await everestMethod.withdrawLockedSummit({
+            user: user1,
+            everestAmount: halfEverestAmount,
+        })
+        const userEverestBalance5 = (await everestGet.userEverestInfo(user1.address)).everestOwned
+        const userDummyExtEverest5 = await dummyEverestExtension.userEverest(user1.address)
+        expect(userDummyExtEverest5).to.equal(userEverestBalance5)
+
+
+        consoleLog({
+            Point0: `EverestInfo: ${toDecimal(e18(0))}, Ext: ${toDecimal(userDummyExtEverest0)}`,
+            Point1: `EverestInfo: ${toDecimal(e18(0))}, Ext: ${toDecimal(userDummyExtEverest1)}`,
+            Point2: `EverestInfo: ${toDecimal(userEverestBalance2)}, Ext: ${toDecimal(userDummyExtEverest2)}`,
+            Point3: `EverestInfo: ${toDecimal(userEverestBalance3)}, Ext: ${toDecimal(userDummyExtEverest3)}`,
+            Point4: `EverestInfo: ${toDecimal(userEverestBalance4)}, Ext: ${toDecimal(userDummyExtEverest4)}`,
+            Point5: `EverestInfo: ${toDecimal(userEverestBalance5)}, Ext: ${toDecimal(userDummyExtEverest5)}`,
         })
     })
 })

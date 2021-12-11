@@ -23,7 +23,7 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
     Cartographer public cartographer;
     ExpeditionV2 public expeditionV2;
 
-    bool public panicFundsReleased = false;
+    bool public panic = false;
     uint256 public constant epochDuration = 3600 * 24 * 7;
     address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
 
@@ -42,6 +42,8 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
 
     event WinningsLocked(address indexed _userAdd, uint256 _lockedWinnings, uint256 _bonusWinnings);
     event WinningsHarvested(address indexed _userAdd, uint256 _epoch, uint256 _harvestedWinnings, bool _lockForEverest);
+    event SetPanic(bool indexed _panic);
+    event SetYieldLockEpochCount(uint256 _count);
 
     function initialize(
         address _summit,
@@ -57,14 +59,17 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
         everest = EverestToken(_everest);
         cartographer = Cartographer(_cartographer);
         expeditionV2 = ExpeditionV2(_expeditionV2);
+
+        summit.approve(_everest, type(uint256).max);
     }
 
 
-    function panicSetFundsRelease(bool _release)
+    function setPanic(bool _panic)
         public
         onlyOwner
     {
-        panicFundsReleased = _release;
+        panic = _panic;
+        emit SetPanic(_panic);
     }
 
 
@@ -88,14 +93,41 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
 
     /// @dev Return if an epoch has matured
     function hasEpochMatured(uint256 _epoch)
-        internal view
+        public view
         returns (bool)
     {
         return (getCurrentEpoch() - _epoch) >= yieldLockEpochCount;
     }
 
+    function getEpochStartTimestamp(uint256 _epoch)
+        public pure
+        returns (uint256)
+    {
+        return _epoch * epochDuration;
+    }
+
+    /// @dev Epoch maturity timestamp
+    function getEpochMatureTimestamp(uint256 _epoch)
+        public view
+        returns (uint256)
+    {
+        return getEpochStartTimestamp(_epoch) + (yieldLockEpochCount * epochDuration);
+    }
+
+    function getUserInteractingEpochs(address _userAdd)
+        public view
+        returns (uint256[] memory)
+    {
+        uint256[] memory epochs = new uint256[](userInteractingEpochs[_userAdd].length());
+        for (uint16 index = 0; index < userInteractingEpochs[_userAdd].length(); index++) {
+            epochs[index] = userInteractingEpochs[_userAdd].at(index);
+        }
+        return epochs;
+    }
 
     // FUNCTIONALITY
+
+
 
 
     /// @dev Update yield lock epoch count
@@ -104,6 +136,7 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
     {
         require(_count <= 12, "Invalid lock epoch count");
         yieldLockEpochCount = _count;
+        emit SetYieldLockEpochCount(_count);
     }
 
     function addLockedWinnings(uint256 _lockedWinnings, uint256 _bonusWinnings, address _userAdd)
@@ -138,14 +171,14 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
         if (_lockForEverest) {
             everest.lockAndExtendLockDuration(
                 _amount,
-                everest.lockTimeRequiredForClaimableSummitLock(),
+                everest.inflectionLockTime(),
                 msg.sender
             );
 
         // Else check if epoch matured, harvest 100% if true, else harvest 50%, burn 25%, and send 25% to expedition contract to be distributed to EVEREST holders
         } else {
             bool epochMatured = hasEpochMatured(_epoch);
-            if (panicFundsReleased || epochMatured) {
+            if (panic || epochMatured) {
                 IERC20(summit).safeTransfer(msg.sender, _amount);
             } else {
                 IERC20(summit).safeTransfer(msg.sender, _amount / 2);
