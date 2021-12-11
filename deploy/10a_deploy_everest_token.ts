@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, Contracts, delay } from '../utils';
+import { chainIdAllowsVerification, chainIdRequiresDummies, Contracts, delay } from '../utils';
 
 const deployEverestToken: DeployFunction = async function ({
   getNamedAccounts,
@@ -26,6 +26,15 @@ const deployEverestToken: DeployFunction = async function ({
       constructorArguments: [SummitToken.address],
     })
   }
+
+  if (chainIdRequiresDummies(chainId)) {
+    const DummyEverestExtension = await deploy(Contracts.DummyEverestExtension, {
+      from: dev,
+      args: [EverestToken.address],
+      log: true,
+    })
+  };
+
 };
 export default deployEverestToken;
 deployEverestToken.tags = ['EverestToken', 'LOCALHOST', 'TESTNET', 'MAINNET']

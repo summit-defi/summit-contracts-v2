@@ -555,7 +555,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     ///     elevationYieldContributed - Total yieldContributed across all pools of this elevation
     ///     elevationPotentialWinnings - Total potential winnings from that yield for the user's selected totem
     /// )
-    function roundPotentialWinnings(address _userAdd)
+    function potentialWinnings(address _userAdd)
         public view
         validUserAdd(_userAdd)
         returns (uint256, uint256)

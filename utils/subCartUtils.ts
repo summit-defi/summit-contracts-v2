@@ -97,10 +97,10 @@ export const subCartGet = {
     },
     potentialWinnings: async (tokenAddress: string, elevation: number, userAddress: string) => {
         const subCart = await getSubCartographer(elevation)
-        const hypotheticalRewards = await subCart.hypotheticalRewards(tokenAddress, userAddress)
+        const potentialWinnings = await subCart.potentialWinnings(tokenAddress, userAddress)
         return {
-            contributedYield: hypotheticalRewards[0],
-            potentialWinnings: hypotheticalRewards[1],
+            contributedYield: potentialWinnings[0],
+            potentialWinnings: potentialWinnings[1],
         }
     },
     userInteractingWithPool: async (tokenAddress: string, elevation: number, userAddress: string) => {

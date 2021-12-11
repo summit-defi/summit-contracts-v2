@@ -3,8 +3,8 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, toDecimal, Contracts, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, e36, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, e12, e0, consoleLog, expectAllEqual, getBifiToken, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getSummitToken, everestGet, everestMethod, expeditionMethod, expeditionGet, getSummitBalance, getUsdcBalance, UserExpeditionInfo, elevationHelperGet, expeditionSynth, days } from "../utils";
-import { userPromiseSequenceMap, userPromiseSequenceReduce, usersClaimedSummitBalances, usersExpeditionHypotheticalRewards, usersExpeditionInfo, usersExpeditionRewards, usersSummitBalances, usersUsdcBalances } from "../utils/users";
+import { e18, ERR, EVENT, toDecimal, Contracts, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, e36, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, e12, e0, consoleLog, expectAllEqual, getBifiToken, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getSummitToken, everestGet, everestMethod, expeditionMethod, expeditionGet, getSummitBalance, getUsdcBalance, UserExpeditionInfo, elevationHelperGet, expeditionSynth, days, rolloverRound } from "../utils";
+import { userPromiseSequenceMap, userPromiseSequenceReduce, usersLockedSummitBalances, usersExpeditionHypotheticalRewards, usersExpeditionInfos, usersExpeditionRewards, usersSummitBalances, usersUsdcBalances } from "../utils/users";
 import { oasisUnlockedFixture } from "./fixtures";
 
 
@@ -85,20 +85,50 @@ describe("EXPEDITION V2", async function() {
 
     it('EXPEDITION: Users can only enter expedition if they own everest, have selected a deity, and have selected a safety factor', async function() {
         const { user1, user2, user3 } = await getNamedSigners(hre)
+
+        enum RequirementStep {
+            Everest,
+            Deity,
+            SafetyFactor,
+        }
         
         const expectMetRequirementsMatch = async (user: SignerWithAddress, userMetRequirements: any) => {
             const userEligibleToJoinExpedition = await expeditionGet.userSatisfiesExpeditionRequirements(user.address)
 
-            expect(userEligibleToJoinExpedition.everest).to.equal(userMetRequirements.everest)
-            expect(userEligibleToJoinExpedition.deity).to.equal(userMetRequirements.deity)
-            expect(userEligibleToJoinExpedition.safetyFactor).to.equal(userMetRequirements.safetyFactor)
+            expect(userEligibleToJoinExpedition.everest).to.equal(userMetRequirements[RequirementStep.Everest])
+            expect(userEligibleToJoinExpedition.deity).to.equal(userMetRequirements[RequirementStep.Deity])
+            expect(userEligibleToJoinExpedition.safetyFactor).to.equal(userMetRequirements[RequirementStep.SafetyFactor])
         }
 
         const getRequirementPrioritizedRevertErr = (userMetRequirements: any) => {
-            if (!userMetRequirements.everest) return ERR.EVEREST.MUST_OWN_EVEREST
-            if (!userMetRequirements.deity) return ERR.EXPEDITION_V2.NO_DEITY
-            if (!userMetRequirements.safetyFactor) return ERR.EXPEDITION_V2.NO_SAFETY_FACTOR
+            if (!userMetRequirements[RequirementStep.Everest]) return ERR.EVEREST.MUST_OWN_EVEREST
+            if (!userMetRequirements[RequirementStep.Deity]) return ERR.EXPEDITION_V2.NO_DEITY
+            if (!userMetRequirements[RequirementStep.SafetyFactor]) return ERR.EXPEDITION_V2.NO_SAFETY_FACTOR
             return undefined
+        }
+
+        const executeRequirementStep = async (user: SignerWithAddress, step: RequirementStep) => {
+            switch (step) {
+                case RequirementStep.Everest:
+                    await everestMethod.lockSummit({
+                        user,
+                        amount: userParams[user.address].summitAmount,
+                        lockDuration: userParams[user.address].lockDuration,
+                    })
+                    return
+                case RequirementStep.Deity:
+                    await expeditionMethod.selectDeity({
+                        user,
+                        deity: userParams[user.address].deity,
+                    })
+                    return
+                case RequirementStep.SafetyFactor:
+                    await expeditionMethod.selectSafetyFactor({
+                        user,
+                        safetyFactor: userParams[user.address].safetyFactor,
+                    })
+                    return
+            }
         }
 
         const userParams = {
@@ -107,18 +137,21 @@ describe("EXPEDITION V2", async function() {
                 safetyFactor: 100,
                 summitAmount: e18(10),
                 lockDuration: days(7),
+                requirementsOrder: [RequirementStep.Everest, RequirementStep.Deity, RequirementStep.SafetyFactor]
             },
             [user2.address]: {
                 deity: 0,
                 safetyFactor: 0,
                 summitAmount: e18(30),
                 lockDuration: days(365),
+                requirementsOrder: [RequirementStep.SafetyFactor, RequirementStep.Everest, RequirementStep.Deity]
             },
             [user3.address]: {
                 deity: 1,
                 safetyFactor: 50,
                 summitAmount: e18(22.5),
                 lockDuration: days(30),
+                requirementsOrder: [RequirementStep.SafetyFactor, RequirementStep.Deity, RequirementStep.Everest]
             }
         }
 
@@ -126,57 +159,36 @@ describe("EXPEDITION V2", async function() {
             async (user) => {
 
                 let userMetRequirements = {
-                    everest: false,
-                    deity: false,
-                    safetyFactor: false,
+                    [RequirementStep.Everest]: false,
+                    [RequirementStep.Deity]: false,
+                    [RequirementStep.SafetyFactor]: false,
                 }
 
                 let userExpeditionInfo = await expeditionGet.userExpeditionInfo(user.address)
                 expect(userExpeditionInfo.entered).to.equal(false)
-        
                 await expectMetRequirementsMatch(user, userMetRequirements)
-                
-                await expeditionMethod.joinExpedition({
-                    user,
-                    revertErr: getRequirementPrioritizedRevertErr(userMetRequirements)
-                })
-        
-                await everestMethod.lockSummit({
-                    user,
-                    amount: userParams[user.address].summitAmount,
-                    lockDuration: userParams[user.address].lockDuration,
-                })
-        
-                userMetRequirements.everest = true;
-                await expectMetRequirementsMatch(user, userMetRequirements)      
-        
-                await expeditionMethod.joinExpedition({
-                    user,
-                    revertErr: getRequirementPrioritizedRevertErr(userMetRequirements)
-                })
-        
-                await expeditionMethod.selectDeity({
-                    user,
-                    deity: userParams[user.address].deity,
-                })
-        
-                userMetRequirements.deity = true;
-                await expectMetRequirementsMatch(user, userMetRequirements)      
-        
-        
-                await expeditionMethod.joinExpedition({
-                    user,
-                    revertErr: getRequirementPrioritizedRevertErr(userMetRequirements)
-                })
-        
-                await expeditionMethod.selectSafetyFactor({
-                    user,
-                    safetyFactor: userParams[user.address].safetyFactor,
-                })
-        
-                userMetRequirements.safetyFactor = true;
-                await expectMetRequirementsMatch(user, userMetRequirements)
-        
+
+
+                await promiseSequenceMap(
+                    userParams[user.address].requirementsOrder,
+                    async (step) => {
+
+                        // Ensure user can't join expedition without requirement
+                        await expeditionMethod.joinExpedition({
+                            user,
+                            revertErr: getRequirementPrioritizedRevertErr(userMetRequirements)
+                        })
+
+                        // Execute Step
+                        await executeRequirementStep(user, step)
+
+                        // Mark requirement as completed, ensure met requirements match
+                        userMetRequirements[step] = true;
+                        await expectMetRequirementsMatch(user, userMetRequirements)
+                    }
+                )
+
+                // User should now be able to join expedition        
                 const expedInfoInit = await expeditionGet.userExpeditionInfo(user.address)
                 expect(expedInfoInit.entered).to.be.false
         
@@ -310,14 +322,14 @@ describe("EXPEDITION V2", async function() {
     it(`EXPEDITION: Winnings are harvested correctly`, async function() {
         const expeditionRewards = await usersExpeditionRewards()
 
-        const summitClaimedInit = await usersClaimedSummitBalances()
+        const summitClaimedInit = await usersLockedSummitBalances()
         const usdcBalancesInit = await usersUsdcBalances()
         
         await userPromiseSequenceMap(
             async (user) => await expeditionMethod.harvestExpedition({ user })
         )
             
-        const summitClaimedFinal = await usersClaimedSummitBalances()
+        const summitClaimedFinal = await usersLockedSummitBalances()
         const usdcBalancesFinal = await usersUsdcBalances()
 
         await userPromiseSequenceMap(
@@ -459,102 +471,102 @@ describe("EXPEDITION V2", async function() {
         expect6FigBigNumberAllEqual([expedInfoInit.everestOwned, expedInfoMid.everestOwned, expedInfoMid2.everestOwned, expedInfoFinal.everestOwned])
     })
 
-    // it('EVEREST CHANGE: Users should be able to increase or remove locked everest and update expeditions', async function() {
-    //     const { user1 } = await getNamedSigners(hre)
-    //     const expeditionV2 = await getExpedition()
-    //     const cakeToken = await getCakeToken()
+    it('EVEREST CHANGE: Users should be able to increase or remove locked everest and update expeditions', async function() {
+        const { user1 } = await getNamedSigners(hre)
 
-    //     await expeditionSynth.rolloverExpedition()
+        await rolloverRound(EXPEDITION)
         
-    //     await expeditionSynth.expectUserAndExpedSuppliesToMatch()
+        await expeditionSynth.expectUserAndExpedSuppliesToMatch()
 
-    //     const expedInfoInit = await expeditionGet.userExpeditionInfo(user1.address)
-    //     const { safe: safeInit, deitied: deitiedInit } = await expeditionSynth.calcUserSafeAndDeitiedEverest(user1.address)
+        const everestInfoInit = await everestGet.userEverestInfo(user1.address)
+        const expedInfoInit = await expeditionGet.userExpeditionInfo(user1.address)
+        expect(everestInfoInit.everestOwned).to.equal(expedInfoInit.everestOwned)
+        const { safe: safeInit, deitied: deitiedInit } = await expeditionSynth.calcUserSafeAndDeitiedEverest(user1.address)
 
-    //     consoleLog({
-    //         safeInit: toDecimal(safeInit),
-    //         expedInfoSafeInit: toDecimal(expedInfoInit.safeSupply),
-    //         summitInit: toDecimal(expedInfoInit.summitLocked),
-    //         summitLpInit: toDecimal(expedInfoInit.summitLpLocked),
-    //     })
+        consoleLog({
+            safeInit: toDecimal(safeInit),
+            expedInfoSafeInit: toDecimal(expedInfoInit.safeSupply),
+        })
 
-    //     expect(safeInit).to.equal(expedInfoInit.safeSupply)
-    //     expect(deitiedInit).to.equal(expedInfoInit.deitiedSupply)
+        expect(safeInit).to.equal(expedInfoInit.safeSupply)
+        expect(deitiedInit).to.equal(expedInfoInit.deitiedSupply)
 
-    //     // Increase locked summit
-    //     await expeditionV2.connect(user1).increaseLockedSummit(e18(30), e18(0))
+        // Increase locked summit
+        await everestMethod.increaseLockedSummit({
+            user: user1,
+            amount: e18(30)
+        })
 
-    //     await expeditionSynth.expectUserAndExpedSuppliesToMatch()
+        await expeditionSynth.expectUserAndExpedSuppliesToMatch()
 
-    //     const expedInfoMid = await expeditionGet.userExpeditionInfo(user1.address)
-    //     const { safe: safeMid, deitied: deitiedMid } = await expeditionSynth.calcUserSafeAndDeitiedEverest(user1.address)
+        const everestInfoMid = await everestGet.userEverestInfo(user1.address)
+        const expedInfoMid = await expeditionGet.userExpeditionInfo(user1.address)
+        expect(everestInfoMid.everestOwned).to.equal(expedInfoMid.everestOwned)
+        const { safe: safeMid, deitied: deitiedMid } = await expeditionSynth.calcUserSafeAndDeitiedEverest(user1.address)
 
-    //     expect(safeMid).to.equal(expedInfoMid.safeSupply)
-    //     expect(deitiedMid).to.equal(expedInfoMid.deitiedSupply)
+        expect(safeMid).to.equal(expedInfoMid.safeSupply)
+        expect(deitiedMid).to.equal(expedInfoMid.deitiedSupply)
 
-    //     consoleLog({
-    //         safeMid: toDecimal(safeMid),
-    //         expedInfoSafeMid: toDecimal(expedInfoMid.safeSupply),
-    //         summitMid: toDecimal(expedInfoMid.summitLocked),
-    //         summitLpMid: toDecimal(expedInfoMid.summitLpLocked),
-    //     })
+        consoleLog({
+            safeMid: toDecimal(safeMid),
+            expedInfoSafeMid: toDecimal(expedInfoMid.safeSupply),
+        })
 
 
 
-    //     // DECREASE LOCKED SUMMIT by half
-    //     await mineBlockWithTimestamp(expedInfoInit.lockRelease)
-    //     const halfEverestAmount = expedInfoMid.everestOwned.div(2)
+        // DECREASE LOCKED SUMMIT by half
+        await mineBlockWithTimestamp(everestInfoMid.lockRelease)
+        const halfEverestAmount = everestInfoMid.everestOwned.div(2)
+        
+        await everestMethod.withdrawLockedSummit({
+            user: user1,
+            everestAmount: halfEverestAmount
+        })
+        
+        await expeditionSynth.expectUserAndExpedSuppliesToMatch()
+        
+        const everestInfoMid2 = await everestGet.userEverestInfo(user1.address)
+        const expedInfoMid2 = await expeditionGet.userExpeditionInfo(user1.address)
+        expect(everestInfoMid2.everestOwned).to.equal(expedInfoMid2.everestOwned)
+        const { safe: safeMid2, deitied: deitiedMid2 } = await expeditionSynth.calcUserSafeAndDeitiedEverest(user1.address)
 
-    //     await expeditionV2.connect(user1).decreaseLockedSummit(halfEverestAmount)
+        consoleLog({
+            safeMid2: toDecimal(safeMid2),
+            expedInfoSafeMid2: toDecimal(expedInfoMid2.safeSupply),
+        })
 
-    //     await expeditionSynth.expectUserAndExpedSuppliesToMatch()
-
-    //     const expedInfoMid2 = await expeditionGet.userExpeditionInfo(user1.address)
-    //     const { safe: safeMid2, deitied: deitiedMid2 } = await expeditionSynth.calcUserSafeAndDeitiedEverest(user1.address)
-
-    //     consoleLog({
-    //         safeMid2: toDecimal(safeMid2),
-    //         expedInfoSafeMid2: toDecimal(expedInfoMid2.safeSupply),
-    //         summitMid2: toDecimal(expedInfoMid2.summitLocked),
-    //         summitLpMid2: toDecimal(expedInfoMid2.summitLpLocked),
-    //     })
-
-    //     expect(safeMid2).to.equal(expedInfoMid2.safeSupply)
-    //     expect(deitiedMid2).to.equal(expedInfoMid2.deitiedSupply)
+        expect(safeMid2).to.equal(expedInfoMid2.safeSupply)
+        expect(deitiedMid2).to.equal(expedInfoMid2.deitiedSupply)
         
         
-    //     // Decrease locked summit to 0
-    //     await expeditionV2.connect(user1).decreaseLockedSummit(halfEverestAmount)
-        
-    //     await expeditionSynth.expectUserAndExpedSuppliesToMatch()
+        // Decrease locked summit to 0
+        await everestMethod.withdrawLockedSummit({
+            user: user1,
+            everestAmount: halfEverestAmount
+        })        
+        await expeditionSynth.expectUserAndExpedSuppliesToMatch()
 
-    //     const expedInfoFinal = await expeditionGet.userExpeditionInfo(user1.address)
-    //     const { safe: safeFinal, deitied: deitiedFinal } = await expeditionSynth.calcUserSafeAndDeitiedEverest(user1.address)
+        const everestInfoFinal = await everestGet.userEverestInfo(user1.address)
+        const expedInfoFinal = await expeditionGet.userExpeditionInfo(user1.address)
+        expect(everestInfoFinal.everestOwned).to.equal(expedInfoFinal.everestOwned)
+        const { safe: safeFinal, deitied: deitiedFinal } = await expeditionSynth.calcUserSafeAndDeitiedEverest(user1.address)
 
-    //     consoleLog({
-    //         safeFinal: toDecimal(safeFinal),
-    //         expedInfoSafeFinal: toDecimal(expedInfoFinal.safeSupply),
-    //         summitFinal: toDecimal(expedInfoFinal.summitLocked),
-    //         summitLpFinal: toDecimal(expedInfoFinal.summitLpLocked),
-    //     })
+        consoleLog({
+            safeFinal: toDecimal(safeFinal),
+            expedInfoSafeFinal: toDecimal(expedInfoFinal.safeSupply),
+        })
 
-    //     expect(safeFinal).to.equal(expedInfoFinal.safeSupply)
-    //     expect(deitiedFinal).to.equal(expedInfoFinal.deitiedSupply)
+        expect(safeFinal).to.equal(expedInfoFinal.safeSupply)
+        expect(deitiedFinal).to.equal(expedInfoFinal.deitiedSupply)
 
+        expectAllEqual([
+            everestInfoFinal.everestOwned,
+            expedInfoFinal.everestOwned,
+            e18(0)
+        ])
 
-    //     // Safety factor changes
-    //     expect6FigBigNumberAllEqual([expedInfoMid.everestOwned, expedInfoMid2.everestOwned.mul(2)])
-    //     expect(expedInfoFinal.summitLocked).to.equal(0)
-    //     expect(expedInfoFinal.summitLpLocked).to.equal(0)
-    //     expect(expedInfoFinal.everestOwned).to.equal(0)
-    //     expectAllEqual([1, expedInfoInit.interactingExpedCount, expedInfoMid.interactingExpedCount, expedInfoMid2.interactingExpedCount])
-    //     expectAllEqual([0, expedInfoFinal.interactingExpedCount])
-
-
-    //     // User Everest Info doesnt change
-    //     expectAllEqual([expedInfoInit.deity, expedInfoMid.deity, expedInfoMid2.deity, expedInfoFinal.deity])
-    //     expectAllEqual([expedInfoInit.everestLockMultiplier, expedInfoMid.everestLockMultiplier, expedInfoMid2.everestLockMultiplier, expedInfoFinal.everestLockMultiplier])
-    //     expect6FigBigNumberAllEqual([expedInfoInit.lockRelease, expedInfoMid.lockRelease, expedInfoMid2.lockRelease, expedInfoFinal.lockRelease])
-    //     expectAllEqual([expedInfoInit.safetyFactor, expedInfoMid.safetyFactor, expedInfoMid2.safetyFactor, expedInfoFinal.safetyFactor])
-    // })
+        // Other User Exped Info doesnt change
+        expectAllEqual([expedInfoInit.deity, expedInfoMid.deity, expedInfoMid2.deity, expedInfoFinal.deity])
+        expectAllEqual([expedInfoInit.safetyFactor, expedInfoMid.safetyFactor, expedInfoMid2.safetyFactor, expedInfoFinal.safetyFactor])
+    })
 })

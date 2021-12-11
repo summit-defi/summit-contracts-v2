@@ -171,7 +171,7 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
         if (_lockForEverest) {
             everest.lockAndExtendLockDuration(
                 _amount,
-                everest.lockTimeRequiredForClaimableSummitLock(),
+                everest.inflectionLockTime(),
                 msg.sender
             );
 

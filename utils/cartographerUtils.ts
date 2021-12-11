@@ -316,6 +316,29 @@ export const cartographerMethod = {
             await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Withdraw, eventOnly ? null : eventArgs, false)
         }
     },
+    // function elevateAndLockStakedSummit(uint8 _elevation, uint256 _amount)
+    elevateAndLockStakedSummit: async ({
+        user,
+        elevation,
+        amount,
+        revertErr,
+    }: {
+        user: SignerWithAddress,
+        elevation: number,
+        amount: BigNumber,
+        revertErr?: string,
+    }) => {
+        const cartographer = await getCartographer()
+        const tx = cartographer.connect(user).elevateAndLockStakedSummit
+        const txArgs = [elevation, amount]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            const eventArgs = [user.address, elevation, amount]
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.ElevateAndLockStakedSummit, eventArgs, false)
+        }
+    },
     switchTotem: async ({
         user,
         elevation,

@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import { BigNumber, Contract } from "ethers"
-import { expect6FigBigNumberEquals, sixFigBigNumberEquals, toDecimal } from "."
+import { EVENT, expect6FigBigNumberEquals, sixFigBigNumberEquals, toDecimal } from "."
 
 export const executeTx = async (tx: any, txArgs: any[]) => {
     await tx(...txArgs)

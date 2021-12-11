@@ -16,6 +16,8 @@ export const Contracts = {
     Timelock: 'Timelock',
 
     EverestToken: 'EverestToken',
+    DummyEverestExtension: 'DummyEverestExtension',
+
     ExpeditionV2: 'ExpeditionV2',
 
     SummitLocking: 'SummitLocking',
@@ -173,11 +175,17 @@ export const ERR = {
         ALREADY_LOCKING_SUMMIT: 'Already locking summit',
         INVALID_LP_INCENTIVE_MULT: 'Incentive multiplier must be between 1x and 4x',
         INVALID_LOCK_DURATION: 'Invalid lock duration',
+        LOCK_DURATION_STRICTLY_INCREASE: 'Lock duration must strictly increase',
         EVEREST_LOCKED: 'Lock still in effect',
         BAD_WITHDRAW: 'Bad withdraw',
         INVALID_SAFETY_FACTOR: 'Invalid safety factor',
         NOT_IN_PANIC: 'Not in panic',
         NOT_AVAILABLE_DURING_PANIC: 'Not available during panic',
+
+        MISSING_EXTENSION: 'Missing extension',
+        EXTENSION_CAP_REACHED: 'Max extension cap reached',
+        EXPEDITION_ALREADY_EXISTS: 'Extension already exists',
+        EXTENSION_DOESNT_EXIST: 'Extension doesnt exist',
     },
 
     EXPEDITION_V2: {
@@ -218,6 +226,7 @@ export const EVENT = {
     Rollover: 'Rollover',
     RolloverReferral: 'RolloverReferral',
     Elevate: 'Elevate',
+    ElevateAndLockStakedSummit: 'ElevateAndLockStakedSummit',
     
     ExpeditionCreated: 'ExpeditionCreated',
     ExpeditionExtended: 'ExpeditionExtended',
@@ -258,6 +267,9 @@ export const EVENT = {
         SetMinEverestLockMult: 'SetMinEverestLockMult',
         SetMaxEverestLockMult: 'SetMaxEverestLockMult',
         SetPanic: 'SetPanic',
+
+        EverestExtensionAdded: 'EverestExtensionAdded',
+        EverestExtensionRemoved: 'EverestExtensionRemoved',
     },
 
     Expedition: {

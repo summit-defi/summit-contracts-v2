@@ -70,7 +70,7 @@ export const expect6FigBigNumberEquals = (a: BigNumber, b: BigNumber) => {
 export const expect6FigBigNumberAllEqual = (arr: BigNumber[]) => {
     arr.forEach((item) => expect6FigBigNumberEquals(item, arr[0]))
 }
-export const expectAllEqual = (arr: number[]) => {
+export const expectAllEqual = (arr: Array<number | BigNumber>) => {
     arr.forEach((item) => expect(item).to.equal(arr[0]))
 }
 export const expectBigNumberGreaterThan = (a: BigNumber, b: BigNumber) => {
