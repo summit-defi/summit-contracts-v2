@@ -1,7 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { boolean, string } from "hardhat/internal/core/params/argumentTypes"
-import { claimAmountBonus, claimAmountWithBonusAdded, e12, e6, elevationPromiseSequenceReduce, EVENT, executeTxExpectEvent, executeTxExpectReversion, getBifiToken, getCakeToken, OASIS, subCartGet, sumBigNumbers, toDecimal, tokenAmountAfterDepositFee, tokenAmountAfterWithdrawTax, tokenPromiseSequenceMap } from "."
+import { claimAmountBonus, claimAmountWithBonusAdded, days, e12, e6, elevationPromiseSequenceReduce, EVENT, executeTxExpectEvent, executeTxExpectReversion, getBifiToken, getCakeToken, getTimestamp, OASIS, subCartGet, sumBigNumbers, toDecimal, tokenAmountAfterDepositFee, tokenAmountAfterWithdrawTax, tokenPromiseSequenceMap } from "."
 import { getCartographer, getSummitToken } from "./contracts"
 
 
@@ -34,22 +34,37 @@ const getUserTokenWithdrawalTax = async (userAddress: string, tokenAddress: stri
 const getTokenDepositFee = async (tokenAddress: string): Promise<number> => {
     return await (await getCartographer()).tokenDepositFee(tokenAddress)
 }
-const getUserTokenEarningsBonus = async (userAddress: string, tokenAddress: string): Promise<number> => {
+const calcBonusBPNextSecond = async (userAddress: string, tokenAddress: string) => {
+    const lastWithdrawTimestampForBonus = await (await getCartographer()).tokenLastWithdrawTimestampForBonus(userAddress, tokenAddress)
+    const nextTimestamp = (await getTimestamp()) + 1
+    const offset = nextTimestamp - lastWithdrawTimestampForBonus
+    return calculateBonusFromOffset(offset)
+}
+const getBonusBP = async (userAddress: string, tokenAddress: string): Promise<number> => {
     return await (await getCartographer()).bonusBP(userAddress, tokenAddress)
+}
+const getTokenClaimableWithEmission = async (userAddress: string, tokenAddress: string, elevation: number): Promise<BigNumber> => {
+    return (await subCartGet.claimableRewards(tokenAddress, elevation, userAddress))
+        .add(await farmSummitEmissionOverDuration(tokenAddress, elevation, 1))
 }
 const getTokenClaimableWithBonus = async (userAddress: string, tokenAddress: string, elevation: number): Promise<BigNumber> => {
     const expectedClaimAmount = (await subCartGet.claimableRewards(tokenAddress, elevation, userAddress))
         .add(await farmSummitEmissionOverDuration(tokenAddress, elevation, 1))
         .div(e6(1)).mul(e6(1))
-    const userTokenBonusBp = await getUserTokenEarningsBonus(userAddress, tokenAddress)
+    const userTokenBonusBp = await calcBonusBPNextSecond(userAddress, tokenAddress)
     return claimAmountWithBonusAdded(expectedClaimAmount, userTokenBonusBp)
 }
 const getTokenClaimableBonus = async (userAddress: string, tokenAddress: string, elevation: number): Promise<BigNumber> => {
     const expectedClaimAmount = (await subCartGet.claimableRewards(tokenAddress, elevation, userAddress))
         .add(await farmSummitEmissionOverDuration(tokenAddress, elevation, 1))
         .div(e6(1)).mul(e6(1))
-    const userTokenBonusBp = await getUserTokenEarningsBonus(userAddress, tokenAddress)
+    const userTokenBonusBp = await calcBonusBPNextSecond(userAddress, tokenAddress)
     return claimAmountBonus(expectedClaimAmount, userTokenBonusBp)
+}
+const calculateBonusFromOffset = (offset: number): number => {
+    if (offset <= days(7)) return 0
+    if (offset >= days(14)) return 700
+    return Math.floor(((offset - days(7)) * 700) / days(7))
 }
 
 export const cartographerGet = {
@@ -62,9 +77,11 @@ export const cartographerGet = {
     summitPerSecond,
     getUserTokenWithdrawalTax,
     getTokenDepositFee,
-    getUserTokenEarningsBonus,
+    getBonusBP,
+    getTokenClaimableWithEmission,
     getTokenClaimableWithBonus,
     getTokenClaimableBonus,
+    calculateBonusFromOffset,
     getRolloverReward: async () => {
         return await (await getCartographer()).rolloverReward()
     },
@@ -73,6 +90,9 @@ export const cartographerGet = {
     },
     elevationPoolsCount: async (elevation: number) => {
         return await (await getCartographer()).elevationPoolsCount(elevation)
+    },
+    tokenLastWithdrawTimestampForBonus: async (userAddress: string, tokenAddress: string): Promise<number> => {
+        return (await (await getCartographer()).tokenLastWithdrawTimestampForBonus(userAddress, tokenAddress)).toNumber()
     }
 }
 
@@ -559,7 +579,7 @@ export const cartographerSetParam = {
         revertErr,
     }: {
         dev: SignerWithAddress
-        maxBonusBP: boolean,
+        maxBonusBP: number,
         revertErr?: string,
     }) => {
         const cartographer = await getCartographer()

@@ -59,6 +59,17 @@ export const deltaBN = (n0: BigNumber, n1: BigNumber): BigNumber => {
     return n0.gt(n1) ? n0.sub(n1) : n1.sub(n0)
 }
 
+// LOGGING
+export const checkmarkIfTrue = (b: boolean) => {
+    return b ? '✔' : '✘'
+}
+export const checkmarkIfEquals = (a: any, b: any) => {
+    return checkmarkIfTrue(a === b)
+}
+export const checkmarkIfBNEquals = (a: BigNumber, b: BigNumber) => {
+    return checkmarkIfTrue(a.eq(b))
+}
+
 // ASSERTIONS
 export const sixFigBigNumberEquals = (a: BigNumber, b: BigNumber) => {
     const diff = a.gt(b) ? a.sub(b) : b.sub(a)
