@@ -111,6 +111,7 @@ export const ERR = {
     SELF_REFERRER: 'Cant refer yourself',
     NO_REWARDS_TO_REDEEM: 'No referral rewards to redeem',
     ONLY_CARTOGRAPHER_OR_EXPEDITION: 'Only cartographer or expedition',
+    TOTEM_MUST_BE_SELECTED: 'Totem must be selected',
 
     // Elevation
     INVALID_ELEV: 'Invalid elev',

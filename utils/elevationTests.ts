@@ -4,7 +4,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signers';
 import { expect } from 'chai'
 import { Contract } from 'ethers';
 import hre, { ethers } from 'hardhat';
-import { cartographerMethod, cartographerSynth, consoleLog, depositedAfterFee, e18, elevationHelperGet, ERR, EVENT, getContract, getTotemCount, mineBlock, rolloverRound, rolloverRoundUntilLosingTotem, rolloverRoundUntilWinningTotem, subCartGet, subCartMethod, toDecimal } from '.';
+import { cartographerMethod, cartographerSynth, consoleLog, depositedAfterFee, e18, elevationHelperGet, ERR, EVENT, getCartographer, getContract, getTotemCount, getUserTotems, mineBlock, rolloverRound, rolloverRoundUntilLosingTotem, rolloverRoundUntilWinningTotem, subCartGet, subCartMethod, toDecimal } from '.';
 import { TOTEM_COUNT } from './constants';
 import { userPromiseSequenceMap, userPromiseSequenceReduce, usersHypotheticalRewards, usersRewards, usersStaked } from './users';
 import { e12, expect6FigBigNumberEquals, expect6FigBigNumberAllEqual, expectBigNumberArraysEqual, expectBigNumberGreaterThan, expectBigNumberLessThan, mineBlocks, stringifyBigNumberArray, getTimestamp, mineBlockWithTimestamp, increaseTimestampAndMine, e0, e6 } from './utils';
@@ -28,15 +28,23 @@ const switchTotemIfNecessary = async (user: SignerWithAddress, elevation: number
 }
 
 
+
+// TOTEM TESTS
+const totemTests = (tokenName: string, elevation: number) => {
+  it('TOTEM: Users should be able to select a totem')
+}
+
+
 // DEPOSIT
-const standardDepositShouldSucceed = (tokenName: string, elevation: number, totem: number) => {
+const standardDepositShouldSucceed = (tokenName: string, elevation: number) => {
   it('DEPOSIT: Standard deposit should succeed', async function() {
     const { user1 } = await getNamedSigners(hre)
     const token = await getContract(tokenName)
-    switchTotemIfNecessary(user1, elevation, totem)
+    const userTotems = await getUserTotems()
+    switchTotemIfNecessary(user1, elevation, userTotems[user1.address])
 
     const initialStaked = (await subCartGet.userInfo(token.address, elevation, user1.address)).staked
-    
+
     const amount = e18(5)
     await cartographerMethod.deposit({
       user: user1,
@@ -44,7 +52,7 @@ const standardDepositShouldSucceed = (tokenName: string, elevation: number, tote
       elevation,
       amount,
     })
-    
+
     const finalStaked = (await subCartGet.userInfo(token.address, elevation, user1.address)).staked
 
     expect(finalStaked).to.equal(initialStaked.add(amount))
@@ -72,7 +80,7 @@ const depositShouldUpdatePoolAndTotemInfo = (tokenName: string, elevation: numbe
     const totalTotem0Deposit = depositAmounts[user1.address].add(depositAmounts[user2.address])
     const totalTotem1Deposit = depositAmounts[user3.address]
     const totalDeposit = await userPromiseSequenceReduce((total, user) => total.add(depositAmounts[user.address]), e18(0))
-    
+
     const fee = 0
     const totalTotem0DepositAfterFee = depositedAfterFee(totalTotem0Deposit, fee)
     const totalTotem1DepositAfterFee = depositedAfterFee(totalTotem1Deposit, fee)
@@ -90,7 +98,7 @@ const depositShouldUpdatePoolAndTotemInfo = (tokenName: string, elevation: numbe
     )
 
     const { supply: supplyFinal, totemSupplies: totemSuppliesFinal } = await subCartGet.poolInfo(token.address, elevation)
-    
+
 
     const usersStakedFinal = await usersStaked(token.address, elevation)
 
@@ -98,7 +106,7 @@ const depositShouldUpdatePoolAndTotemInfo = (tokenName: string, elevation: numbe
     expect(totemSuppliesFinal[0].sub(totemSuppliesInit[0])).to.equal(totalTotem0DepositAfterFee)
     expect(totemSuppliesFinal[1].sub(totemSuppliesInit[0])).to.equal(totalTotem1DepositAfterFee)
     expect(supplyFinal.sub(supplyInit)).to.equal(totalDepositAfterFee)
-    
+
     await userPromiseSequenceMap(
       async (user, userIndex) => expect(usersStakedFinal[userIndex].sub(usersStakedInit[userIndex])).to.equal(depositedAfterFee(depositAmounts[user.address], fee))
     )
@@ -156,11 +164,11 @@ const elevationPoolRewardsShouldIncreaseEachBlock = (tokenName: string, elevatio
       totem0RoundRewards: `${toDecimal(totemRoundRewardsInit[0])} --> ${toDecimal(totemRoundRewardsFinal[0])}`,
       totem1RoundRewards: `${toDecimal(totemRoundRewardsInit[1])} --> ${toDecimal(totemRoundRewardsFinal[1])}`,
     })
-    
+
     expect6FigBigNumberEquals(roundRewardsDelta, totem0RoundRewardsDelta.add(totem1RoundRewardsDelta))
 
     const farmBlockEmission = await cartographerSynth.farmSummitEmissionOneBlock(token.address, elevation)
-    
+
     const totem0ScaledRewards = totem0RoundRewardsDelta.mul(e12(1)).div(totemSuppliesInit[0])
     const totem1ScaledRewards = totem1RoundRewardsDelta.mul(e12(1)).div(totemSuppliesInit[1])
     consoleLog({
@@ -178,7 +186,7 @@ const elevationPoolRewardsShouldIncreaseEachBlock = (tokenName: string, elevatio
 
     const usersStakedAmt = await usersStaked(token.address, elevation)
     const usersHypotheticalRewardsInit = await usersHypotheticalRewards(token.address, elevation)
-    
+
     const {
       roundRewards: roundRewardsInit,
       totemRoundRewards: totemRoundRewardsInit,
@@ -225,7 +233,7 @@ const elevationPoolRewardsShouldIncreaseEachBlock = (tokenName: string, elevatio
     expect6FigBigNumberEquals(totem0RoundRewardsDelta, usersHypotheticalRewardsDelta[0].add(usersHypotheticalRewardsDelta[1]))
     expect6FigBigNumberEquals(totem1RoundRewardsDelta, usersHypotheticalRewardsDelta[2])
     expect6FigBigNumberEquals(roundRewardsDelta, totem0RoundRewardsDelta.add(totem1RoundRewardsDelta))
-    
+
     // User's rewards scale proportionally to their staked amount
     const usersHypotheticalPendingScaled = await userPromiseSequenceMap(
       async (_user, userIndex) => usersHypotheticalRewardsDelta[userIndex].mul(e12(1)).div(usersStakedAmt[userIndex])
@@ -250,7 +258,7 @@ const vestedWinningsIncreaseOverDurationOfRound = (tokenName: string, elevation:
     // const quarterRoundDuration = roundDuration / 4
 
     // await rolloverRound(elevation)
-    
+
     // const roundNumber = await elevationHelperGet.roundNumber(elevation)
     // const prevRound = roundNumber - 1
 
@@ -311,7 +319,7 @@ const vestedWinningsIncreaseOverDurationOfRound = (tokenName: string, elevation:
     // expectBigNumberGreaterThan(harvestable2, harvestable1)
     // expectBigNumberLessThan(vesting2, vesting1)
 
-    
+
     // await increaseTimestampAndMine(quarterRoundDuration)
 
     // const {
@@ -356,9 +364,9 @@ const winningsMatchHypotheticalWinnings = (tokenName: string, elevation: number)
   it('WINNINGS: Winnings match hypothetical winnings before round end', async function() {
     const { dev, user1, user2, user3 } = await getNamedSigners(hre)
     const token = await getContract(tokenName)
-    
+
     await subCartMethod.updatePool(token.address, elevation)
-    
+
     const usersHypotheticalRewardsInit = await usersHypotheticalRewards(token.address, elevation)
 
     await subCartMethod.updatePool(token.address, elevation)
@@ -425,13 +433,13 @@ const withdrawingVestedWinningsRevestsRemaining = (tokenName: string, elevation:
 
     // const availBlockDelta = harvestableInit.sub(harvestable0);
     // const balanceInit = await token.balanceOf(winningUser.address)
-    
+
     // await cartographerMethod.claimSingleFarm({
     //   user: winningUser,
     //   tokenAddress: token.address,
     //   elevation,
     // })
-    
+
     // const {
     //   harvestable: harvestableFinal,
     //   vesting: vestingFinal,
@@ -540,7 +548,7 @@ const withdrawingVestedWinningsRevestsRemaining = (tokenName: string, elevation:
     // expect6FigBigNumberAllEqual([vestAmtToDurRatio0, vestAmtToDurRatio1, vestAmtToDurRatio2, vestAmtToDurRatio3])
 
     // const balanceInit = await token.balanceOf(winningUser.address)
-    
+
 
     // await cartographerMethod.claimSingleFarm({
     //   user: winningUser,
@@ -706,7 +714,7 @@ const rolloverMultipleRounds = (tokenName: string, elevation: number) => {
     // // MULTI ROUND ROLLOVER
     // await rolloverRound(elevation)
 
-    
+
     // const {
     //   harvestable: user1AvailRewardsInit,
     //   vesting: user1VestingRewardsInit,
@@ -719,12 +727,12 @@ const rolloverMultipleRounds = (tokenName: string, elevation: number) => {
     // const nextRoundTime = await elevationHelperGet.roundEndTimestamp(elevation)
     // const roundDuration = await elevationHelperGet.roundDurationSeconds(elevation)
     // await mineBlockWithTimestamp(nextRoundTime + (roundDuration * 4))
-    
+
     // await rollover(elevation)
 
     // await subCartMethod.updatePool(token.address, elevation)
-    
-    
+
+
     // const {
     //   harvestable: user1AvailRewardsFinal,
     //   vesting: user1VestingRewardsFinal,
@@ -778,7 +786,7 @@ const correctWinnersHistoricalData = (tokenName: string, elevation: number) => {
     const round1WinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
     expect(poolWinCountersInit[round1WinningTotem].add(1)).to.equal(poolWinCounters1[round1WinningTotem])
     expectBigNumberArraysEqual(prevWinners1, [round1WinningTotem, ...prevWinnersInit.slice(0, 9)])
-    
+
     await rolloverRound(elevation)
     const {
       totemWinCounters: poolWinCounters2,
@@ -787,7 +795,7 @@ const correctWinnersHistoricalData = (tokenName: string, elevation: number) => {
     const round2WinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
     expect(poolWinCounters1[round2WinningTotem].add(1)).to.equal(poolWinCounters2[round2WinningTotem])
     expectBigNumberArraysEqual(prevWinners2, [round2WinningTotem, round1WinningTotem, ...prevWinnersInit.slice(0, 8)])
-    
+
     await rolloverRound(elevation)
     const {
       totemWinCounters: poolWinCounters3,
@@ -796,7 +804,7 @@ const correctWinnersHistoricalData = (tokenName: string, elevation: number) => {
     const round3WinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
     expect(poolWinCounters2[round3WinningTotem].add(1)).to.equal(poolWinCounters3[round3WinningTotem])
     expectBigNumberArraysEqual(prevWinners3, [round3WinningTotem, round2WinningTotem, round1WinningTotem, ...prevWinnersInit.slice(0, 7)])
-    
+
     await rolloverRound(elevation)
     const {
       totemWinCounters: poolWinCounters4,
@@ -805,7 +813,7 @@ const correctWinnersHistoricalData = (tokenName: string, elevation: number) => {
     const round4WinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
     expect(poolWinCounters3[round4WinningTotem].add(1)).to.equal(poolWinCounters4[round4WinningTotem])
     expectBigNumberArraysEqual(prevWinners4, [round4WinningTotem, round3WinningTotem, round2WinningTotem, round1WinningTotem, ...prevWinnersInit.slice(0, 6)])
-    
+
     await rolloverRound(elevation)
     const {
       totemWinCounters: poolWinCounters5,
@@ -847,17 +855,17 @@ const correctWinnersHistoricalData = (tokenName: string, elevation: number) => {
 
     const winsInit = poolWinCountersInit.reduce((accum: BigNumber, wins: BigNumber) => wins.add(accum), BigNumber.from('0'))
     const winsFinal = poolWinCountersFinal.reduce((accum: BigNumber, wins: BigNumber) => wins.add(accum), BigNumber.from('0'))
-    
+
     expect(winsFinal.sub(winsInit)).to.equal(1)
   })
 }
 
 // TOTEMS
-// const switchingTotems = (tokenName: string, rewardTokenName: string, elevation: number) => {
+// const switchingTotems = (tokenName: string, elevation: number) => {
 //   it(`TOTEMS: Switching to invalid totem should fail with error ${ERR.INVALID_TOTEM}`, async function() {
 //     const { user1 } = await getNamedSigners(hre)
 //     const cartographer = await getCartographer()
-    
+
 //     await expect(
 //       cartographer.connect(user1).switchTotem(elevation, TOTEM_COUNT[elevation])
 //     ).to.be.revertedWith(ERR.INVALID_TOTEM)
@@ -866,17 +874,16 @@ const correctWinnersHistoricalData = (tokenName: string, elevation: number) => {
 //     const { user1 } = await getNamedSigners(hre)
 //     const cartographer = await getCartographer()
 //     const subCartographer = await ethers.getContract(tokenName)
-//     const rewardToken = await ethers.getContract(rewardTokenName)
 //     const elevationHelper = await ethers.getContract('ElevationHelper')
 
 //     const targetTotem = TOTEM_COUNT[elevation] - 1
 
 //     await rolloverRoundUntilWinningTotem(elevation, 0)
 //     await mineBlocks(10)
-    
+
 //     const [harvestablePre0] = await cartographer.rewards(pid, user1.address)
 //     await subCartMethod.updatePool(token.address, elevation)
-    
+
 //     let runningUserInfo =  await subCartographer.connect(user1).userInfo(pid, user1.address)
 //     const user1Totem0 = await getUserTotem(subCartographer, elevation, user1)
 //     const user1Staked0 = runningUserInfo.staked
@@ -888,12 +895,12 @@ const correctWinnersHistoricalData = (tokenName: string, elevation: number) => {
 
 //     const [harvestable0] = await cartographer.rewards(pid, user1.address)
 //     const singleBlockRewardDelta = harvestable0.sub(harvestablePre0)
-    
+
 //     expect(user1Totem0).to.equal(0)
-    
+
 //     // SWITCH TOTEM FROM 0 --> TARGET TOTEM
 //     await cartographer.connect(user1).switchTotem(elevation, targetTotem)
-    
+
 //     runningUserInfo =  await subCartographer.connect(user1).userInfo(pid, user1.address)
 //     const user1Totem1 = await getUserTotem(subCartographer, elevation, user1)
 //     const user1Staked1 = runningUserInfo.staked
@@ -919,10 +926,10 @@ const correctWinnersHistoricalData = (tokenName: string, elevation: number) => {
 //     const singleBlockRewardDelta1 = harvestable1.sub(harvestablePre1)
 
 //     const [roundRewards1B, ...totemRewards1B] = await subCartographer.totemRoundRewards(pid)
-    
+
 //     // SWITCH BACK FROM TARGET TOTEM --> 0
 //     await cartographer.connect(user1).switchTotem(elevation, 0)
-  
+
 //     runningUserInfo =  await subCartographer.connect(user1).userInfo(pid, user1.address)
 //     const user1Totem2 = await getUserTotem(subCartographer, elevation, user1)
 //     const user1Staked2 = runningUserInfo.staked
@@ -939,7 +946,7 @@ const correctWinnersHistoricalData = (tokenName: string, elevation: number) => {
 //     expect(poolLpSupply2).to.equal(poolLpSupply1)
 //     expect(totem0LpSupply2.sub(totem0LpSupply1)).to.equal(user1Staked0)
 //     expect(totemTargetLpSupply1.sub(totemTargetLpSupply2)).to.equal(user1Staked0)
-    
+
 //     expect(totem0LpSupply2).to.equal(totem0LpSupply0)
 //     expect(totemTargetLpSupply2).to.equal(totemTargetLpSupply0)
 
@@ -961,6 +968,8 @@ export const elevationTests = {
   rolloverMultipleRounds,
 
   correctWinnersHistoricalData,
+
+  // switchingTotems,
 }
 
 function rollover(elevation: number) {

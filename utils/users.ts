@@ -3,7 +3,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import hre from 'hardhat'
 import { UserInfo } from "os"
-import { everestGet, expeditionGet, ExpeditionHypotheticalRewards, ExpeditionInfo, ExpeditionRewards, getEverestBalance, getSummitBalance, getUsdcBalance, promiseSequenceMap, subCartGet, UserEverestInfo, UserExpeditionInfo } from "."
+import { everestGet, expeditionGet, ExpeditionHypotheticalRewards, ExpeditionInfo, ExpeditionRewards, getEverestBalance, getSummitBalance, getUsdcBalance, promiseSequenceMap, subCartGet, UserEverestInfo, UserExpeditionInfo, UserTotemInfo } from "."
 import { summitLockingGet } from "./summitLockingUtils"
 
 
@@ -63,6 +63,12 @@ export const usersEverestBalances = async (): Promise<BigNumber[]> => {
 export const usersUsdcBalances = async (): Promise<BigNumber[]> => {
     return await userPromiseSequenceMap(
         async (user) => await getUsdcBalance(user.address)
+    )
+}
+
+export const usersTotemInfos = async (elevation: number): Promise<UserTotemInfo[]> => {
+    return await userPromiseSequenceMap(
+        async (user) => await subCartGet.userTotemInfo(elevation, user.address)
     )
 }
 

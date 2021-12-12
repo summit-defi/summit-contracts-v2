@@ -74,7 +74,21 @@ describe("STAKING BONUSES", async function() {
             bonusTimestamp: `${lastWithdrawTimestampForBonusInit} --> ${lastWithdrawTimestampForBonusFinal}`
         })
     })
-    it(`BONUS ACCRUAL: Harvesting winnings doesn't reset bonus BP`)
+    it(`BONUS ACCRUAL: Harvesting winnings doesn't reset bonus BP`, async function() {
+        const { user1 } = await getNamedSigners(hre)
+        const summitToken = await getSummitToken()
+
+        const lastWithdrawTimestampForBonusInit = await cartographerGet.tokenLastWithdrawTimestampForBonus(user1.address, summitToken.address)
+
+        await cartographerMethod.claimSingleFarm({
+            user: user1,
+            tokenAddress: summitToken.address,
+            elevation: OASIS,
+        })
+
+        const lastWithdrawTimestampForBonusFinal = await cartographerGet.tokenLastWithdrawTimestampForBonus(user1.address, summitToken.address)
+        expect(lastWithdrawTimestampForBonusFinal).to.equal(lastWithdrawTimestampForBonusInit)
+    })
     it(`BONUS ACCRUAL: Bonus start accruing at 7 days, and accrues correctly and earns correctly over duration of 7 days, and remains at max indefinitely`, async function() {
         const { user1 } = await getNamedSigners(hre)
         const summitToken = await getSummitToken()
@@ -259,7 +273,7 @@ describe("STAKING BONUSES", async function() {
 
         const cakeBonusFinal = await cartographerGet.getBonusBP(user1.address, cakeToken.address)
         const summitBonusFinal = await cartographerGet.getBonusBP(user1.address, summitToken.address)
-        expect(cakeBonusFinal).to.equal(100 * (1000 / 700))
-        expect(summitBonusFinal).to.equal(700 * (1000 / 700))
+        expect(cakeBonusFinal).to.equal(Math.floor(100 * (1000 / 700)))
+        expect(summitBonusFinal).to.equal(Math.floor(700 * (1000 / 700)))
     })
 })

@@ -35,6 +35,11 @@ export interface UserInfo {
     reVestStart: BigNumber
     reVestDur: BigNumber
 }
+export interface UserTotemInfo {
+    totem: number
+    totemSelected: boolean
+    totemSelectionRound: number
+}
 
 export const subCartGet = {
     farmingEnabled: async (elevation: number) => {
@@ -73,7 +78,7 @@ export const subCartGet = {
             totemRoundRewards: totemRoundRewards.length > 0 ? totemRoundRewards.slice(1) : [],
         }
     },
-    userTotemInfo: async (elevation: number, userAddress: string) => {
+    userTotemInfo: async (elevation: number, userAddress: string): Promise<UserTotemInfo> => {
         if (elevation === OASIS) return {
             totem: 0,
             totemSelected: true,
