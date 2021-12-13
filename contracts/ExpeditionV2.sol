@@ -14,7 +14,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "hardhat/console.sol";
 
 /*
@@ -59,7 +58,7 @@ DEITIES (COSMIC BULL vs COSMIC BEAR):
     . Users are more likely to stake with the safer deity so it's pot will be higher, thus the winnings per SUMMIT staked lower
 
     . COSMIC BEAR is riskier, with a smaller chance of winning, potentially as low as 10%
-    . Users are less likely to steak with BULL as it may be outside their risk tolerance to shoot for a small % chance of win
+    . Users are less likely to stake with BULL as it may be outside their risk tolerance to shoot for a small % chance of win
 
     . Thus BEAR will usually have less staked, making it both riskier, and more rewarding on win
 
@@ -93,8 +92,6 @@ WINNINGS:
 
 contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExtension {
     using SafeERC20 for IERC20;
-    using EnumerableSet for EnumerableSet.AddressSet;
-
 
     // ---------------------------------------
     // --   V A R I A B L E S

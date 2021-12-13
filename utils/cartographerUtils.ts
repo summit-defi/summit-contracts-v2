@@ -1,7 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { boolean, string } from "hardhat/internal/core/params/argumentTypes"
-import { claimAmountBonus, claimAmountWithBonusAdded, days, e12, e6, elevationPromiseSequenceReduce, EVENT, executeTxExpectEvent, executeTxExpectReversion, getBifiToken, getCakeToken, getTimestamp, OASIS, subCartGet, sumBigNumbers, toDecimal, tokenAmountAfterDepositFee, tokenAmountAfterWithdrawTax, tokenPromiseSequenceMap } from "."
+import { claimAmountBonus, claimAmountWithBonusAdded, days, e12, e6, elevationPromiseSequenceReduce, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getBifiToken, getCakeToken, getTimestamp, OASIS, subCartGet, sumBigNumbers, toDecimal, tokenAmountAfterDepositFee, tokenAmountAfterWithdrawTax, tokenPromiseSequenceMap } from "."
 import { getCartographer, getSummitToken } from "./contracts"
 
 
@@ -44,21 +44,33 @@ const getBonusBP = async (userAddress: string, tokenAddress: string): Promise<nu
     return await (await getCartographer()).bonusBP(userAddress, tokenAddress)
 }
 const getTokenClaimableWithEmission = async (userAddress: string, tokenAddress: string, elevation: number): Promise<BigNumber> => {
-    return (await subCartGet.claimableRewards(tokenAddress, elevation, userAddress))
+    return (await subCartGet.poolClaimableRewards(tokenAddress, elevation, userAddress))
         .add(await farmSummitEmissionOverDuration(tokenAddress, elevation, 1))
 }
 const getTokenClaimableWithBonus = async (userAddress: string, tokenAddress: string, elevation: number): Promise<BigNumber> => {
-    const expectedClaimAmount = (await subCartGet.claimableRewards(tokenAddress, elevation, userAddress))
+    const claimableRewards = await subCartGet.poolClaimableRewards(tokenAddress, elevation, userAddress)
+    const userTokenBonusBp = await calcBonusBPNextSecond(userAddress, tokenAddress)
+
+    // Earnings remain consistent over time
+    if (elevation !== OASIS) return claimAmountWithBonusAdded(claimableRewards.div(e6(1)).mul(e6(1)), userTokenBonusBp)
+
+    // OASIS additional earnings need to be factored in
+    const expectedClaimAmount = claimableRewards
         .add(await farmSummitEmissionOverDuration(tokenAddress, elevation, 1))
         .div(e6(1)).mul(e6(1))
-    const userTokenBonusBp = await calcBonusBPNextSecond(userAddress, tokenAddress)
     return claimAmountWithBonusAdded(expectedClaimAmount, userTokenBonusBp)
 }
 const getTokenClaimableBonus = async (userAddress: string, tokenAddress: string, elevation: number): Promise<BigNumber> => {
-    const expectedClaimAmount = (await subCartGet.claimableRewards(tokenAddress, elevation, userAddress))
+    const claimableRewards = await subCartGet.poolClaimableRewards(tokenAddress, elevation, userAddress)
+    const userTokenBonusBp = await calcBonusBPNextSecond(userAddress, tokenAddress)
+
+    // Earnings remain consistent over time
+    if (elevation !== OASIS) return claimAmountBonus(claimableRewards.div(e6(1)).mul(e6(1)), userTokenBonusBp)
+
+    // OASIS additional earnings need to be factored in
+    const expectedClaimAmount = claimableRewards
         .add(await farmSummitEmissionOverDuration(tokenAddress, elevation, 1))
         .div(e6(1)).mul(e6(1))
-    const userTokenBonusBp = await calcBonusBPNextSecond(userAddress, tokenAddress)
     return claimAmountBonus(expectedClaimAmount, userTokenBonusBp)
 }
 const calculateBonusFromOffset = (offset: number): number => {
@@ -249,7 +261,7 @@ export const cartographerMethod = {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(user).deposit
         const txArgs = [tokenAddress, elevation, amount]
-        
+
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
@@ -280,8 +292,12 @@ export const cartographerMethod = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const expectedClaimAmountWithBonus = await getTokenClaimableWithBonus(user.address, tokenAddress, elevation)
-            const eventArgs = eventOnly ? null : [user.address, expectedClaimAmountWithBonus]
-            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.ClaimWinnings, eventArgs, false)
+            if (expectedClaimAmountWithBonus.eq(0)) {
+                await executeTx(tx, txArgs)
+            } else {
+                const eventArgs = eventOnly ? null : [user.address, expectedClaimAmountWithBonus]
+                await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.ClaimWinnings, eventArgs, false)
+            }
         }
     },
     claimElevation: async ({
@@ -306,6 +322,33 @@ export const cartographerMethod = {
             const totalClaimableWithBonuses = sumBigNumbers(tokenClaimableWithBonuses)
             const eventArgs = [user.address, elevation, totalClaimableWithBonuses]
             await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.ClaimElevation, eventArgs, false)
+        }
+    },
+    emergencyWithdraw: async ({
+        user,
+        tokenAddress,
+        elevation,
+        revertErr,
+        eventOnly = false,
+    }: {
+        user: SignerWithAddress,
+        tokenAddress: string,
+        elevation: number,
+        revertErr?: string,
+        eventOnly?: boolean,
+    }) => {
+        const cartographer = await getCartographer()
+        const tx = cartographer.connect(user).emergencyWithdraw
+        const txArgs = [tokenAddress, elevation]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            const amount = (await subCartGet.userInfo(tokenAddress, elevation, user.address)).staked
+            const userTokenTaxBP = await getUserTokenWithdrawalTax(user.address, tokenAddress)
+            const amountAfterTax = tokenAmountAfterWithdrawTax(amount, userTokenTaxBP)
+            const eventArgs = [user.address, tokenAddress, elevation, amountAfterTax]
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.EmergencyWithdraw, eventOnly ? null : eventArgs, false)
         }
     },
     withdraw: async ({

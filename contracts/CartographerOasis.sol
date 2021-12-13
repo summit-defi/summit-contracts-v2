@@ -162,18 +162,10 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     }
 
     function getUserInteractingPools(address _userAdd) public view returns (address[] memory) {
-        address[] memory pools = new address[](userInteractingPools[_userAdd].length());
-        for (uint16 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
-            pools[index] = userInteractingPools[_userAdd].at(index);
-        }
-        return pools;
+        return userInteractingPools[_userAdd].values();
     }
     function getPools() public view returns (address[] memory) {
-        address[] memory pools = new address[](poolTokens.length());
-        for (uint16 index = 0; index < poolTokens.length(); index++) {
-            pools[index] = poolTokens.at(index);
-        }
-        return pools;
+        return poolTokens.values();
     }
 
 
@@ -323,7 +315,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     /// @param _token Pool to fetch rewards from
     /// @param _userAdd User requesting rewards info
     /// @return claimableRewards: Amount of Summit available to Claim
-    function claimableRewards(address _token, address _userAdd)
+    function poolClaimableRewards(address _token, address _userAdd)
         public view
         poolExists(_token) validUserAdd(_userAdd)
         returns (uint256)
@@ -348,11 +340,12 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         uint256 claimable = 0;
 
         // Iterate through pools the user is interacting, get claimable amount, update pool
-        for (uint8 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
+        address[] memory interactingPools = userInteractingPools[_userAdd].values();
+        for (uint8 index = 0; index < interactingPools.length; index++) {
             // Claim winnings
             claimable += _poolClaimableRewards(
-                poolInfo[userInteractingPools[_userAdd].at(index)],
-                userInfo[userInteractingPools[_userAdd].at(index)][_userAdd]
+                poolInfo[interactingPools[index]],
+                userInfo[interactingPools[index]][_userAdd]
             );
         }
         
@@ -405,11 +398,12 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         uint256 claimable = 0;
 
         // Iterate through pools the user is interacting, get claimable amount, update pool
-        for (uint8 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
+        address[] memory interactingPools = userInteractingPools[_userAdd].values();
+        for (uint8 index = 0; index < interactingPools.length; index++) {
             // Claim winnings
             claimable += _unifiedClaim(
-                poolInfo[userInteractingPools[_userAdd].at(index)],
-                userInfo[userInteractingPools[_userAdd].at(index)][_userAdd],
+                poolInfo[interactingPools[index]],
+                userInfo[interactingPools[index]][_userAdd],
                 _userAdd
             );
         }

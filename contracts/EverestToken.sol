@@ -461,11 +461,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         public view
         returns (address[] memory)
     {
-        address[] memory extensions = new address[](everestExtensions.length());
-        for (uint8 index = 0; index < everestExtensions.length(); index++) {
-            extensions[index] = everestExtensions.at(index);
-        }
-        return extensions;
+        return everestExtensions.values();
     }
 
     /// @dev Get user everest owned

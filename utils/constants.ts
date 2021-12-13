@@ -111,6 +111,7 @@ export const ERR = {
     SELF_REFERRER: 'Cant refer yourself',
     NO_REWARDS_TO_REDEEM: 'No referral rewards to redeem',
     ONLY_CARTOGRAPHER_OR_EXPEDITION: 'Only cartographer or expedition',
+    TOTEM_MUST_BE_SELECTED: 'Totem must be selected',
 
     // Elevation
     INVALID_ELEV: 'Invalid elev',
@@ -196,6 +197,11 @@ export const ERR = {
         NO_SAFETY_FACTOR: 'No safety factor selected',
         INVALID_DEITY: "Invalid deity",
     },
+
+    ELEVATION_HELPER: {
+        MULT_CANT_EXCEED_3X: 'Multiplier cannot exceed 3X',
+        ROUND_DURATION_NON_ZERO: 'Duration mult must be non zero',
+    },
 }
 
 export const TOKEN_FEE = {
@@ -216,6 +222,7 @@ export const EVENT = {
     PoolUpdated: 'PoolUpdated',
     Deposit: 'Deposit',
     SwitchTotem: 'SwitchTotem',
+    EmergencyWithdraw: 'EmergencyWithdraw',
     Withdraw: 'Withdraw',
     SetExpeditionTreasuryAddress: 'SetExpeditionTreasuryAddress',
     SetFeeAddressSt: 'SetFeeAddressSt',
@@ -298,7 +305,15 @@ export const EVENT = {
         SetBaseMinimumWithdrawalTax: 'SetBaseMinimumWithdrawalTax',
         SetTokenIsNativeFarm: 'SetTokenIsNativeFarm',
         SetMaxBonusBP: 'SetMaxBonusBP',
-    }
+    },
+
+    ElevationHelper: {
+        WinningTotemSelected: 'WinningTotemSelected',
+        DeityDividerSelected: 'DeityDividerSelected',
+        UpgradeSummitRNGModule: 'UpgradeSummitRNGModule',
+        SetElevationRoundDurationMult: 'SetElevationRoundDurationMult',
+        SetElevationAllocMultiplier: 'SetElevationAllocMultiplier',
+    },
 }
 
 export const EVM = {

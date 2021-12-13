@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "hardhat/console.sol";
 
 
 /*
@@ -112,7 +113,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         uint256 roundRew;                           // Running sum of user's rewards earned in current round
 
         uint256 winningsDebt;                       // AccWinnings of user's totem at time of deposit
-        uint256 lastDepositTimestamp;               // Last timestamp user deposits fund into pool
     }
 
     struct UserElevationInfo {
@@ -155,7 +155,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
     mapping(address => ElevationPoolInfo) public poolInfo;              // Pool info for each elevation pool
     mapping(address => mapping(uint256 => RoundInfo)) public poolRoundInfo;      // The round end information for each round of each pool
-    mapping(uint256 => uint256) public roundWinningsMult; // The historical winning multipliers of an elevation
     mapping(address => mapping(address => UserInfo)) public userInfo;            // Users running staking / vesting information
     mapping(address => UserElevationInfo) public userElevationInfo;// User's totem info at each elevation
 
@@ -284,25 +283,13 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     }
 
     function getUserInteractingPools(address _userAdd) public view returns (address[] memory) {
-        address[] memory pools = new address[](userInteractingPools[_userAdd].length());
-        for (uint16 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
-            pools[index] = userInteractingPools[_userAdd].at(index);
-        }
-        return pools;
+        return userInteractingPools[_userAdd].values();
     }
     function getPools() public view returns (address[] memory) {
-        address[] memory pools = new address[](poolTokens.length());
-        for (uint16 index = 0; index < poolTokens.length(); index++) {
-            pools[index] = poolTokens.at(index);
-        }
-        return pools;
+        return poolTokens.values();
     }
     function getActivePools() public view returns (address[] memory) {
-        address[] memory pools = new address[](activePools.length());
-        for (uint16 index = 0; index < activePools.length(); index++) {
-            pools[index] = activePools.at(index);
-        }
-        return pools;
+        return activePools.values();
     }
     function totemSupplies(address _token) public view poolExists(_token) returns (uint256[] memory) {
         return poolInfo[_token].totemSupplies;
@@ -510,9 +497,9 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param _token Pool token to fetch rewards from
     /// @param _userAdd User requesting rewards info
     /// @return claimableRewards - Amount of Summit available to claim
-    function claimableRewards(address _token, address _userAdd)
+    function poolClaimableRewards(address _token, address _userAdd)
         public view
-        onlyCartographer poolExists(_token) validUserAdd(_userAdd)
+        poolExists(_token) validUserAdd(_userAdd)
         returns (uint256)
     {
         ElevationPoolInfo storage pool = poolInfo[_token];
@@ -528,18 +515,19 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @return elevClaimableRewards: Amount of Summit available to claim across the elevation
     function elevClaimableRewards(address _userAdd)
         public view
-        onlyCartographer validUserAdd(_userAdd)
+        validUserAdd(_userAdd)
         returns (uint256)
     {
         // Claim rewards of users active pools
         uint256 claimable = 0;
 
         // Iterate through pools the user is interacting, get claimable amount, update pool
-        for (uint8 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
+        address[] memory interactingPools = userInteractingPools[_userAdd].values();
+        for (uint8 index = 0; index < interactingPools.length; index++) {
             // Claim winnings
             claimable += _claimableWinnings(
-                poolInfo[userInteractingPools[_userAdd].at(index)],
-                userInfo[userInteractingPools[_userAdd].at(index)][_userAdd],
+                poolInfo[interactingPools[index]],
+                userInfo[interactingPools[index]][_userAdd],
                 _userAdd
             );
         }
@@ -555,7 +543,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     ///     elevationYieldContributed - Total yieldContributed across all pools of this elevation
     ///     elevationPotentialWinnings - Total potential winnings from that yield for the user's selected totem
     /// )
-    function potentialWinnings(address _userAdd)
+    function elevPotentialWinnings(address _userAdd)
         public view
         validUserAdd(_userAdd)
         returns (uint256, uint256)
@@ -595,7 +583,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param _token Pool token to check
     /// @param _userAdd User to check
     /// @return The yield from staking, which has been contributed during the current round
-    function roundYieldContributed(address _token, address _userAdd)
+    function poolYieldContributed(address _token, address _userAdd)
         public view
         poolExists(_token) validUserAdd(_userAdd)
         returns (uint256)
@@ -627,7 +615,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
         // Calculate the new accSummitPerShare with the emission to bring current, and return both values
         return (
-            pool.accSummitPerShare + (emissionToBringCurrent * 1e12 / pool.supply),
+            pool.accSummitPerShare + (pool.supply == 0 ? 0 : (emissionToBringCurrent * 1e12 / pool.supply)),
             emissionToBringCurrent
         );
     }
@@ -714,23 +702,23 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         // Iterate through active pools of elevation, sum total rewards earned (all totems), and winning totems's rewards
         uint256 elevTotalRewards = 0;
         uint256 winningTotemRewards = 0;
-        for (uint16 index = 0; index < activePools.length(); index++) {
+        address[] memory pools = activePools.values();
+        for (uint16 index = 0; index < pools.length; index++) {
             // Bring pool current
-            updatePool(activePools.at(index));
+            updatePool(pools[index]);
 
             // Add round rewards of pool and winning totem to elevation round reward accumulators
-            elevTotalRewards += poolInfo[activePools.at(index)].roundRewards;
-            winningTotemRewards += poolInfo[activePools.at(index)].totemRoundRewards[winningTotem];
+            elevTotalRewards += poolInfo[pools[index]].roundRewards;
+            winningTotemRewards += poolInfo[pools[index]].totemRoundRewards[winningTotem];
         }
 
         // Calculate the winnings multiplier of the round that just ended from the combined reward amounts
         uint256 elevWinningsMult = winningTotemRewards == 0 ? 0 : elevTotalRewards * 1e12 / winningTotemRewards;
-        roundWinningsMult[currRound - 1] = elevWinningsMult;
 
         // Update and rollover all active pools
-        for (uint16 index = 0; index < activePools.length(); index++) {
+        for (uint16 index = 0; index < pools.length; index++) {
             // Rollover Pool
-            rolloverPool(activePools.at(index), currRound - 1, elevWinningsMult);
+            rolloverPool(pools[index], currRound - 1, elevWinningsMult);
         }
     }
     
@@ -759,7 +747,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         uint256 precomputedFullRoundMult = deltaAccSummitPerShare * _winningsMultiplier / 1e12;
 
         // Increment running precomputed mult with previous round's data
-        pool.totemRunningPrecomputedMult[elevationHelper.winningTotem(elevation, _prevRound - 1)] += precomputedFullRoundMult;
+        pool.totemRunningPrecomputedMult[elevationHelper.winningTotem(elevation, _prevRound)] += precomputedFullRoundMult;
 
         // Adding a new entry to the pool's poolRoundInfo for the most recently closed round
         poolRoundInfo[_token][_prevRound] = RoundInfo({
@@ -775,27 +763,10 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     
 
 
-    
 
     // ------------------------------------------------------------
     // --   W I N N I N G S   C A L C U L A T I O N S 
     // ------------------------------------------------------------
-
-
-    /// @dev Totem precomputed multiplier for a pool round
-    /// @param pool Pool info
-    /// @param _totem Totem to determine winnings change
-    /// @param _roundIndex Round to determine delta for
-    function totemPrecomputedMultForRound(ElevationPoolInfo storage pool, uint8 _totem, uint256 _roundIndex)
-        internal view
-        returns (uint256)
-    {
-        // Early escape if round lost
-        if (_totem != elevationHelper.winningTotem(elevation, _roundIndex)) return 0;
-
-        // Round won, so poolRoundInfo delta is for requested totem
-        return poolRoundInfo[pool.token][_roundIndex].precomputedFullRoundMult;
-    }
     
     
     /// @dev Calculation of round rewards of the first round interacted
@@ -803,7 +774,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param round Passed in instead of used inline in this function to prevent stack too deep error
     /// @param _totem Totem to determine if round was won and winnings warranted
     /// @return Winnings from round
-    function userFirstInteractedRoundWinnings(UserInfo storage user, RoundInfo memory round, uint8 _totem)
+    function _userFirstInteractedRoundWinnings(UserInfo storage user, RoundInfo memory round, uint8 _totem)
         internal view
         returns (uint256)
     {
@@ -831,13 +802,15 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         uint256 claimable = 0;
 
         // Get winnings from first user interacted round if it was won (requires different calculation)
-        claimable += userFirstInteractedRoundWinnings(user, poolRoundInfo[pool.token][user.prevInteractedRound], totem);
+        claimable += _userFirstInteractedRoundWinnings(user, poolRoundInfo[pool.token][user.prevInteractedRound], totem);
 
         // Escape early if user interacted during previous round
         if (user.prevInteractedRound == currRound - 1) return claimable;
 
         // The change in precomputed mult of the user's first interacting round, this value doesn't exist when user.winningsDebt is set, so must be included here
-        uint256 firstInteractedRoundDeltaPrecomputedMult = poolRoundInfo[pool.token][user.prevInteractedRound].precomputedFullRoundMult;
+        uint256 firstInteractedRoundDeltaPrecomputedMult = totem == elevationHelper.winningTotem(elevation, user.prevInteractedRound) ?
+            poolRoundInfo[pool.token][user.prevInteractedRound].precomputedFullRoundMult :
+            0;
         uint256 winningsDebtAtEndOfFirstInteractedRound = user.winningsDebt + firstInteractedRoundDeltaPrecomputedMult;
 
         // Add multiple rounds of precomputed mult delta for all rounds between first interacted and most recent round
@@ -863,8 +836,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
             staked: 0,
             roundDebt: 0,
             winningsDebt: 0,
-            prevInteractedRound: 0,
-            lastDepositTimestamp: block.timestamp
+            prevInteractedRound: 0
         });
     }
     
@@ -891,10 +863,10 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @dev Update the users round interaction
     /// @param pool Pool info
     /// @param user User info
-    /// @param _totem Users selected totem
     /// @param _amount Amount depositing / withdrawing
     /// @param _isDeposit Flag to differentiate deposit / withdraw
-    function _updateUserRoundInteraction(ElevationPoolInfo storage pool, UserInfo storage user, uint8 _totem, uint256 _amount, bool _isDeposit)
+    /// @param _userAdd User's address (for totem)
+    function _updateUserRoundInteraction(ElevationPoolInfo storage pool, UserInfo storage user, uint256 _amount, bool _isDeposit, address _userAdd)
         internal
     {
         uint256 currRound = elevationHelper.roundNumber(elevation);
@@ -924,7 +896,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         user.roundDebt = user.staked * pool.accSummitPerShare / 1e12;
 
         // Acc Winnings Per Share of the user's totem
-        user.winningsDebt = pool.totemRunningPrecomputedMult[_totem];
+        user.winningsDebt = pool.totemRunningPrecomputedMult[_getUserTotem(_userAdd)];
 
         // Update the user's previous interacted round to be this round
         user.prevInteractedRound = currRound;
@@ -945,7 +917,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         require(!_interacting || userInteractingPools[_userAdd].length() < 12, "Staked pool cap (12) reached");
 
         if (_interacting) {
-
             userInteractingPools[_userAdd].add(_token);
         } else {
             userInteractingPools[_userAdd].remove(_token);
@@ -967,8 +938,9 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
         // Iterate through pools the user is interacting with and update totem
         uint256 claimable = 0;
-        for (uint8 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
-            claimable += switchTotemForPool(userInteractingPools[_userAdd].at(index), prevTotem, _totem, _userAdd);
+        address[] memory interactingPools = userInteractingPools[_userAdd].values();
+        for (uint8 index = 0; index < interactingPools.length; index++) {
+            claimable += _switchTotemForPool(interactingPools[index], prevTotem, _totem, _userAdd);
         }
 
         // Update user's totem in state
@@ -983,7 +955,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param _prevTotem Totem the user is leaving
     /// @param _newTotem Totem the user is moving to
     /// @param _userAdd User doing the switch
-    function switchTotemForPool(address _token, uint8 _prevTotem, uint8 _newTotem, address _userAdd)
+    function _switchTotemForPool(address _token, uint8 _prevTotem, uint8 _newTotem, address _userAdd)
         internal
         returns (uint256)
     {
@@ -1046,11 +1018,12 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         uint256 claimable = 0;
 
         // Iterate through pools the user is interacting, get claimable amount, update pool
-        for (uint8 index = 0; index < userInteractingPools[_userAdd].length(); index++) {
+        address[] memory interactingPools = userInteractingPools[_userAdd].values();
+        for (uint8 index = 0; index < interactingPools.length; index++) {
             // Claim winnings
             claimable += _unifiedClaim(
-                poolInfo[userInteractingPools[_userAdd].at(index)],
-                userInfo[userInteractingPools[_userAdd].at(index)][_userAdd],
+                poolInfo[interactingPools[index]],
+                userInfo[interactingPools[index]][_userAdd],
                 _userAdd
             );
         }
@@ -1170,7 +1143,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         uint256 claimable = _claimWinnings(pool, user, _userAdd);
 
         // Update the users round interaction, may be updated again in the same tx, but must be updated here to maintain state
-        _updateUserRoundInteraction(pool, user, _getUserTotem(_userAdd), 0, true);
+        _updateUserRoundInteraction(pool, user, 0, true, _userAdd);
 
         // Update users pool interaction status, may be updated again in the same tx, but must be updated here to maintain state
         _markUserInteractingWithPool(pool.token, _userAdd, _userInteractingWithPool(user));
@@ -1211,7 +1184,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         }
         
         // Update / create users interaction with the pool
-        _updateUserRoundInteraction(pool, user, totem, amountAfterFee, true);
+        _updateUserRoundInteraction(pool, user, amountAfterFee, true, _userAdd);
 
         // Update users pool interaction status
         _markUserInteractingWithPool(pool.token, _userAdd, _userInteractingWithPool(user));
@@ -1249,7 +1222,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
             updatePool(pool.token);
 
             // Update the users interaction in the pool
-            _updateUserRoundInteraction(pool, user, totem, _amount, false);
+            _updateUserRoundInteraction(pool, user, _amount, false, _userAdd);
         }
         
         // Signal cartographer to perform withdrawal function if not elevating funds

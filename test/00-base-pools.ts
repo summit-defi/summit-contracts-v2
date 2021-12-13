@@ -2,7 +2,7 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { consoleLog, ERR, EVENT, MESA, mineBlockWithTimestamp, OASIS, SUMMIT, PLAINS, ZEROADD, promiseSequenceMap, elevationPromiseSequenceMap, getSubCartographers, Contracts, getCakeToken, getCartographer, getElevationHelper, getSummitToken, cartographerMethod, cartographerGet, elevationHelperGet, e18, subCartMethod, subCartGet } from "../utils";
+import { consoleLog, ERR, EVENT, MESA, mineBlockWithTimestamp, OASIS, SUMMIT, PLAINS, ZEROADD, promiseSequenceMap, allElevationPromiseSequenceMap, getSubCartographers, Contracts, getCakeToken, getCartographer, getElevationHelper, getSummitToken, cartographerMethod, cartographerGet, elevationHelperGet, e18, subCartMethod, subCartGet } from "../utils";
 import { baseFixture, twoThousandUnlockedFixture } from "./fixtures";
 
 const userDepositIntoPools = async () => {
@@ -16,7 +16,7 @@ const userDepositIntoPools = async () => {
     { tokenAddress: cakeToken.address }
   ]
 
-  await elevationPromiseSequenceMap(
+  await allElevationPromiseSequenceMap(
     async (elevation) => {
       if ((await subCartGet.userTotemInfo(elevation, user1.address)).totemSelected) return
       await cartographerMethod.switchTotem({
@@ -29,7 +29,7 @@ const userDepositIntoPools = async () => {
 
   await promiseSequenceMap(
     pools,
-    async (pool) => await elevationPromiseSequenceMap(
+    async (pool) => await allElevationPromiseSequenceMap(
       async (elevation) => await cartographerMethod.deposit({
         user: user1,
         ...pool,
@@ -161,7 +161,7 @@ describe("Base Pools", function() {
 
       await promiseSequenceMap(
         pools,
-        async (pool) => await elevationPromiseSequenceMap(
+        async (pool) => await allElevationPromiseSequenceMap(
           async (elevation) => await cartographerMethod.add({
             dev,
             ...pool,
@@ -174,7 +174,7 @@ describe("Base Pools", function() {
     })
     it('Number of pools should be correct', async function() {  
       expect(await cartographerGet.poolsCount()).to.equal(8)
-      await elevationPromiseSequenceMap(
+      await allElevationPromiseSequenceMap(
         async (elevation) => expect(await cartographerGet.elevationPoolsCount(elevation)).to.equal(2)
       )
     })
@@ -184,22 +184,22 @@ describe("Base Pools", function() {
 
       const elevationAllocMultipliers = [100, 110, 125, 150]
 
-      const summitAllocations = await elevationPromiseSequenceMap(
+      const summitAllocations = await allElevationPromiseSequenceMap(
         async (elevation) => Math.floor(4000 * elevationAllocMultipliers[elevation])
       )
-      const cakeAllocations = await elevationPromiseSequenceMap(
+      const cakeAllocations = await allElevationPromiseSequenceMap(
         async (elevation) => Math.floor(100 * elevationAllocMultipliers[elevation])
       )
 
       const tenThousandUnlockTime = await elevationHelperGet.unlockTimestamp(SUMMIT)
       await mineBlockWithTimestamp(tenThousandUnlockTime)
-      await elevationPromiseSequenceMap(
+      await allElevationPromiseSequenceMap(
         async (elevation) => await cartographerMethod.rollover({ elevation })
       )
 
       await userDepositIntoPools()
 
-      await elevationPromiseSequenceMap(
+      await allElevationPromiseSequenceMap(
         async (elevation) => {
           expect(await cartographerGet.elevationModulatedAllocation(summitToken.address, elevation)).to.equal(summitAllocations[elevation])
           expect(await cartographerGet.elevationModulatedAllocation(cakeToken.address, elevation)).to.equal(cakeAllocations[elevation])

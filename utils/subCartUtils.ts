@@ -1,10 +1,18 @@
 import { BigNumber } from "@ethersproject/bignumber"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { ethers } from "hardhat"
 import { e18, executeTx, getElevationHelper, getElevationName, MESA, OASIS, PLAINS, promiseSequenceMap, SUMMIT } from "."
 
-export const elevationPromiseSequenceMap = async (transformer: (element: number, index: number, array: number[]) => Promise<any>) => {
+
+export const allElevationPromiseSequenceMap = async (transformer: (element: number, index: number, array: number[]) => Promise<any>) => {
     return await promiseSequenceMap(
         [OASIS, PLAINS, MESA, SUMMIT],
+        async (elevation, index, array) => await transformer(elevation, index, array)
+    )
+}
+export const onlyElevationPromiseSequenceMap = async (transformer: (element: number, index: number, array: number[]) => Promise<any>) => {
+    return await promiseSequenceMap(
+        [PLAINS, MESA, SUMMIT],
         async (elevation, index, array) => await transformer(elevation, index, array)
     )
 }
@@ -22,7 +30,7 @@ export const getSubCartographer = async (elevation: number) => {
 }
 
 export const getSubCartographers = async () => {
-    return await elevationPromiseSequenceMap(getSubCartographer)
+    return await allElevationPromiseSequenceMap(getSubCartographer)
 }
 export interface UserInfo {
     [key: string]: BigNumber
@@ -31,9 +39,11 @@ export interface UserInfo {
     debt: BigNumber
     roundRew: BigNumber
     winningsDebt: BigNumber
-    reVestAmt: BigNumber
-    reVestStart: BigNumber
-    reVestDur: BigNumber
+}
+export interface UserTotemInfo {
+    totem: number
+    totemSelected: boolean
+    totemSelectionRound: number
 }
 
 export const subCartGet = {
@@ -49,9 +59,6 @@ export const subCartGet = {
             debt: userInfo.debt || userInfo.roundDebt,
             roundRew: userInfo.roundRew,
             winningsDebt: userInfo.winningsDebt,
-            reVestAmt: userInfo.reVestAmt,
-            reVestStart: userInfo.reVestStart,
-            reVestDur: userInfo.reVestDur,
         }
     },
     poolInfo: async (tokenAddress: string, elevation: number) => {
@@ -73,7 +80,7 @@ export const subCartGet = {
             totemRoundRewards: totemRoundRewards.length > 0 ? totemRoundRewards.slice(1) : [],
         }
     },
-    userTotemInfo: async (elevation: number, userAddress: string) => {
+    userTotemInfo: async (elevation: number, userAddress: string): Promise<UserTotemInfo> => {
         if (elevation === OASIS) return {
             totem: 0,
             totemSelected: true,
@@ -87,19 +94,23 @@ export const subCartGet = {
             totemSelectionRound: userElevationInfo.totemSelectionRound,
         }        
     },
-    claimableRewards: async (tokenAddress: string, elevation: number, userAddress: string): Promise<BigNumber> => {
+    poolYieldContributed: async (tokenAddress: string, elevation: number, userAddress: string): Promise<BigNumber> => {
         const subCart = await getSubCartographer(elevation)
-        return await subCart.claimableRewards(tokenAddress, userAddress)
+        return await subCart.poolYieldContributed(tokenAddress, userAddress)
+    },
+    poolClaimableRewards: async (tokenAddress: string, elevation: number, userAddress: string): Promise<BigNumber> => {
+        const subCart = await getSubCartographer(elevation)
+        return await subCart.poolClaimableRewards(tokenAddress, userAddress)
     },
     elevClaimableRewards: async (elevation: number, userAddress: string) => {
         const subCart = await getSubCartographer(elevation)
         return await subCart.elevClaimableRewards(userAddress)
     },
-    potentialWinnings: async (tokenAddress: string, elevation: number, userAddress: string) => {
+    elevPotentialWinnings: async (elevation: number, userAddress: string): Promise<{ yieldContributed: BigNumber, potentialWinnings: BigNumber }> => {
         const subCart = await getSubCartographer(elevation)
-        const potentialWinnings = await subCart.potentialWinnings(tokenAddress, userAddress)
+        const potentialWinnings = await subCart.elevPotentialWinnings(userAddress)
         return {
-            contributedYield: potentialWinnings[0],
+            yieldContributed: potentialWinnings[0],
             potentialWinnings: potentialWinnings[1],
         }
     },
@@ -109,8 +120,14 @@ export const subCartGet = {
     },
     totemCount: async (elevation: number) => {
         return (await getElevationHelper()).totemCount(elevation)
+    },
+    getUserInteractingPools: async (elevation: number, userAddress: string): Promise<string[]> => {
+        return await (await getSubCartographer(elevation)).getUserInteractingPools(userAddress)
+    },
+    getActivePools: async (elevation: number): Promise<string[]> => {
+        if (elevation === OASIS) return []
+        return await (await getSubCartographer(elevation)).getActivePools()
     }
-
 }
 
 
@@ -119,5 +136,5 @@ export const subCartGet = {
 export const subCartMethod = {
     updatePool: async (tokenAddress: string, elevation: number) => {
         executeTx((await getSubCartographer(elevation)).updatePool, [tokenAddress])
-    }
+    },
 }

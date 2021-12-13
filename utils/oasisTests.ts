@@ -38,12 +38,12 @@ const pendingSUMMITShouldIncreaseEachBlock = (tokenName: string) => {
         const token = await getContract(tokenName)
     
         const timestampBefore = await getTimestamp()
-        const harvestable0 = await subCartGet.claimableRewards(token.address, OASIS, user1.address)
+        const harvestable0 = await subCartGet.poolClaimableRewards(token.address, OASIS, user1.address)
         
         await mineBlock()
         
         const timestampAfter = await getTimestamp()
-        const harvestable1 = await subCartGet.claimableRewards(token.address, OASIS, user1.address)
+        const harvestable1 = await subCartGet.poolClaimableRewards(token.address, OASIS, user1.address)
 
         const summitFarm1SecondEmission = await cartographerSynth.farmSummitEmissionOverDuration(
           token.address,
@@ -69,7 +69,7 @@ const pendingSUMMITShouldIncreaseEachBlock = (tokenName: string) => {
           timestampFinal - timestampAfter,
         )
 
-        const harvestable2 = await subCartGet.claimableRewards(token.address, OASIS, user1.address)
+        const harvestable2 = await subCartGet.poolClaimableRewards(token.address, OASIS, user1.address)
         expect6FigBigNumberEquals(harvestable2.sub(harvestable1), summitFarm3SecondEmission)
       })
 }
@@ -105,7 +105,7 @@ const redeemTransfersCorrectSUMMITToAddresses = (tokenName: string) => {
 
       await mineBlocks(5)
 
-      const expectedRewards = (await subCartGet.claimableRewards(token.address, OASIS, user1.address))
+      const expectedRewards = (await subCartGet.poolClaimableRewards(token.address, OASIS, user1.address))
         .add(await cartographerSynth.farmSummitEmissionOverDuration(token.address, OASIS, 1))
       const {
         referralExpected,
@@ -239,13 +239,13 @@ const pendingSUMMITRedeemedOnWithdrawal = (tokenName: string) => {
         await subCartMethod.updatePool(token.address, OASIS)
 
         const usersHarvestableInit = await userPromiseSequenceMap(
-          async (user) => await subCartGet.claimableRewards(token.address, OASIS, user.address)
+          async (user) => await subCartGet.poolClaimableRewards(token.address, OASIS, user.address)
         )
 
         await mineBlocks(3)
 
         const usersHarvestableFinal = await userPromiseSequenceMap(
-          async (user) => await subCartGet.claimableRewards(token.address, OASIS, user.address)
+          async (user) => await subCartGet.poolClaimableRewards(token.address, OASIS, user.address)
         )
 
         const usersHarvestableDelta = await userPromiseSequenceMap(

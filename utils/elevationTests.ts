@@ -3,11 +3,13 @@ import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signers';
 import { expect } from 'chai'
 import { Contract } from 'ethers';
+import { access } from 'fs';
 import hre, { ethers } from 'hardhat';
-import { cartographerMethod, cartographerSynth, consoleLog, depositedAfterFee, e18, elevationHelperGet, ERR, EVENT, getContract, getTotemCount, mineBlock, rolloverRound, rolloverRoundUntilLosingTotem, rolloverRoundUntilWinningTotem, subCartGet, subCartMethod, toDecimal } from '.';
+import { cartographerGet, cartographerMethod, cartographerSynth, consoleLog, deltaBN, depositedAfterFee, e18, elevationHelperGet, ERR, EVENT, getCartographer, getContract, getSummitBalance, getTokenBalance, getTotemCount, getUserTotems, mineBlock, rolloverRound, rolloverRounds, rolloverRoundUntilLosingTotem, rolloverRoundUntilWinningTotem, subCartGet, subCartMethod, sumBigNumbers, toDecimal, usersPoolYieldsContributed } from '.';
 import { TOTEM_COUNT } from './constants';
-import { userPromiseSequenceMap, userPromiseSequenceReduce, usersHypotheticalRewards, usersRewards, usersStaked } from './users';
-import { e12, expect6FigBigNumberEquals, expect6FigBigNumberAllEqual, expectBigNumberArraysEqual, expectBigNumberGreaterThan, expectBigNumberLessThan, mineBlocks, stringifyBigNumberArray, getTimestamp, mineBlockWithTimestamp, increaseTimestampAndMine, e0, e6 } from './utils';
+import { summitLockingGet } from './summitLockingUtils';
+import { userPromiseSequenceMap, userPromiseSequenceReduce, usersPotentialWinnings, usersRewards, usersStaked, usersTotemInfos } from './users';
+import { e12, expect6FigBigNumberEquals, expect6FigBigNumberAllEqual, expectBigNumberArraysEqual, expectBigNumberGreaterThan, expectBigNumberLessThan, mineBlocks, stringifyBigNumberArray, getTimestamp, mineBlockWithTimestamp, increaseTimestampAndMine, e0, e6, tokenAmountAfterWithdrawTax } from './utils';
 
 
 
@@ -19,6 +21,8 @@ const getHistoricalTotemStats = async (elevationHelper: Contract, elevation: num
 }
 
 const switchTotemIfNecessary = async (user: SignerWithAddress, elevation: number, totem: number, revertErr?: string) => {
+  const userTotemInfo = await subCartGet.userTotemInfo(elevation, user.address)
+  if (userTotemInfo.totemSelected && userTotemInfo.totem === totem) return
   await cartographerMethod.switchTotem({
     user,
     elevation,
@@ -27,16 +31,28 @@ const switchTotemIfNecessary = async (user: SignerWithAddress, elevation: number
   })
 }
 
+const sumUsersTotemDeposited = async (elevation: number, tokenAddress: string) => {
+  const usersTotemsInfos = await usersTotemInfos(elevation)
+  const usersStakedAmounts = await usersStaked(tokenAddress, elevation)
+  console.log({usersStakedAmounts})
+  return usersStakedAmounts.reduce((acc, stakedAmount, userIndex) => ({
+    total: acc.total.add(stakedAmount),
+    totem0: acc.totem0.add(usersTotemsInfos[userIndex].totem === 0 ? stakedAmount : 0),
+    totem1: acc.totem1.add(usersTotemsInfos[userIndex].totem === 1 ? stakedAmount : 0),
+  }), { total: e18(0), totem0: e18(0), totem1: e18(0)})
+}
+
 
 // DEPOSIT
-const standardDepositShouldSucceed = (tokenName: string, elevation: number, totem: number) => {
+const standardDepositShouldSucceed = (tokenName: string, elevation: number) => {
   it('DEPOSIT: Standard deposit should succeed', async function() {
     const { user1 } = await getNamedSigners(hre)
     const token = await getContract(tokenName)
-    switchTotemIfNecessary(user1, elevation, totem)
+    const userTotems = await getUserTotems()
+    await switchTotemIfNecessary(user1, elevation, userTotems[user1.address])
 
     const initialStaked = (await subCartGet.userInfo(token.address, elevation, user1.address)).staked
-    
+
     const amount = e18(5)
     await cartographerMethod.deposit({
       user: user1,
@@ -44,7 +60,7 @@ const standardDepositShouldSucceed = (tokenName: string, elevation: number, tote
       elevation,
       amount,
     })
-    
+
     const finalStaked = (await subCartGet.userInfo(token.address, elevation, user1.address)).staked
 
     expect(finalStaked).to.equal(initialStaked.add(amount))
@@ -55,9 +71,9 @@ const depositShouldUpdatePoolAndTotemInfo = (tokenName: string, elevation: numbe
     const { user1, user2, user3 } = await getNamedSigners(hre)
     const token = await getContract(tokenName)
 
-    switchTotemIfNecessary(user1, elevation, 0)
-    switchTotemIfNecessary(user2, elevation, 0)
-    switchTotemIfNecessary(user3, elevation, 1)
+    await switchTotemIfNecessary(user1, elevation, 0)
+    await switchTotemIfNecessary(user2, elevation, 0)
+    await switchTotemIfNecessary(user3, elevation, 1)
 
 
     const { supply: supplyInit, totemSupplies: totemSuppliesInit } = await subCartGet.poolInfo(token.address, elevation)
@@ -69,14 +85,11 @@ const depositShouldUpdatePoolAndTotemInfo = (tokenName: string, elevation: numbe
       [user2.address]: e18(2),
       [user3.address]: e18(6),
     }
-    const totalTotem0Deposit = depositAmounts[user1.address].add(depositAmounts[user2.address])
-    const totalTotem1Deposit = depositAmounts[user3.address]
-    const totalDeposit = await userPromiseSequenceReduce((total, user) => total.add(depositAmounts[user.address]), e18(0))
-    
-    const fee = 0
-    const totalTotem0DepositAfterFee = depositedAfterFee(totalTotem0Deposit, fee)
-    const totalTotem1DepositAfterFee = depositedAfterFee(totalTotem1Deposit, fee)
-    const totalDepositAfterFee = depositedAfterFee(totalDeposit, fee)
+
+    const fee = await cartographerGet.getTokenDepositFee(token.address)
+    const totalDepositAfterFee = depositedAfterFee(sumBigNumbers([depositAmounts[user1.address], depositAmounts[user2.address], depositAmounts[user3.address]]), fee)
+    const totalTotem0DepositAfterFee = depositedAfterFee(sumBigNumbers([depositAmounts[user1.address], depositAmounts[user2.address]]), fee)
+    const totalTotem1DepositAfterFee = depositedAfterFee(depositAmounts[user3.address], fee)
 
     await userPromiseSequenceMap(
       async (user) => {
@@ -90,15 +103,23 @@ const depositShouldUpdatePoolAndTotemInfo = (tokenName: string, elevation: numbe
     )
 
     const { supply: supplyFinal, totemSupplies: totemSuppliesFinal } = await subCartGet.poolInfo(token.address, elevation)
-    
 
     const usersStakedFinal = await usersStaked(token.address, elevation)
 
+    console.log({
+      totalSupply: `${supplyInit} --> ${supplyFinal}`,
+      totemSupply0: `${totemSuppliesInit[0]} --> ${totemSuppliesFinal[0]}`,
+      totemSupply1: `${totemSuppliesInit[1]} --> ${totemSuppliesFinal[1]}`,
+      summedTotal: toDecimal(totalDepositAfterFee),
+      summedTotem0: toDecimal(totalTotem0DepositAfterFee),
+      summedTotem1: toDecimal(totalTotem1DepositAfterFee),
+    })
+
 
     expect(totemSuppliesFinal[0].sub(totemSuppliesInit[0])).to.equal(totalTotem0DepositAfterFee)
-    expect(totemSuppliesFinal[1].sub(totemSuppliesInit[0])).to.equal(totalTotem1DepositAfterFee)
+    expect(totemSuppliesFinal[1].sub(totemSuppliesInit[1])).to.equal(totalTotem1DepositAfterFee)
     expect(supplyFinal.sub(supplyInit)).to.equal(totalDepositAfterFee)
-    
+
     await userPromiseSequenceMap(
       async (user, userIndex) => expect(usersStakedFinal[userIndex].sub(usersStakedInit[userIndex])).to.equal(depositedAfterFee(depositAmounts[user.address], fee))
     )
@@ -156,11 +177,11 @@ const elevationPoolRewardsShouldIncreaseEachBlock = (tokenName: string, elevatio
       totem0RoundRewards: `${toDecimal(totemRoundRewardsInit[0])} --> ${toDecimal(totemRoundRewardsFinal[0])}`,
       totem1RoundRewards: `${toDecimal(totemRoundRewardsInit[1])} --> ${toDecimal(totemRoundRewardsFinal[1])}`,
     })
-    
+
     expect6FigBigNumberEquals(roundRewardsDelta, totem0RoundRewardsDelta.add(totem1RoundRewardsDelta))
 
     const farmBlockEmission = await cartographerSynth.farmSummitEmissionOneBlock(token.address, elevation)
-    
+
     const totem0ScaledRewards = totem0RoundRewardsDelta.mul(e12(1)).div(totemSuppliesInit[0])
     const totem1ScaledRewards = totem1RoundRewardsDelta.mul(e12(1)).div(totemSuppliesInit[1])
     consoleLog({
@@ -172,13 +193,13 @@ const elevationPoolRewardsShouldIncreaseEachBlock = (tokenName: string, elevatio
     expect6FigBigNumberEquals(roundRewardsDelta, farmBlockEmission.mul(4))
     expect6FigBigNumberEquals(totem0ScaledRewards, totem1ScaledRewards)
   })
-  it('PENDING: Users hypothetical rewards should increase each block proportionally', async function() {
-    const { user1, user2, user3 } = await getNamedSigners(hre)
+  it('PENDING: Users potential rewards should increase each block proportionally', async function() {
     const token = await getContract(tokenName)
+    const userTotems = await getUserTotems()
 
     const usersStakedAmt = await usersStaked(token.address, elevation)
-    const usersHypotheticalRewardsInit = await usersHypotheticalRewards(token.address, elevation)
-    
+    const usersPotentialWinningsInit = await usersPotentialWinnings(elevation)
+
     const {
       roundRewards: roundRewardsInit,
       totemRoundRewards: totemRoundRewardsInit,
@@ -188,14 +209,17 @@ const elevationPoolRewardsShouldIncreaseEachBlock = (tokenName: string, elevatio
       roundRewards: toDecimal(roundRewardsInit),
       totem0RoundRewards: toDecimal(totemRoundRewardsInit[0]),
       totem1RoundRewards: toDecimal(totemRoundRewardsInit[1]),
-      user1: `${toDecimal(usersHypotheticalRewardsInit[0].potentialWinnings)}, ${toDecimal(usersHypotheticalRewardsInit[0].contributedYield)}`,
-      user2: `${toDecimal(usersHypotheticalRewardsInit[1].potentialWinnings)}, ${toDecimal(usersHypotheticalRewardsInit[1].contributedYield)}`,
-      user3: `${toDecimal(usersHypotheticalRewardsInit[2].potentialWinnings)}, ${toDecimal(usersHypotheticalRewardsInit[2].contributedYield)}`,
+      user1: `${toDecimal(usersPotentialWinningsInit[0].potentialWinnings)}, ${toDecimal(usersPotentialWinningsInit[0].yieldContributed)}`,
+      user2: `${toDecimal(usersPotentialWinningsInit[1].potentialWinnings)}, ${toDecimal(usersPotentialWinningsInit[1].yieldContributed)}`,
+      user3: `${toDecimal(usersPotentialWinningsInit[2].potentialWinnings)}, ${toDecimal(usersPotentialWinningsInit[2].yieldContributed)}`,
     })
 
 
     await userPromiseSequenceMap(
-      async (_user, userIndex) => expect(usersHypotheticalRewardsInit[userIndex].potentialWinnings).to.equal(usersHypotheticalRewardsInit[userIndex].contributedYield.mul(roundRewardsInit).div(totemRoundRewardsInit[userIndex]))
+      async (user, userIndex) => expect6FigBigNumberEquals(
+        usersPotentialWinningsInit[userIndex].potentialWinnings,
+        usersPotentialWinningsInit[userIndex].yieldContributed.mul(roundRewardsInit).div(totemRoundRewardsInit[userTotems[user.address]])
+      )
     )
 
 
@@ -203,561 +227,212 @@ const elevationPoolRewardsShouldIncreaseEachBlock = (tokenName: string, elevatio
     await subCartMethod.updatePool(token.address, elevation)
 
     // Users hypothetical winnings are calculated correctly
-    const usersHypotheticalRewardsFinal = await usersHypotheticalRewards(token.address, elevation)
+    const usersPotentialWinningsFinal = await usersPotentialWinnings(elevation)
     const {
       roundRewards: roundRewardsFinal,
       totemRoundRewards: totemRoundRewardsFinal,
     } = await subCartGet.poolInfo(token.address, elevation)
 
     await userPromiseSequenceMap(
-      async (_user, userIndex) => expect(usersHypotheticalRewardsFinal[userIndex].potentialWinnings).to.equal(usersHypotheticalRewardsFinal[userIndex].contributedYield.mul(roundRewardsFinal).div(totemRoundRewardsFinal[userIndex]))
+      async (user, userIndex) => expect6FigBigNumberEquals(
+        usersPotentialWinningsFinal[userIndex].potentialWinnings,
+        usersPotentialWinningsFinal[userIndex].yieldContributed.mul(roundRewardsFinal).div(totemRoundRewardsFinal[userTotems[user.address]])
+      )
     )
 
 
     // Sum of users rewards in each totem is reflected in totem total, and sum of all totems is reflected in pool total
-    const usersHypotheticalRewardsDelta = await userPromiseSequenceMap(
-      async (_user, userIndex) => usersHypotheticalRewardsFinal[userIndex].contributedYield.sub(usersHypotheticalRewardsInit[userIndex].contributedYield)
+    const usersPotentialWinningsDelta = await userPromiseSequenceMap(
+      async (_user, userIndex) => usersPotentialWinningsFinal[userIndex].yieldContributed.sub(usersPotentialWinningsInit[userIndex].yieldContributed)
     )
     const roundRewardsDelta = roundRewardsFinal.sub(roundRewardsInit)
     const totem0RoundRewardsDelta = totemRoundRewardsFinal[0].sub(totemRoundRewardsInit[0])
     const totem1RoundRewardsDelta = totemRoundRewardsFinal[1].sub(totemRoundRewardsInit[1])
 
-    expect6FigBigNumberEquals(totem0RoundRewardsDelta, usersHypotheticalRewardsDelta[0].add(usersHypotheticalRewardsDelta[1]))
-    expect6FigBigNumberEquals(totem1RoundRewardsDelta, usersHypotheticalRewardsDelta[2])
+    expect6FigBigNumberEquals(totem0RoundRewardsDelta, usersPotentialWinningsDelta[0].add(usersPotentialWinningsDelta[1]))
+    expect6FigBigNumberEquals(totem1RoundRewardsDelta, usersPotentialWinningsDelta[2])
     expect6FigBigNumberEquals(roundRewardsDelta, totem0RoundRewardsDelta.add(totem1RoundRewardsDelta))
-    
+
     // User's rewards scale proportionally to their staked amount
-    const usersHypotheticalPendingScaled = await userPromiseSequenceMap(
-      async (_user, userIndex) => usersHypotheticalRewardsDelta[userIndex].mul(e12(1)).div(usersStakedAmt[userIndex])
+    const usersPotentialWinningsScaled = await userPromiseSequenceMap(
+      async (_user, userIndex) => usersPotentialWinningsDelta[userIndex].mul(e12(1)).div(usersStakedAmt[userIndex])
     )
 
+    console.log({
+      user1PotentialWinningsScaled: toDecimal(usersPotentialWinningsScaled[0]),
+      user2PotentialWinningsScaled: toDecimal(usersPotentialWinningsScaled[1]),
+      user3PotentialWinningsScaled: toDecimal(usersPotentialWinningsScaled[2]),
+    })
+
     expect6FigBigNumberAllEqual([
-      usersHypotheticalPendingScaled[0],
-      usersHypotheticalPendingScaled[1],
-      usersHypotheticalPendingScaled[2],
+      usersPotentialWinningsScaled[0],
+      usersPotentialWinningsScaled[1],
+      usersPotentialWinningsScaled[2],
     ])
   })
 }
 
 
 // PENDING INTER ROUND
-const vestedWinningsIncreaseOverDurationOfRound = (tokenName: string, elevation: number) => {
-  it('VESTING: Winnings vest over duration of round', async function() {
-    // const { dev, user1, user3 } = await getNamedSigners(hre)
-    // const token = await getContract(tokenName)
-
-    // const roundDuration = await elevationHelperGet.roundDurationSeconds(elevation)
-    // const quarterRoundDuration = roundDuration / 4
-
-    // await rolloverRound(elevation)
-    
-    // const roundNumber = await elevationHelperGet.roundNumber(elevation)
-    // const prevRound = roundNumber - 1
-
-    // const prevWinningTotem = await elevationHelperGet.winningTotem(elevation, prevRound)
-    // const winningUser = prevWinningTotem === 0 ? user1 : user3
-    // const {
-    //   harvestable: harvestable0,
-    //   vesting: vesting0,
-    //   vestDuration: vestDuration0,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-
-    // consoleLog({
-    //   PERC_THROUGH_ROUND: `${((roundDuration - vestDuration0.toNumber()) * 100) / roundDuration}%`,
-    //   harvestableRewards: toDecimal(harvestable0),
-    //   vesting: toDecimal(vesting0),
-    //   vestDurationSeconds: vestDuration0.toString(),
-    //   timestamp: await getTimestamp(),
-    //   quarterRoundDuration,
-    // })
-
-    // await increaseTimestampAndMine(quarterRoundDuration)
-
-    // const {
-    //   harvestable: harvestable1,
-    //   vesting: vesting1,
-    //   vestDuration: vestDuration1,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-
-
-    // consoleLog({
-    //   PERC_THROUGH_ROUND: `${((roundDuration - vestDuration1.toNumber()) * 100) / roundDuration}%`,
-    //   harvestableRewards: toDecimal(harvestable1),
-    //   vesting: toDecimal(vesting1),
-    //   vestDurationSeconds: vestDuration1.toString(),
-    //   timestamp: await getTimestamp(),
-    // })
-
-    // expectBigNumberGreaterThan(harvestable1, harvestable0)
-    // expectBigNumberLessThan(vesting1, vesting0)
-
-
-    // await increaseTimestampAndMine(quarterRoundDuration)
-
-    // const {
-    //   harvestable: harvestable2,
-    //   vesting: vesting2,
-    //   vestDuration: vestDuration2,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-
-    // consoleLog({
-    //   PERC_THROUGH_ROUND: `${((roundDuration - vestDuration2.toNumber()) * 100) / roundDuration}%`,
-    //   harvestableRewards: toDecimal(harvestable2),
-    //   vesting: toDecimal(vesting2),
-    //   vestDurationSeconds: vestDuration2.toString(),
-    //   timestamp: await getTimestamp(),
-    // })
-
-    // expectBigNumberGreaterThan(harvestable2, harvestable1)
-    // expectBigNumberLessThan(vesting2, vesting1)
-
-    
-    // await increaseTimestampAndMine(quarterRoundDuration)
-
-    // const {
-    //   harvestable: harvestable3,
-    //   vesting: vesting3,
-    //   vestDuration: vestDuration3,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-
-    // consoleLog({
-    //   PERC_THROUGH_ROUND: `${((roundDuration - vestDuration3.toNumber()) * 100) / roundDuration}%`,
-    //   harvestableRewards: toDecimal(harvestable3),
-    //   vesting: toDecimal(vesting3),
-    //   vestDurationSeconds: vestDuration3.toString(),
-    //   timestamp: await getTimestamp(),
-    // })
-
-    // expectBigNumberGreaterThan(harvestable3, harvestable2)
-    // expectBigNumberLessThan(vesting3, vesting2)
-
-
-    // await increaseTimestampAndMine(quarterRoundDuration)
-
-    // const {
-    //   harvestable: harvestable4,
-    //   vesting: vesting4,
-    //   vestDuration: vestDuration4,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-
-    // consoleLog({
-    //   PERC_THROUGH_ROUND: `${((roundDuration - vestDuration4.toNumber()) * 100) / roundDuration}%`,
-    //   harvestableRewards: toDecimal(harvestable4),
-    //   vesting: toDecimal(vesting4),
-    //   vestDurationSeconds: vestDuration4.toString(),
-    //   timestamp: await getTimestamp(),
-    // })
-
-    // expectBigNumberGreaterThan(harvestable4, harvestable3)
-    // expectBigNumberLessThan(vesting4, vesting3)
-  })
-}
-const winningsMatchHypotheticalWinnings = (tokenName: string, elevation: number) => {
-  it('WINNINGS: Winnings match hypothetical winnings before round end', async function() {
-    const { dev, user1, user2, user3 } = await getNamedSigners(hre)
+const winningsMatchPotentialWinnings = (tokenName: string, elevation: number) => {
+  it('WINNINGS: Winnings match potential winnings before round end', async function() {
     const token = await getContract(tokenName)
-    
-    await subCartMethod.updatePool(token.address, elevation)
-    
-    const usersHypotheticalRewardsInit = await usersHypotheticalRewards(token.address, elevation)
 
     await subCartMethod.updatePool(token.address, elevation)
 
-    const timestampBegin = await getTimestamp()
-
-    const usersHypotheticalRewardsFinal = await usersHypotheticalRewards(token.address, elevation)
-
-    const usersHypotheticalWinningsDelta = await userPromiseSequenceMap(
-      async (_user, userIndex) => usersHypotheticalRewardsFinal[userIndex].potentialWinnings.sub(usersHypotheticalRewardsInit[userIndex].potentialWinnings)
+    // Single timestamp delta
+    const usersPotentialWinningsInit = await usersPotentialWinnings(elevation)
+    await subCartMethod.updatePool(token.address, elevation)
+    const usersPotentialWinningsInit2 = await usersPotentialWinnings(elevation)
+    const usersYieldContributedDelta = await userPromiseSequenceMap(
+      async (_user, userIndex) => usersPotentialWinningsInit2[userIndex].yieldContributed.sub(usersPotentialWinningsInit[userIndex].yieldContributed)
     )
 
+
+    // Round Rollover
+    const nextRoundTime = await elevationHelperGet.roundEndTimestamp(elevation)
+    await mineBlockWithTimestamp(nextRoundTime)
+
+    const usersPotentialWinningsFinal = await usersPotentialWinnings(elevation)
     const usersRewardsInit = await usersRewards(token.address, elevation)
 
+    const timestampBeforeRollover = await getTimestamp()
     await rolloverRound(elevation)
+
+    const timestampAfterRollover = await getTimestamp()
+    const rolloverTimestampDelta = timestampAfterRollover - timestampBeforeRollover
+
+    const usersTotalYieldContributed = await userPromiseSequenceMap(
+      async (user, userIndex) => usersPotentialWinningsFinal[userIndex].yieldContributed.add(usersYieldContributedDelta[userIndex].mul(rolloverTimestampDelta))
+    )
 
     const prevWinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
 
-    const usersRewardsFinal = await usersRewards(token.address, elevation)
+    const totalYieldContributed = sumBigNumbers(usersTotalYieldContributed)
+    const winningTotemYieldContributed = prevWinningTotem === 0 ?
+      usersTotalYieldContributed[0].add(usersTotalYieldContributed[1]) :
+      usersTotalYieldContributed[2]
 
+    const winningsMult = totalYieldContributed.mul(e12(1)).div(winningTotemYieldContributed)
+
+
+    const usersRewardsFinal = await usersRewards(token.address, elevation)
     const usersRewardsDelta = await userPromiseSequenceMap(
-      async (user, userIndex) => usersRewardsFinal[userIndex].harvestable
-        .add(usersRewardsFinal[userIndex].vesting)
-        .sub(usersRewardsInit[userIndex].harvestable)
-        .sub(usersRewardsInit[userIndex].vesting)
+      async (user, userIndex) => usersRewardsFinal[userIndex].sub(usersRewardsInit[userIndex])
     )
 
-    const timestampEnd = await getTimestamp()
-    const timestampDelta = timestampEnd - timestampBegin
+    await userPromiseSequenceMap(
+      async (user, userIndex) => consoleLog({
+        user: userIndex,
+        yieldContributed: toDecimal(usersTotalYieldContributed[userIndex]),
+        winningsMult: winningsMult.toNumber(),
+        winningsFinal: toDecimal(usersTotalYieldContributed[userIndex].mul(winningsMult).div(e12(1))),
+        reward: toDecimal(usersRewardsDelta[userIndex]),
+      })
+    )
 
     if (prevWinningTotem == 0) {
-      expect6FigBigNumberEquals(usersRewardsDelta[0], usersHypotheticalRewardsFinal[0].harvestable.add(usersHypotheticalWinningsDelta[0].mul(timestampDelta)))
-      expect6FigBigNumberEquals(usersRewardsDelta[0], usersHypotheticalRewardsFinal[0].harvestable.add(usersHypotheticalWinningsDelta[0].mul(timestampDelta)))
+      expect6FigBigNumberEquals(usersRewardsDelta[0], usersTotalYieldContributed[0].mul(winningsMult).div(e12(1)))
+      expect6FigBigNumberEquals(usersRewardsDelta[1], usersTotalYieldContributed[1].mul(winningsMult).div(e12(1)))
     } else {
-      expect6FigBigNumberEquals(usersRewardsDelta[0], usersHypotheticalRewardsFinal[0].harvestable.add(usersHypotheticalWinningsDelta[0].mul(timestampDelta)))
+      expect6FigBigNumberEquals(usersRewardsDelta[2], usersTotalYieldContributed[2].mul(winningsMult).div(e12(1)))
     }
-  })
-}
-const withdrawingVestedWinningsRevestsRemaining = (tokenName: string, elevation: number) => {
-  it('VESTING: Withdrawing partially vesting winnings re-vests remaining', async function() {
-    // const { user1, user3 } = await getNamedSigners(hre)
-    // const token = await getContract(tokenName)
-
-    // const prevWinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
-    // const roundDuration = await elevationHelperGet.roundDurationSeconds(elevation)
-    // const quarterRoundDuration = roundDuration / 4
-
-    // await increaseTimestampAndMine(quarterRoundDuration)
-    // await subCartMethod.updatePool(token.address, elevation)
-
-    // const winningUser = prevWinningTotem === 0 ? user1 : user3
-
-    // const {
-    //   harvestable: harvestable0
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-
-    // await subCartMethod.updatePool(token.address, elevation)
-
-    // const {
-    //   harvestable: harvestableInit,
-    //   vesting: vestingInit,
-    //   vestDuration: vestDurationInit,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-
-    // const availBlockDelta = harvestableInit.sub(harvestable0);
-    // const balanceInit = await token.balanceOf(winningUser.address)
-    
-    // await cartographerMethod.claimSingleFarm({
-    //   user: winningUser,
-    //   tokenAddress: token.address,
-    //   elevation,
-    // })
-    
-    // const {
-    //   harvestable: harvestableFinal,
-    //   vesting: vestingFinal,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // const balanceFinal = await token.balanceOf(winningUser.address)
-
-    // expect6FigBigNumberEquals(balanceFinal.sub(balanceInit), harvestableInit.add(availBlockDelta))
-    // expect(harvestableFinal).to.equal(0)
-    // expect6FigBigNumberEquals(vestingInit.sub(vestingFinal), vestingInit.div(vestDurationInit))
-  })
-  it('VESTING: Re-vested winnings increase over duration of vesting', async function() {
-    // const { dev, user1, user3 } = await getNamedSigners(hre)
-    // const token = await getContract(tokenName)
-
-    // await rolloverRound(elevation)
-
-    // const winningTotem = await elevationHelperGet.prevWinningTotem(elevation)
-    // const roundStart = await elevationHelperGet.currentRoundStartTime(elevation)
-
-    // const winningUser = winningTotem === 0 ? user1 : user3
-
-    // await subCartMethod.updatePool(token.address, elevation)
-
-    // const {
-    //   harvestable: harvestable0,
-    //   vesting: vesting0,
-    //   vestStart: vestStart0,
-    //   vestDuration: vestDuration0,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // const totalAmount0 = harvestable0.add(vesting0)
-    // const vestAmtToDurRatio0 = vesting0.div(vestDuration0)
-
-    // const quarterVestingDuration = vestDuration0.div(4).toNumber() + 1
-
-    // await increaseTimestampAndMine(quarterVestingDuration)
-    // await subCartMethod.updatePool(token.address, elevation)
-
-    // const {
-    //   harvestable: harvestable1,
-    //   vesting: vesting1,
-    //   vestStart: vestStart1,
-    //   vestDuration: vestDuration1,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // expect(vestStart0).to.equal(vestStart1)
-
-    // const totalAmount1 = harvestable1.add(vesting1)
-    // const vestAmtToDurRatio1 = vesting1.div(vestDuration1)
-
-    // await increaseTimestampAndMine(quarterVestingDuration)
-    // await subCartMethod.updatePool(token.address, elevation)
-
-    // const {
-    //   harvestable: harvestable2,
-    //   vesting: vesting2,
-    //   vestStart: vestStart2,
-    //   vestDuration: vestDuration2,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // const totalAmount2 = harvestable2.add(vesting2)
-    // const vestAmtToDurRatio2 = vesting2.div(vestDuration2)
-
-    // await increaseTimestampAndMine(quarterVestingDuration)
-    // await subCartMethod.updatePool(token.address, elevation)
-
-    // const {
-    //   harvestable: harvestable3,
-    //   vesting: vesting3,
-    //   vestStart: vestStart3,
-    //   vestDuration: vestDuration3,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // const totalAmount3 = harvestable3.add(vesting3)
-    // const vestAmtToDurRatio3 = vesting3.div(vestDuration3)
-
-    // await increaseTimestampAndMine(quarterVestingDuration)
-    // await subCartMethod.updatePool(token.address, elevation)
-
-    // const {
-    //   harvestable: harvestable4,
-    //   vesting: vesting4,
-    //   vestStart: vestStart4,
-    //   vestDuration: vestDuration4,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // expect(vestStart4).to.equal(roundStart)
-
-    // await rolloverRound(elevation)
-
-    // const {
-    //   harvestable: harvestable5,
-    //   vesting: vesting5,
-    //   vestStart: vestStart5,
-    //   vestDuration: vestDuration5,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // const oneBlockVestAmount = vestDuration5.gt(0) ? vesting5.div(vestDuration5) : vestDuration5
-    // const totalAmount4 = harvestable4.add(vesting4)
-
-    // consoleLog({
-    //   totalAmount0: toDecimal(totalAmount0),
-    //   totalAmount1: toDecimal(totalAmount1),
-    //   totalAmount2: toDecimal(totalAmount2),
-    //   totalAmount3: toDecimal(totalAmount3),
-    //   totalAmount4: toDecimal(totalAmount4),
-    //   harvestable4: toDecimal(harvestable4),
-    //   vesting4: toDecimal(vesting4),
-    // })
-
-    // expect6FigBigNumberAllEqual([totalAmount0, totalAmount1, totalAmount2, totalAmount3, totalAmount4, harvestable4])
-    // expect6FigBigNumberAllEqual([vestAmtToDurRatio0, vestAmtToDurRatio1, vestAmtToDurRatio2, vestAmtToDurRatio3])
-
-    // const balanceInit = await token.balanceOf(winningUser.address)
-    
-
-    // await cartographerMethod.claimSingleFarm({
-    //   user: winningUser,
-    //   tokenAddress: token.address,
-    //   elevation,
-    // })
-
-    // const balanceFinal = await token.balanceOf(winningUser.address)
-    // expect6FigBigNumberEquals(balanceFinal.sub(balanceInit), harvestable5.add(oneBlockVestAmount))
-  })
-}
-const winningsVestAndAccumulateOverMultipleRounds = (tokenName: string, elevation: number) => {
-  it('VESTING: Vest and accumulate over multiple rounds', async function() {
-    // const { user1, user3 } = await getNamedSigners(hre)
-    // const token = await getContract(tokenName)
-
-    // await rolloverRound(elevation)
-
-    // const prevWinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
-    // const winningUser = prevWinningTotem === 0 ? user1 : user3
-    // const {
-    //   harvestable: harvestable0,
-    //   vesting: vesting0,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // await mineBlock()
-
-    // const {
-    //   harvestable: harvestable1,
-    //   vesting: vesting1,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // consoleLog({
-    //   harvestable: `${toDecimal(harvestable0)} --> ${toDecimal(harvestable1)}`,
-    //   vesting: `${toDecimal(vesting0)} --> ${toDecimal(vesting1)}`,
-    // })
-    // expectBigNumberGreaterThan(harvestable1, harvestable0)
-    // expectBigNumberLessThan(vesting1, vesting0)
-    // expect6FigBigNumberEquals(harvestable0.add(vesting0), harvestable1.add(vesting1))
-
-    // await rolloverRoundUntilWinningTotem(elevation, prevWinningTotem)
-
-    // await mineBlock()
-    // const {
-    //   harvestable: harvestable2,
-    //   vesting: vesting2,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // await mineBlock()
-    // const {
-    //   harvestable: harvestable3,
-    //   vesting: vesting3,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // consoleLog({
-    //   harvestable: `${toDecimal(harvestable2)} --> ${toDecimal(harvestable3)}`,
-    //   vesting: `${toDecimal(vesting2)} --> ${toDecimal(vesting3)}`,
-    // })
-    // expectBigNumberGreaterThan(harvestable3, harvestable2)
-    // expectBigNumberLessThan(vesting3, vesting2)
-    // expect6FigBigNumberEquals(harvestable2.add(vesting2), harvestable3.add(vesting3))
-
-    // await rolloverRoundUntilWinningTotem(elevation, prevWinningTotem)
-
-    // await mineBlock()
-    // const {
-    //   harvestable: harvestable4,
-    //   vesting: vesting4,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // await mineBlock()
-    // const {
-    //   harvestable: harvestable5,
-    //   vesting: vesting5,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // expectBigNumberGreaterThan(harvestable5, harvestable4)
-    // expectBigNumberLessThan(vesting5, vesting4)
-    // expect6FigBigNumberEquals(harvestable4.add(vesting4), harvestable5.add(vesting5))
-
-    // await rolloverRoundUntilLosingTotem(elevation, prevWinningTotem)
-
-    // const {
-    //   harvestable: harvestable6,
-    //   vesting: vesting6,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // expect(vesting6).to.equal(0)
-
-    // await cartographerMethod.claimSingleFarm({
-    //   user: winningUser,
-    //   tokenAddress: token.address,
-    //   elevation,
-    // })
-
-    // const {
-    //   harvestable: harvestable7,
-    //   vesting: vesting7,
-    // } = await subCartGet.claimableRewards(token.address, elevation, winningUser.address)
-    // consoleLog({
-    //   harvestable6: toDecimal(harvestable6),
-    //   vesting6: toDecimal(vesting6),
-    //   harvestable7: toDecimal(harvestable7),
-    //   vesting7: toDecimal(vesting7),
-    // })
-    // expect(harvestable7).to.equal(0)
-    // expect(vesting7).to.equal(0)
   })
 }
 
 const rolloverMultipleRounds = (tokenName: string, elevation: number) => {
   it('ROLLOVER: Rolling over multiple rounds yields correct rewards', async function() {
-    // const { user1, user3 } = await getNamedSigners(hre)
-    // const token = await getContract(tokenName)
+    const { user1, user3 } = await getNamedSigners(hre)
+    const token = await getContract(tokenName)
 
-    // await rolloverRound(elevation)
+    await rolloverRound(elevation)
 
-    // // DETERMINE FULL ROUND ROLLOVER BASELINE
-    // let totem0baselineSet = false
-    // let totem1baselineSet = false
+    // DETERMINE FULL ROUND ROLLOVER BASELINE
+    let totem0baselineSet = false
+    let totem1baselineSet = false
 
-    // let user1BaselineAvailRewardsInit
-    // let user1BaselineVestingRewardsInit
-    // let user3BaselineAvailRewardsInit
-    // let user3BaselineVestingRewardsInit
+    let user1BaselineAvailRewardsInit: BigNumber | undefined
+    let user3BaselineAvailRewardsInit: BigNumber | undefined
 
-    // let user1BaselineWinDelta
-    // let user3BaselineWinDelta
+    let user1BaselineWinDelta: BigNumber | undefined
+    let user3BaselineWinDelta: BigNumber | undefined
 
-    // while (!totem1baselineSet || !totem0baselineSet) {
-    //   if (!totem0baselineSet) {
-    //     const {
-    //       harvestable: u1harvestable,
-    //       vesting: u1vesting,
-    //     } = await subCartGet.claimableRewards(token.address, elevation, user1.address)
-    //     user1BaselineAvailRewardsInit = u1harvestable
-    //     user1BaselineVestingRewardsInit = u1vesting
-    //   }
+    while (!totem1baselineSet || !totem0baselineSet) {
+      if (!totem0baselineSet) {
+        user1BaselineAvailRewardsInit = await subCartGet.poolClaimableRewards(token.address, elevation, user1.address)
+      }
 
-    //   if (!totem1baselineSet) {
-    //     const {
-    //       harvestable: u3harvestable,
-    //       vesting: u3vesting,
-    //     } = await subCartGet.claimableRewards(token.address, elevation, user3.address)
-    //     user3BaselineAvailRewardsInit = u3harvestable
-    //     user3BaselineVestingRewardsInit = u3vesting
-    //   }
+      if (!totem1baselineSet) {
+        user3BaselineAvailRewardsInit = await subCartGet.poolClaimableRewards(token.address, elevation, user3.address)
+      }
 
-    //   await rolloverRound(elevation)
-    //   const winningTotem = await elevationHelperGet.prevWinningTotem(elevation)
+      await rolloverRound(elevation)
+      const winningTotem = await elevationHelperGet.prevWinningTotem(elevation)
 
-    //   if (!totem0baselineSet && winningTotem === 0) {
-    //     const {
-    //       harvestable: user1BaselineAvailRewardsMid,
-    //       vesting: user1BaselineVestingRewardsMid,
-    //     } = await subCartGet.claimableRewards(token.address, elevation, user1.address)
-    //     user1BaselineWinDelta = user1BaselineAvailRewardsMid.add(user1BaselineVestingRewardsMid).sub(user1BaselineAvailRewardsInit).sub(user1BaselineVestingRewardsInit)
-    //     totem0baselineSet = true
-    //   }
-    //   if (!totem1baselineSet && winningTotem === 1) {
-    //     const {
-    //       harvestable: user3BaselineAvailRewardsMid,
-    //       vesting: user3BaselineVestingRewardsMid,
-    //     } = await subCartGet.claimableRewards(token.address, elevation, user1.address)
-    //     user3BaselineWinDelta = user3BaselineAvailRewardsMid.add(user3BaselineVestingRewardsMid).sub(user3BaselineAvailRewardsInit).sub(user3BaselineVestingRewardsInit)
-    //     totem1baselineSet = true
-    //   }
-    // }
+      if (!totem0baselineSet && winningTotem === 0) {
+        const user1BaselineAvailRewardsMid = await subCartGet.poolClaimableRewards(token.address, elevation, user1.address)
+        user1BaselineWinDelta = user1BaselineAvailRewardsMid.sub(user1BaselineAvailRewardsInit!)
+        console.log({
+          totem0: `${toDecimal(user1BaselineAvailRewardsInit || e18(0))} --> ${toDecimal(user1BaselineAvailRewardsMid || e18(0))}: ${toDecimal(user1BaselineWinDelta)}`,
+        })
+        totem0baselineSet = true
+      }
+      if (!totem1baselineSet && winningTotem === 1) {
+        const user3BaselineAvailRewardsMid = await subCartGet.poolClaimableRewards(token.address, elevation, user3.address)
+        user3BaselineWinDelta = user3BaselineAvailRewardsMid.sub(user3BaselineAvailRewardsInit!)
+        console.log({
+          totem1: `${toDecimal(user3BaselineAvailRewardsInit || e18(0))} --> ${toDecimal(user3BaselineAvailRewardsMid || e18(0))}: ${toDecimal(user3BaselineWinDelta)}`
+        })
+        totem1baselineSet = true
+      }
+    }
 
-    // // MULTI ROUND ROLLOVER
-    // await rolloverRound(elevation)
+    if (user1BaselineWinDelta === null || user3BaselineWinDelta == null) {
+      console.log("Baseline Win Delta Missing")
+      expect(true).to.equal(false)
+    }
+    user1BaselineWinDelta = user1BaselineWinDelta!
+    user3BaselineWinDelta = user3BaselineWinDelta!
 
-    
-    // const {
-    //   harvestable: user1AvailRewardsInit,
-    //   vesting: user1VestingRewardsInit,
-    // } = await subCartGet.claimableRewards(token.address, elevation, user1.address)
-    // const {
-    //   harvestable: user3AvailRewardsInit,
-    //   vesting: user3VestingRewardsInit,
-    // } = await subCartGet.claimableRewards(token.address, elevation, user3.address)
+    // MULTI ROUND ROLLOVER
+    await rolloverRound(elevation)
 
-    // const nextRoundTime = await elevationHelperGet.roundEndTimestamp(elevation)
-    // const roundDuration = await elevationHelperGet.roundDurationSeconds(elevation)
-    // await mineBlockWithTimestamp(nextRoundTime + (roundDuration * 4))
-    
-    // await rollover(elevation)
 
-    // await subCartMethod.updatePool(token.address, elevation)
-    
-    
-    // const {
-    //   harvestable: user1AvailRewardsFinal,
-    //   vesting: user1VestingRewardsFinal,
-    // } = await subCartGet.claimableRewards(token.address, elevation, user1.address)
-    // const {
-    //   harvestable: user3AvailRewardsFinal,
-    //   vesting: user3VestingRewardsFinal,
-    // } = await subCartGet.claimableRewards(token.address, elevation, user3.address)
+    const user1AvailRewardsInit = await subCartGet.poolClaimableRewards(token.address, elevation, user1.address)
+    const user3AvailRewardsInit = await subCartGet.poolClaimableRewards(token.address, elevation, user3.address)
 
-    // const user1MultiRoundDelta = user1AvailRewardsFinal.add(user1VestingRewardsFinal).sub(user1AvailRewardsInit).sub(user1VestingRewardsInit)
-    // const user3MultiRoundDelta = user3AvailRewardsFinal.add(user3VestingRewardsFinal).sub(user3AvailRewardsInit).sub(user3VestingRewardsInit)
 
-    // const prevWinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
+    const nextRoundTime = await elevationHelperGet.roundEndTimestamp(elevation)
+    const roundDuration = await elevationHelperGet.roundDurationSeconds(elevation)
+    await mineBlockWithTimestamp(nextRoundTime + (roundDuration * 4))
+    await cartographerMethod.rollover({ elevation })
 
-    // consoleLog({
-    //   prevWinningTotem,
-    //   user1WinDelta: toDecimal(user1BaselineWinDelta),
-    //   user3WinDelta: toDecimal(user3BaselineWinDelta),
-    //   user1MultiRoundDelta: toDecimal(user1MultiRoundDelta),
-    //   user3MultiRoundDelta: toDecimal(user3MultiRoundDelta),
-    //   user1Mult: user1BaselineWinDelta.eq(0) ? 'null' : user1MultiRoundDelta.mul('100000').div(user1BaselineWinDelta).toString(),
-    //   user3Mult: user3BaselineWinDelta.eq(0) ? 'null' : user3MultiRoundDelta.mul('100000').div(user3BaselineWinDelta).toString(),
-    //   user1AvailRewards: `${toDecimal(user1AvailRewardsInit)} --> ${toDecimal(user1AvailRewardsFinal)}`,
-    //   user1VestingRewards: `${toDecimal(user1VestingRewardsInit)} --> ${toDecimal(user1VestingRewardsFinal)}`,
-    //   user3AvailRewards: `${toDecimal(user3AvailRewardsInit)} --> ${toDecimal(user3AvailRewardsFinal)}`,
-    //   user3VestingRewards: `${toDecimal(user3VestingRewardsInit)} --> ${toDecimal(user3VestingRewardsFinal)}`,
-    // })
 
-    // if (prevWinningTotem === 0) {
-    //   expect6FigBigNumberEquals(user1MultiRoundDelta.mul(e18(1)).div(user1BaselineWinDelta), e18(5))
-    // } else {
-    //   expect6FigBigNumberEquals(user3MultiRoundDelta.mul(e18(1)).div(user3BaselineWinDelta), e18(5))
-    // }
+    const user1AvailRewardsFinal = await subCartGet.poolClaimableRewards(token.address, elevation, user1.address)
+    const user3AvailRewardsFinal = await subCartGet.poolClaimableRewards(token.address, elevation, user3.address)
+
+    const user1MultiRoundDelta = user1AvailRewardsFinal.sub(user1AvailRewardsInit)
+    const user3MultiRoundDelta = user3AvailRewardsFinal.sub(user3AvailRewardsInit)
+
+    const prevWinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
+
+    consoleLog({
+      prevWinningTotem,
+      user1WinDelta: toDecimal(user1BaselineWinDelta),
+      user3WinDelta: toDecimal(user3BaselineWinDelta),
+      user1MultiRoundDelta: toDecimal(user1MultiRoundDelta),
+      user3MultiRoundDelta: toDecimal(user3MultiRoundDelta),
+      user1Mult: user1BaselineWinDelta.eq(0) ? 'div/0' : user1MultiRoundDelta.mul('100000').div(user1BaselineWinDelta).toString(),
+      user3Mult: user3BaselineWinDelta.eq(0) ? 'div/0' : user3MultiRoundDelta.mul('100000').div(user3BaselineWinDelta).toString(),
+      user1AvailRewards: `${toDecimal(user1AvailRewardsInit)} --> ${toDecimal(user1AvailRewardsFinal)}`,
+      user3AvailRewards: `${toDecimal(user3AvailRewardsInit)} --> ${toDecimal(user3AvailRewardsFinal)}`,
+    })
+
+    if (prevWinningTotem === 0) {
+      expect6FigBigNumberEquals(user1MultiRoundDelta.mul(e18(1)).div(user1BaselineWinDelta), e18(5))
+    } else {
+      expect6FigBigNumberEquals(user3MultiRoundDelta.mul(e18(1)).div(user3BaselineWinDelta), e18(5))
+    }
   })
 }
 
@@ -770,67 +445,70 @@ const correctWinnersHistoricalData = (tokenName: string, elevation: number) => {
       prevWinners: prevWinnersInit,
     } = await elevationHelperGet.historicalTotemStats(elevation)
 
+    console.log({
+      poolWinCountersInit,
+      prevWinnersInit
+    })
+
     await rolloverRound(elevation)
     const {
       totemWinCounters: poolWinCounters1,
       prevWinners: prevWinners1,
     } = await elevationHelperGet.historicalTotemStats(elevation)
     const round1WinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
-    expect(poolWinCountersInit[round1WinningTotem].add(1)).to.equal(poolWinCounters1[round1WinningTotem])
-    expectBigNumberArraysEqual(prevWinners1, [round1WinningTotem, ...prevWinnersInit.slice(0, 9)])
-    
+    expect(poolWinCountersInit[round1WinningTotem] + 1).to.equal(poolWinCounters1[round1WinningTotem])
+    expectBigNumberArraysEqual(prevWinners1, [round1WinningTotem, ...prevWinnersInit].slice(0, 10))
+
     await rolloverRound(elevation)
     const {
       totemWinCounters: poolWinCounters2,
       prevWinners: prevWinners2,
     } = await elevationHelperGet.historicalTotemStats(elevation)
     const round2WinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
-    expect(poolWinCounters1[round2WinningTotem].add(1)).to.equal(poolWinCounters2[round2WinningTotem])
-    expectBigNumberArraysEqual(prevWinners2, [round2WinningTotem, round1WinningTotem, ...prevWinnersInit.slice(0, 8)])
-    
+    expect(poolWinCounters1[round2WinningTotem] + 1).to.equal(poolWinCounters2[round2WinningTotem])
+    expectBigNumberArraysEqual(prevWinners2, [round2WinningTotem, round1WinningTotem, ...prevWinnersInit].slice(0, 10))
+
     await rolloverRound(elevation)
     const {
       totemWinCounters: poolWinCounters3,
       prevWinners: prevWinners3,
     } = await elevationHelperGet.historicalTotemStats(elevation)
     const round3WinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
-    expect(poolWinCounters2[round3WinningTotem].add(1)).to.equal(poolWinCounters3[round3WinningTotem])
-    expectBigNumberArraysEqual(prevWinners3, [round3WinningTotem, round2WinningTotem, round1WinningTotem, ...prevWinnersInit.slice(0, 7)])
-    
+    expect(poolWinCounters2[round3WinningTotem] + 1).to.equal(poolWinCounters3[round3WinningTotem])
+    expectBigNumberArraysEqual(prevWinners3, [round3WinningTotem, round2WinningTotem, round1WinningTotem, ...prevWinnersInit].slice(0, 10))
+
     await rolloverRound(elevation)
     const {
       totemWinCounters: poolWinCounters4,
       prevWinners: prevWinners4,
     } = await elevationHelperGet.historicalTotemStats(elevation)
     const round4WinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
-    expect(poolWinCounters3[round4WinningTotem].add(1)).to.equal(poolWinCounters4[round4WinningTotem])
-    expectBigNumberArraysEqual(prevWinners4, [round4WinningTotem, round3WinningTotem, round2WinningTotem, round1WinningTotem, ...prevWinnersInit.slice(0, 6)])
-    
+    expect(poolWinCounters3[round4WinningTotem] + 1).to.equal(poolWinCounters4[round4WinningTotem])
+    expectBigNumberArraysEqual(prevWinners4, [round4WinningTotem, round3WinningTotem, round2WinningTotem, round1WinningTotem, ...prevWinnersInit].slice(0, 10))
+
     await rolloverRound(elevation)
     const {
       totemWinCounters: poolWinCounters5,
       prevWinners: prevWinners5,
     } = await elevationHelperGet.historicalTotemStats(elevation)
     const round5WinningTotem = await elevationHelperGet.prevWinningTotem(elevation)
-    expect(poolWinCounters4[round5WinningTotem].add(1)).to.equal(poolWinCounters5[round5WinningTotem])
-    expectBigNumberArraysEqual(prevWinners5, [round5WinningTotem, round4WinningTotem, round3WinningTotem, round2WinningTotem, round1WinningTotem, ...prevWinnersInit.slice(0, 5)])
+    expect(poolWinCounters4[round5WinningTotem] + 1).to.equal(poolWinCounters5[round5WinningTotem])
+    expectBigNumberArraysEqual(prevWinners5, [round5WinningTotem, round4WinningTotem, round3WinningTotem, round2WinningTotem, round1WinningTotem, ...prevWinnersInit].slice(0, 10))
 
     consoleLog({
-      poolWinCountersInit: stringifyBigNumberArray(poolWinCountersInit),
-      poolWinCounters1: stringifyBigNumberArray(poolWinCounters1),
-      poolWinCounters2: stringifyBigNumberArray(poolWinCounters2),
-      poolWinCounters3: stringifyBigNumberArray(poolWinCounters3),
-      poolWinCounters4: stringifyBigNumberArray(poolWinCounters4),
-      poolWinCounters5: stringifyBigNumberArray(poolWinCounters5),
-      prevWinnersInit: stringifyBigNumberArray(prevWinnersInit),
-      prevWinners1: stringifyBigNumberArray(prevWinners1),
-      prevWinners2: stringifyBigNumberArray(prevWinners2),
-      prevWinners3: stringifyBigNumberArray(prevWinners3),
-      prevWinners4: stringifyBigNumberArray(prevWinners4),
-      prevWinners5: stringifyBigNumberArray(prevWinners5),
+      poolWinCountersInit: poolWinCountersInit.join(' '),
+      poolWinCounters1: poolWinCounters1.join(' '),
+      poolWinCounters2: poolWinCounters2.join(' '),
+      poolWinCounters3: poolWinCounters3.join(' '),
+      poolWinCounters4: poolWinCounters4.join(' '),
+      poolWinCounters5: poolWinCounters5.join(' '),
+      prevWinnersInit: prevWinnersInit.join(' '),
+      prevWinners1: prevWinners1.join(' '),
+      prevWinners2: prevWinners2.join(' '),
+      prevWinners3: prevWinners3.join(' '),
+      prevWinners4: prevWinners4.join(' '),
+      prevWinners5: prevWinners5.join(' '),
     })
-
-    expect(true).to.be.true
   })
   it('HISTORICAL DATA: Multi-rollover updates historical data correctly', async function() {
     await rolloverRound(elevation)
@@ -845,107 +523,125 @@ const correctWinnersHistoricalData = (tokenName: string, elevation: number) => {
       totemWinCounters: poolWinCountersFinal
     } = await elevationHelperGet.historicalTotemStats(elevation)
 
-    const winsInit = poolWinCountersInit.reduce((accum: BigNumber, wins: BigNumber) => wins.add(accum), BigNumber.from('0'))
-    const winsFinal = poolWinCountersFinal.reduce((accum: BigNumber, wins: BigNumber) => wins.add(accum), BigNumber.from('0'))
-    
-    expect(winsFinal.sub(winsInit)).to.equal(1)
+    const winsInit = poolWinCountersInit.reduce((acc: number, wins: number) => acc + wins, 0)
+    const winsFinal = poolWinCountersFinal.reduce((acc: number, wins: number) => acc + wins, 0)
+
+    expect(winsFinal - winsInit).to.equal(1)
   })
 }
 
 // TOTEMS
-// const switchingTotems = (tokenName: string, rewardTokenName: string, elevation: number) => {
-//   it(`TOTEMS: Switching to invalid totem should fail with error ${ERR.INVALID_TOTEM}`, async function() {
-//     const { user1 } = await getNamedSigners(hre)
-//     const cartographer = await getCartographer()
-    
-//     await expect(
-//       cartographer.connect(user1).switchTotem(elevation, TOTEM_COUNT[elevation])
-//     ).to.be.revertedWith(ERR.INVALID_TOTEM)
-//   })
-//   it('TOTEMS: Users should be able to switch to valid totems', async function() {
-//     const { user1 } = await getNamedSigners(hre)
-//     const cartographer = await getCartographer()
-//     const subCartographer = await ethers.getContract(tokenName)
-//     const rewardToken = await ethers.getContract(rewardTokenName)
-//     const elevationHelper = await ethers.getContract('ElevationHelper')
+const switchingTotems = (tokenName: string, elevation: number) => {
+  it(`TOTEMS: Switching to invalid totem should fail with error ${ERR.INVALID_TOTEM}`, async function() {
+    const { user1 } = await getNamedSigners(hre)
+    const cartographer = await getCartographer()
 
-//     const targetTotem = TOTEM_COUNT[elevation] - 1
+    await cartographerMethod.switchTotem({
+      user: user1,
+      elevation,
+      totem: TOTEM_COUNT[elevation],
+      revertErr: ERR.INVALID_TOTEM
+    })
+  })
+  it('TOTEMS: Users should be able to switch to valid totems', async function() {
+    const { user1 } = await getNamedSigners(hre)
+    const token = await getContract(tokenName)
 
-//     await rolloverRoundUntilWinningTotem(elevation, 0)
-//     await mineBlocks(10)
-    
-//     const [harvestablePre0] = await cartographer.rewards(pid, user1.address)
-//     await subCartMethod.updatePool(token.address, elevation)
-    
-//     let runningUserInfo =  await subCartographer.connect(user1).userInfo(pid, user1.address)
-//     const user1Totem0 = await getUserTotem(subCartographer, elevation, user1)
-//     const user1Staked0 = runningUserInfo.staked
-//     const user1Summit0 = await rewardToken.balanceOf(user1.address)
-//     const poolLpSupply0 = await cartographer.stakedSupply(pid)
-//     const [roundRewards0, ...totemRewards0] = await subCartographer.totemRoundRewards(pid)
-//     const totem0LpSupply0 = (await subCartographer.totemSupplies(pid))[0]
-//     const totemTargetLpSupply0 = (await subCartographer.totemSupplies(pid))[targetTotem]
+    const targetTotem = TOTEM_COUNT[elevation] - 1
 
-//     const [harvestable0] = await cartographer.rewards(pid, user1.address)
-//     const singleBlockRewardDelta = harvestable0.sub(harvestablePre0)
-    
-//     expect(user1Totem0).to.equal(0)
-    
-//     // SWITCH TOTEM FROM 0 --> TARGET TOTEM
-//     await cartographer.connect(user1).switchTotem(elevation, targetTotem)
-    
-//     runningUserInfo =  await subCartographer.connect(user1).userInfo(pid, user1.address)
-//     const user1Totem1 = await getUserTotem(subCartographer, elevation, user1)
-//     const user1Staked1 = runningUserInfo.staked
-//     const user1Summit1 = await rewardToken.balanceOf(user1.address)
-//     const poolLpSupply1 = await cartographer.stakedSupply(pid)
-//     let [roundRewards1, ...totemRewards1] = await subCartographer.totemRoundRewards(pid)
-//     const totem0LpSupply1 = (await subCartographer.totemSupplies(pid))[0]
-//     const totemTargetLpSupply1 = (await subCartographer.totemSupplies(pid))[targetTotem]
+    await rolloverRoundUntilWinningTotem(elevation, 0)
 
-//     expect6FigBigNumberEquals(user1Summit1.sub(user1Summit0), harvestable0.add(singleBlockRewardDelta))
-//     expect(user1Totem1).to.equal(targetTotem)
+    await subCartMethod.updatePool(token.address, elevation)
 
-//     expect(user1Staked1).to.equal(user1Staked0)
-//     expect(poolLpSupply1).to.equal(poolLpSupply0)
-//     expect(totem0LpSupply0.sub(totem0LpSupply1)).to.equal(user1Staked0)
-//     expect(totemTargetLpSupply1.sub(totemTargetLpSupply0)).to.equal(user1Staked0)
+    let runningUserInfo = await subCartGet.userInfo(token.address, elevation, user1.address)
+    const user1Totem0 = (await subCartGet.userTotemInfo(elevation, user1.address)).totem
+    const user1Staked0 = runningUserInfo.staked
+    const poolInfo0 = await subCartGet.poolInfo(token.address, elevation)
 
-//     expect6FigBigNumberEquals(totemRewards1[0].sub(totemRewards0[0]).sub(totemRewards0[1].sub(totemRewards1[1])), roundRewards1.sub(roundRewards0))
+    expect(user1Totem0).to.equal(0)
 
-//     const [harvestablePre1] = await cartographer.rewards(pid, user1.address)
-//     await subCartMethod.updatePool(token.address, elevation)
-//     const [harvestable1] = await cartographer.rewards(pid, user1.address)
-//     const singleBlockRewardDelta1 = harvestable1.sub(harvestablePre1)
+    // SWITCH TOTEM FROM 0 --> TARGET TOTEM
+    await cartographerMethod.switchTotem({
+      user: user1,
+      elevation,
+      totem: targetTotem,
+    })
 
-//     const [roundRewards1B, ...totemRewards1B] = await subCartographer.totemRoundRewards(pid)
-    
-//     // SWITCH BACK FROM TARGET TOTEM --> 0
-//     await cartographer.connect(user1).switchTotem(elevation, 0)
-  
-//     runningUserInfo =  await subCartographer.connect(user1).userInfo(pid, user1.address)
-//     const user1Totem2 = await getUserTotem(subCartographer, elevation, user1)
-//     const user1Staked2 = runningUserInfo.staked
-//     const user1Summit2 = await rewardToken.balanceOf(user1.address)
-//     const poolLpSupply2 = await cartographer.stakedSupply(pid)
-//     const [roundRewards2, ...totemRewards2] = await subCartographer.totemRoundRewards(pid)
-//     const totem0LpSupply2 = (await subCartographer.totemSupplies(pid))[0]
-//     const totemTargetLpSupply2 = (await subCartographer.totemSupplies(pid))[targetTotem]
+    runningUserInfo =  await subCartGet.userInfo(token.address, elevation, user1.address)
+    const user1Totem1 = (await subCartGet.userTotemInfo(elevation, user1.address)).totem
+    const user1Staked1 = runningUserInfo.staked
+    const poolInfo1 = await subCartGet.poolInfo(token.address, elevation)
 
-//     expect6FigBigNumberEquals(user1Summit2.sub(user1Summit1), harvestable1.add(singleBlockRewardDelta1))
-//     expect(user1Totem2).to.equal(0)
+    expect(user1Totem1).to.equal(targetTotem)
+    expect(user1Staked1).to.equal(user1Staked0)
+    expect(poolInfo1.supply).to.equal(poolInfo0.supply)
+    expect(poolInfo0.totemSupplies[0].sub(poolInfo1.totemSupplies[0])).to.equal(user1Staked0)
+    expect(poolInfo1.totemSupplies[1].sub(poolInfo0.totemSupplies[1])).to.equal(user1Staked0)
 
-//     expect(user1Staked2).to.equal(user1Staked1)
-//     expect(poolLpSupply2).to.equal(poolLpSupply1)
-//     expect(totem0LpSupply2.sub(totem0LpSupply1)).to.equal(user1Staked0)
-//     expect(totemTargetLpSupply1.sub(totemTargetLpSupply2)).to.equal(user1Staked0)
-    
-//     expect(totem0LpSupply2).to.equal(totem0LpSupply0)
-//     expect(totemTargetLpSupply2).to.equal(totemTargetLpSupply0)
+    expect6FigBigNumberEquals(poolInfo1.totemRoundRewards[0].sub(poolInfo0.totemRoundRewards[0]).sub(poolInfo0.totemRoundRewards[1].sub(poolInfo1.totemRoundRewards[1])), poolInfo1.roundRewards.sub(poolInfo0.roundRewards))
 
-//     expect6FigBigNumberEquals(totemRewards2[1].sub(totemRewards1B[1]).sub(totemRewards1B[0].sub(totemRewards2[0])), roundRewards2.sub(roundRewards1B))
-//   })
-// }
+    await subCartMethod.updatePool(token.address, elevation)
+
+    const poolInfo1B = await subCartGet.poolInfo(token.address, elevation)
+
+    // SWITCH BACK FROM TARGET TOTEM --> 0
+    await cartographerMethod.switchTotem({
+      user: user1,
+      elevation,
+      totem: 0
+    })
+
+    runningUserInfo =  await subCartGet.userInfo(token.address, elevation, user1.address)
+    const user1Totem2 = (await subCartGet.userTotemInfo(elevation, user1.address)).totem
+    const user1Staked2 = runningUserInfo.staked
+    const poolInfo2 = await subCartGet.poolInfo(token.address, elevation)
+
+    expect(user1Totem2).to.equal(0)
+
+    expect(user1Staked2).to.equal(user1Staked1)
+    expect(poolInfo2.supply).to.equal(poolInfo1.supply)
+    expect(poolInfo2.totemSupplies[0].sub(poolInfo1.totemSupplies[0])).to.equal(user1Staked0)
+    expect(poolInfo1.totemSupplies[1].sub(poolInfo2.totemSupplies[1])).to.equal(user1Staked0)
+
+    expect(poolInfo2.totemSupplies[0]).to.equal(poolInfo0.totemSupplies[0])
+    expect(poolInfo2.totemSupplies[1]).to.equal(poolInfo0.totemSupplies[1])
+
+    expect6FigBigNumberEquals(poolInfo2.totemRoundRewards[1].sub(poolInfo1B.totemRoundRewards[1]).sub(poolInfo1B.totemRoundRewards[0].sub(poolInfo2.totemRoundRewards[0])), poolInfo2.roundRewards.sub(poolInfo1B.roundRewards))
+  })
+}
+
+
+const emergencyWithdraw = (tokenName: string, elevation: number) => {
+  it('EMERGENCY WITHDRAW: Users should be able to emergency withdraw and fully exit a farm', async function() {
+    const { user1 } = await getNamedSigners(hre)
+    const token = await getContract(tokenName)
+
+    const userInfoInit = await subCartGet.userInfo(token.address, elevation, user1.address)
+    const userLockedInit = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+    const userBalanceInit = await getTokenBalance(token, user1.address)
+
+    const userTokenTaxBP = await cartographerGet.getUserTokenWithdrawalTax(user1.address, token.address)
+    const amountAfterTax = tokenAmountAfterWithdrawTax(userInfoInit.staked, userTokenTaxBP)
+
+    await cartographerMethod.emergencyWithdraw({
+      user: user1,
+      tokenAddress: token.address,
+      elevation
+    })
+
+    const userInfoFinal = await subCartGet.userInfo(token.address, elevation, user1.address)
+    const userLockedFinal = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+    const userBalanceFinal = await getTokenBalance(token, user1.address)
+
+    expect(userInfoFinal.debt).to.equal(0)
+    expect(userInfoFinal.prevInteractedRound).to.equal(0)
+    expect(userInfoFinal.roundRew).to.equal(0)
+    expect(userInfoFinal.staked).to.equal(0)
+    expect(userInfoFinal.winningsDebt).to.equal(0)
+    expect(deltaBN(userLockedInit, userLockedFinal)).to.equal(0)
+    expect(deltaBN(userBalanceInit, userBalanceFinal)).to.equal(amountAfterTax)
+  })
+}
 
 export const elevationTests = {
   standardDepositShouldSucceed,
@@ -953,16 +649,13 @@ export const elevationTests = {
 
   elevationPoolRewardsShouldIncreaseEachBlock,
 
-  vestedWinningsIncreaseOverDurationOfRound,
-  winningsMatchHypotheticalWinnings,
-  withdrawingVestedWinningsRevestsRemaining,
-  winningsVestAndAccumulateOverMultipleRounds,
+  winningsMatchPotentialWinnings,
 
   rolloverMultipleRounds,
 
   correctWinnersHistoricalData,
-}
 
-function rollover(elevation: number) {
-  throw new Error('Function not implemented.');
+  switchingTotems,
+
+  emergencyWithdraw,
 }

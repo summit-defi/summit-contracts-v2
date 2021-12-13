@@ -2,7 +2,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, PLAINS, MESA, SUMMIT, mineBlockWithTimestamp, cartographerMethod, getSummitToken, OASIS, getCartographer, elevationHelperGet, cartographerSynth, cartographerGet, expect6FigBigNumberAllEqual, expectAllEqual, subCartGet, elevationPromiseSequenceMap, getBifiToken, getCakeToken, promiseSequenceMap } from "../utils";
+import { e18, ERR, EVENT, PLAINS, MESA, SUMMIT, mineBlockWithTimestamp, cartographerMethod, getSummitToken, OASIS, getCartographer, elevationHelperGet, cartographerSynth, cartographerGet, expect6FigBigNumberAllEqual, expectAllEqual, subCartGet, allElevationPromiseSequenceMap, getBifiToken, getCakeToken, promiseSequenceMap, consoleLog } from "../utils";
 import { fiveThousandUnlockedFixture, oasisUnlockedFixture, poolsFixture, twoThousandUnlockedFixture } from "./fixtures";
 
 const switchTotemIfNecessary = async (user: SignerWithAddress, elevation: number, totem: number, revertErr?: string) => {
@@ -34,9 +34,6 @@ const userDepositIntoElevationPools = async (elevation: number) => {
     { tokenAddress: bifiToken.address },
   ]
 
-  console.log({
-    userElevationTotemInfoBefore: await subCartGet.userTotemInfo(elevation, user1.address)
-  })
   if (!(await subCartGet.userTotemInfo(elevation, user1.address)).totemSelected) {
     await cartographerMethod.switchTotem({
       user: user1,
@@ -44,9 +41,6 @@ const userDepositIntoElevationPools = async (elevation: number) => {
       totem: 0,
     })
   }
-  console.log({
-    userElevationTotemInfoAfter: await subCartGet.userTotemInfo(elevation, user1.address)
-  })
 
   await promiseSequenceMap(
     pools,
@@ -212,7 +206,7 @@ describe("ELEVATION Unlocks", function() {
       const totalAllocPointFinal = await cartographerSynth.totalAlloc()
       const plainsAlloc = await cartographerGet.elevAlloc(PLAINS)
 
-      console.log({
+      consoleLog({
         totalAllocPointInit,
         totalAllocPointFinal,
       })
@@ -300,7 +294,7 @@ describe("ELEVATION Unlocks", function() {
       const mesaAlloc = await cartographerGet.elevAlloc(MESA)
       const totalAllocPointFinal = await cartographerSynth.totalAlloc()
       
-      console.log({
+      consoleLog({
         totalAllocPointInit,
         totalAllocPointFinal,
       })
@@ -374,7 +368,7 @@ describe("ELEVATION Unlocks", function() {
       const summitAlloc = await cartographerGet.elevAlloc(SUMMIT)
       const totalAllocPointFinal = await cartographerSynth.totalAlloc()
       
-      console.log({
+      consoleLog({
         totalAllocPointInit,
         totalAllocPointFinal,
       })

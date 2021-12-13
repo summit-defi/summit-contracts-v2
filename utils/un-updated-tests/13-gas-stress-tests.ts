@@ -5,6 +5,8 @@ import { ERR, mineBlockWithTimestamp, Contracts, getSeeds, mineBlock, mineBlocks
 import { tenThousandUnlockedFixture } from "./fixtures";
 
 
+// TODO: Claim elevation
+
 describe("GAS STRESS TESTS", function() {
   before(async function() {
     await tenThousandUnlockedFixture()

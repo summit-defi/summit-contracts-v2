@@ -8,9 +8,13 @@ library SummitMath {
         internal pure
         returns (uint256)
     {
-        require (minBound <= maxBound, "Invalid scaling range");
+        require(minBound <= maxBound, "Invalid scaling range");
+        if (minResult == maxResult) return minResult;
         if (scalar <= minBound) return minResult;
         if (scalar >= maxBound) return maxResult;
-        return (((scalar - minBound) * (maxResult - minResult) * 1e12) / (maxBound - minBound) / 1e12) + minResult;
+        if (maxResult > minResult) {
+            return (((scalar - minBound) * (maxResult - minResult) * 1e12) / (maxBound - minBound) / 1e12) + minResult;
+        }
+        return (((maxBound - scalar) * (minResult - maxResult) * 1e12) / (maxBound - minBound) / 1e12);
     }
 }
