@@ -1181,7 +1181,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
 
     /// @dev Set the tax for a token
-    function setTokenWithdrawalTax(address _token, uint16 _taxBP)
+    function setTokenWithdrawTax(address _token, uint16 _taxBP)
         public
         onlyOwner
     {

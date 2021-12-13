@@ -1,5 +1,5 @@
-import { PLAINS, MESA, SUMMIT, elevationTests, passthroughTests, SubCartographer, cartographerSetParam, Contracts } from "..";
-import { fiveThousandUnlockedFixture, tenThousandUnlockedFixture, twoThousandUnlockedFixture } from "../../test/fixtures";
+import { PLAINS, MESA, SUMMIT, elevationTests, passthroughTests, SubCartographer, cartographerSetParam, Contracts } from "../utils";
+import { fiveThousandUnlockedFixture, tenThousandUnlockedFixture, twoThousandUnlockedFixture } from "./fixtures";
 
 const getElevationDiffedVariables = (elevation: number) => {
     switch (elevation) {
@@ -75,37 +75,18 @@ describe("ELEVATION FARMING", function() {
                     })
                 })
 
-                elevationTests.totemTests(Contracts.SummitToken, elevation)
-
                 elevationTests.standardDepositShouldSucceed(Contracts.SummitToken, elevation)
                 elevationTests.depositShouldUpdatePoolAndTotemInfo(Contracts.SummitToken, elevation)
                 elevationTests.elevationPoolRewardsShouldIncreaseEachBlock(Contracts.SummitToken, elevation)
 
                 if (!onlyTwoPoolTests) {
-                    elevationTests.vestedWinningsIncreaseOverDurationOfRound(Contracts.SummitToken, elevation)
-                    elevationTests.winningsMatchHypotheticalWinnings(Contracts.SummitToken, elevation)
-
-                    elevationTests.withdrawingVestedWinningsRevestsRemaining(Contracts.SummitToken, elevation)
-                    elevationTests.winningsVestAndAccumulateOverMultipleRounds(Contracts.SummitToken, elevation)
-
+                    elevationTests.winningsMatchPotentialWinnings(Contracts.SummitToken, elevation)
                     elevationTests.rolloverMultipleRounds(Contracts.SummitToken, elevation)
                     elevationTests.switchingTotems(Contracts.SummitToken, elevation)
-
                 }
 
                 elevationTests.correctWinnersHistoricalData(Contracts.SummitToken, elevation)
 
-            })
-
-            describe('- Totem In Use', async function() {
-                before(async function() {
-                    await fixture()
-                })
-
-                elevationTests.initialTotemInUseShouldBeFalse(elevation)
-                elevationTests.totemInUseShouldUpdateOnDeposit(Contracts.SummitToken, elevation)
-                elevationTests.totemInUseShouldPreventIncorrectPondDeposit(Contracts.SummitToken, elevation)
-                elevationTests.withdrawToZeroShouldUpdateTotemInUse(Contracts.SummitToken, elevation)
             })
 
             describe('- Elevation Passthrough Staking', async function() {
@@ -113,10 +94,10 @@ describe("ELEVATION FARMING", function() {
                     await fixture()
                 })
 
-                passthroughTests.vaultTests(passthroughPid, passthroughPoolFee)
-                passthroughTests.switchPassthroughStrategyVaultToMasterChef(passthroughPid, passthroughPoolFee)
-                passthroughTests.masterChefTests(passthroughPid, passthroughPoolFee)
-                passthroughTests.switchPassthroughStrategyMasterChefToVault(passthroughPid)
+                passthroughTests.vaultTests(elevation)
+                passthroughTests.switchPassthroughStrategyVaultToMasterChef(elevation)
+                passthroughTests.masterChefTests(elevation)
+                passthroughTests.switchPassthroughStrategyMasterChefToVault(elevation)
             })
         })
     })

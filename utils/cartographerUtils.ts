@@ -44,18 +44,18 @@ const getBonusBP = async (userAddress: string, tokenAddress: string): Promise<nu
     return await (await getCartographer()).bonusBP(userAddress, tokenAddress)
 }
 const getTokenClaimableWithEmission = async (userAddress: string, tokenAddress: string, elevation: number): Promise<BigNumber> => {
-    return (await subCartGet.claimableRewards(tokenAddress, elevation, userAddress))
+    return (await subCartGet.poolClaimableRewards(tokenAddress, elevation, userAddress))
         .add(await farmSummitEmissionOverDuration(tokenAddress, elevation, 1))
 }
 const getTokenClaimableWithBonus = async (userAddress: string, tokenAddress: string, elevation: number): Promise<BigNumber> => {
-    const expectedClaimAmount = (await subCartGet.claimableRewards(tokenAddress, elevation, userAddress))
+    const expectedClaimAmount = (await subCartGet.poolClaimableRewards(tokenAddress, elevation, userAddress))
         .add(await farmSummitEmissionOverDuration(tokenAddress, elevation, 1))
         .div(e6(1)).mul(e6(1))
     const userTokenBonusBp = await calcBonusBPNextSecond(userAddress, tokenAddress)
     return claimAmountWithBonusAdded(expectedClaimAmount, userTokenBonusBp)
 }
 const getTokenClaimableBonus = async (userAddress: string, tokenAddress: string, elevation: number): Promise<BigNumber> => {
-    const expectedClaimAmount = (await subCartGet.claimableRewards(tokenAddress, elevation, userAddress))
+    const expectedClaimAmount = (await subCartGet.poolClaimableRewards(tokenAddress, elevation, userAddress))
         .add(await farmSummitEmissionOverDuration(tokenAddress, elevation, 1))
         .div(e6(1)).mul(e6(1))
     const userTokenBonusBp = await calcBonusBPNextSecond(userAddress, tokenAddress)
@@ -249,7 +249,7 @@ export const cartographerMethod = {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(user).deposit
         const txArgs = [tokenAddress, elevation, amount]
-        
+
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {

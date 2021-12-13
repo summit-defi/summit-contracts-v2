@@ -155,7 +155,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
     mapping(address => ElevationPoolInfo) public poolInfo;              // Pool info for each elevation pool
     mapping(address => mapping(uint256 => RoundInfo)) public poolRoundInfo;      // The round end information for each round of each pool
-    mapping(uint256 => uint256) public roundWinningsMult; // The historical winning multipliers of an elevation
     mapping(address => mapping(address => UserInfo)) public userInfo;            // Users running staking / vesting information
     mapping(address => UserElevationInfo) public userElevationInfo;// User's totem info at each elevation
 
@@ -510,9 +509,9 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param _token Pool token to fetch rewards from
     /// @param _userAdd User requesting rewards info
     /// @return claimableRewards - Amount of Summit available to claim
-    function claimableRewards(address _token, address _userAdd)
+    function poolClaimableRewards(address _token, address _userAdd)
         public view
-        onlyCartographer poolExists(_token) validUserAdd(_userAdd)
+        poolExists(_token) validUserAdd(_userAdd)
         returns (uint256)
     {
         ElevationPoolInfo storage pool = poolInfo[_token];
@@ -528,7 +527,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @return elevClaimableRewards: Amount of Summit available to claim across the elevation
     function elevClaimableRewards(address _userAdd)
         public view
-        onlyCartographer validUserAdd(_userAdd)
+        validUserAdd(_userAdd)
         returns (uint256)
     {
         // Claim rewards of users active pools
@@ -555,7 +554,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     ///     elevationYieldContributed - Total yieldContributed across all pools of this elevation
     ///     elevationPotentialWinnings - Total potential winnings from that yield for the user's selected totem
     /// )
-    function potentialWinnings(address _userAdd)
+    function elevPotentialWinnings(address _userAdd)
         public view
         validUserAdd(_userAdd)
         returns (uint256, uint256)
@@ -595,7 +594,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @param _token Pool token to check
     /// @param _userAdd User to check
     /// @return The yield from staking, which has been contributed during the current round
-    function roundYieldContributed(address _token, address _userAdd)
+    function poolYieldContributed(address _token, address _userAdd)
         public view
         poolExists(_token) validUserAdd(_userAdd)
         returns (uint256)
@@ -627,7 +626,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
         // Calculate the new accSummitPerShare with the emission to bring current, and return both values
         return (
-            pool.accSummitPerShare + (emissionToBringCurrent * 1e12 / pool.supply),
+            pool.accSummitPerShare + (pool.supply == 0 ? 0 : (emissionToBringCurrent * 1e12 / pool.supply)),
             emissionToBringCurrent
         );
     }
@@ -725,7 +724,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
         // Calculate the winnings multiplier of the round that just ended from the combined reward amounts
         uint256 elevWinningsMult = winningTotemRewards == 0 ? 0 : elevTotalRewards * 1e12 / winningTotemRewards;
-        roundWinningsMult[currRound - 1] = elevWinningsMult;
 
         // Update and rollover all active pools
         for (uint16 index = 0; index < activePools.length(); index++) {
@@ -759,7 +757,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         uint256 precomputedFullRoundMult = deltaAccSummitPerShare * _winningsMultiplier / 1e12;
 
         // Increment running precomputed mult with previous round's data
-        pool.totemRunningPrecomputedMult[elevationHelper.winningTotem(elevation, _prevRound - 1)] += precomputedFullRoundMult;
+        pool.totemRunningPrecomputedMult[elevationHelper.winningTotem(elevation, _prevRound)] += precomputedFullRoundMult;
 
         // Adding a new entry to the pool's poolRoundInfo for the most recently closed round
         poolRoundInfo[_token][_prevRound] = RoundInfo({
@@ -837,7 +835,9 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         if (user.prevInteractedRound == currRound - 1) return claimable;
 
         // The change in precomputed mult of the user's first interacting round, this value doesn't exist when user.winningsDebt is set, so must be included here
-        uint256 firstInteractedRoundDeltaPrecomputedMult = poolRoundInfo[pool.token][user.prevInteractedRound].precomputedFullRoundMult;
+        uint256 firstInteractedRoundDeltaPrecomputedMult = totem == elevationHelper.winningTotem(elevation, user.prevInteractedRound) ?
+            poolRoundInfo[pool.token][user.prevInteractedRound].precomputedFullRoundMult :
+            0;
         uint256 winningsDebtAtEndOfFirstInteractedRound = user.winningsDebt + firstInteractedRoundDeltaPrecomputedMult;
 
         // Add multiple rounds of precomputed mult delta for all rounds between first interacted and most recent round
@@ -891,10 +891,10 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @dev Update the users round interaction
     /// @param pool Pool info
     /// @param user User info
-    /// @param _totem Users selected totem
     /// @param _amount Amount depositing / withdrawing
     /// @param _isDeposit Flag to differentiate deposit / withdraw
-    function _updateUserRoundInteraction(ElevationPoolInfo storage pool, UserInfo storage user, uint8 _totem, uint256 _amount, bool _isDeposit)
+    /// @param _userAdd User's address (for totem)
+    function _updateUserRoundInteraction(ElevationPoolInfo storage pool, UserInfo storage user, uint256 _amount, bool _isDeposit, address _userAdd)
         internal
     {
         uint256 currRound = elevationHelper.roundNumber(elevation);
@@ -924,7 +924,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         user.roundDebt = user.staked * pool.accSummitPerShare / 1e12;
 
         // Acc Winnings Per Share of the user's totem
-        user.winningsDebt = pool.totemRunningPrecomputedMult[_totem];
+        user.winningsDebt = pool.totemRunningPrecomputedMult[_getUserTotem(_userAdd)];
 
         // Update the user's previous interacted round to be this round
         user.prevInteractedRound = currRound;
@@ -1170,7 +1170,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         uint256 claimable = _claimWinnings(pool, user, _userAdd);
 
         // Update the users round interaction, may be updated again in the same tx, but must be updated here to maintain state
-        _updateUserRoundInteraction(pool, user, _getUserTotem(_userAdd), 0, true);
+        _updateUserRoundInteraction(pool, user, 0, true, _userAdd);
 
         // Update users pool interaction status, may be updated again in the same tx, but must be updated here to maintain state
         _markUserInteractingWithPool(pool.token, _userAdd, _userInteractingWithPool(user));
@@ -1211,7 +1211,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         }
         
         // Update / create users interaction with the pool
-        _updateUserRoundInteraction(pool, user, totem, amountAfterFee, true);
+        _updateUserRoundInteraction(pool, user, amountAfterFee, true, _userAdd);
 
         // Update users pool interaction status
         _markUserInteractingWithPool(pool.token, _userAdd, _userInteractingWithPool(user));
@@ -1249,7 +1249,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
             updatePool(pool.token);
 
             // Update the users interaction in the pool
-            _updateUserRoundInteraction(pool, user, totem, _amount, false);
+            _updateUserRoundInteraction(pool, user, _amount, false, _userAdd);
         }
         
         // Signal cartographer to perform withdrawal function if not elevating funds

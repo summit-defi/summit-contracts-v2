@@ -34,10 +34,10 @@ export const elevationHelperGet = {
         return (await (await getElevationHelper()).referralBurnTimestamp()).toNumber()
     },
     historicalTotemStats: async (elevation: number) => {
-        const history = (await (await getElevationHelper()).historicalWinningTotems(elevation))
+        const history = await (await getElevationHelper()).historicalWinningTotems(elevation)
         return {
-            totemWinCounters: history.slice(0, 10).map((wins: BigNumber) => wins.toNumber()),
-            prevWinners: history.slice(10).map((winner: BigNumber) => winner.toNumber()),
+            totemWinCounters: history[0].map((wins: BigNumber) => wins.toNumber()),
+            prevWinners: history[1].map((winner: BigNumber) => winner.toNumber()),
         }
     }
 }

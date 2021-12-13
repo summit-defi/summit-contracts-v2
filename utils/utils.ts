@@ -76,6 +76,9 @@ export const sixFigBigNumberEquals = (a: BigNumber, b: BigNumber) => {
     return diff.div(e12(1)).toNumber() === 0
 }
 export const expect6FigBigNumberEquals = (a: BigNumber, b: BigNumber) => {
+    if (!sixFigBigNumberEquals(a, b)) {
+        console.log(`BN Mismatch: ${toDecimal(a)} ==? ${toDecimal(b)}: ✘`)
+    }
     expect(sixFigBigNumberEquals(a, b)).to.be.true
 }
 export const expect6FigBigNumberAllEqual = (arr: BigNumber[]) => {
@@ -150,12 +153,10 @@ export const claimAmountWithBonusAdded = (amount: BigNumber, bonus: number): Big
     return amount.mul(10000 + bonus).div(10000)
 }
 export const depositedAfterFee = (amount: BigNumber, fee: number): BigNumber => {
-    const trueFee = Math.max(0, fee - 50)
-    return amount.mul(BigNumber.from(10000 - trueFee)).div("10000")
+    return amount.mul(10000 - fee).div(10000)
 }
 export const withdrawnAfterFee = (amount: BigNumber, fee: number): BigNumber => {
-    const trueFee = Math.min(fee, 50)
-    return amount.mul(BigNumber.from(10000 - trueFee)).div("10000")
+    return amount.mul(10000 - fee).div(10000)
 }
 export const amountAfterFullFee = (amount: BigNumber, fee: number): BigNumber => {
     return withdrawnAfterFee(depositedAfterFee(amount, fee), fee)

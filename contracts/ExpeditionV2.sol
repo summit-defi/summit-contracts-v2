@@ -59,7 +59,7 @@ DEITIES (COSMIC BULL vs COSMIC BEAR):
     . Users are more likely to stake with the safer deity so it's pot will be higher, thus the winnings per SUMMIT staked lower
 
     . COSMIC BEAR is riskier, with a smaller chance of winning, potentially as low as 10%
-    . Users are less likely to steak with BULL as it may be outside their risk tolerance to shoot for a small % chance of win
+    . Users are less likely to stake with BULL as it may be outside their risk tolerance to shoot for a small % chance of win
 
     . Thus BEAR will usually have less staked, making it both riskier, and more rewarding on win
 

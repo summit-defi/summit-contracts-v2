@@ -92,19 +92,23 @@ export const subCartGet = {
             totemSelectionRound: userElevationInfo.totemSelectionRound,
         }        
     },
-    claimableRewards: async (tokenAddress: string, elevation: number, userAddress: string): Promise<BigNumber> => {
+    poolYieldContributed: async (tokenAddress: string, elevation: number, userAddress: string): Promise<BigNumber> => {
         const subCart = await getSubCartographer(elevation)
-        return await subCart.claimableRewards(tokenAddress, userAddress)
+        return await subCart.poolYieldContributed(tokenAddress, userAddress)
+    },
+    poolClaimableRewards: async (tokenAddress: string, elevation: number, userAddress: string): Promise<BigNumber> => {
+        const subCart = await getSubCartographer(elevation)
+        return await subCart.poolClaimableRewards(tokenAddress, userAddress)
     },
     elevClaimableRewards: async (elevation: number, userAddress: string) => {
         const subCart = await getSubCartographer(elevation)
         return await subCart.elevClaimableRewards(userAddress)
     },
-    potentialWinnings: async (tokenAddress: string, elevation: number, userAddress: string) => {
+    elevPotentialWinnings: async (elevation: number, userAddress: string): Promise<{ yieldContributed: BigNumber, potentialWinnings: BigNumber }> => {
         const subCart = await getSubCartographer(elevation)
-        const potentialWinnings = await subCart.potentialWinnings(tokenAddress, userAddress)
+        const potentialWinnings = await subCart.elevPotentialWinnings(userAddress)
         return {
-            contributedYield: potentialWinnings[0],
+            yieldContributed: potentialWinnings[0],
             potentialWinnings: potentialWinnings[1],
         }
     },

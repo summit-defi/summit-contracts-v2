@@ -1,10 +1,23 @@
 import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signers';
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat';
-import { cartographerGet, cartographerMethod, cartographerSetParam, consoleLog, deltaBN, depositedAfterFee, e18, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getMasterChef, getMasterChefPassthrough, rolloverIfAvailable, toDecimal, tokenAmountAfterWithdrawTax } from '.';
+import { cartographerGet, cartographerMethod, cartographerSetParam, consoleLog, deltaBN, depositedAfterFee, e18, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getMasterChef, getMasterChefPassthrough, rolloverIfAvailable, subCartGet, toDecimal, tokenAmountAfterWithdrawTax } from '.';
 import { Contracts, EVENT, EXPEDITION, MESA, SUMMIT, PLAINS, OASIS } from './constants';
-import { userPromiseSequenceMap } from './users';
+import { getUserTotems, userPromiseSequenceMap } from './users';
 import { amountAfterFullFee, e16, expect6FigBigNumberAllEqual, expect6FigBigNumberEquals, getBlockNumber, getTimestamp, mineBlock, mineBlockWithTimestamp, promiseSequenceMap, tokenAmountAfterDepositFee, withdrawnAfterFee } from './utils';
+
+const switchTotemIfNecessary = async (user: SignerWithAddress, elevation: number, totem: number, revertErr?: string) => {
+    if (elevation === OASIS) return
+    const userTotemInfo = await subCartGet.userTotemInfo(elevation, user.address)
+    if (userTotemInfo.totemSelected && userTotemInfo.totem === totem) return
+    await cartographerMethod.switchTotem({
+      user,
+      elevation,
+      totem,
+      revertErr
+    })
+  }
 
 // VAULT TESTING
 const vaultTests = (elevation: number) => {
@@ -29,6 +42,7 @@ const vaultTests = (elevation: number) => {
         const bifiVault = await getBifiVault()
         const bifiVaultPassthrough = await getBifiVaultPassthrough()
         const bifiToken = await getBifiToken()
+        const userTotems = await getUserTotems()
 
 
         const usersBifiInit = await userPromiseSequenceMap(
@@ -40,6 +54,9 @@ const vaultTests = (elevation: number) => {
             async (user, userIndex) => {
                 const amount = e18(userIndex + 1)
                 const balanceInit = await bifiVaultPassthrough.balance()
+
+                await switchTotemIfNecessary(user, elevation, userTotems[user.address])
+
 
                 await cartographerMethod.deposit({
                     user,

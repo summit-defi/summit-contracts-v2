@@ -34,14 +34,20 @@ export const usersPoolInfoItem = async (tokenAddress: string, elevation: number,
 export const usersStaked = async (tokenAddress: string, elevation: number): Promise<BigNumber[]> => {
     return await usersPoolInfoItem(tokenAddress, elevation, 'staked')
 }
-export const usersHypotheticalRewards = async (tokenAddress: string, elevation: number) => {
+export const usersPotentialWinnings = async (elevation: number): Promise<Array<{ yieldContributed: BigNumber, potentialWinnings: BigNumber }>> => {
     return await userPromiseSequenceMap(
-        async (user) => (await subCartGet.potentialWinnings(tokenAddress, elevation, user.address))
+        async (user) => await subCartGet.elevPotentialWinnings(elevation, user.address)
     )
 }
-export const usersRewards = async (tokenAddress: string, elevation: number) => {
+export const usersPoolYieldsContributed = async (tokenAddress: string, elevation: number): Promise<BigNumber[]> => {
     return await userPromiseSequenceMap(
-        async (user) => (await subCartGet.claimableRewards(tokenAddress, elevation, user.address))
+        async (user) => await subCartGet.poolYieldContributed(tokenAddress, elevation, user.address)
+    )
+}
+
+export const usersRewards = async (tokenAddress: string, elevation: number): Promise<BigNumber[]> => {
+    return await userPromiseSequenceMap(
+        async (user) => await subCartGet.poolClaimableRewards(tokenAddress, elevation, user.address)
     )
 }
 

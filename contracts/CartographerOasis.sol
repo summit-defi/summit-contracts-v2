@@ -323,7 +323,7 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     /// @param _token Pool to fetch rewards from
     /// @param _userAdd User requesting rewards info
     /// @return claimableRewards: Amount of Summit available to Claim
-    function claimableRewards(address _token, address _userAdd)
+    function poolClaimableRewards(address _token, address _userAdd)
         public view
         poolExists(_token) validUserAdd(_userAdd)
         returns (uint256)
