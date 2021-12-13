@@ -48,9 +48,9 @@ contract ElevationHelper is Ownable {
 
     // Constants for elevation comparisons
     uint8 constant OASIS = 0;
-    uint8 constant TWOTHOUSAND = 1;
-    uint8 constant FIVETHOUSAND = 2;
-    uint8 constant TENTHOUSAND = 3;
+    uint8 constant PLAINS = 1;
+    uint8 constant MESA = 2;
+    uint8 constant SUMMIT = 3;
     uint8 constant EXPEDITION = 4;
     uint8 constant roundEndLockoutDuration = 120;
 
@@ -135,7 +135,7 @@ contract ElevationHelper is Ownable {
         referralBurnTimestamp = nextHourTimestamp + 7 days;    
 
         // Timestamp of the first seed round starting
-        ISummitRNGModule(summitRNGModuleAdd).setSeedRoundEndTimestamp(nextHourTimestamp - roundEndLockoutDuration);
+        ISummitRNGModule(summitRNGModuleAdd).setSeedRoundEndTimestamp(unlockTimestamp[PLAINS] - roundEndLockoutDuration);
     }
 
 
@@ -157,7 +157,7 @@ contract ElevationHelper is Ownable {
         _;
     }
     modifier elevationOrExpedition(uint8 _elevation) {
-        require(_elevation >= TWOTHOUSAND && _elevation <= EXPEDITION, "Bad elevation");
+        require(_elevation >= PLAINS && _elevation <= EXPEDITION, "Bad elevation");
         _;
     }
     
