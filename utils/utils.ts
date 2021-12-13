@@ -25,6 +25,9 @@ export const flatten = <T>(arr: T[][]): T[] => {
 export const sumBigNumbers = (arr: BigNumber[]) => {
     return arr.reduce((acc, n) => acc.add(n), e18(0))
 }
+export const sumNumbers = (arr: number[]) => {
+    return arr.reduce((acc, n) => acc + n, 0)
+}
 export const days = (n: number) => {
     return n * 24 * 3600
 }

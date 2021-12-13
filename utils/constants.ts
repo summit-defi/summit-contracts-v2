@@ -197,6 +197,11 @@ export const ERR = {
         NO_SAFETY_FACTOR: 'No safety factor selected',
         INVALID_DEITY: "Invalid deity",
     },
+
+    ELEVATION_HELPER: {
+        MULT_CANT_EXCEED_3X: 'Multiplier cannot exceed 3X',
+        ROUND_DURATION_NON_ZERO: 'Duration mult must be non zero',
+    },
 }
 
 export const TOKEN_FEE = {
@@ -300,7 +305,15 @@ export const EVENT = {
         SetBaseMinimumWithdrawalTax: 'SetBaseMinimumWithdrawalTax',
         SetTokenIsNativeFarm: 'SetTokenIsNativeFarm',
         SetMaxBonusBP: 'SetMaxBonusBP',
-    }
+    },
+
+    ElevationHelper: {
+        WinningTotemSelected: 'WinningTotemSelected',
+        DeityDividerSelected: 'DeityDividerSelected',
+        UpgradeSummitRNGModule: 'UpgradeSummitRNGModule',
+        SetElevationRoundDurationMult: 'SetElevationRoundDurationMult',
+        SetElevationAllocMultiplier: 'SetElevationAllocMultiplier',
+    },
 }
 
 export const EVM = {
