@@ -87,6 +87,7 @@ describe("ELEVATION FARMING", function() {
 
                 elevationTests.correctWinnersHistoricalData(Contracts.SummitToken, elevation)
 
+                elevationTests.emergencyWithdraw(Contracts.SummitToken, elevation)
             })
 
             describe('- Elevation Passthrough Staking', async function() {

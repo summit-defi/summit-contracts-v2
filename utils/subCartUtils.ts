@@ -1,10 +1,18 @@
 import { BigNumber } from "@ethersproject/bignumber"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { ethers } from "hardhat"
 import { e18, executeTx, getElevationHelper, getElevationName, MESA, OASIS, PLAINS, promiseSequenceMap, SUMMIT } from "."
 
-export const elevationPromiseSequenceMap = async (transformer: (element: number, index: number, array: number[]) => Promise<any>) => {
+
+export const allElevationPromiseSequenceMap = async (transformer: (element: number, index: number, array: number[]) => Promise<any>) => {
     return await promiseSequenceMap(
         [OASIS, PLAINS, MESA, SUMMIT],
+        async (elevation, index, array) => await transformer(elevation, index, array)
+    )
+}
+export const onlyElevationPromiseSequenceMap = async (transformer: (element: number, index: number, array: number[]) => Promise<any>) => {
+    return await promiseSequenceMap(
+        [PLAINS, MESA, SUMMIT],
         async (elevation, index, array) => await transformer(elevation, index, array)
     )
 }
@@ -22,7 +30,7 @@ export const getSubCartographer = async (elevation: number) => {
 }
 
 export const getSubCartographers = async () => {
-    return await elevationPromiseSequenceMap(getSubCartographer)
+    return await allElevationPromiseSequenceMap(getSubCartographer)
 }
 export interface UserInfo {
     [key: string]: BigNumber
@@ -31,9 +39,6 @@ export interface UserInfo {
     debt: BigNumber
     roundRew: BigNumber
     winningsDebt: BigNumber
-    reVestAmt: BigNumber
-    reVestStart: BigNumber
-    reVestDur: BigNumber
 }
 export interface UserTotemInfo {
     totem: number
@@ -54,9 +59,6 @@ export const subCartGet = {
             debt: userInfo.debt || userInfo.roundDebt,
             roundRew: userInfo.roundRew,
             winningsDebt: userInfo.winningsDebt,
-            reVestAmt: userInfo.reVestAmt,
-            reVestStart: userInfo.reVestStart,
-            reVestDur: userInfo.reVestDur,
         }
     },
     poolInfo: async (tokenAddress: string, elevation: number) => {
@@ -118,8 +120,14 @@ export const subCartGet = {
     },
     totemCount: async (elevation: number) => {
         return (await getElevationHelper()).totemCount(elevation)
+    },
+    getUserInteractingPools: async (elevation: number, userAddress: string): Promise<string[]> => {
+        return await (await getSubCartographer(elevation)).getUserInteractingPools(userAddress)
+    },
+    getActivePools: async (elevation: number): Promise<string[]> => {
+        if (elevation === OASIS) return []
+        return await (await getSubCartographer(elevation)).getActivePools()
     }
-
 }
 
 
@@ -128,5 +136,5 @@ export const subCartGet = {
 export const subCartMethod = {
     updatePool: async (tokenAddress: string, elevation: number) => {
         executeTx((await getSubCartographer(elevation)).updatePool, [tokenAddress])
-    }
+    },
 }

@@ -5,10 +5,11 @@ import { expect } from 'chai'
 import { Contract } from 'ethers';
 import { access } from 'fs';
 import hre, { ethers } from 'hardhat';
-import { cartographerGet, cartographerMethod, cartographerSynth, consoleLog, deltaBN, depositedAfterFee, e18, elevationHelperGet, ERR, EVENT, getCartographer, getContract, getSummitBalance, getTotemCount, getUserTotems, mineBlock, rolloverRound, rolloverRounds, rolloverRoundUntilLosingTotem, rolloverRoundUntilWinningTotem, subCartGet, subCartMethod, sumBigNumbers, toDecimal, usersPoolYieldsContributed } from '.';
+import { cartographerGet, cartographerMethod, cartographerSynth, consoleLog, deltaBN, depositedAfterFee, e18, elevationHelperGet, ERR, EVENT, getCartographer, getContract, getSummitBalance, getTokenBalance, getTotemCount, getUserTotems, mineBlock, rolloverRound, rolloverRounds, rolloverRoundUntilLosingTotem, rolloverRoundUntilWinningTotem, subCartGet, subCartMethod, sumBigNumbers, toDecimal, usersPoolYieldsContributed } from '.';
 import { TOTEM_COUNT } from './constants';
+import { summitLockingGet } from './summitLockingUtils';
 import { userPromiseSequenceMap, userPromiseSequenceReduce, usersPotentialWinnings, usersRewards, usersStaked, usersTotemInfos } from './users';
-import { e12, expect6FigBigNumberEquals, expect6FigBigNumberAllEqual, expectBigNumberArraysEqual, expectBigNumberGreaterThan, expectBigNumberLessThan, mineBlocks, stringifyBigNumberArray, getTimestamp, mineBlockWithTimestamp, increaseTimestampAndMine, e0, e6 } from './utils';
+import { e12, expect6FigBigNumberEquals, expect6FigBigNumberAllEqual, expectBigNumberArraysEqual, expectBigNumberGreaterThan, expectBigNumberLessThan, mineBlocks, stringifyBigNumberArray, getTimestamp, mineBlockWithTimestamp, increaseTimestampAndMine, e0, e6, tokenAmountAfterWithdrawTax } from './utils';
 
 
 
@@ -609,6 +610,39 @@ const switchingTotems = (tokenName: string, elevation: number) => {
   })
 }
 
+
+const emergencyWithdraw = (tokenName: string, elevation: number) => {
+  it('EMERGENCY WITHDRAW: Users should be able to emergency withdraw and fully exit a farm', async function() {
+    const { user1 } = await getNamedSigners(hre)
+    const token = await getContract(tokenName)
+
+    const userInfoInit = await subCartGet.userInfo(token.address, elevation, user1.address)
+    const userLockedInit = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+    const userBalanceInit = await getTokenBalance(token, user1.address)
+
+    const userTokenTaxBP = await cartographerGet.getUserTokenWithdrawalTax(user1.address, token.address)
+    const amountAfterTax = tokenAmountAfterWithdrawTax(userInfoInit.staked, userTokenTaxBP)
+
+    await cartographerMethod.emergencyWithdraw({
+      user: user1,
+      tokenAddress: token.address,
+      elevation
+    })
+
+    const userInfoFinal = await subCartGet.userInfo(token.address, elevation, user1.address)
+    const userLockedFinal = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+    const userBalanceFinal = await getTokenBalance(token, user1.address)
+
+    expect(userInfoFinal.debt).to.equal(0)
+    expect(userInfoFinal.prevInteractedRound).to.equal(0)
+    expect(userInfoFinal.roundRew).to.equal(0)
+    expect(userInfoFinal.staked).to.equal(0)
+    expect(userInfoFinal.winningsDebt).to.equal(0)
+    expect(deltaBN(userLockedInit, userLockedFinal)).to.equal(0)
+    expect(deltaBN(userBalanceInit, userBalanceFinal)).to.equal(amountAfterTax)
+  })
+}
+
 export const elevationTests = {
   standardDepositShouldSucceed,
   depositShouldUpdatePoolAndTotemInfo,
@@ -622,4 +656,6 @@ export const elevationTests = {
   correctWinnersHistoricalData,
 
   switchingTotems,
+
+  emergencyWithdraw,
 }

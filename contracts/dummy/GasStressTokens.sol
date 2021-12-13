@@ -4,6 +4,9 @@ pragma solidity 0.8.0;
 
 import "../libs/ERC20Mintable.sol";
 
+contract GS1 is ERC20Mintable('Gas Stress 1', 'GS1') {}
+contract GS2 is ERC20Mintable('Gas Stress 2', 'GS2') {}
+contract GS3 is ERC20Mintable('Gas Stress 3', 'GS3') {}
 contract GS4 is ERC20Mintable('Gas Stress 4', 'GS4') {}
 contract GS5 is ERC20Mintable('Gas Stress 5', 'GS5') {}
 contract GS6 is ERC20Mintable('Gas Stress 6', 'GS6') {}

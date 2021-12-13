@@ -152,6 +152,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     event RolloverReferral(address indexed user);
     event SwitchTotem(address indexed user, uint8 indexed elevation, uint8 totem);
     event Elevate(address indexed user, address indexed token, uint8 sourceElevation, uint8 targetElevation, uint256 amount);
+    event EmergencyWithdraw(address indexed user, address indexed token, uint8 indexed elevation, uint256 amount);
     event Withdraw(address indexed user, address indexed token, uint8 indexed elevation, uint256 amount);
     event ElevateAndLockStakedSummit(address indexed user, uint8 indexed elevation, uint256 amount);
     event ClaimWinnings(address indexed user, uint256 amount);
@@ -792,6 +793,9 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         // Early exit if min tax is greater than tax of this token
         if (tokenMinTax >= tokenTax) return uint16(tokenMinTax);
 
+        console.log("ScaleValue", block.timestamp, lastDepositTimestampForTax, lastDepositTimestampForTax + taxDecayDuration);
+        console.log("ScaleValueTokenTax", tokenMinTax, tokenTax);
+
         return uint16(SummitMath.scaledValue(
             block.timestamp,
             lastDepositTimestampForTax, lastDepositTimestampForTax + taxDecayDuration,
@@ -887,6 +891,28 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         uint256 totalClaimed = subCartographer(_elevation).claimElevation(msg.sender);
         
         emit ClaimElevation(msg.sender, _elevation, totalClaimed);
+    }
+
+
+    /// @dev Withdraw staked funds from a pool
+    /// (@param _token, @param _elevation) Pool identifier
+    function emergencyWithdraw(address _token, uint8 _elevation)
+        public
+        nonReentrant poolExists(_token, _elevation)
+    {
+        // Executes the withdrawal in the sub cartographer
+        uint256 amountAfterTax = subCartographer(_elevation)
+            .emergencyWithdraw(
+                _token,
+                msg.sender
+            );
+
+        // Farm bonus handling, sets the last withdraw timestamp to 7 days ago (tax decay duration) to begin earning bonuses immediately
+        // Update to the max of (current last withdraw timestamp, current timestamp - 7 days), which ensures the first 7 days are never building bonus
+        uint256 currentLastWithdrawTimestamp = tokenLastWithdrawTimestampForBonus[msg.sender][_token];
+        tokenLastWithdrawTimestampForBonus[msg.sender][_token] = Math.max(currentLastWithdrawTimestamp, (block.timestamp - taxDecayDuration));
+
+        emit EmergencyWithdraw(msg.sender, _token, _elevation, amountAfterTax);
     }
 
 

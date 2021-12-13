@@ -1,7 +1,7 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre from "hardhat";
-import { e18, ERR, toDecimal, getTimestamp, deltaBN, mineBlockWithTimestamp, promiseSequenceMap, getSummitToken, everestGet, everestMethod, days, getSummitBalance, getEverestBalance, userPromiseSequenceMap, elevationPromiseSequenceMap, cartographerMethod, rolloverRoundUntilWinningTotem, getUserTotems, OASIS, getCakeToken, getBifiToken, epochDuration, getSummitLocking, rolloverIfAvailable, rolloverRound, sumBigNumbers, tokenPromiseSequenceMap, cartographerGet, expect6FigBigNumberEquals, BURNADD, expectAllEqual } from "../utils";
+import { e18, ERR, toDecimal, getTimestamp, deltaBN, mineBlockWithTimestamp, promiseSequenceMap, getSummitToken, everestGet, everestMethod, days, getSummitBalance, getEverestBalance, userPromiseSequenceMap, allElevationPromiseSequenceMap, cartographerMethod, rolloverRoundUntilWinningTotem, getUserTotems, OASIS, getCakeToken, getBifiToken, epochDuration, getSummitLocking, rolloverIfAvailable, rolloverRound, sumBigNumbers, tokenPromiseSequenceMap, cartographerGet, expect6FigBigNumberEquals, BURNADD, expectAllEqual } from "../utils";
 import { summitLockingGet, summitLockingMethod } from "../utils/summitLockingUtils";
 import { oasisUnlockedFixture, tenThousandUnlockedFixture } from "./fixtures";
 
@@ -12,13 +12,13 @@ describe("SUMMIT LOCKING", async function() {
         const { user1 } = await tenThousandUnlockedFixture()
         const userTotems = await getUserTotems()
 
-        await elevationPromiseSequenceMap(
+        await allElevationPromiseSequenceMap(
             async (elevation) => rolloverIfAvailable(elevation)
         )
 
         await userPromiseSequenceMap(
             async (user) => {
-                await elevationPromiseSequenceMap(
+                await allElevationPromiseSequenceMap(
                     async (elevation) => {
                         await cartographerMethod.switchTotem({
                             user,
@@ -54,7 +54,7 @@ describe("SUMMIT LOCKING", async function() {
         const summitLocking = await getSummitLocking()
 
         // Deposit into oasis
-        await elevationPromiseSequenceMap(
+        await allElevationPromiseSequenceMap(
             async (elevation) => {
                 // Rollover Elevation
                 await rolloverRound(elevation)

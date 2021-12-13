@@ -1,7 +1,7 @@
 import { getNamedSigner, getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import hre from 'hardhat'
 import { expect } from "chai"
-import { userPromiseSequenceMap, elevationPromiseSequenceMap, cartographerMethod, getUserTotems, usersTotemInfos, OASIS, elevationHelperGet, mineBlockWithTimestamp, PLAINS, rolloverRound, subCartGet, ERR, e18, getSummitToken } from "../utils";
+import { userPromiseSequenceMap, allElevationPromiseSequenceMap, cartographerMethod, getUserTotems, usersTotemInfos, OASIS, elevationHelperGet, mineBlockWithTimestamp, PLAINS, rolloverRound, subCartGet, ERR, e18, getSummitToken } from "../utils";
 import { oasisUnlockedFixture, twoThousandUnlockedFixture } from "./fixtures";
 
 
@@ -14,7 +14,7 @@ describe("TOTEMS", async function() {
         it('TOTEM SELECTION: Totems can be selected before elevation unlocks', async function() {
             const userTotems = await getUserTotems()
 
-            await elevationPromiseSequenceMap(
+            await allElevationPromiseSequenceMap(
                 async (elevation) => {
                     if (elevation === OASIS) return
 

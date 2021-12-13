@@ -118,11 +118,7 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
         public view
         returns (uint256[] memory)
     {
-        uint256[] memory epochs = new uint256[](userInteractingEpochs[_userAdd].length());
-        for (uint16 index = 0; index < userInteractingEpochs[_userAdd].length(); index++) {
-            epochs[index] = userInteractingEpochs[_userAdd].at(index);
-        }
-        return epochs;
+        return userInteractingEpochs[_userAdd].values();
     }
 
     // FUNCTIONALITY

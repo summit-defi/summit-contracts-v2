@@ -14,7 +14,7 @@ const deployGasStressTokens: DeployFunction = async function ({
   if (!chainIdRequiresDummies(chainId)) return;
 
   let gasStressTokenIds = [];
-  for (let i = 4; i <= 29; i++) {
+  for (let i = 1; i <= 29; i++) {
     gasStressTokenIds.push(i);
   }
   await promiseSequenceMap(

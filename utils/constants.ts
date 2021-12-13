@@ -217,6 +217,7 @@ export const EVENT = {
     PoolUpdated: 'PoolUpdated',
     Deposit: 'Deposit',
     SwitchTotem: 'SwitchTotem',
+    EmergencyWithdraw: 'EmergencyWithdraw',
     Withdraw: 'Withdraw',
     SetExpeditionTreasuryAddress: 'SetExpeditionTreasuryAddress',
     SetFeeAddressSt: 'SetFeeAddressSt',

@@ -12,12 +12,12 @@ const switchTotemIfNecessary = async (user: SignerWithAddress, elevation: number
     const userTotemInfo = await subCartGet.userTotemInfo(elevation, user.address)
     if (userTotemInfo.totemSelected && userTotemInfo.totem === totem) return
     await cartographerMethod.switchTotem({
-      user,
-      elevation,
-      totem,
-      revertErr
+        user,
+        elevation,
+        totem,
+        revertErr
     })
-  }
+}
 
 // VAULT TESTING
 const vaultTests = (elevation: number) => {

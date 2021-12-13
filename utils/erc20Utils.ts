@@ -1,6 +1,9 @@
 import { Contract } from "ethers"
 import { getSummitToken, getEverestToken, getCakeToken, getBifiToken, promiseSequenceMap } from "."
 
+export const getTokenBalance = async (token: Contract, add: string) => {
+    return await token.balanceOf(add)
+}
 export const getSummitBalance = async (add: string) => {
     return (await (await getSummitToken()).balanceOf(add))
 }

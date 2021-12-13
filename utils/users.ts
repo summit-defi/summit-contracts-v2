@@ -108,3 +108,17 @@ export const getUserTotems = async () => {
         [user3.address]: 1,
     }
 }
+export const getInvUserTotems = async () => {
+    const { user1, user2, user3 } = await getNamedSigners(hre)
+    return {
+        [user1.address]: 1,
+        [user2.address]: 1,
+        [user3.address]: 0,
+    }
+}
+
+export const usersInteractingPoolsLists = async (elevation: number): Promise<string[][]> => {
+    return await userPromiseSequenceMap(
+        async (user) => await subCartGet.getUserInteractingPools(elevation, user.address)
+    )
+}
