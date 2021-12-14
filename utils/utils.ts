@@ -192,7 +192,7 @@ export const chainIdExportsAddresses = (chainId: string) => {
 
 // CONTRACT ADDRESSES
 export const writeContractAddresses = (chainId: string, addresses: Array<[string, string]>) => {
-    const contractsJSON = fs.readFileSync('./data/contracts.json')
+    const contractsJSON = fs.readFileSync('utils/data/contracts.json')
     const contracts = JSON.parse(contractsJSON.toString())
 
     const insertAddress = (key: string, value: string) => {
@@ -205,7 +205,7 @@ export const writeContractAddresses = (chainId: string, addresses: Array<[string
     })
 
     const output = JSON.stringify(contracts, null, 2)
-    fs.writeFileSync('./data/contracts.json', output)
+    fs.writeFileSync('utils/data/contracts.json', output)
 }
 
 // SEEDING
@@ -243,7 +243,7 @@ type NamedElevationsOnly = NamedElevations.OASIS | NamedElevations.PLAINS | Name
 
 export const writePoolPid = (chainId: string, poolSymbol: string, elevation: number, createdPoolPid: number | undefined) => {
     const chainName = getChainName(chainId)
-    const filename = `./data/${chainName}/pools.json`
+    const filename = `utils/data/${chainName}/pools.json`
     const poolPidsJSON = fs.readFileSync(filename)
     const poolPids = JSON.parse(poolPidsJSON.toString())
 
@@ -262,7 +262,7 @@ export const getElevationPoolPids = (chainId: string, elevation: number): number
 }
 export const getPoolPids = (chainId: string): JSONPoolPids[] => {
     const chainName = getChainName(chainId)
-    const filename = `./data/${chainName}/pools.json`
+    const filename = `utils/data/${chainName}/pools.json`
     const poolPidsJSON = fs.readFileSync(filename)
     const poolPids = JSON.parse(poolPidsJSON.toString())
 
@@ -272,7 +272,7 @@ export const getPoolPids = (chainId: string): JSONPoolPids[] => {
 }
 export const writePoolAllocation = (chainId: string, poolSymbol: string, allocation: number) => {
     const chainName = getChainName(chainId)
-    const filename = `./data/${chainName}/pools.json`
+    const filename = `utils/data/${chainName}/pools.json`
     const poolPidsJSON = fs.readFileSync(filename)
     const poolPids = JSON.parse(poolPidsJSON.toString())
 
@@ -284,7 +284,7 @@ export const writePoolAllocation = (chainId: string, poolSymbol: string, allocat
 }
 export const writePassthroughStrategy = (chainId: string, poolSymbol: string, token: string, passthroughStrategy: string) => {
     const chainName = getChainName(chainId)
-    const filename = `./data/${chainName}/passthroughStrategies.json`
+    const filename = `utils/data/${chainName}/passthroughStrategies.json`
     const passthroughStrategiesJSON = fs.readFileSync(filename)
     const passthroughStrategies = JSON.parse(passthroughStrategiesJSON.toString())
 
@@ -304,7 +304,7 @@ export interface JSONPassthroughStrategy {
 }
 export const getPassthroughStrategy = (chainId: string, poolSymbol: string): JSONPassthroughStrategy => {
     const chainName = getChainName(chainId)
-    const filename = `./data/${chainName}/passthroughStrategies.json`
+    const filename = `utils/data/${chainName}/passthroughStrategies.json`
     const passthroughStrategiesJSON = fs.readFileSync(filename)
     const passthroughStrategies = JSON.parse(passthroughStrategiesJSON.toString())
 
@@ -312,7 +312,7 @@ export const getPassthroughStrategy = (chainId: string, poolSymbol: string): JSO
 }
 export const writeExpeditionPid = (chainId: string, expeditionSymbol: string, createdExpeditionPid: number) => {
     const chainName = getChainName(chainId)
-    const filename = `./data/${chainName}/expeditions.json`
+    const filename = `utils/data/${chainName}/expeditions.json`
     const expeditionPidsJSON = fs.readFileSync(filename)
     const expeditionPids = JSON.parse(expeditionPidsJSON.toString())
 
@@ -343,7 +343,7 @@ export const emptyHardhatTimelockTransactions = (chainId: string) => {
     if (chainId !== '31337') return
 
     const chainName = getChainName(chainId)
-    const filename = `./data/${chainName}/timelockTxns.json`
+    const filename = `utils/data/${chainName}/timelockTxns.json`
 
     const output = JSON.stringify({
         queued: {},
@@ -355,7 +355,7 @@ export const emptyHardhatTimelockTransactions = (chainId: string) => {
 }
 export const writeTimelockTransaction = (chainId: string, txHash: string, timestamp: number, txType: TimelockTransactionType, rawParams: any[], timelockTxParams: TimelockTxParams, note?: string) => {
     const chainName = getChainName(chainId)
-    const filename = `./data/${chainName}/timelockTxns.json`
+    const filename = `utils/data/${chainName}/timelockTxns.json`
     const timelockTxnsJSON = fs.readFileSync(filename)
     const timelockTxns = JSON.parse(timelockTxnsJSON.toString())
 
@@ -407,7 +407,7 @@ export const writeTimelockTransaction = (chainId: string, txHash: string, timest
 
 export const getQueuedTimelockTransactionByHash = (chainId: string, txHash: string): JSONQueuedTransaction | null => {
     const chainName = getChainName(chainId)
-    const filename = `./data/${chainName}/timelockTxns.json`
+    const filename = `utils/data/${chainName}/timelockTxns.json`
     const timelockTxnsJSON = fs.readFileSync(filename)
     const timelockTxns = JSON.parse(timelockTxnsJSON.toString())
 
@@ -416,7 +416,7 @@ export const getQueuedTimelockTransactionByHash = (chainId: string, txHash: stri
 
 export const checkForAlreadyQueuedMatchingTimelockTx = (chainId: string, targetContract: string, txSignature: string, txParams: any[]): string | null => {
     const chainName = getChainName(chainId)
-    const filename = `./data/${chainName}/timelockTxns.json`
+    const filename = `utils/data/${chainName}/timelockTxns.json`
     const timelockTxnsJSON = fs.readFileSync(filename)
     const timelockTxns = JSON.parse(timelockTxnsJSON.toString())
 
