@@ -269,10 +269,6 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
         require(userExpeditionInfo[msg.sender].safetyFactorSelected, "No safety factor selected");
         _;
     }
-    modifier elevationHelperRoundRolledOver() {
-        require(elevationHelper.roundNumber(EXPEDITION) > rolledOverRounds, "Elev helper must be rolled over first");
-        _;
-    }
     
 
 
@@ -332,7 +328,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
 
     
     function setExpeditionDeityWinningsMult(uint256 _deityMult) public onlyOwner {
-        require(_deityMult >= 100 && _deityMult <= 500, "Invalid runway rounds (7-90)");
+        require(_deityMult >= 100 && _deityMult <= 500, "Invalid deity mult (1X-5X)");
         expeditionDeityWinningsMult = _deityMult;
         emit SetExpeditionDeityWinningsMult(_deityMult);
     }

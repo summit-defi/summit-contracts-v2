@@ -113,13 +113,6 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         require (_everestAmount > 0 && _everestAmount <= userEverestInfo[msg.sender].everestOwned, "Bad withdraw");
         _;
     }
-    function _validUserAdd(address _userAdd) internal pure {
-        require(_userAdd != address(0), "User address is zero");
-    }
-    modifier validUserAdd(address _userAdd) {
-        _validUserAdd(_userAdd);
-        _;
-    }
     modifier onlyPanic() {
         require(panic, "Not in panic");
         _;
