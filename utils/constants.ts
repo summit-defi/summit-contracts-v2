@@ -1,4 +1,4 @@
-export const RUN_RNG_SIMS = false
+export const FULL_TESTS = false
 
 
 export const Contracts = {
@@ -237,6 +237,7 @@ export const EVENT = {
     RolloverReferral: 'RolloverReferral',
     Elevate: 'Elevate',
     ElevateAndLockStakedSummit: 'ElevateAndLockStakedSummit',
+    SummitOwnershipTransferred: 'SummitOwnershipTransferred',
     
     ExpeditionCreated: 'ExpeditionCreated',
     ExpeditionExtended: 'ExpeditionExtended',

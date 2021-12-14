@@ -5,7 +5,7 @@ import "@nomiclabs/hardhat-ganache"
 import "@nomiclabs/hardhat-etherscan"
 import 'hardhat-abi-exporter'
 import 'hardhat-contract-sizer'
-import 'hardhat-gas-reporter'
+// import 'hardhat-gas-reporter'
 import 'solidity-coverage'
 import { task } from 'hardhat/config'
 import { HardhatUserConfig } from "hardhat/types";

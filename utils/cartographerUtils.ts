@@ -534,7 +534,26 @@ export const cartographerMethod = {
             await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.RolloverReferral, eventArgs, false)
         }
     },
-
+    migrateSummitOwnership: async ({
+        dev,
+        summitOwner,
+        revertErr,
+    }: {
+        dev: SignerWithAddress
+        summitOwner: string,
+        revertErr?: string,
+    }) => {
+        const cartographer = await getCartographer()
+        const tx = cartographer.connect(dev).migrateSummitOwnership
+        const txArgs = [summitOwner]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            const eventArgs = [summitOwner]
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.SummitOwnershipTransferred, eventArgs, false)
+        }
+    },
 }
 
 export const cartographerSetParam = {

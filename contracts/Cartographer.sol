@@ -167,6 +167,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     event SetBaseMinimumWithdrawalTax(uint16 _baseMinimumWithdrawalTax);
     event SetTokenIsNativeFarm(address indexed _token, bool _isNativeFarm);
     event SetMaxBonusBP(uint256 _maxBonusBP);
+    event SummitOwnershipTransferred(address indexed _summitOwner);
 
 
 
@@ -247,6 +248,16 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         elevationHelper.enable(launchTimestamp);
         summitReferrals.enable(address(summit));
         subCartographer(OASIS).enable(launchTimestamp);
+    }
+
+    /// @dev Transferring Summit Ownership - Huge timelock
+    function migrateSummitOwnership(address _summitOwner)
+        public
+        onlyOwner
+    {
+        require(_summitOwner != address(0), "Missing Summit Owner");
+        summit.transferOwnership(_summitOwner);
+        emit SummitOwnershipTransferred(_summitOwner);
     }
 
 
