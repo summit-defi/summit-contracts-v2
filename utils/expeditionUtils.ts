@@ -2,7 +2,7 @@ import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { expect } from "chai"
 import { string } from "hardhat/internal/core/params/argumentTypes"
-import { consoleLog, e0, e18, elevationHelperGet, EVENT, executeTxExpectEvent, executeTxExpectReversion, EXPEDITION, getElevationHelper, getExpedition, getSummitBalance, getUsdcBalance, mineBlockWithTimestamp, toDecimal, usersExpeditionInfos } from "."
+import { consoleLog, e0, e18, elevationHelperGet, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, EXPEDITION, getElevationHelper, getExpedition, getSummitBalance, getUsdcBalance, mineBlockWithTimestamp, toDecimal, usersExpeditionInfos } from "."
 import { everestGet } from "./everestUtils"
 
 
@@ -177,6 +177,23 @@ export const expeditionMethod = {
             await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.ExpeditionFundsAdded, eventArgs, true)
         }
     },
+    recalculateExpeditionEmissions: async ({
+        dev,
+        revertErr,
+    }: {
+        dev: SignerWithAddress
+        revertErr?: string,
+    }) => {
+        const expedition = await getExpedition()
+        const tx = expedition.connect(dev).recalculateExpeditionEmissions
+        const txArgs = [] as any[]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.ExpeditionEmissionsRecalculated, null, true)
+        }
+    },
     disableExpedition: async ({
         user,
         revertErr,
@@ -226,6 +243,23 @@ export const expeditionMethod = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.Rollover, null, false)
+        }
+    },
+    syncEverestAmount: async ({
+        user,
+        revertErr,
+    }: {
+        user: SignerWithAddress,
+        revertErr?: string
+    }) => {
+        const expedition = await getExpedition()
+        const tx = expedition.connect(user).syncEverestAmount
+        const txArgs = [] as any[]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            await executeTx(tx, txArgs)
         }
     },
     selectDeity: async ({

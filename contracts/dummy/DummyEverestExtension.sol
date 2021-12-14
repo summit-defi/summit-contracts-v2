@@ -19,7 +19,7 @@ contract DummyEverestExtension is BaseEverestExtension {
     function joinDummyExtension()
         public
     {
-        userEverest[msg.sender] = getUserEverest(msg.sender);
+        userEverest[msg.sender] = _getUserEverest(msg.sender);
     }
 
     function updateUserEverest(uint256 _everestAmount, address _userAdd)

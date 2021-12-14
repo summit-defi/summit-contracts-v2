@@ -26,9 +26,10 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
 
     bool public panic = false;
 
-    uint256 public minLockTime = 3600 * 24 * 7;
-    uint256 public inflectionLockTime = 3600 * 24 * 30;
-    uint256 public maxLockTime = 3600 * 24 * 365;
+    uint256 public daySeconds = 24 * 3600;
+    uint256 public minLockTime = 7 days;
+    uint256 public inflectionLockTime = 30 days;
+    uint256 public maxLockTime = 365 days;
     uint256 public minEverestLockMult = 1000;
     uint256 public inflectionEverestLockMult = 10000;
     uint256 public maxEverestLockMult = 25000;
@@ -112,13 +113,6 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         require (_everestAmount > 0 && _everestAmount <= userEverestInfo[msg.sender].everestOwned, "Bad withdraw");
         _;
     }
-    function _validUserAdd(address _userAdd) internal pure {
-        require(_userAdd != address(0), "User address is zero");
-    }
-    modifier validUserAdd(address _userAdd) {
-        _validUserAdd(_userAdd);
-        _;
-    }
     modifier onlyPanic() {
         require(panic, "Not in panic");
         _;
@@ -137,17 +131,17 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
 
     function setMinLockTime(uint256 _lockTimeDays) public onlyOwner {
         require(_lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 30, "Invalid minimum lock time (1-30 days)");
-        minLockTime = _lockTimeDays * 24 * 365;
+        minLockTime = _lockTimeDays * daySeconds;
         emit SetMinLockTime(_lockTimeDays);
     }
     function setInflectionLockTime(uint256 _lockTimeDays) public onlyOwner {
         require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 7 && _lockTimeDays <= 365, "Invalid inflection lock time (7-365 days)");
-        minLockTime = _lockTimeDays * 24 * 365;
+        minLockTime = _lockTimeDays * daySeconds;
         emit SetInflectionLockTime(_lockTimeDays);
     }
     function setMaxLockTime(uint256 _lockTimeDays) public onlyOwner {
         require(_lockTimeDays >= minLockTime && _lockTimeDays >= 7 && _lockTimeDays <= 730, "Invalid maximum lock time (7-730 days)");
-        maxLockTime = _lockTimeDays * 24 * 365;
+        maxLockTime = _lockTimeDays * daySeconds;
         emit SetMaxLockTime(_lockTimeDays);
     }
     function setMinEverestLockMult(uint256 _lockMult) public onlyOwner {
