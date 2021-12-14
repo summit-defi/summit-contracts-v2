@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/dummy/GasStressTokens.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">all files</a> / <a href="index.html">contracts/dummy/</a> GasStressTokens.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>0/0</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/0</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>0/0</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>0/0</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+&nbsp;
+pragma solidity 0.8.0;
+&nbsp;
+import "../libs/ERC20Mintable.sol";
+&nbsp;
+contract GS0 is ERC20Mintable('Gas Stress 0', 'GS0') {}
+contract GS1 is ERC20Mintable('Gas Stress 1', 'GS1') {}
+contract GS2 is ERC20Mintable('Gas Stress 2', 'GS2') {}
+contract GS3 is ERC20Mintable('Gas Stress 3', 'GS3') {}
+contract GS4 is ERC20Mintable('Gas Stress 4', 'GS4') {}
+contract GS5 is ERC20Mintable('Gas Stress 5', 'GS5') {}
+contract GS6 is ERC20Mintable('Gas Stress 6', 'GS6') {}
+contract GS7 is ERC20Mintable('Gas Stress 7', 'GS7') {}
+contract GS8 is ERC20Mintable('Gas Stress 8', 'GS8') {}
+contract GS9 is ERC20Mintable('Gas Stress 9', 'GS9') {}
+contract GS10 is ERC20Mintable('Gas Stress 10', 'GS10') {}
+contract GS11 is ERC20Mintable('Gas Stress 11', 'GS11') {}
+contract GS12 is ERC20Mintable('Gas Stress 12', 'GS12') {}
+contract GS13 is ERC20Mintable('Gas Stress 13', 'GS13') {}
+contract GS14 is ERC20Mintable('Gas Stress 14', 'GS14') {}
+contract GS15 is ERC20Mintable('Gas Stress 15', 'GS15') {}
+contract GS16 is ERC20Mintable('Gas Stress 16', 'GS16') {}
+contract GS17 is ERC20Mintable('Gas Stress 17', 'GS17') {}
+contract GS18 is ERC20Mintable('Gas Stress 18', 'GS18') {}
+contract GS19 is ERC20Mintable('Gas Stress 19', 'GS19') {}
+contract GS20 is ERC20Mintable('Gas Stress 20', 'GS20') {}
+contract GS21 is ERC20Mintable('Gas Stress 21', 'GS21') {}
+contract GS22 is ERC20Mintable('Gas Stress 22', 'GS22') {}
+contract GS23 is ERC20Mintable('Gas Stress 23', 'GS23') {}
+contract GS24 is ERC20Mintable('Gas Stress 24', 'GS24') {}
+contract GS25 is ERC20Mintable('Gas Stress 25', 'GS25') {}
+contract GS26 is ERC20Mintable('Gas Stress 26', 'GS26') {}
+contract GS27 is ERC20Mintable('Gas Stress 27', 'GS27') {}
+contract GS28 is ERC20Mintable('Gas Stress 28', 'GS28') {}
+contract GS29 is ERC20Mintable('Gas Stress 29', 'GS29') {}</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Dec 14 2021 16:51:29 GMT+0100 (Central European Standard Time)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>

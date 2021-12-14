@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/MasterChefPassthrough.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">contracts/</a> MasterChefPassthrough.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">90.48% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>38/42</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">57.14% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>8/14</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">88.89% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>8/9</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">92.86% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>39/42</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">32×</span>
+<span class="cline-any cline-yes">32×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">32×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-yes">108×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">28×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">28×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">28×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">28×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+&nbsp;
+pragma solidity 0.8.0;
+pragma experimental ABIEncoderV2;
+&nbsp;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/IPassthrough.sol";
+&nbsp;
+&nbsp;
+struct PoolInfo {
+    IERC20 lpToken;          
+    uint256 allocPoint;      
+    uint256 lastRewardBlock; 
+    uint256 accCakePerShare;
+}
+&nbsp;
+struct UserInfo {
+    uint256 amount;
+    uint256 rewardDebt;
+}
+&nbsp;
+&nbsp;
+interface IMasterChef {
+    function deposit(uint256 _pid, uint256 _amount) external;
+    function withdraw(uint256 _pid, uint256 _amount) external;
+    function poolInfo(uint256 _pid) external view returns (PoolInfo memory);
+    function userInfo(uint256 _pid, address _user) external view returns (UserInfo memory);
+}
+&nbsp;
+&nbsp;
+contract MasterChefPassthrough is IPassthrough, Ownable {
+    using SafeERC20 for IERC20;
+    using Address for address;
+&nbsp;
+    address public cartographer;
+    address public masterChef;
+    uint256 public masterChefPid;
+&nbsp;
+    IERC20 public passthroughToken;
+    IERC20 public rewardToken;
+&nbsp;
+    constructor(
+        address _cartographer,
+        address _masterChef,
+        uint256 _masterChefPid,
+        IERC20 _token,
+        IERC20 _rewardToken
+    ) {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_cartographer != address(0), "Cartographer missing");
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_masterChef != address(0), "MasterChef missing");
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(address(_token) != address(0), "Passthrough token missing");
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(address(_rewardToken) != address(0), "Reward token missing");
+&nbsp;
+        PoolInfo memory chefPool = IMasterChef(_masterChef).poolInfo(_masterChefPid);
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(address(chefPool.lpToken) == address(_token), "Pool must match passthrough token");
+&nbsp;
+&nbsp;
+        cartographer = _cartographer;
+        masterChef = _masterChef;
+        masterChefPid = _masterChefPid;
+        passthroughToken = _token;
+        rewardToken = _rewardToken;
+&nbsp;
+        passthroughToken.approve(masterChef, type(uint).max);
+    }
+&nbsp;
+&nbsp;
+    modifier onlyCartographer() {
+        require(msg.sender == cartographer, "Only cartographer");
+        _;
+    }
+&nbsp;
+    /// @dev Getter of passthroughToken
+    function token() external view override returns (IERC20) {
+        return passthroughToken;
+    }
+&nbsp;
+&nbsp;
+    /// @dev Getter of balance staked in masterChef
+    function balance() public view returns (uint256) {
+<span class="cstat-no" title="statement not covered" >        return IMasterChef(masterChef).userInfo(masterChefPid, address(this)).amount;</span>
+    }
+&nbsp;
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function distributeRewards(address _expeditionTreasuryAdd, address _treasuryAdd) internal {</span>
+        uint256 toDistribute = rewardToken.balanceOf(address(this));
+&nbsp;
+        // Early exit if nothing to distribute
+        if (toDistribute == 0) return;
+&nbsp;
+        rewardToken.safeTransfer(_expeditionTreasuryAdd, toDistribute * 92 / 100);
+        rewardToken.safeTransfer(_treasuryAdd, toDistribute * 8 / 100);
+    }
+&nbsp;
+&nbsp;
+    /// @dev Enact this passthrough strategy
+    function enact()
+        external override
+        onlyCartographer
+    {
+        uint256 cartographerBalance = passthroughToken.balanceOf(cartographer);
+        passthroughToken.safeTransferFrom(cartographer, address(this), cartographerBalance);
+        IMasterChef(masterChef).deposit(masterChefPid, cartographerBalance);
+    }
+&nbsp;
+&nbsp;
+    /// @dev Deposit the amount of passthrough token in contract to the masterChef and take deposit fee, distribute any fees / rewards that are harvested
+    /// @param _amount Amount the user is attempting to deposit
+    /// @param _expeditionTreasuryAdd Expedition accumulator
+    /// @param _treasuryAdd Dev fund accumulator
+    function deposit(uint256 _amount, address _expeditionTreasuryAdd, address _treasuryAdd)
+        external override
+        onlyCartographer
+        returns (uint256)
+    {
+        uint256 cartographerBalance = passthroughToken.balanceOf(cartographer);
+        passthroughToken.safeTransferFrom(cartographer, address(this), cartographerBalance);
+&nbsp;
+        // Deposit user's amount into masterChef
+        uint256 balanceInit = balance();
+        IMasterChef(masterChef).deposit(masterChefPid, _amount);
+        uint256 balanceFinal = balance();
+&nbsp;
+        // True amount deposited in masterChef
+        uint256 trueDepositedAmount = balanceFinal - balanceInit;
+&nbsp;
+        distributeRewards(_expeditionTreasuryAdd, _treasuryAdd);
+&nbsp;
+        return trueDepositedAmount;
+    }
+&nbsp;
+&nbsp;
+    /// @dev Withdraw passthrough token back to cartographer, send any extra rewards to accumulator addresses
+    /// @param _amount Amount to withdraw for user
+    /// @param _expeditionTreasuryAdd Address of expedition accumulator
+    /// @param _treasuryAdd Address of dev fund accumulator
+    function withdraw(uint256 _amount, address _expeditionTreasuryAdd, address _treasuryAdd)
+        external override
+        onlyCartographer
+        returns (uint256)
+    {
+        uint256 balanceInit = balance();
+        IMasterChef(masterChef).withdraw(masterChefPid, _amount);
+        uint256 balanceFinal = balance();
+&nbsp;
+        // True amount withdrawn from masterChef
+        uint256 withdrawnAmount = balanceInit - balanceFinal;
+&nbsp;
+        // Return withdrawn amount back to cartographer
+        passthroughToken.safeTransfer(cartographer, withdrawnAmount);
+        
+        // Distribute the remaining rewards in this contract
+        distributeRewards(_expeditionTreasuryAdd, _treasuryAdd);
+&nbsp;
+        return withdrawnAmount;
+    }
+&nbsp;
+    /// @dev Retire this passthrough strategy, send all user's funds back to cartographer and distribute any rewards
+    /// @param _expeditionTreasuryAdd Address of expedition accumulator
+    /// @param _treasuryAdd Address of the dev fund accumulator
+    function retire(address _expeditionTreasuryAdd, address _treasuryAdd)
+        external override
+        onlyCartographer
+    {
+        uint256 stakedAmount = balance();
+&nbsp;
+        // Withdraw all from the masterChef
+<span class="cstat-no" title="statement not covered" >        IMasterChef(masterChef).withdraw(masterChefPid, stakedAmount)</span>;
+&nbsp;
+        // Return collective user's amount back to cartographer
+<span class="cstat-no" title="statement not covered" >        passthroughToken.safeTransfer(cartographer, stakedAmount)</span>;
+&nbsp;
+        // Distribute the remaining rewards in this contract
+<span class="cstat-no" title="statement not covered" >        distributeRewards(_expeditionTreasuryAdd, _treasuryAdd)</span>;
+    }
+}</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Dec 14 2021 16:51:29 GMT+0100 (Central European Standard Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>

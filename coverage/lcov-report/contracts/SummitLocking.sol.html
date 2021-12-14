@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/SummitLocking.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">contracts/</a> SummitLocking.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">90.7% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>39/43</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">60% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>12/20</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>11/11</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">88.64% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>39/44</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-yes">12×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">164×</span>
+<span class="cline-any cline-yes">163×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">229×</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">163×</span>
+<span class="cline-any cline-yes">163×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">163×</span>
+<span class="cline-any cline-yes">163×</span>
+<span class="cline-any cline-yes">163×</span>
+<span class="cline-any cline-yes">163×</span>
+<span class="cline-any cline-yes">163×</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">8×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+&nbsp;
+pragma solidity 0.8.0;
+&nbsp;
+import "./SummitToken.sol";
+import "./Cartographer.sol";
+import "./ExpeditionV2.sol";
+import "./EverestToken.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+&nbsp;
+&nbsp;
+contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+    using EnumerableSet for EnumerableSet.UintSet;
+&nbsp;
+    SummitToken public summit;
+    EverestToken public everest;
+    Cartographer public cartographer;
+    ExpeditionV2 public expeditionV2;
+&nbsp;
+    bool public panic = false;
+    uint256 public constant epochDuration = 3600 * 24 * 7;
+    address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
+&nbsp;
+    struct UserLockedWinnings {
+        uint256 winnings;
+        uint256 bonusEarned;
+        uint256 claimedWinnings;
+    }
+&nbsp;
+    uint8 public yieldLockEpochCount = 5;
+&nbsp;
+    mapping(address =&gt; EnumerableSet.UintSet) userInteractingEpochs;    // List of epochs the user is interacting with (to help with frontend / user info)
+    mapping(address =&gt; mapping(uint256 =&gt; UserLockedWinnings)) public userLockedWinnings;
+    mapping(address =&gt; uint256) public userLifetimeWinnings;            // Public value for user information
+    mapping(address =&gt; uint256) public userLifetimeBonusWinnings;       // Public value for user information
+&nbsp;
+    event WinningsLocked(address indexed _userAdd, uint256 _lockedWinnings, uint256 _bonusWinnings);
+    event WinningsHarvested(address indexed _userAdd, uint256 _epoch, uint256 _harvestedWinnings, bool _lockForEverest);
+    event SetPanic(bool indexed _panic);
+    event SetYieldLockEpochCount(uint256 _count);
+&nbsp;
+    function initialize(
+        address _summit,
+        address _everest,
+        address _cartographer,
+        address _expeditionV2
+    ) public onlyOwner {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_summit != address(0), "Missing SummitToken");
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_everest != address(0), "Missing EverestToken");
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_cartographer != address(0), "Missing Cartographer");
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_expeditionV2 != address(0), "Missing ExpeditionV2");
+        summit = SummitToken(_summit);
+        everest = EverestToken(_everest);
+<span class="cstat-no" title="statement not covered" >        cartographer = Cartographer(_cartographer)</span>;
+<span class="cstat-no" title="statement not covered" >        expeditionV2 = ExpeditionV2(_expeditionV2)</span>;
+&nbsp;
+        summit.approve(_everest, type(uint256).max);
+    }
+&nbsp;
+&nbsp;
+    function setPanic(bool _panic)
+        public
+        onlyOwner
+    {
+        panic = _panic;
+        emit SetPanic(_panic);
+    }
+&nbsp;
+&nbsp;
+    // MODIFIERS
+&nbsp;
+&nbsp;
+    modifier onlyCartographerOrExpedition() {
+        require(msg.sender == address(cartographer) || msg.sender == address(expeditionV2), "Only cartographer or expedition");
+        _;
+    }
+&nbsp;
+&nbsp;
+    // PUBLIC
+&nbsp;
+    function getCurrentEpoch()
+        public view
+        returns (uint256)
+    {
+        return block.timestamp / epochDuration;
+    }
+&nbsp;
+    /// @dev Return if an epoch has matured
+    function hasEpochMatured(uint256 _epoch)
+        public view
+        returns (bool)
+    {
+        return (getCurrentEpoch() - _epoch) &gt;= yieldLockEpochCount;
+    }
+&nbsp;
+    function getEpochStartTimestamp(uint256 _epoch)
+        public pure
+        returns (uint256)
+    {
+        return _epoch * epochDuration;
+    }
+&nbsp;
+    /// @dev Epoch maturity timestamp
+    function getEpochMatureTimestamp(uint256 _epoch)
+        public view
+        returns (uint256)
+    {
+        return getEpochStartTimestamp(_epoch) + (yieldLockEpochCount * epochDuration);
+    }
+&nbsp;
+    function getUserInteractingEpochs(address _userAdd)
+        public view
+        returns (uint256[] memory)
+    {
+        return userInteractingEpochs[_userAdd].values();
+    }
+&nbsp;
+    // FUNCTIONALITY
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+    /// @dev Update yield lock epoch count
+    function setYieldLockEpochCount(uint8 _count)
+        public onlyOwner
+    {
+        require(_count &lt;= 12, "Invalid lock epoch count");
+        yieldLockEpochCount = _count;
+        emit SetYieldLockEpochCount(_count);
+    }
+&nbsp;
+    function addLockedWinnings(uint256 _lockedWinnings, uint256 _bonusWinnings, address _userAdd)
+        external
+        onlyCartographerOrExpedition
+    {
+        uint256 currentEpoch = getCurrentEpoch();
+        UserLockedWinnings storage userEpochWinnings = userLockedWinnings[_userAdd][currentEpoch];
+        userEpochWinnings.winnings += _lockedWinnings;
+        userLifetimeWinnings[_userAdd] += _lockedWinnings;
+        userEpochWinnings.bonusEarned += _bonusWinnings;
+        userLifetimeBonusWinnings[_userAdd] += _bonusWinnings;
+        userInteractingEpochs[_userAdd].add(currentEpoch);
+&nbsp;
+        emit WinningsLocked(_userAdd, _lockedWinnings, _bonusWinnings);
+    }
+&nbsp;
+    /// @dev Harvest locked winnings, 50% tax taken on early harvest
+    function harvestWinnings(uint256 _epoch, uint256 _amount, bool _lockForEverest)
+        public
+        nonReentrant
+    {
+        UserLockedWinnings storage userEpochWinnings = userLockedWinnings[msg.sender][_epoch];
+&nbsp;
+        // Winnings that haven't yet been claimed
+        uint256 unclaimedWinnings = userEpochWinnings.winnings - userEpochWinnings.claimedWinnings;
+&nbsp;
+        // Validate harvest amount
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_amount &gt; 0 &amp;&amp; _amount &lt;= unclaimedWinnings, "Bad Harvest");
+&nbsp;
+        // Harvest winnings by locking for everest in the expedition
+        if (_lockForEverest) {
+            everest.lockAndExtendLockDuration(
+                _amount,
+                everest.inflectionLockTime(),
+                msg.sender
+            );
+&nbsp;
+        // Else check if epoch matured, harvest 100% if true, else harvest 50%, burn 25%, and send 25% to expedition contract to be distributed to EVEREST holders
+        } else {
+            bool epochMatured = hasEpochMatured(_epoch);
+            if (panic || epochMatured) {
+                IERC20(summit).safeTransfer(msg.sender, _amount);
+            } else {
+                IERC20(summit).safeTransfer(msg.sender, _amount / 2);
+                IERC20(summit).safeTransfer(burnAdd, _amount / 4);
+                IERC20(summit).safeTransfer(cartographer.expeditionTreasuryAdd(), _amount / 4);
+            }
+        }
+&nbsp;
+        userEpochWinnings.claimedWinnings += _amount;
+&nbsp;
+        if ((userEpochWinnings.winnings - userEpochWinnings.claimedWinnings) == 0) {
+<span class="cstat-no" title="statement not covered" >            userInteractingEpochs[msg.sender].remove(_epoch)</span>;
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit WinningsHarvested(msg.sender, _epoch, _amount, _lockForEverest);</span>
+    }
+} </pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Dec 14 2021 16:51:29 GMT+0100 (Central European Standard Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>

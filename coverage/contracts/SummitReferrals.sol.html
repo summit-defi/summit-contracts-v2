@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/SummitReferrals.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">contracts/</a> SummitReferrals.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">84.62% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>33/39</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">66.67% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>16/24</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">100% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>11/11</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">79.49% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>31/39</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">162×</span>
+<span class="cline-any cline-yes">162×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">157×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+pragma solidity 0.8.0;
+&nbsp;
+import "./Cartographer.sol";
+import "./SummitToken.sol";
+&nbsp;
+contract SummitReferrals {
+    address public cartographer;
+    SummitToken public summit;
+    address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
+    
+    constructor(address _cartographer) {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_cartographer != address(0), "Cart required");
+        cartographer = _cartographer;
+    }
+    
+    function enable(address _summit) external onlyCartographer {
+        summit = SummitToken(_summit);
+        summit.approve(burnAdd, type(uint256).max);
+    }
+&nbsp;
+    // REFERRALS
+    uint256 roundIndex = 0; 
+    mapping(address =&gt; address) public referrerOf;
+    mapping(uint256 =&gt; mapping(address =&gt; uint256)) public pendingReferralRewards;
+    mapping(address =&gt; uint256) public totalReferralRewards;
+&nbsp;
+&nbsp;
+    // EVENTS
+    event ReferralCreated(address indexed referrerAddress, address indexed refereeAddress);
+    event ReferralRewardsRedeemed(address indexed referrerAddress, uint256 amount);
+    event UnclaimedReferralRewardsBurned(address indexed burner, uint256 indexed round, uint256 amount);
+&nbsp;
+    function createReferral(address referrerAddress) public {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(referrerAddress != msg.sender, "Cant refer yourself");
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(referrerOf[msg.sender] == address(0), "Already been referred");
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(referrerOf[referrerAddress] != msg.sender, "No reciprocal referrals");
+        require(referrerOf[referrerOf[referrerAddress]] != msg.sender, "No 3 user cyclical referrals");
+        referrerOf[msg.sender] = referrerAddress;
+        emit ReferralCreated(referrerAddress, msg.sender);
+    }  
+&nbsp;
+    modifier onlyCartographer() {
+        require(msg.sender == cartographer, "Only Cartographer can call function" );
+        _;
+    }
+    function addReferralRewardsIfNecessary(address referee, uint256 amount) external onlyCartographer {
+        if (referrerOf[referee] == address(0)) { return; }
+        uint256 additionalReward = amount / 100;
+        pendingReferralRewards[roundIndex][referrerOf[referee]] += additionalReward;
+<span class="cstat-no" title="statement not covered" >        pendingReferralRewards[roundIndex][referee] += additionalReward</span>;
+        totalReferralRewards[referrerOf[referee]] += additionalReward;
+        totalReferralRewards[referee] += additionalReward;
+    }
+    
+    function getReferralRound() external view returns(uint256) {
+        return roundIndex;
+    }
+&nbsp;
+    // Called after burn button pressed with correct code and tokens burned
+    function burnUnclaimedReferralRewardsAndRolloverRound(address burner) external onlyCartographer {
+        uint256 burnAmount = summit.balanceOf(address(this));
+&nbsp;
+        if (burnAmount &gt; 0) {
+            summit.transfer(burnAdd, burnAmount);
+        }
+        
+        roundIndex += 1;
+&nbsp;
+        emit UnclaimedReferralRewardsBurned(burner, roundIndex - 1, burnAmount);
+    }
+&nbsp;
+    // To be called after rewards redeemed in Cartographer
+    function redeemReferralRewards() public {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(pendingReferralRewards[roundIndex][msg.sender] &gt; 0, "No referral rewards to redeem");
+<span class="cstat-no" title="statement not covered" >        uint256 toBeRedeemed = pendingReferralRewards[roundIndex][msg.sender];</span>
+&nbsp;
+        // Safety hatch if required summit has recently been burned, followed by a user harvesting rewards
+        if (toBeRedeemed &gt; summit.balanceOf(address(this))) {
+            Cartographer(cartographer).referralRewardsMintSafetyHatch(toBeRedeemed);
+        }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        safeSummitTransfer(msg.sender, toBeRedeemed)</span>;
+        pendingReferralRewards[roundIndex][msg.sender] = 0;
+&nbsp;
+        emit ReferralRewardsRedeemed(msg.sender, toBeRedeemed);
+    }
+    
+    function getReferralRewardsToBeBurned() public view returns (uint256) {
+        return summit.balanceOf(address(this));
+    }
+&nbsp;
+    function getPendingReferralRewards(address user) public view returns (uint256) {
+        return pendingReferralRewards[roundIndex][user];
+    }
+&nbsp;
+&nbsp;
+    // UTIL
+    function safeSummitTransfer(address _to, uint256 _amount) internal {
+<span class="cstat-no" title="statement not covered" >        uint256 summitBal = summit.balanceOf(address(this));</span>
+        bool transferSuccess = false;
+        if (_amount &gt; summitBal) {
+            transferSuccess = summit.transfer(_to, summitBal);
+        } else {
+<span class="cstat-no" title="statement not covered" >            transferSuccess = summit.transfer(_to, _amount)</span>;
+        }
+<span class="cstat-no" title="statement not covered" >        require(transferSuccess, "SafeSummitTransfer: failed")</span>;
+    }    
+}</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Dec 14 2021 16:51:29 GMT+0100 (Central European Standard Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>

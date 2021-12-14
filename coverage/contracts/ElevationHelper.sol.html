@@ -1,0 +1,1424 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/ElevationHelper.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">contracts/</a> ElevationHelper.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">90.12% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>73/81</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">77.5% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>31/40</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">75% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>24/32</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">90.36% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>75/83</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+323
+324
+325
+326
+327
+328
+329
+330
+331
+332
+333
+334
+335
+336
+337
+338
+339
+340
+341
+342
+343
+344
+345
+346
+347
+348
+349
+350
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+392
+393
+394
+395
+396
+397
+398
+399
+400
+401
+402
+403
+404
+405
+406
+407
+408
+409
+410
+411
+412
+413
+414
+415
+416
+417
+418
+419
+420
+421
+422
+423
+424
+425
+426
+427
+428
+429
+430
+431
+432
+433
+434
+435
+436
+437
+438
+439
+440
+441
+442
+443
+444
+445
+446
+447
+448
+449
+450
+451
+452
+453
+454</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">242×</span>
+<span class="cline-any cline-yes">242×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3125×</span>
+<span class="cline-any cline-yes">3125×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">123×</span>
+<span class="cline-any cline-yes">123×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6480×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">364×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3096×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">468×</span>
+<span class="cline-any cline-yes">465×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">124×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">121×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">121×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">93×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">93×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">93×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">93×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">121×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">121×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">121×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">121×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">121×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">121×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">93×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">90×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">93×</span>
+<span class="cline-any cline-yes">93×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">93×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">24×</span>
+<span class="cline-any cline-yes">24×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">24×</span>
+<span class="cline-any cline-yes">24×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">24×</span>
+<span class="cline-any cline-yes">24×</span>
+<span class="cline-any cline-yes">24×</span>
+<span class="cline-any cline-yes">136×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">24×</span>
+<span class="cline-any cline-yes">149×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">24×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">//SPDX-License-Identifier: MIT
+pragma solidity 0.8.0;
+&nbsp;
+import "./interfaces/ISummitRNGModule.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
+&nbsp;
+&nbsp;
+&nbsp;
+/*
+---------------------------------------------------------------------------------------------
+--   S U M M I T . D E F I
+---------------------------------------------------------------------------------------------
+&nbsp;
+&nbsp;
+Summit is highly experimental.
+It has been crafted to bring a new flavor to the defi world.
+We hope you enjoy the Summit.defi experience.
+If you find any bugs in these contracts, please claim the bounty (see docs)
+&nbsp;
+&nbsp;
+Created with love by Architect and the Summit team
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+---------------------------------------------------------------------------------------------
+--   E L E V A T I O N   H E L P E R
+---------------------------------------------------------------------------------------------
+&nbsp;
+&nbsp;
+ElevationHelper.sol handles shared functionality between the elevations / expedition
+Handles the allocation multiplier for each elevation
+Handles the duration of each round
+&nbsp;
+&nbsp;
+&nbsp;
+*/
+&nbsp;
+contract ElevationHelper is Ownable {
+    // ---------------------------------------
+    // --   V A R I A B L E S
+    // ---------------------------------------
+&nbsp;
+    address public cartographer;                                            // Allows cartographer to act as secondary owner-ish
+    address public expeditionV2;
+&nbsp;
+    // Constants for elevation comparisons
+    uint8 constant OASIS = 0;
+    uint8 constant PLAINS = 1;
+    uint8 constant MESA = 2;
+    uint8 constant SUMMIT = 3;
+    uint8 constant EXPEDITION = 4;
+    uint8 constant roundEndLockoutDuration = 120;
+&nbsp;
+    
+    uint16[5] public allocMultiplier = [100, 110, 125, 150, 100];            // Alloc point multipliers for each elevation    
+    uint16[5] public pendingAllocMultiplier = [100, 110, 125, 150, 100];     // Pending alloc point multipliers for each elevation, updated at end of round for elevation, instantly for oasis   
+    uint8[5] public totemCount = [1, 2, 5, 10, 2];                          // Number of totems at each elevation
+&nbsp;
+    
+    uint256 constant baseRoundDuration = 3600;                              // Duration (seconds) of the smallest round chunk
+    uint256[5] public durationMult = [0, 2, 2, 2, 24];                      // Number of round chunks for each elevation
+    uint256[5] public pendingDurationMult = [0, 2, 2, 2, 24];               // Duration mult that takes effect at the end of the round
+&nbsp;
+    uint256[5] public unlockTimestamp;                                      // Time at which each elevation unlocks to the public
+    uint256[5] public roundNumber;                                          // Current round of each elevation
+    uint256[5] public roundEndTimestamp;                                    // Time at which each elevation's current round ends
+    mapping(uint256 =&gt; uint256) public expeditionDeityDivider;                // Higher / lower integer for each expedition round
+&nbsp;
+    mapping(uint8 =&gt; mapping(uint256 =&gt; uint256)) public totemWinsAccum;    // Accumulator of the total number of wins for each totem
+    mapping(uint8 =&gt; mapping(uint256 =&gt; uint8)) public winningTotem;        // The specific winning totem for each elevation round
+&nbsp;
+&nbsp;
+    uint256 constant referralDurationMult = 24 * 7;                         // Round chunk multiplier for the unclaimed referral rewards burn
+    uint256 public referralRound;                                           // Incrementor of the referral round
+    uint256 public referralBurnTimestamp;                                   // Time at which burning unclaimed referral rewards becomes available
+&nbsp;
+&nbsp;
+    address public summitRNGModuleAdd;                                      // VRF module address
+&nbsp;
+&nbsp;
+&nbsp;
+    // ---------------------------------------
+    // --   E V E N T S
+    // ---------------------------------------
+&nbsp;
+    event WinningTotemSelected(uint8 indexed elevation, uint256 indexed round, uint8 indexed totem);
+    event DeityDividerSelected(uint256 indexed expeditionRound, uint256 indexed deityDivider);
+    event UpgradeSummitRNGModule(address indexed _summitRNGModuleAdd);
+    event SetElevationRoundDurationMult(uint8 indexed _elevation, uint8 _mult);
+    event SetElevationAllocMultiplier(uint8 indexed _elevation, uint16 _allocMultiplier);
+&nbsp;
+&nbsp;
+&nbsp;
+    
+    // ---------------------------------------
+    // --   I N I T I A L I Z A T I O N
+    // ---------------------------------------
+&nbsp;
+    /// @dev Creates ElevationHelper contract with cartographer as owner of certain functionality
+    /// @param _cartographer Address of main Cartographer contract
+    constructor(address _cartographer, address _expeditionV2)
+        onlyOwner
+    {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_cartographer != address(0), "Cartographer missing");
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_expeditionV2 != address(0), "Expedition missing");
+        cartographer = _cartographer;
+        expeditionV2 = _expeditionV2;
+    }
+&nbsp;
+    /// @dev Turns on the Summit ecosystem across all contracts
+    /// @param _enableTimestamp Timestamp at which Summit was enabled, used to set unlock points for each elevation
+    function enable(uint256 _enableTimestamp)
+        external
+        onlyCartographer
+    {
+        // The next top of hour from the enable timestamp
+        uint256 nextHourTimestamp = _enableTimestamp + (3600 - (_enableTimestamp % 3600));
+&nbsp;
+        // Setting when each elevation of the ecosystem unlocks
+        unlockTimestamp = [
+            nextHourTimestamp,                       // Oasis - throwaway
+            nextHourTimestamp + 1 days,              // Plains
+            nextHourTimestamp + 3 days,              // Mesa
+            nextHourTimestamp + 5 days,              // Summit
+            nextHourTimestamp + 7 days               // Expedition
+        ];
+&nbsp;
+        // The first 'round' ends when the elevation unlocks
+        roundEndTimestamp = unlockTimestamp;
+        
+        // Timestamp the first unclaimed referral rewards burn becomes available
+        referralBurnTimestamp = nextHourTimestamp + 7 days;    
+&nbsp;
+        // Timestamp of the first seed round starting
+        ISummitRNGModule(summitRNGModuleAdd).setSeedRoundEndTimestamp(unlockTimestamp[PLAINS] - roundEndLockoutDuration);
+    }
+&nbsp;
+&nbsp;
+&nbsp;
+    // ---------------------------------------
+    // --   M O D I F I E R S
+    // ---------------------------------------
+&nbsp;
+    modifier onlyCartographer() {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(msg.sender == cartographer, "Only cartographer");
+        _;
+    }
+    modifier onlyCartographerOrExpedition() {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(msg.sender == cartographer || msg.sender == expeditionV2, "Only cartographer or expedition");
+        _;
+    }
+    modifier allElevations(uint8 _elevation) {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_elevation &lt;= EXPEDITION, "Bad elevation");
+        _;
+    }
+    modifier elevationOrExpedition(uint8 _elevation) {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_elevation &gt;= PLAINS &amp;&amp; _elevation &lt;= EXPEDITION, "Bad elevation");
+        _;
+    }
+    
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+    // ---------------------------------------
+    // --   U T I L S (inlined for brevity)
+    // ---------------------------------------
+&nbsp;
+&nbsp;
+    /// @dev Allocation multiplier of an elevation
+    /// @param _elevation Desired elevation
+    function elevationAllocMultiplier(uint8 _elevation) public view returns (uint256) {
+        return uint256(allocMultiplier[_elevation]);
+    }
+    
+    /// @dev Duration of elevation round in seconds
+    /// @param _elevation Desired elevation
+    function roundDurationSeconds(uint8 _elevation) public view returns (uint256) {
+        return durationMult[_elevation] * baseRoundDuration;
+    }
+&nbsp;
+    /// @dev Current round of the expedition
+    function currentExpeditionRound() public view returns (uint256) {
+        return roundNumber[EXPEDITION];
+    }
+&nbsp;
+    /// @dev Deity divider (random offset which skews chances of each deity winning) of the current expedition round
+    function currentDeityDivider() public view returns (uint256) {
+        return expeditionDeityDivider[currentExpeditionRound()];
+    }
+&nbsp;
+    /// @dev Modifies a given alloc point with the multiplier of that elevation, used to set a single allocation for a token while each elevation is set automatically
+    /// @param _allocPoint Base alloc point to modify
+    /// @param _elevation Fetcher for the elevation multiplier
+    function elevationModulatedAllocation(uint256 _allocPoint, uint8 _elevation) external view allElevations(_elevation) returns (uint256) {
+        return _allocPoint * allocMultiplier[_elevation];
+    }
+&nbsp;
+    /// @dev Checks whether elevation is is yet to be unlocked for farming
+    /// @param _elevation Which elevation to check
+<span class="fstat-no" title="function not covered" >    function elevationLocked(uint8 _elevation) external view returns (bool) {</span>
+<span class="cstat-no" title="statement not covered" >        return block.timestamp &lt;= unlockTimestamp[_elevation];</span>
+    }
+&nbsp;
+    /// @dev Checks whether elevation is locked due to round ending in next {roundEndLockoutDuration} seconds
+    /// @param _elevation Which elevation to check
+    function endOfRoundLockoutActive(uint8 _elevation) external view returns (bool) {
+        if (roundEndTimestamp[_elevation] == 0) return false;
+        return block.timestamp &gt;= (roundEndTimestamp[_elevation] - roundEndLockoutDuration);
+    }
+&nbsp;
+    /// @dev The next round available for a new pool to unlock at. Used to add pools but not start them until the next rollover
+    /// @param _elevation Which elevation to check
+<span class="fstat-no" title="function not covered" >    function nextRound(uint8 _elevation) external view returns (uint256) {</span>
+<span class="cstat-no" title="statement not covered" >        return block.timestamp &lt;= unlockTimestamp[_elevation] ? 1 : (roundNumber[_elevation] + 1);</span>
+    }
+&nbsp;
+    /// @dev Whether a round has ended
+    /// @param _elevation Which elevation to check
+<span class="fstat-no" title="function not covered" >    function roundEnded(uint8 _elevation) internal view returns (bool) {</span>
+<span class="cstat-no" title="statement not covered" >        return block.timestamp &gt;= roundEndTimestamp[_elevation];</span>
+    }
+&nbsp;
+    /// @dev Seconds remaining in round of elevation
+    /// @param _elevation Which elevation to check time remaining of
+<span class="fstat-no" title="function not covered" >    function timeRemainingInRound(uint8 _elevation) public view returns (uint256) {</span>
+<span class="cstat-no" title="statement not covered" >        return roundEnded(_elevation) ? 0 : roundEndTimestamp[_elevation] - block.timestamp;</span>
+    }
+&nbsp;
+    /// @dev Getter of fractional amount of round remaining
+    /// @param _elevation Which elevation to check progress of
+    /// @return Fraction raised to 1e12
+<span class="fstat-no" title="function not covered" >    function fractionRoundRemaining(uint8 _elevation) external view returns (uint256) {</span>
+<span class="cstat-no" title="statement not covered" >        return timeRemainingInRound(_elevation) * 1e12 / roundDurationSeconds(_elevation);</span>
+    }
+&nbsp;
+    /// @dev Getter of fractional progress through round
+    /// @param _elevation Which elevation to check progress of
+    /// @return Fraction raised to 1e12
+<span class="fstat-no" title="function not covered" >    function fractionRoundComplete(uint8 _elevation) external view returns (uint256) {</span>
+<span class="cstat-no" title="statement not covered" >        return ((roundDurationSeconds(_elevation) - timeRemainingInRound(_elevation)) * 1e12) / roundDurationSeconds(_elevation);</span>
+    }
+&nbsp;
+    /// @dev Start timestamp of current round
+    /// @param _elevation Which elevation to check
+<span class="fstat-no" title="function not covered" >    function currentRoundStartTime(uint8 _elevation) external view returns(uint256) {</span>
+<span class="cstat-no" title="statement not covered" >        return roundEndTimestamp[_elevation] - roundDurationSeconds(_elevation);</span>
+    }
+&nbsp;
+    /// @dev Time remaining until next available referral burn event
+<span class="fstat-no" title="function not covered" >    function referralBurnTimeRemaining() external view returns (uint256) {</span>
+<span class="cstat-no" title="statement not covered" >        return referralBurnTimestamp - block.timestamp;</span>
+    }
+&nbsp;
+    /// @dev Validate unclaimed referral rewards available for burning
+    function validateReferralBurnAvailable() external view {
+        require(block.timestamp &gt;= referralBurnTimestamp, "Referral burn not available");
+    }
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+    
+    // ------------------------------------------------------------------
+    // --   P A R A M E T E R S
+    // ------------------------------------------------------------------
+&nbsp;
+    /// @dev Upgrade the RNG module when VRF becomes available on FTM, will only use `getRandomNumber` functionality
+    /// @param _summitRNGModuleAdd Address of new VRF randomness module
+    function upgradeSummitRNGModule (address _summitRNGModuleAdd)
+        public onlyOwner
+    {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_summitRNGModuleAdd != address(0), "SummitRandomnessModule missing");
+        summitRNGModuleAdd = _summitRNGModuleAdd;
+        emit UpgradeSummitRNGModule(_summitRNGModuleAdd);
+    }
+&nbsp;
+&nbsp;
+    /// @dev Update round duration mult of an elevation
+    function setElevationRoundDurationMult(uint8 _elevation, uint8 _mult)
+        public
+        onlyOwner elevationOrExpedition(_elevation)
+    {
+        require(_mult &gt; 0, "Duration mult must be non zero");
+        pendingDurationMult[_elevation] = _mult;
+        emit SetElevationRoundDurationMult(_elevation, _mult);
+    }
+&nbsp;
+&nbsp;
+    /// @dev Update emissions multiplier of an elevation
+    function setElevationAllocMultiplier(uint8 _elevation, uint16 _allocMultiplier)
+        public
+        onlyOwner allElevations(_elevation)
+    {
+        require(_allocMultiplier &lt;= 300, "Multiplier cannot exceed 3X");
+        pendingAllocMultiplier[_elevation] = _allocMultiplier;
+        if (_elevation == OASIS) {
+            allocMultiplier[_elevation] = _allocMultiplier;
+        }
+        emit SetElevationAllocMultiplier(_elevation, _allocMultiplier);
+    }
+&nbsp;
+&nbsp;
+&nbsp;
+    // ------------------------------------------------------------------
+    // --   R O L L O V E R   E L E V A T I O N   R O U N D
+    // ------------------------------------------------------------------
+&nbsp;
+&nbsp;
+    /// @dev Validates that the selected elevation is able to be rolled over
+    /// @param _elevation Which elevation is attempting to be rolled over
+    function validateRolloverAvailable(uint8 _elevation)
+        external view
+    {
+        // Elevation must be unlocked for round to rollover
+        require(block.timestamp &gt;= unlockTimestamp[_elevation], "Elevation locked");
+        // Rollover only becomes available after the round has ended, if timestamp is before roundEnd, the round has already been rolled over and its end timestamp pushed into the future
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(block.timestamp &gt;= roundEndTimestamp[_elevation], "Round already rolled over");
+    }
+&nbsp;
+&nbsp;
+    /// @dev Uses the seed and future block number to generate a random number, which is then used to select the winning totem and if necessary the next deity divider
+    /// @param _elevation Which elevation to select winner for
+    function selectWinningTotem(uint8 _elevation)
+        external
+        onlyCartographerOrExpedition elevationOrExpedition(_elevation)
+    {
+        // No winning totem should be selected for round 0, which takes place when the elevation is locked
+        if (roundNumber[_elevation] == 0) { return; }
+&nbsp;
+        uint256 rand = ISummitRNGModule(summitRNGModuleAdd).getRandomNumber(_elevation, roundNumber[_elevation]);
+&nbsp;
+        // Uses the random number to select the winning totem
+        uint8 winner = chooseWinningTotem(_elevation, rand);
+&nbsp;
+        // Updates data with the winning totem
+        markWinningTotem(_elevation, winner);
+&nbsp;
+        // If necessary, uses the random number to generate the next deity divider for expeditions
+        if (_elevation == EXPEDITION)
+            setNextDeityDivider(rand);
+    }
+&nbsp;
+&nbsp;
+    /// @dev Final step in the rollover pipeline, incrementing the round numbers to bring current
+    /// @param _elevation Which elevation is being updated
+    function rolloverElevation(uint8 _elevation)
+        external
+        onlyCartographerOrExpedition
+    {
+        // Incrementing round number, does not need to be adjusted with overflown rounds
+        roundNumber[_elevation] += 1;
+&nbsp;
+        // Failsafe to cover multiple rounds needing to be rolled over if no user rolled them over previously (almost impossible, but just in case)
+        uint256 overflownRounds = ((block.timestamp - roundEndTimestamp[_elevation]) / roundDurationSeconds(_elevation));
+        
+        // Brings current with any extra overflown rounds
+        roundEndTimestamp[_elevation] += roundDurationSeconds(_elevation) * overflownRounds;
+&nbsp;
+        // Updates round duration if necessary
+        if (pendingDurationMult[_elevation] != durationMult[_elevation]) {
+            durationMult[_elevation] = pendingDurationMult[_elevation];
+        }
+&nbsp;
+        // Adds the duration of the current round (updated if necessary) to the current round end timestamp
+        roundEndTimestamp[_elevation] += roundDurationSeconds(_elevation);
+&nbsp;
+        // Updates elevation allocation multiplier if necessary
+        if (pendingAllocMultiplier[_elevation] != allocMultiplier[_elevation]) {
+            allocMultiplier[_elevation] = pendingAllocMultiplier[_elevation];
+        }
+    }
+&nbsp;
+&nbsp;
+    /// @dev Simple modulo on generated random number to choose the winning totem (inlined for brevity)
+    /// @param _elevation Which elevation the winner will be selected for
+    /// @param _rand The generated random number to select with
+    function chooseWinningTotem(uint8 _elevation, uint256 _rand) internal view returns (uint8) {
+        if (_elevation == EXPEDITION)
+            return (_rand % 100) &lt; currentDeityDivider() ? 0 : 1;
+&nbsp;
+        return uint8((_rand * totemCount[_elevation]) / 100);
+    }
+&nbsp;
+&nbsp;
+    /// @dev Stores selected winning totem (inlined for brevity)
+    /// @param _elevation Elevation to store at
+    /// @param _winner Selected winning totem
+    function markWinningTotem(uint8 _elevation, uint8 _winner) internal {
+        totemWinsAccum[_elevation][_winner] += 1;
+        winningTotem[_elevation][roundNumber[_elevation]] = _winner;   
+&nbsp;
+        emit WinningTotemSelected(_elevation, roundNumber[_elevation], _winner);
+    }
+&nbsp;
+&nbsp;
+    /// @dev Sets random deity divider (50 - 90) for next expedition round (inlined for brevity)
+    /// @param _rand Same rand that chose winner
+    function setNextDeityDivider(uint256 _rand) internal {
+        // Number between 50 - 90 based on previous round winning number, helps to balance the divider between the deities
+        uint256 expedSelector = (_rand % 100);
+        uint256 divider = 50 + ((expedSelector * 40) / 100);
+        expeditionDeityDivider[currentExpeditionRound() + 1] = divider;
+&nbsp;
+        emit DeityDividerSelected(currentExpeditionRound() + 1, divider);
+    }
+    
+&nbsp;
+&nbsp;
+    // ------------------------------------------------------------------
+    // --   R O L L O V E R   R E F E R R A L   B U R N
+    // ------------------------------------------------------------------
+    
+    /// @dev Rollover referral burn round
+    function rolloverReferralBurn() external  onlyCartographer {
+        referralRound += 1;
+        referralBurnTimestamp += baseRoundDuration * referralDurationMult;
+    }
+&nbsp;
+&nbsp;
+    
+    
+    // ------------------------------------------------------------------
+    // --   F R O N T E N D
+    // ------------------------------------------------------------------
+    
+    /// @dev Fetcher of historical data for past winning totems
+    /// @param _elevation Which elevation to check historical winners of
+    /// @return Array of 20 values, first 10 of which are win count accumulators for each totem, last 10 of which are winners of previous 10 rounds of play
+    function historicalWinningTotems(uint8 _elevation) public view allElevations(_elevation) returns (uint256[] memory, uint256[] memory) {
+&nbsp;
+        uint256 round = roundNumber[_elevation];
+        uint256 winHistoryDepth = Math.min(10, round);
+&nbsp;
+        uint256[] memory winsAccum = new uint256[](totemCount[_elevation]);
+        uint256[] memory prevWinHistory = new uint256[](winHistoryDepth);
+&nbsp;
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (_elevation &gt; OASIS) {
+            uint256 prevRound = round == 0 ? 0 : round - 1;
+            for (uint8 i = 0; i &lt; totemCount[_elevation]; i++) {
+                winsAccum[i] = totemWinsAccum[_elevation][i];
+            }
+            for (uint8 j = 0; j &lt; winHistoryDepth; j++) {
+                prevWinHistory[j] = winningTotem[_elevation][prevRound - j];
+            }
+        }
+&nbsp;
+        return (winsAccum, prevWinHistory);
+    }
+}</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Dec 14 2021 16:51:29 GMT+0100 (Central European Standard Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>

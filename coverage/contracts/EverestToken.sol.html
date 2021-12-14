@@ -1,0 +1,1616 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts/EverestToken.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">contracts/</a> EverestToken.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">85.71% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>114/133</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">66.67% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>44/66</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">82.35% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>28/34</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">87.05% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>121/139</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+323
+324
+325
+326
+327
+328
+329
+330
+331
+332
+333
+334
+335
+336
+337
+338
+339
+340
+341
+342
+343
+344
+345
+346
+347
+348
+349
+350
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+392
+393
+394
+395
+396
+397
+398
+399
+400
+401
+402
+403
+404
+405
+406
+407
+408
+409
+410
+411
+412
+413
+414
+415
+416
+417
+418
+419
+420
+421
+422
+423
+424
+425
+426
+427
+428
+429
+430
+431
+432
+433
+434
+435
+436
+437
+438
+439
+440
+441
+442
+443
+444
+445
+446
+447
+448
+449
+450
+451
+452
+453
+454
+455
+456
+457
+458
+459
+460
+461
+462
+463
+464
+465
+466
+467
+468
+469
+470
+471
+472
+473
+474
+475
+476
+477
+478
+479
+480
+481
+482
+483
+484
+485
+486
+487
+488
+489
+490
+491
+492
+493
+494
+495
+496
+497
+498
+499
+500
+501
+502
+503
+504
+505
+506
+507
+508
+509
+510
+511
+512
+513
+514
+515
+516
+517
+518</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">30×</span>
+<span class="cline-any cline-yes">28×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">22×</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">37×</span>
+<span class="cline-any cline-yes">36×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">34×</span>
+<span class="cline-any cline-yes">34×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">61×</span>
+<span class="cline-any cline-yes">57×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-yes">36×</span>
+<span class="cline-any cline-yes">36×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-yes">16×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">14×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">21×</span>
+<span class="cline-any cline-yes">17×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">19×</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">18×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">15×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">13×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">6×</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">5×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">49×</span>
+<span class="cline-any cline-yes">52×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-yes">3×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+&nbsp;
+pragma solidity 0.8.0;
+&nbsp;
+import "./libs/ERC20Mintable.sol";
+import "./BaseEverestExtension.sol";
+import "./libs/SummitMath.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+&nbsp;
+&nbsp;
+// EverestToken, governance token of Summit DeFi
+contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+    using EnumerableSet for EnumerableSet.AddressSet;
+&nbsp;
+    // ---------------------------------------
+    // --   V A R I A B L E S
+    // ---------------------------------------
+&nbsp;
+    IERC20 public summit;
+&nbsp;
+    bool public panic = false;
+&nbsp;
+    uint256 public daySeconds = 24 * 3600;
+    uint256 public minLockTime = 7 days;
+    uint256 public inflectionLockTime = 30 days;
+    uint256 public maxLockTime = 365 days;
+    uint256 public minEverestLockMult = 1000;
+    uint256 public inflectionEverestLockMult = 10000;
+    uint256 public maxEverestLockMult = 25000;
+&nbsp;
+    uint256 public totalSummitLocked;
+    uint256 public weightedAvgSummitLockDurations;
+&nbsp;
+    struct UserEverestInfo {
+        address userAdd;
+&nbsp;
+        uint256 everestOwned;
+        uint256 everestLockMultiplier;
+        uint256 lockDuration;
+        uint256 lockRelease;
+        uint256 summitLocked;
+    }
+    mapping(address =&gt; UserEverestInfo) public userEverestInfo;
+&nbsp;
+    // Other contracts that hook into the user's amount of everest, max 3 extensions
+    // Will be used for the DAO, as well as everest pools in the future
+    EnumerableSet.AddressSet everestExtensions;
+&nbsp;
+&nbsp;
+    constructor(address _summit) {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_summit != address(0), "SummitToken missing");
+        summit = IERC20(_summit);
+    }
+    
+    
+    // ---------------------------------------
+    // --   E V E N T S
+    // ---------------------------------------
+&nbsp;
+    event SummitLocked(address indexed user, uint256 _summitLocked, uint256 _lockDuration, uint256 _everestAwarded);
+    event LockDurationIncreased(address indexed user, uint256 _lockDuration, uint256 _additionalEverestAwarded);
+    event LockedSummitIncreased(address indexed user, bool indexed _increasedWithClaimableWinnings, uint256 _summitLocked, uint256 _everestAwarded);
+    event LockedSummitWithdrawn(address indexed user, uint256 _summitRemoved, uint256 _everestBurned);
+    event PanicFundsRecovered(address indexed user, uint256 _summitRecovered);
+&nbsp;
+    event SetMinLockTime(uint256 _lockTimeDays);
+    event SetInflectionLockTime(uint256 _lockTimeDays);
+    event SetMaxLockTime(uint256 _lockTimeDays);
+    event SetMinEverestLockMult(uint256 _lockMult);
+    event SetInflectionEverestLockMult(uint256 _lockMult);
+    event SetMaxEverestLockMult(uint256 _lockMult);
+    event SetLockTimeRequiredForTaxlessSummitWithdraw(uint256 _lockTimeDays);
+    event SetLockTimeRequiredForLockedSummitDeposit(uint256 _lockTimeDays);
+    event SetPanic(bool _panic);
+&nbsp;
+    event EverestExtensionAdded(address indexed extension);
+    event EverestExtensionRemoved(address indexed extension);
+&nbsp;
+&nbsp;
+&nbsp;
+    // ------------------------------------------------------
+    // --   M O D I F I E R S 
+    // ------------------------------------------------------
+&nbsp;
+    modifier validLockDuration(uint256 _lockDuration) {
+        require (_lockDuration &gt;= minLockTime &amp;&amp; _lockDuration &lt;= maxLockTime, "Invalid lock duration");
+        _;
+    }
+    modifier userNotAlreadyLockingSummit() {
+        require (userEverestInfo[msg.sender].everestOwned == 0, "Already locking summit");
+        _;
+    }
+    modifier userLockDurationSatisfied() {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(userEverestInfo[msg.sender].lockRelease != 0, "User doesnt have a lock release");
+        require(block.timestamp &gt;= userEverestInfo[msg.sender].lockRelease, "Lock still in effect");
+        _;
+    }
+    modifier userEverestInfoExists(address _userAdd) {
+        require(userEverestInfo[_userAdd].userAdd == _userAdd, "User doesnt exist");
+        _;
+    }
+    modifier userOwnsEverest(address _userAdd) {
+        <span class="missing-if-branch" title="else path not taken" >E</span>require (userEverestInfo[_userAdd].everestOwned &gt; 0, "Must own everest");
+        _;
+    }
+    modifier validEverestAmountToBurn(uint256 _everestAmount) {
+        require (_everestAmount &gt; 0 &amp;&amp; _everestAmount &lt;= userEverestInfo[msg.sender].everestOwned, "Bad withdraw");
+        _;
+    }
+    modifier onlyPanic() {
+        require(panic, "Not in panic");
+        _;
+    }
+    modifier notPanic() {
+        require(!panic, "Not available during panic");
+        _;
+    }
+&nbsp;
+&nbsp;
+    // ---------------------------------------
+    // --   A D J U S T M E N T S
+    // ---------------------------------------
+&nbsp;
+&nbsp;
+&nbsp;
+<span class="fstat-no" title="function not covered" >    function setMinLockTime(uint256 _lockTimeDays) public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        require(_lockTimeDays &lt;= maxLockTime &amp;&amp; _lockTimeDays &gt;= 1 &amp;&amp; _lockTimeDays &lt;= 30, "Invalid minimum lock time (1-30 days)")</span>;
+<span class="cstat-no" title="statement not covered" >        minLockTime = _lockTimeDays * daySeconds</span>;
+<span class="cstat-no" title="statement not covered" >        emit SetMinLockTime(_lockTimeDays);</span>
+    }
+<span class="fstat-no" title="function not covered" >    function setInflectionLockTime(uint256 _lockTimeDays) public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        require(_lockTimeDays &gt;= minLockTime &amp;&amp; _lockTimeDays &lt;= maxLockTime &amp;&amp; _lockTimeDays &gt;= 7 &amp;&amp; _lockTimeDays &lt;= 365, "Invalid inflection lock time (7-365 days)")</span>;
+<span class="cstat-no" title="statement not covered" >        minLockTime = _lockTimeDays * daySeconds</span>;
+<span class="cstat-no" title="statement not covered" >        emit SetInflectionLockTime(_lockTimeDays);</span>
+    }
+<span class="fstat-no" title="function not covered" >    function setMaxLockTime(uint256 _lockTimeDays) public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        require(_lockTimeDays &gt;= minLockTime &amp;&amp; _lockTimeDays &gt;= 7 &amp;&amp; _lockTimeDays &lt;= 730, "Invalid maximum lock time (7-730 days)")</span>;
+<span class="cstat-no" title="statement not covered" >        maxLockTime = _lockTimeDays * daySeconds</span>;
+<span class="cstat-no" title="statement not covered" >        emit SetMaxLockTime(_lockTimeDays);</span>
+    }
+<span class="fstat-no" title="function not covered" >    function setMinEverestLockMult(uint256 _lockMult) public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        require(_lockMult &gt;= 100 &amp;&amp; _lockMult &lt;= 50000, "Invalid lock mult")</span>;
+<span class="cstat-no" title="statement not covered" >        minEverestLockMult = _lockMult</span>;
+<span class="cstat-no" title="statement not covered" >        emit SetMinEverestLockMult(_lockMult);</span>
+    }
+<span class="fstat-no" title="function not covered" >    function setInflectionEverestLockMult(uint256 _lockMult) public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        require(_lockMult &gt;= 100 &amp;&amp; _lockMult &lt;= 50000, "Invalid lock mult")</span>;
+<span class="cstat-no" title="statement not covered" >        inflectionEverestLockMult = _lockMult</span>;
+<span class="cstat-no" title="statement not covered" >        emit SetInflectionEverestLockMult(_lockMult);</span>
+    }
+<span class="fstat-no" title="function not covered" >    function setMaxEverestLockMult(uint256 _lockMult) public onlyOwner {</span>
+<span class="cstat-no" title="statement not covered" >        require(_lockMult &gt;= 100 &amp;&amp; _lockMult &lt;= 50000, "Invalid lock mult")</span>;
+<span class="cstat-no" title="statement not covered" >        maxEverestLockMult = _lockMult</span>;
+<span class="cstat-no" title="statement not covered" >        emit SetMaxEverestLockMult(_lockMult);</span>
+    }
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+    // ------------------------------------------------------------
+    // --   F U N C T I O N A L I T Y
+    // ------------------------------------------------------------
+&nbsp;
+&nbsp;
+    /// @dev Update the average lock duration
+    function _updateAvgSummitLockDuration(uint256 _amount, uint256 _lockDuration, bool _isLocking)
+        internal
+    {
+        // The weighted average of the change being applied
+        uint256 deltaWeightedAvg = _amount * _lockDuration;
+&nbsp;
+        // Update the lock multiplier and the total amount locked
+        if (_isLocking) {
+            totalSummitLocked += _amount;
+            weightedAvgSummitLockDurations += deltaWeightedAvg;
+        } else {
+            totalSummitLocked -= _amount;
+            weightedAvgSummitLockDurations -= deltaWeightedAvg;
+        }
+    }
+    function avgSummitLockDuration()
+        public view
+        returns (uint256)
+    {
+        // Early escape if div/0
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (totalSummitLocked == 0) <span class="cstat-no" title="statement not covered" >return 0;</span>
+&nbsp;
+        // Return the average from the weighted average lock duration 
+        return weightedAvgSummitLockDurations / totalSummitLocked;
+    }
+&nbsp;
+    /// @dev Lock period multiplier
+    function _lockDurationMultiplier(uint256 _lockDuration)
+        internal view
+        returns (uint256)
+    {
+        if (_lockDuration &lt;= inflectionLockTime) {
+            return SummitMath.scaledValue(
+                _lockDuration,
+                minLockTime, inflectionLockTime,
+                minEverestLockMult, inflectionEverestLockMult
+            );
+        }
+        return SummitMath.scaledValue(
+            _lockDuration,
+            inflectionLockTime, maxLockTime,
+            inflectionEverestLockMult, maxEverestLockMult
+        );
+    }
+&nbsp;
+    /// @dev Transfer everest to the burn address.
+    function _burnEverest(address _userAdd, uint256 _everestAmount)
+        internal
+    {
+        IERC20(address(this)).safeTransferFrom(_userAdd, address(this), _everestAmount);
+        _burn(address(this), _everestAmount);
+    }
+&nbsp;
+    /// @dev Lock Summit for a duration and earn everest
+    /// @param _summitAmount Amount of SUMMIT to deposit
+    /// @param _lockDuration Duration the SUMMIT will be locked for
+    function lockSummit(uint256 _summitAmount, uint256 _lockDuration)
+        public
+        nonReentrant notPanic userNotAlreadyLockingSummit validLockDuration(_lockDuration)
+    {
+        // Validate and deposit user's SUMMIT
+        require(_summitAmount &lt;= summit.balanceOf(msg.sender), "Exceeds balance");
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (_summitAmount &gt; 0) {    
+            summit.safeTransferFrom(msg.sender, address(this), _summitAmount);
+        }
+&nbsp;
+        // Calculate the lock multiplier and EVEREST award
+        uint256 everestLockMultiplier = _lockDurationMultiplier(_lockDuration);
+        uint256 everestAward = (_summitAmount * everestLockMultiplier) / 10000;
+        
+        // Mint EVEREST to the user's wallet
+        _mint(msg.sender, everestAward);
+&nbsp;
+        // Create and initialize the user's everestInfo
+        UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
+        everestInfo.userAdd = msg.sender;
+        everestInfo.everestOwned = everestAward;
+        everestInfo.everestLockMultiplier = everestLockMultiplier;
+        everestInfo.lockRelease = block.timestamp + _lockDuration;
+        everestInfo.lockDuration = _lockDuration;
+        everestInfo.summitLocked = _summitAmount;
+&nbsp;
+        // Update average lock duration with new summit locked
+        _updateAvgSummitLockDuration(_summitAmount, _lockDuration, true);
+&nbsp;
+        // Update the EVEREST in the expedition
+        _updateEverestExtensionsUserEverestOwned(everestInfo);
+&nbsp;
+        emit SummitLocked(msg.sender, _summitAmount, _lockDuration, everestAward);
+    }
+&nbsp;
+&nbsp;
+    /// @dev Increase the lock duration of user's locked SUMMIT
+    function increaseLockDuration(uint256 _lockDuration)
+        public
+        nonReentrant notPanic userEverestInfoExists(msg.sender) userOwnsEverest(msg.sender) validLockDuration(_lockDuration)
+    {
+        uint256 additionalEverestAward = _increaseLockDuration(_lockDuration, msg.sender);
+        emit LockDurationIncreased(msg.sender, _lockDuration, additionalEverestAward);
+    }
+    function _increaseLockDuration(uint256 _lockDuration, address _userAdd)
+        internal
+        returns (uint256)
+    {
+        UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
+        require(_lockDuration &gt;= everestInfo.lockDuration, "Lock duration must strictly increase");
+&nbsp;
+        // Update average lock duration by removing existing lock duration, and adding new duration
+        _updateAvgSummitLockDuration(everestInfo.summitLocked, everestInfo.lockDuration, false);
+        _updateAvgSummitLockDuration(everestInfo.summitLocked, _lockDuration, true);
+&nbsp;
+        // Calculate and validate the new everest lock multiplier
+        uint256 everestLockMultiplier = _lockDurationMultiplier(_lockDuration);
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(everestLockMultiplier &gt;= everestInfo.everestLockMultiplier, "New lock duration must be greater");
+&nbsp;
+        // Calculate the additional EVEREST awarded by the extended lock duration
+        uint256 additionalEverestAward = ((everestInfo.summitLocked * everestLockMultiplier) / 10000) - everestInfo.everestOwned;
+&nbsp;
+        // Increase the lock release
+        uint256 lockRelease = block.timestamp + _lockDuration;
+&nbsp;
+        // Mint EVEREST to the user's address
+        _mint(_userAdd, additionalEverestAward);
+&nbsp;
+        // Update the user's running state
+        everestInfo.everestOwned += additionalEverestAward;
+        everestInfo.everestLockMultiplier = everestLockMultiplier;
+        everestInfo.lockRelease = lockRelease;
+        everestInfo.lockDuration = _lockDuration;
+&nbsp;
+        // Update the expedition with the user's new EVEREST amount
+        _updateEverestExtensionsUserEverestOwned(everestInfo);
+&nbsp;
+        return additionalEverestAward;
+    }
+&nbsp;
+&nbsp;
+    /// @dev Internal locked SUMMIT amount increase, returns the extra EVEREST earned by the increased lock duration
+    function _increaseLockedSummit(uint256 _summitAmount, UserEverestInfo storage everestInfo, address _summitOriginAdd)
+        internal
+        returns (uint256)
+    {
+        // Validate and deposit user's funds
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(_summitAmount &lt;= summit.balanceOf(_summitOriginAdd), "Exceeds balance");
+        <span class="missing-if-branch" title="else path not taken" >E</span>if (_summitAmount &gt; 0) {
+            summit.safeTransferFrom(_summitOriginAdd, address(this), _summitAmount);
+        }
+&nbsp;
+        // Calculate the extra EVEREST that is awarded by the deposited SUMMIT
+        uint256 additionalEverestAward = (_summitAmount * everestInfo.everestLockMultiplier) / 10000;
+        
+        // Mint EVEREST to the user's address
+        _mint(everestInfo.userAdd, additionalEverestAward);
+&nbsp;
+        // Increase running balances of EVEREST and SUMMIT
+        everestInfo.everestOwned += additionalEverestAward;
+        everestInfo.summitLocked += _summitAmount;
+&nbsp;
+        // Update average lock duration with new summit locked
+        _updateAvgSummitLockDuration(_summitAmount, everestInfo.lockDuration, true);
+&nbsp;
+        // Update the expedition with the users new EVEREST info
+        _updateEverestExtensionsUserEverestOwned(everestInfo);
+&nbsp;
+        return additionalEverestAward;
+    }
+&nbsp;
+    /// @dev Increase the duration of already locked SUMMIT, exit early if user is already locked for a longer duration
+    function _increaseLockDurationAndReleaseIfNecessary(UserEverestInfo storage everestInfo, uint256 _lockDuration)
+        internal
+        returns (uint256)
+    {
+        // Early escape if lock release already satisfies requirement
+        if ((block.timestamp + _lockDuration) &lt;= everestInfo.lockRelease) return 0;
+&nbsp;
+        // If required lock duration is satisfied, but lock release needs to be extended: Update lockRelease exclusively
+        if (_lockDuration &lt;= everestInfo.lockDuration) {
+            everestInfo.lockRelease = block.timestamp + _lockDuration;
+            return 0;
+        }
+&nbsp;
+        // Lock duration increased: earn additional EVEREST and update lockDuration and lockRelease
+        return _increaseLockDuration(_lockDuration, everestInfo.userAdd);
+    }
+&nbsp;
+    /// @dev Lock additional summit and extend duration to arbitrary duration
+    function lockAndExtendLockDuration(uint256 _summitAmount, uint256 _lockDuration, address _userAdd)
+        public
+        nonReentrant notPanic userEverestInfoExists(_userAdd) userOwnsEverest(_userAdd) validLockDuration(_lockDuration)
+    {
+        UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
+&nbsp;
+        // Increase the lock duration of the current locked SUMMIT
+        uint256 additionalEverestAward = _increaseLockDurationAndReleaseIfNecessary(everestInfo, _lockDuration);
+&nbsp;
+        // Increase the amount of locked summit by {_summitAmount} and increase the EVEREST award
+        additionalEverestAward += _increaseLockedSummit(
+            _summitAmount,
+            everestInfo,
+            msg.sender
+        );
+        
+        emit LockedSummitIncreased(_userAdd, true, _summitAmount, additionalEverestAward);
+    }
+&nbsp;
+    /// @dev Increase the users Locked Summit and earn everest
+    function increaseLockedSummit(uint256 _summitAmount)
+        public
+        nonReentrant notPanic userEverestInfoExists(msg.sender) userOwnsEverest(msg.sender)
+    {
+        uint256 additionalEverestAward = _increaseLockedSummit(
+            _summitAmount,
+            userEverestInfo[msg.sender],
+            msg.sender
+        );
+&nbsp;
+        emit LockedSummitIncreased(msg.sender, false, _summitAmount, additionalEverestAward);
+    }
+&nbsp;
+    /// @dev Decrease the Summit and burn everest
+    function withdrawLockedSummit(uint256 _everestAmount)
+        public
+        nonReentrant notPanic userEverestInfoExists(msg.sender) userOwnsEverest(msg.sender) userLockDurationSatisfied validEverestAmountToBurn(_everestAmount)
+    {
+        UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
+        <span class="missing-if-branch" title="else path not taken" >E</span>require (_everestAmount &lt;= everestInfo.everestOwned, "Bad withdraw");
+&nbsp;
+        uint256 summitToWithdraw = _everestAmount * 10000 / everestInfo.everestLockMultiplier;
+&nbsp;
+        everestInfo.everestOwned -= _everestAmount;
+        everestInfo.summitLocked -= summitToWithdraw;
+&nbsp;
+        // Update average summit lock duration with removed summit
+        _updateAvgSummitLockDuration(summitToWithdraw, everestInfo.lockDuration, false);
+&nbsp;
+        summit.safeTransfer(msg.sender, summitToWithdraw);
+        _burnEverest(msg.sender, _everestAmount);
+&nbsp;
+        _updateEverestExtensionsUserEverestOwned(everestInfo);
+&nbsp;
+        emit LockedSummitWithdrawn(msg.sender, summitToWithdraw, _everestAmount);
+    }
+&nbsp;
+    
+    
+    
+    
+    
+    // ----------------------------------------------------------------------
+    // --   E V E R E S T   E X T E N S I O N S
+    // ----------------------------------------------------------------------
+&nbsp;
+&nbsp;
+&nbsp;
+    /// @dev Add an everest extension
+    function addEverestExtension(address _extension)
+        public
+        onlyOwner
+    {
+        require(_extension != address(0), "Missing extension");
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(everestExtensions.length() &lt; 3, "Max extension cap reached");
+        require(!everestExtensions.contains(_extension), "Extension already exists");
+        everestExtensions.add(_extension);
+&nbsp;
+        emit EverestExtensionAdded(_extension);
+    }
+&nbsp;
+    /// @dev Remove an everest extension
+    function removeEverestExtension(address _extension)
+        public
+        onlyOwner
+    {
+        require(_extension != address(0), "Missing extension");
+        require(everestExtensions.contains(_extension), "Extension doesnt exist");
+&nbsp;
+        everestExtensions.remove(_extension);
+&nbsp;
+        emit EverestExtensionRemoved(_extension);
+    }
+&nbsp;
+    /// @dev Return list of everest extensions
+    function getEverestExtensions()
+        public view
+        returns (address[] memory)
+    {
+        return everestExtensions.values();
+    }
+&nbsp;
+    /// @dev Get user everest owned
+    function getUserEverestOwned(address _userAdd)
+        public view
+        returns (uint256)
+    {
+        return userEverestInfo[_userAdd].everestOwned;
+    }
+&nbsp;
+    function _updateEverestExtensionsUserEverestOwned(UserEverestInfo storage user)
+        internal
+    {
+        // Iterate through and update each extension with the user's everest amount
+        for (uint8 extensionIndex = 0; extensionIndex &lt; everestExtensions.length(); extensionIndex++) {
+            BaseEverestExtension(everestExtensions.at(extensionIndex)).updateUserEverest(user.everestOwned, user.userAdd);
+        }
+    }
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+&nbsp;
+    // -------------------------------------
+    // --   P A N I C
+    // -------------------------------------
+&nbsp;
+&nbsp;
+&nbsp;
+    /// @dev Turn on or off panic mode
+    function setPanic(bool _panic)
+        public
+        onlyOwner
+    {
+        panic = _panic;
+        emit SetPanic(_panic);
+    }
+&nbsp;
+&nbsp;
+    /// @dev Panic recover locked SUMMIT if something has gone wrong
+    function panicRecoverFunds()
+        public
+        nonReentrant userEverestInfoExists(msg.sender) onlyPanic
+    {
+        UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];
+&nbsp;
+        uint256 recoverableSummit = everestInfo.summitLocked;
+        summit.safeTransfer(msg.sender, recoverableSummit);
+&nbsp;
+        everestInfo.userAdd = address(0);
+        everestInfo.everestOwned = 0;
+        everestInfo.summitLocked = 0;
+        everestInfo.lockRelease = 0;
+        everestInfo.lockDuration = 0;
+        everestInfo.everestLockMultiplier = 0;
+&nbsp;
+        emit PanicFundsRecovered(msg.sender, recoverableSummit);
+    }
+&nbsp;
+}</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Dec 14 2021 16:51:29 GMT+0100 (Central European Standard Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>
