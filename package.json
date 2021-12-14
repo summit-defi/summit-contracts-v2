@@ -6,7 +6,8 @@
     "execute-queued-timelock-txs": "npx hardhat run scripts/execute-queued-timelock-transactions.ts --network ftm_mainnet",
     "queue-sync-farms": "npx hardhat run scripts/timelocked-update-pools-from-config.ts --network ftm_mainnet",
     "queue-misc-txs": "npx hardhat run scripts/queue-timelock-transactions.ts --network ftm_mainnet",
-    "testtx": "npx hardhat run scripts/test.ts --network ftm_mainnet"
+    "testtx": "npx hardhat run scripts/test.ts --network ftm_mainnet",
+    "coverage": "npx hardhat coverage"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.7",
@@ -40,6 +41,7 @@
     "web3": "^1.3.5"
   },
   "dependencies": {
-    "node-cron": "^3.0.0"
+    "node-cron": "^3.0.0",
+    "solidity-coverage": "^0.7.17"
   }
 }

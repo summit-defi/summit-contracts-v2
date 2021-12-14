@@ -6,6 +6,7 @@ import "@nomiclabs/hardhat-etherscan"
 import 'hardhat-abi-exporter'
 import 'hardhat-contract-sizer'
 import 'hardhat-gas-reporter'
+import 'solidity-coverage'
 import { task } from 'hardhat/config'
 import { HardhatUserConfig } from "hardhat/types";
 import { apiKey, mnemonics, namedAddresses } from './secrets'
@@ -147,10 +148,10 @@ const config: HardhatUserConfig = {
     only: [':ERC20$', ':Cartographer$', ':CartographerOasis$', ':CartographerElevation$', ':CartographerExpedition$', ':ElevationHelper$', ':Multicall$', ':SummitReferrals$', ':SummitToken$'],
     spacing: 2
   },
-  gasReporter: {
-    enabled: true,
-    excludeContracts: ['dummy/', 'PCS/', 'libs/'],
-  },
+  // gasReporter: {
+  //   enabled: true,
+  //   excludeContracts: ['dummy/', 'PCS/', 'libs/'],
+  // },
   // contractSizer: {
   //   alphaSort: true,
   //   runOnCompile: true,
