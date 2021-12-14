@@ -97,7 +97,7 @@ export const cartographerGet = {
     getRolloverReward: async () => {
         return await (await getCartographer()).rolloverReward()
     },
-    poolsCount: async () => {
+    poolsCount: async (): Promise<number> => {
         return (await (await getCartographer()).poolsCount()).toNumber()
     },
     elevationPoolsCount: async (elevation: number) => {
@@ -271,6 +271,32 @@ export const cartographerMethod = {
             await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Deposit, eventArgs, false)
         }
     },
+    elevate: async ({
+        user,
+        tokenAddress,
+        sourceElevation,
+        targetElevation,
+        amount,
+        revertErr,
+    }: {
+        user: SignerWithAddress,
+        tokenAddress: string,
+        sourceElevation: number,
+        targetElevation: number,
+        amount: BigNumber,
+        revertErr?: string,
+    }) => {
+        const cartographer = await getCartographer()
+        const tx = cartographer.connect(user).elevate
+        const txArgs = [tokenAddress, sourceElevation, targetElevation, amount]
+
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            const eventArgs = [user.address, tokenAddress, sourceElevation, targetElevation, amount]
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.Elevate, eventArgs, false)
+        }
+    },
     claimSingleFarm: async ({
         user,
         tokenAddress,
@@ -303,10 +329,12 @@ export const cartographerMethod = {
     claimElevation: async ({
         user,
         elevation,
+        eventOnly = false,
         revertErr,
     }: {
         user: SignerWithAddress,
         elevation: number,
+        eventOnly?: boolean,
         revertErr?: string,
     }) => {
         const cartographer = await getCartographer()
@@ -320,7 +348,7 @@ export const cartographerMethod = {
                 async (token) => await getTokenClaimableWithBonus(user.address, token.address, elevation)
             )
             const totalClaimableWithBonuses = sumBigNumbers(tokenClaimableWithBonuses)
-            const eventArgs = [user.address, elevation, totalClaimableWithBonuses]
+            const eventArgs = eventOnly ? null : [user.address, elevation, totalClaimableWithBonuses]
             await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.ClaimElevation, eventArgs, false)
         }
     },

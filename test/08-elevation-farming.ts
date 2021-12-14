@@ -1,24 +1,24 @@
 import { PLAINS, MESA, SUMMIT, elevationTests, passthroughTests, SubCartographer, cartographerSetParam, Contracts } from "../utils";
-import { fiveThousandUnlockedFixture, tenThousandUnlockedFixture, twoThousandUnlockedFixture } from "./fixtures";
+import { mesaUnlockedFixture, summitUnlockedFixture, plainsUnlockedFixture } from "./fixtures";
 
 const getElevationDiffedVariables = (elevation: number) => {
     switch (elevation) {
         case SUMMIT:
             return {
-                fixture: tenThousandUnlockedFixture,
+                fixture: summitUnlockedFixture,
                 meters: '10K',
                 onlyTwoPoolTests: true,
             }
         case MESA:
             return {
-                fixture: fiveThousandUnlockedFixture,
+                fixture: mesaUnlockedFixture,
                 meters: '5K',
                 onlyTwoPoolTests: true,
             }
         default:
         case PLAINS:
             return {
-                fixture: twoThousandUnlockedFixture,
+                fixture: plainsUnlockedFixture,
                 meters: '2K',
                 onlyTwoPoolTests: false,
             }

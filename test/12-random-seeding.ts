@@ -2,12 +2,12 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre from "hardhat";
 import { ERR, PLAINS, mineBlockWithTimestamp, getSeeds, mineBlock, summitTrustedSeederMethod, elevationHelperGet, summitTrustedSeederGet, rolloverRound, getTimestamp } from "../utils";
-import { twoThousandUnlockedFixture } from "./fixtures";
+import { plainsUnlockedFixture } from "./fixtures";
 
 
 describe("Seeding Random Numbers", function() {
   before(async function() {
-      await twoThousandUnlockedFixture()
+      await plainsUnlockedFixture()
   })
   it(`SEEDING: Sending sealed and unsealed seed should fail until nextSeedRoundAvailable returns true`, async function() {
     const { trustedSeeder } = await getNamedSigners(hre)

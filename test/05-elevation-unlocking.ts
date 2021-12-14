@@ -3,7 +3,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
 import { e18, ERR, EVENT, PLAINS, MESA, SUMMIT, mineBlockWithTimestamp, cartographerMethod, getSummitToken, OASIS, getCartographer, elevationHelperGet, cartographerSynth, cartographerGet, expect6FigBigNumberAllEqual, expectAllEqual, subCartGet, allElevationPromiseSequenceMap, getBifiToken, getCakeToken, promiseSequenceMap, consoleLog } from "../utils";
-import { fiveThousandUnlockedFixture, oasisUnlockedFixture, poolsFixture, twoThousandUnlockedFixture } from "./fixtures";
+import { mesaUnlockedFixture, oasisUnlockedFixture, poolsFixture, plainsUnlockedFixture } from "./fixtures";
 
 const switchTotemIfNecessary = async (user: SignerWithAddress, elevation: number, totem: number, revertErr?: string) => {
   if ((await subCartGet.userTotemInfo(elevation, user.address)).totemSelected) return
@@ -223,7 +223,7 @@ describe("ELEVATION Unlocks", function() {
 
   describe("- Five Thousand Meters", async function() {
     it(`UNLOCK: 5K Rollover should only be available after 5K elevation unlocks, else fails with error "${ERR.ELEVATION_LOCKED}"`, async function() {
-      await twoThousandUnlockedFixture()
+      await plainsUnlockedFixture()
       const fiveThousandUnlockTime = await elevationHelperGet.unlockTimestamp(MESA)
       
       await mineBlockWithTimestamp(fiveThousandUnlockTime - 60)
@@ -240,7 +240,7 @@ describe("ELEVATION Unlocks", function() {
       })
     })
     it(`UNLOCK: Rolling over first 5K round, 5K pools should switch from failing ("${ERR.POOL_NOT_AVAILABLE_YET}") to succeeding`, async function() {
-      const { summitToken, user1 } = await twoThousandUnlockedFixture()
+      const { summitToken, user1 } = await plainsUnlockedFixture()
 
       const fiveThousandUnlockTime = await elevationHelperGet.unlockTimestamp(MESA)
       await initialTotemSelections(user1)
@@ -280,7 +280,7 @@ describe("ELEVATION Unlocks", function() {
       })
     })
     it(`UNLOCK: 5K Rollover should increase totalAllocPoint`, async function() {
-      await twoThousandUnlockedFixture()
+      await plainsUnlockedFixture()
       
       const totalAllocPointInit = await cartographerSynth.totalAlloc()
       
@@ -310,7 +310,7 @@ describe("ELEVATION Unlocks", function() {
 
   describe('- Ten Thousand Meters', async function() {
     it(`UNLOCK: 10K Rollover should only be available after 10K elevation unlocks, else fails with error "${ERR.ELEVATION_LOCKED}"`, async function() {
-      await fiveThousandUnlockedFixture()
+      await mesaUnlockedFixture()
 
       const tenThousandUnlockTime = await elevationHelperGet.unlockTimestamp(SUMMIT)
       await mineBlockWithTimestamp(tenThousandUnlockTime - 60)
@@ -327,7 +327,7 @@ describe("ELEVATION Unlocks", function() {
       })
     })
     it(`UNLOCK: Rolling over first 10k round, 10k pools should switch from failing ("${ERR.POOL_NOT_AVAILABLE_YET}") to succeeding`, async function() {
-      const { summitToken, user1 } = await fiveThousandUnlockedFixture()
+      const { summitToken, user1 } = await mesaUnlockedFixture()
 
       const summitUnlockTimestamp = await elevationHelperGet.unlockTimestamp(SUMMIT)
       await switchTotemIfNecessary(user1, SUMMIT, 0)
@@ -353,7 +353,7 @@ describe("ELEVATION Unlocks", function() {
       })
     })
     it(`UNLOCK: 10K Rollover should increase totalAllocPoint`, async function() {
-      await fiveThousandUnlockedFixture()
+      await mesaUnlockedFixture()
       
       const totalAllocPointInit = await cartographerSynth.totalAlloc()
       
@@ -384,7 +384,7 @@ describe("ELEVATION Unlocks", function() {
 
   describe('- Round End Lockout', async function() {
     it(`LOCKOUT: Elevation pools lockout 1 minute before round end until rollover`, async function() {
-      const { summitToken, user1 } = await twoThousandUnlockedFixture()
+      const { summitToken, user1 } = await plainsUnlockedFixture()
       
       const twoMinutesBeforeRollover = await elevationHelperGet.roundEndTimestamp(PLAINS) - 180
       await initialTotemSelections(user1)

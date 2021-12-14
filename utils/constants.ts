@@ -1,3 +1,6 @@
+export const RUN_RNG_SIMS = false
+
+
 export const Contracts = {
     Cartographer: 'Cartographer',
     ElevationHelper: 'ElevationHelper',
@@ -111,7 +114,7 @@ export const ERR = {
     SELF_REFERRER: 'Cant refer yourself',
     NO_REWARDS_TO_REDEEM: 'No referral rewards to redeem',
     ONLY_CARTOGRAPHER_OR_EXPEDITION: 'Only cartographer or expedition',
-    TOTEM_MUST_BE_SELECTED: 'Totem must be selected',
+    TOTEM_NOT_SELECTED: 'Totem not selected',
 
     // Elevation
     INVALID_ELEV: 'Invalid elev',
@@ -130,7 +133,7 @@ export const ERR = {
     },
 
     // Switch Elevation
-    ELEV_SWITCH: {
+    ELEVATE: {
         NO_SAME_ELEV_TRANSFER: 'Must change elev',
         NO_EXPEDITION: 'No exped elev switch',
         NON_ZERO_AMOUNT: 'Transfer non zero amount',

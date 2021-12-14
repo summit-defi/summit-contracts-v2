@@ -3,7 +3,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
 import { consoleLog, ERR, EVENT, MESA, mineBlockWithTimestamp, OASIS, SUMMIT, PLAINS, ZEROADD, promiseSequenceMap, allElevationPromiseSequenceMap, getSubCartographers, Contracts, getCakeToken, getCartographer, getElevationHelper, getSummitToken, cartographerMethod, cartographerGet, elevationHelperGet, e18, subCartMethod, subCartGet, delay } from "../utils";
-import { baseFixture, twoThousandUnlockedFixture } from "./fixtures";
+import { baseFixture, plainsUnlockedFixture } from "./fixtures";
 
 const userDepositIntoPools = async () => {
   const { user1 } = await getNamedSigners(hre)
@@ -207,7 +207,7 @@ describe("Base Pools", function() {
       )
     })
     it('Pools can be disabled and reenabled', async function() {
-      await twoThousandUnlockedFixture()
+      await plainsUnlockedFixture()
       const { dev, user1 } = await getNamedSigners(hre)
       const summitToken = await getSummitToken()
 
@@ -250,7 +250,7 @@ describe("Base Pools", function() {
       expect(await cartographerGet.tokenAlloc(summitToken.address)).to.equal(summitTokenAlloc)
     })
     it('Tokens total alloc points can be updated', async function() {
-      await twoThousandUnlockedFixture()
+      await plainsUnlockedFixture()
       const { dev, user1 } = await getNamedSigners(hre)
       const summitToken = await getSummitToken()
 
