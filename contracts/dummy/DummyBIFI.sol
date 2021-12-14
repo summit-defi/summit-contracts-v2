@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.0;
 
-import "../libs/ERC20Mintable.sol";
+import "../libs/DummyERC20Mintable.sol";
 
 // SummitToken with Governance.
-contract DummyBIFI is ERC20Mintable('Dummy Bifi Token', 'BIFI') {
+contract DummyBIFI is DummyERC20Mintable('Dummy Bifi Token', 'BIFI') {
 
     // function dummyMint() public 
 }

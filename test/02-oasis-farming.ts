@@ -1,7 +1,7 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, mineBlock, oasisTests, toDecimal, passthroughTests, consoleLog, Contracts, OASIS, cartographerMethod, cartographerGet, subCartGet, mineBlocks } from "../utils";
+import { e18, ERR, EVENT, mineBlock, oasisTests, toDecimal, passthroughTests, consoleLog, Contracts, OASIS, cartographerMethod, cartographerGet, subCartGet, mineBlocks, elevationTests } from "../utils";
 import { getCartographer, getSummitToken } from "../utils/contracts";
 import { oasisUnlockedFixture, poolsFixture } from "./fixtures";
 
@@ -107,6 +107,7 @@ describe("OASIS Pools", function() {
 
     // REWARDS UPDATING AND SPLITTING
     oasisTests.rewardsCorrectlyDistributed(Contracts.SummitToken)
+    elevationTests.emergencyWithdraw(Contracts.SummitToken, OASIS)
 
 
     // ALLOCPOINT

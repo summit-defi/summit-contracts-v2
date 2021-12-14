@@ -1181,11 +1181,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         emit RolloverReferral(msg.sender);
     }
 
-    /// @dev Referral burn timestamp for frontend
-    function referralBurnTimestamp() public view returns(uint256) {
-        return elevationHelper.referralBurnTimestamp();
-    }
-
     /// @dev Safety hatch for referral reward round rollover burning needed summit
     function referralRewardsMintSafetyHatch(uint256 _amount) public {
         // Only callable by summitReferrals contract

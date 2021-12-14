@@ -272,9 +272,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     function _getUserTotem(address _userAdd) internal view returns (uint8) {
         return userElevationInfo[_userAdd].totem;
     }
-    function selectedTotem(address _userAdd) external view override returns (uint8) {
-        return _getUserTotem(_userAdd);
-    }
     function isTotemSelected(address _userAdd) external view override returns (bool) {
         return _totemSelected(_userAdd);
     }
@@ -1004,9 +1001,6 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         returns (bool)
     {
         return (user.staked + user.roundRew) > 0;
-    }
-    function userInteractingWithPool(address _token, address _userAdd) public view poolExists(_token) returns (bool) {
-        return userInteractingPools[_userAdd].contains(_token);
     }
 
 

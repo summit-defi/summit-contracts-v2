@@ -151,9 +151,6 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
     function supply(address _token) external view override returns (uint256) {
         return poolInfo[_token].supply;
     }
-    function selectedTotem(address) external pure override returns (uint8) {
-        return 0;
-    }
     function isTotemSelected(address) external pure override returns (bool) {
         return true;
     }
@@ -386,9 +383,6 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
         } else {
             userInteractingPools[_userAdd].remove(_token);
         }
-    }
-    function userInteractingWithPool(address _token, address _userAdd) public view poolExists(_token) returns (bool) {
-        return userInteractingPools[_userAdd].contains(_token);
     }
 
     /// @dev Claim an entire elevation

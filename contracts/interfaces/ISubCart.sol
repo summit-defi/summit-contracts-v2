@@ -20,7 +20,6 @@ interface ISubCart {
     function withdraw(address _token, uint256 _amount, address _userAdd, bool _isElevate) external returns (uint256);
  
     function supply(address _token) external view returns (uint256);
-    function selectedTotem(address _userAdd) external view returns (uint8);
     function isTotemSelected(address _userAdd) external view returns (bool);
 
     function userStakedAmount(address _token, address _userAdd) external view returns (uint256);

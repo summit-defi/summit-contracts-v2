@@ -5,7 +5,7 @@ import "@nomiclabs/hardhat-ganache"
 import "@nomiclabs/hardhat-etherscan"
 import 'hardhat-abi-exporter'
 import 'hardhat-contract-sizer'
-// import 'hardhat-gas-reporter'
+import 'hardhat-gas-reporter'
 import 'solidity-coverage'
 import { task } from 'hardhat/config'
 import { HardhatUserConfig } from "hardhat/types";
@@ -36,7 +36,7 @@ const config: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200,
+        runs: 1000,
       }
     },
   },
@@ -148,10 +148,10 @@ const config: HardhatUserConfig = {
     only: [':ERC20$', ':Cartographer$', ':CartographerOasis$', ':CartographerElevation$', ':CartographerExpedition$', ':ElevationHelper$', ':Multicall$', ':SummitReferrals$', ':SummitToken$'],
     spacing: 2
   },
-  // gasReporter: {
-  //   enabled: true,
-  //   excludeContracts: ['dummy/', 'PCS/', 'libs/'],
-  // },
+  gasReporter: {
+    enabled: true,
+    excludeContracts: ['dummy/', 'PCS/', 'libs/'],
+  },
   // contractSizer: {
   //   alphaSort: true,
   //   runOnCompile: true,

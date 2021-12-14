@@ -20,24 +20,24 @@
     </h1>
     <div class='clearfix'>
       <div class='fl pad1y space-right2'>
-        <span class="strong">0% </span>
+        <span class="strong">44.44% </span>
         <span class="quiet">Statements</span>
-        <span class='fraction'>0/6</span>
+        <span class='fraction'>4/9</span>
       </div>
       <div class='fl pad1y space-right2'>
-        <span class="strong">0% </span>
+        <span class="strong">66.67% </span>
         <span class="quiet">Branches</span>
-        <span class='fraction'>0/2</span>
+        <span class='fraction'>4/6</span>
       </div>
       <div class='fl pad1y space-right2'>
-        <span class="strong">0% </span>
+        <span class="strong">100% </span>
         <span class="quiet">Functions</span>
-        <span class='fraction'>0/1</span>
+        <span class='fraction'>2/2</span>
       </div>
       <div class='fl pad1y space-right2'>
-        <span class="strong">0% </span>
+        <span class="strong">44.44% </span>
         <span class="quiet">Lines</span>
-        <span class='fraction'>0/6</span>
+        <span class='fraction'>4/9</span>
       </div>
     </div>
   </div>
@@ -77,7 +77,17 @@
 32
 33
 34
-35</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -100,7 +110,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2×</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1×</span>
+<span class="cline-any cline-yes">1×</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -119,28 +139,38 @@ import "./libs/ERC20Mintable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 &nbsp;
-contract SummitToken is ERC20Mintable('SummitToken', 'SUMMIT'), ReentrancyGuard {
+contract SummitToken is ERC20Mintable('SummitToken', 'SUMMIT'), ReentrancyGuard, Initializable {
     using SafeERC20 for IERC20;
 &nbsp;
-    IERC20 constant oldSummit = IERC20(0x8F9bCCB6Dd999148Da1808aC290F2274b13D7994);
+    IERC20 public oldSummit;
     uint256 constant swapRatio = 1000;
     address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
 &nbsp;
     event SummitTokenSwap(address indexed user, uint256 oldSummitAmount, uint256 newSummitAmount);
 &nbsp;
+    function initialize(address _oldSummit)
+        public
+        initializer onlyOwner
+    {
+        require(_oldSummit != address(0), "Missing Old Summit");
+        oldSummit = IERC20(_oldSummit);
+    }
+&nbsp;
     /// @dev Token swap from V1 token
-<span class="fstat-no" title="function not covered" >    function tokenSwap(uint256 _amount)</span>
+    function tokenSwap(uint256 _amount)
         public
         nonReentrant
     {
-<span class="cstat-no" title="statement not covered" >        require(oldSummit.balanceOf(msg.sender) &gt;= _amount, "Not enough SUMMIT")</span>;
+        <span class="missing-if-branch" title="else path not taken" >E</span>require(address(oldSummit) != address(0), "Old SUMMIT not set");
+        <span class="missing-if-branch" title="if path not taken" >I</span>require(_amount &lt;= oldSummit.balanceOf(msg.sender), "Not enough SUMMIT");
         
 <span class="cstat-no" title="statement not covered" >        oldSummit.safeTransferFrom(msg.sender, address(this), _amount)</span>;
 <span class="cstat-no" title="statement not covered" >        oldSummit.safeTransfer(burnAdd, _amount)</span>;
 &nbsp;
 <span class="cstat-no" title="statement not covered" >        uint256 newSummitAmount = _amount * swapRatio / 10000;</span>
-<span class="cstat-no" title="statement not covered" >        mint(msg.sender, newSummitAmount)</span>;
+<span class="cstat-no" title="statement not covered" >        _mint(msg.sender, newSummitAmount)</span>;
 &nbsp;
 <span class="cstat-no" title="statement not covered" >        emit SummitTokenSwap(msg.sender, _amount, newSummitAmount);</span>
     }
@@ -151,7 +181,7 @@ contract SummitToken is ERC20Mintable('SummitToken', 'SUMMIT'), ReentrancyGuard 
 </div><!-- /wrapper -->
 <div class='footer quiet pad2 space-top1 center small'>
   Code coverage
-  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Dec 14 2021 16:51:29 GMT+0100 (Central European Standard Time)
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Tue Dec 14 2021 23:22:43 GMT+0100 (Central European Standard Time)
 </div>
 </div>
 <script src="../prettify.js"></script>

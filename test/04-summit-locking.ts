@@ -277,7 +277,8 @@ describe("SUMMIT LOCKING", async function() {
         
         await cartographerMethod.claimElevation({
             user: user1,
-            elevation: OASIS
+            elevation: OASIS,
+            eventOnly: true
         }) 
         
         const lifetimeWinnings1 = await summitLockingGet.getUserLifetimeWinnings(user1.address)

@@ -6,7 +6,7 @@ import { Contract } from 'ethers';
 import { access } from 'fs';
 import hre, { ethers } from 'hardhat';
 import { cartographerGet, cartographerMethod, cartographerSynth, consoleLog, deltaBN, depositedAfterFee, e18, elevationHelperGet, ERR, EVENT, getCartographer, getContract, getSummitBalance, getTokenBalance, getTotemCount, getUserTotems, mineBlock, rolloverRound, rolloverRounds, rolloverRoundUntilLosingTotem, rolloverRoundUntilWinningTotem, subCartGet, subCartMethod, sumBigNumbers, toDecimal, usersPoolYieldsContributed } from '.';
-import { TOTEM_COUNT } from './constants';
+import { OASIS, TOTEM_COUNT } from './constants';
 import { summitLockingGet } from './summitLockingUtils';
 import { userPromiseSequenceMap, userPromiseSequenceReduce, usersPotentialWinnings, usersRewards, usersStaked, usersTotemInfos } from './users';
 import { e12, expect6FigBigNumberEquals, expect6FigBigNumberAllEqual, expectBigNumberArraysEqual, expectBigNumberGreaterThan, expectBigNumberLessThan, mineBlocks, stringifyBigNumberArray, getTimestamp, mineBlockWithTimestamp, increaseTimestampAndMine, e0, e6, tokenAmountAfterWithdrawTax } from './utils';
@@ -634,10 +634,13 @@ const emergencyWithdraw = (tokenName: string, elevation: number) => {
     const userBalanceFinal = await getTokenBalance(token, user1.address)
 
     expect(userInfoFinal.debt).to.equal(0)
-    expect(userInfoFinal.prevInteractedRound).to.equal(0)
-    expect(userInfoFinal.roundRew).to.equal(0)
     expect(userInfoFinal.staked).to.equal(0)
-    expect(userInfoFinal.winningsDebt).to.equal(0)
+
+    if (elevation !== OASIS) {
+      expect(userInfoFinal.prevInteractedRound).to.equal(0)
+      expect(userInfoFinal.roundRew).to.equal(0)
+      expect(userInfoFinal.winningsDebt).to.equal(0)
+    }
     expect(deltaBN(userLockedInit, userLockedFinal)).to.equal(0)
     expect(deltaBN(userBalanceInit, userBalanceFinal)).to.equal(amountAfterTax)
   })
