@@ -13,7 +13,7 @@ abstract contract BaseEverestExtension {
         _;
     }
 
-    function getUserEverest(address _userAdd)
+    function _getUserEverest(address _userAdd)
         internal view
         returns (uint256)
     {

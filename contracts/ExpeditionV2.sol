@@ -173,6 +173,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
     event UserHarvestedExpedition(address indexed user, uint256 _summitHarvested, uint256 _usdcHarvested);
 
     event ExpeditionInitialized(address _usdcTokenAddress, address _elevationHelper);
+    event ExpeditionEmissionsRecalculated(uint256 _roundsRemaining, uint256 _summitEmissionPerRound, uint256 _usdcEmissionPerRound);
     event ExpeditionFundsAdded(address indexed token, uint256 _amount);
     event ExpeditionDisabled();
     event ExpeditionEnabled();
@@ -372,6 +373,12 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
         bool summitFundNonZero = _recalculateExpeditionTokenEmissions(expeditionInfo.summit);
         bool usdcFundNonZero = _recalculateExpeditionTokenEmissions(expeditionInfo.usdc);
         expeditionInfo.roundsRemaining = (summitFundNonZero || usdcFundNonZero) ? expeditionRunwayRounds : 0;
+    }
+    function recalculateExpeditionEmissions()
+        public onlyOwner
+    {
+        _recalculateExpeditionEmissions();
+        emit ExpeditionEmissionsRecalculated(expeditionInfo.roundsRemaining, expeditionInfo.summit.roundEmission, expeditionInfo.usdc.roundEmission);
     }
 
     /// @dev Add funds to the expedition
@@ -658,9 +665,29 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
     // ---------------------------------------
 
 
+    function syncEverestAmount()
+        public
+        nonReentrant
+    {
+        _updateUserEverestAmount(
+            msg.sender,
+            _getUserEverest(msg.sender)
+        );
+    }
+
+
     function updateUserEverest(uint256 _everestAmount, address _userAdd)
         external override
         onlyEverestToken
+    {
+        _updateUserEverestAmount(
+            _userAdd,
+            _everestAmount
+        );
+    }
+
+    function _updateUserEverestAmount(address _userAdd, uint256 _everestAmount)
+        internal
     {
         UserExpeditionInfo storage user = _getOrCreateUserInfo(_userAdd);
 
@@ -777,7 +804,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
             userExpeditionInfo[_userAdd].deitySelected,
             userExpeditionInfo[_userAdd].safetyFactorSelected
         );
-    }    
+    }
 
     function joinExpedition()
         public

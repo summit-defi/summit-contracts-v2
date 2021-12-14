@@ -56,6 +56,7 @@ describe("EXPEDITION V2", async function() {
             tokenAddress: cakeToken.address,
             amount: e18(500),
         })
+        await expeditionMethod.recalculateExpeditionEmissions({ dev })
 
         const expectedEmissionsMid = await expeditionSynth.getExpeditionExpectedEmissions()
         const expeditionInfoMid = await expeditionGet.expeditionInfo()
@@ -72,6 +73,7 @@ describe("EXPEDITION V2", async function() {
             tokenAddress: summitToken.address,
             amount: e18(300),
         })
+        await expeditionMethod.recalculateExpeditionEmissions({ dev })
 
         const expectedEmissionsFinal = await expeditionSynth.getExpeditionExpectedEmissions()
         const expeditionInfoFinal = await expeditionGet.expeditionInfo()
@@ -81,6 +83,27 @@ describe("EXPEDITION V2", async function() {
         expect(expeditionInfoFinal.summitExpeditionToken.roundEmission).to.equal(expectedEmissionsFinal.summitEmission)
         expect(expeditionInfoFinal.usdcExpeditionToken.emissionsRemaining).to.equal(e18(500))
         expect(expeditionInfoFinal.usdcExpeditionToken.roundEmission).to.equal(expectedEmissionsFinal.usdcEmission)
+    })
+
+    it('SYNC EVEREST: Sync everest keeps values correct', async function() {
+        const { user1 } = await getNamedSigners(hre)
+
+        const expeditionInfoInit = await expeditionGet.expeditionInfo()
+        const userExpedInfoInit = await expeditionGet.userExpeditionInfo(user1.address)
+
+        await expeditionMethod.syncEverestAmount({
+            user: user1
+        })
+
+        const expeditionInfoFinal = await expeditionGet.expeditionInfo()
+        const userExpedInfoFinal = await expeditionGet.userExpeditionInfo(user1.address)
+
+        expect(expeditionInfoInit.deitiedSupply).to.equal(expeditionInfoFinal.deitiedSupply)
+        expect(expeditionInfoInit.deitySupply[userExpedInfoInit.deity]).to.equal(expeditionInfoFinal.deitySupply[userExpedInfoInit.deity])
+        expect(expeditionInfoInit.safeSupply).to.equal(expeditionInfoFinal.safeSupply)
+        expect(userExpedInfoInit.everestOwned).to.equal(userExpedInfoFinal.everestOwned)
+        expect(userExpedInfoInit.safeSupply).to.equal(userExpedInfoFinal.safeSupply)
+        expect(userExpedInfoInit.deitiedSupply).to.equal(userExpedInfoFinal.deitiedSupply)
     })
 
     it('EXPEDITION: Users can only enter expedition if they own everest, have selected a deity, and have selected a safety factor', async function() {

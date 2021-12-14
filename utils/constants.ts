@@ -288,6 +288,7 @@ export const EVENT = {
         UserHarvestedExpedition: 'UserHarvestedExpedition',
 
         ExpeditionInitialized: 'ExpeditionInitialized',
+        ExpeditionEmissionsRecalculated: 'ExpeditionEmissionsRecalculated',
         ExpeditionFundsAdded: 'ExpeditionFundsAdded',
         ExpeditionDisabled: 'ExpeditionDisabled',
         ExpeditionEnabled: 'ExpeditionEnabled',
