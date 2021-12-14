@@ -2,7 +2,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { Contract } from "ethers";
 import { deployments } from "hardhat";
-import { OASIS, PLAINS, MESA, SUMMIT, EXPEDITION, INF_APPROVE, e18, mineBlockWithTimestamp, getSeeds, mineBlocks, TOKEN_FEE, Contracts, getSubCartographers, promiseSequenceMap, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getMasterChef, getMasterChefPassthrough, getSummitReferrals, getSummitToken, getTimelock, elevationHelperGet, getSummitRandomnessModule, expeditionMethod, rolloverRound, getDummyEverestExtension } from "../utils";
+import { OASIS, PLAINS, MESA, SUMMIT, EXPEDITION, INF_APPROVE, e18, mineBlockWithTimestamp, getSeeds, mineBlocks, TOKEN_FEE, Contracts, getSubCartographers, promiseSequenceMap, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getMasterChef, getMasterChefPassthrough, getSummitReferrals, getSummitToken, getTimelock, elevationHelperGet, getSummitTrustedSeeder, expeditionMethod, rolloverRound, getDummyEverestExtension } from "../utils";
 
 interface FixtureState {
   readonly dev: SignerWithAddress
@@ -44,7 +44,7 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
   const cartographer = await getCartographer()
   const subCartographers = await getSubCartographers()
   const elevationHelper = await getElevationHelper()
-  const summitTrustedSeederRNGModule = await getSummitRandomnessModule()
+  const summitTrustedSeederRNGModule = await getSummitTrustedSeeder()
   const summitReferrals = await getSummitReferrals()
   const timelock = await getTimelock()
   const everestToken = await getEverestToken()
@@ -132,7 +132,7 @@ export const oasisUnlockedFixture = deployments.createFixture(async (): Promise<
   return poolsFixtureState
 })
 
-export const twoThousandUnlockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
+export const plainsUnlockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
   const oasisUnlockedFixtureState = await oasisUnlockedFixture();
 
   const { summitTrustedSeederRNGModule, cartographer, trustedSeeder } = oasisUnlockedFixtureState
@@ -150,8 +150,8 @@ export const twoThousandUnlockedFixture = deployments.createFixture(async (): Pr
   return oasisUnlockedFixtureState
 })
 
-export const fiveThousandUnlockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
-  const twoThousandUnlockedFixtureState = await twoThousandUnlockedFixture();
+export const mesaUnlockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
+  const twoThousandUnlockedFixtureState = await plainsUnlockedFixture();
 
   const { cartographer } = twoThousandUnlockedFixtureState
   const fiveThousandUnlockTime = await elevationHelperGet.unlockTimestamp(MESA)
@@ -161,8 +161,8 @@ export const fiveThousandUnlockedFixture = deployments.createFixture(async (): P
   return twoThousandUnlockedFixtureState
 })
 
-export const tenThousandUnlockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
-  const fiveThousandUnlockedFixtureState = await fiveThousandUnlockedFixture();
+export const summitUnlockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
+  const fiveThousandUnlockedFixtureState = await mesaUnlockedFixture();
 
   const { cartographer } = fiveThousandUnlockedFixtureState
   const tenThousandUnlockTime = await elevationHelperGet.unlockTimestamp(SUMMIT)
@@ -173,7 +173,7 @@ export const tenThousandUnlockedFixture = deployments.createFixture(async (): Pr
 })
 
 export const expeditionUnlockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
-  const tenThousandUnlockedFixtureState = await tenThousandUnlockedFixture();
+  const tenThousandUnlockedFixtureState = await summitUnlockedFixture();
 
   const expeditionUnlockTime = await elevationHelperGet.unlockTimestamp(EXPEDITION)
   await mineBlockWithTimestamp(expeditionUnlockTime)
@@ -183,7 +183,7 @@ export const expeditionUnlockedFixture = deployments.createFixture(async (): Pro
 })
 
 export const timelockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
-  const expeditionUnlockedFixtureState = await tenThousandUnlockedFixture();
+  const expeditionUnlockedFixtureState = await summitUnlockedFixture();
 
   const { dev, cartographer, subCartographers, timelock } = expeditionUnlockedFixtureState
 

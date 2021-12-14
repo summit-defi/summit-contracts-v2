@@ -215,7 +215,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         return userElevationInfo[_userAdd].totemSelected;
     }
     modifier userHasSelectedTotem(address _userAdd) {
-        require(_totemSelected(_userAdd), "Totem must be selected");
+        require(_totemSelected(_userAdd), "Totem not selected");
         _;
     }
     function _validUserAdd(address _userAdd) internal pure {
@@ -863,10 +863,10 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @dev Update the users round interaction
     /// @param pool Pool info
     /// @param user User info
+    /// @param _totem Totem (potentially new totem)
     /// @param _amount Amount depositing / withdrawing
     /// @param _isDeposit Flag to differentiate deposit / withdraw
-    /// @param _userAdd User's address (for totem)
-    function _updateUserRoundInteraction(ElevationPoolInfo storage pool, UserInfo storage user, uint256 _amount, bool _isDeposit, address _userAdd)
+    function _updateUserRoundInteraction(ElevationPoolInfo storage pool, UserInfo storage user, uint8 _totem, uint256 _amount, bool _isDeposit)
         internal
     {
         uint256 currRound = elevationHelper.roundNumber(elevation);
@@ -896,7 +896,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         user.roundDebt = user.staked * pool.accSummitPerShare / 1e12;
 
         // Acc Winnings Per Share of the user's totem
-        user.winningsDebt = pool.totemRunningPrecomputedMult[_getUserTotem(_userAdd)];
+        user.winningsDebt = pool.totemRunningPrecomputedMult[_totem];
 
         // Update the user's previous interacted round to be this round
         user.prevInteractedRound = currRound;
@@ -914,6 +914,10 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
 
     /// @dev Increments or decrements user's pools at elevation staked, and adds to  / removes from users list of staked pools
     function _markUserInteractingWithPool(address _token, address _userAdd, bool _interacting) internal {
+        // Early escape if interacting state already up to date
+        if (userInteractingPools[_userAdd].contains(_token) == _interacting) return;
+
+        // Validate staked pool cap
         require(!_interacting || userInteractingPools[_userAdd].length() < 12, "Staked pool cap (12) reached");
 
         if (_interacting) {
@@ -934,7 +938,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         uint8 prevTotem = _getUserTotem(_userAdd);
 
         // Early exit if totem is same as current
-        require(!_totemSelected(_userAdd) || prevTotem != _totem, "Totem must be different");
+        require(!_totemSelected(_userAdd) || prevTotem != _totem, "Totem must change");
 
         // Iterate through pools the user is interacting with and update totem
         uint256 claimable = 0;
@@ -965,6 +969,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         uint256 claimable = _unifiedClaim(
             pool,
             user,
+            _newTotem,
             _userAdd
         );
 
@@ -1024,6 +1029,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
             claimable += _unifiedClaim(
                 poolInfo[interactingPools[index]],
                 userInfo[interactingPools[index]][_userAdd],
+                _getUserTotem(_userAdd),
                 _userAdd
             );
         }
@@ -1064,6 +1070,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         _unifiedClaim(
             poolInfo[_token],
             userInfo[_token][_userAdd],
+            _getUserTotem(_userAdd),
             _userAdd
         );
 
@@ -1113,6 +1120,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         _unifiedClaim(
             poolInfo[_token],
             userInfo[_token][_userAdd],
+            _getUserTotem(_userAdd),
             _userAdd
         );
 
@@ -1131,9 +1139,10 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
     /// @dev Claim winnings from a pool
     /// @param pool ElevationPoolInfo of pool to withdraw from
     /// @param user UserInfo of withdrawing user
+    /// @param _totem Users Totem (new totem if necessary)
     /// @param _userAdd User address
     /// @return Amount claimable
-    function _unifiedClaim(ElevationPoolInfo storage pool, UserInfo storage user, address _userAdd)
+    function _unifiedClaim(ElevationPoolInfo storage pool, UserInfo storage user, uint8 _totem, address _userAdd)
         internal
         returns (uint256)
     {
@@ -1143,7 +1152,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         uint256 claimable = _claimWinnings(pool, user, _userAdd);
 
         // Update the users round interaction, may be updated again in the same tx, but must be updated here to maintain state
-        _updateUserRoundInteraction(pool, user, 0, true, _userAdd);
+        _updateUserRoundInteraction(pool, user, _totem, 0, true);
 
         // Update users pool interaction status, may be updated again in the same tx, but must be updated here to maintain state
         _markUserInteractingWithPool(pool.token, _userAdd, _userInteractingWithPool(user));
@@ -1184,7 +1193,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
         }
         
         // Update / create users interaction with the pool
-        _updateUserRoundInteraction(pool, user, amountAfterFee, true, _userAdd);
+        _updateUserRoundInteraction(pool, user, totem, amountAfterFee, true);
 
         // Update users pool interaction status
         _markUserInteractingWithPool(pool.token, _userAdd, _userInteractingWithPool(user));
@@ -1222,7 +1231,7 @@ contract CartographerElevation is ISubCart, Ownable, Initializable, ReentrancyGu
             updatePool(pool.token);
 
             // Update the users interaction in the pool
-            _updateUserRoundInteraction(pool, user, _amount, false, _userAdd);
+            _updateUserRoundInteraction(pool, user, totem, _amount, false);
         }
         
         // Signal cartographer to perform withdrawal function if not elevating funds

@@ -375,6 +375,10 @@ contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard 
 
     /// @dev Increments or decrements user's pools at elevation staked, and adds to  / removes from users list of staked pools
     function _markUserInteractingWithPool(address _token, address _userAdd, bool _interacting) internal {
+        // Early escape if interacting state already up to date
+        if (userInteractingPools[_userAdd].contains(_token) == _interacting) return;
+
+        // Validate staked pool cap
         require(!_interacting || userInteractingPools[_userAdd].length() < 12, "Staked pool cap (12) reached");
 
         if (_interacting) {

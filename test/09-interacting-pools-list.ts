@@ -3,13 +3,13 @@ import { expect } from "chai"
 import hre from "hardhat";
 import { e18, ERR, toDecimal, getTimestamp, deltaBN, mineBlockWithTimestamp, promiseSequenceMap, getSummitToken, everestGet, everestMethod, days, getSummitBalance, getEverestBalance, userPromiseSequenceMap, allElevationPromiseSequenceMap, cartographerMethod, rolloverRoundUntilWinningTotem, getUserTotems, OASIS, getCakeToken, getBifiToken, epochDuration, getSummitLocking, rolloverIfAvailable, rolloverRound, sumBigNumbers, tokenPromiseSequenceMap, cartographerGet, expect6FigBigNumberEquals, BURNADD, expectAllEqual, usersInteractingPoolsLists, subCartGet, onlyElevationPromiseSequenceMap, getInvUserTotems } from "../utils";
 import { summitLockingGet, summitLockingMethod } from "../utils/summitLockingUtils";
-import { oasisUnlockedFixture, tenThousandUnlockedFixture } from "./fixtures";
+import { oasisUnlockedFixture, summitUnlockedFixture } from "./fixtures";
 
 
 
 describe("INTERACTING POOLS LIST", async function() {
     before(async function () {
-        const { user1 } = await tenThousandUnlockedFixture()
+        const { user1 } = await summitUnlockedFixture()
         const userTotems = await getUserTotems()
 
         await allElevationPromiseSequenceMap(

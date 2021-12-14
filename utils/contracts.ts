@@ -7,7 +7,7 @@ export const getContract = async (contractName: string) => {
 
 export const getCartographer = async () => await getContract(Contracts.Cartographer)
 export const getElevationHelper = async () => await getContract(Contracts.ElevationHelper)
-export const getSummitRandomnessModule = async () => await getContract(Contracts.SummitTrustedSeederRNGModule)
+export const getSummitTrustedSeeder = async () => await getContract(Contracts.SummitTrustedSeederRNGModule)
 export const getSummitToken = async () => await getContract(Contracts.SummitToken)
 export const getSummitReferrals = async () => await getContract(Contracts.SummitReferrals)
 export const getBifiToken = async () => await getContract(Contracts.DummyBIFI)

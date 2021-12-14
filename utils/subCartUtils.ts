@@ -124,9 +124,16 @@ export const subCartGet = {
     getUserInteractingPools: async (elevation: number, userAddress: string): Promise<string[]> => {
         return await (await getSubCartographer(elevation)).getUserInteractingPools(userAddress)
     },
+    getUserInteractingPoolsCount: async (elevation: number, userAddress: string): Promise<number> => {
+        return (await (await getSubCartographer(elevation)).getUserInteractingPools(userAddress)).length
+    },
     getActivePools: async (elevation: number): Promise<string[]> => {
         if (elevation === OASIS) return []
         return await (await getSubCartographer(elevation)).getActivePools()
+    },
+    getActivePoolsCount: async (elevation: number): Promise<number> => {
+        if (elevation === OASIS) return 0
+        return (await (await getSubCartographer(elevation)).getActivePools()).length
     }
 }
 

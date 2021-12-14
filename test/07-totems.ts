@@ -2,7 +2,7 @@ import { getNamedSigner, getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/
 import hre from 'hardhat'
 import { expect } from "chai"
 import { userPromiseSequenceMap, allElevationPromiseSequenceMap, cartographerMethod, getUserTotems, usersTotemInfos, OASIS, elevationHelperGet, mineBlockWithTimestamp, PLAINS, rolloverRound, subCartGet, ERR, e18, getSummitToken } from "../utils";
-import { oasisUnlockedFixture, twoThousandUnlockedFixture } from "./fixtures";
+import { oasisUnlockedFixture, plainsUnlockedFixture } from "./fixtures";
 
 
 
@@ -73,7 +73,7 @@ describe("TOTEMS", async function() {
     })
     describe("TOTEM SELECTION BEFORE DEPOSIT", async function() {
         before(async function () {
-            await twoThousandUnlockedFixture()
+            await plainsUnlockedFixture()
         })
         it('TOTEM SELECTION: Totems must be selected before deposit is allowed', async function() {
             const { user1 } = await getNamedSigners(hre)
@@ -84,7 +84,7 @@ describe("TOTEMS", async function() {
                 tokenAddress: summitToken.address,
                 elevation: PLAINS,
                 amount: e18(5),
-                revertErr: ERR.TOTEM_MUST_BE_SELECTED
+                revertErr: ERR.TOTEM_NOT_SELECTED
             })
 
             await cartographerMethod.switchTotem({

@@ -209,12 +209,6 @@ export const writeContractAddresses = (chainId: string, addresses: Array<[string
 }
 
 // SEEDING
-export const getSeeds = (input: string, seeder: string): { unsealedSeed: string, sealedSeed: string } => {
-    const unsealedSeed = web3.utils.keccak256(input)
-    const encoded = web3.utils.encodePacked(unsealedSeed, seeder)
-    const sealedSeed = web3.utils.keccak256(encoded!)
-    return { unsealedSeed, sealedSeed }
-}
 
 // TOKEN ADDRESS
 export const replaceSummitAddresses = (address: string, summitAddress: string, summitLpAddress: string): string => {
