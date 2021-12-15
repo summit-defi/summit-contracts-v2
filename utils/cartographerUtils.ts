@@ -1,7 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { boolean, string } from "hardhat/internal/core/params/argumentTypes"
-import { claimAmountBonus, claimAmountWithBonusAdded, days, e12, e6, elevationPromiseSequenceReduce, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getBifiToken, getCakeToken, getTimestamp, OASIS, subCartGet, sumBigNumbers, toDecimal, tokenAmountAfterDepositFee, tokenAmountAfterWithdrawTax, tokenPromiseSequenceMap } from "."
+import { claimAmountBonus, claimAmountWithBonusAdded, days, e18, e12, e6, elevationPromiseSequenceReduce, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getBifiToken, getCakeToken, getTimestamp, OASIS, subCartGet, sumBigNumbers, toDecimal, tokenAmountAfterDepositFee, tokenAmountAfterWithdrawTax, tokenPromiseSequenceMap } from "."
 import { getCartographer, getSummitToken } from "./contracts"
 
 
@@ -105,7 +105,28 @@ export const cartographerGet = {
     },
     tokenLastWithdrawTimestampForBonus: async (userAddress: string, tokenAddress: string): Promise<number> => {
         return (await (await getCartographer()).tokenLastWithdrawTimestampForBonus(userAddress, tokenAddress)).toNumber()
-    }
+    },
+    tokenLastDepositTimestampForTax: async (userAddress: string, tokenAddress: string): Promise<number> => {
+        return (await (await getCartographer()).tokenLastDepositTimestampForTax(userAddress, tokenAddress)).toNumber()
+    },
+    userTokenStakedAmount: async (userAddress: string, tokenAddress: string): Promise<BigNumber> => {
+        return await (await getCartographer()).userTokenStakedAmount(userAddress, tokenAddress)
+    },
+    taxResetOnDepositBP: async (): Promise<number> => {
+        return (await (await getCartographer()).taxResetOnDepositBP()).toNumber()
+    },
+    taxBP: async (userAddress: string, tokenAddress: string): Promise<number> => {
+        return await (await getCartographer()).taxBP(userAddress, tokenAddress)
+    },
+    tokenWithdrawalTax: async (tokenAddress: string): Promise<number> => {
+        return await (await getCartographer()).tokenWithdrawalTax(tokenAddress)
+    },
+    isNativeFarmToken: async (tokenAddress: string): Promise<number> => {
+        return await (await getCartographer()).isNativeFarmToken(tokenAddress)
+    },
+    baseMinimumWithdrawalTax: async (): Promise<number> => {
+        return await (await getCartographer()).baseMinimumWithdrawalTax()
+    },
 }
 
 

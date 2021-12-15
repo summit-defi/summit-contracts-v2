@@ -1,13 +1,12 @@
 import { expect } from "chai"
-import { BigNumber, Contract, ethers } from "ethers"
+import { BigNumber, ethers } from "ethers"
 import { network, ethers as hardhatEthers } from "hardhat"
 import { EVM, getElevationName } from "."
 import { getCreate2Address } from '@ethersproject/address';
 import { pack, keccak256 } from '@ethersproject/solidity';
 import fs from 'fs'
 import { NamedElevations, networkAMMFactories, networkAMMPairCodeHash, networkExportsAddresses, networksOnWhichToVerify, networksWhichExpectUsersToHaveSummit, networksWhichRequireDummies, networkWrappedNativeTokens } from "./constants"
-import web3 from "web3"
-import { JSONQueuedTransaction, TimelockTransactionType, TimelockTxFunctionParams, TimelockTxParams, TimelockTxTypeName } from "./timelockUtils";
+import { JSONQueuedTransaction, TimelockTransactionType, TimelockTxParams, TimelockTxTypeName } from "./timelockUtils";
 
 // ETHERS
 export const ethersKeccak256 = (input: string): string => ethers.utils.keccak256(input)
