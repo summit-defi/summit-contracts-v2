@@ -435,7 +435,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         whitelistedTransferAddresses.add(_whitelistedAddress);
         emit AddWhitelistedTransferAddress(_whitelistedAddress);
     }
-    
+
     function getWhitelistedTransferAddresses() public view returns (address[] memory) {
         return whitelistedTransferAddresses.values();
     }
@@ -459,7 +459,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         onlyOwner
     {
         require(_extension != address(0), "Missing extension");
-        require(everestExtensions.length() < 3, "Max extension cap reached");
+        require(everestExtensions.length() < 5, "Max extension cap reached");
         require(!everestExtensions.contains(_extension), "Extension already exists");
         everestExtensions.add(_extension);
 
