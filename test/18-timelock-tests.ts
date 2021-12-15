@@ -6,7 +6,7 @@ import { mineBlockWithTimestamp, Contracts, ERR, getTimestamp, EVENT, PoolConfig
 import { TimelockTxSig } from "../utils/timelockConstants";
 import { poolsFixture, timelockedFixture } from "./fixtures";
 
-describe.only("TIMELOCK", async function() {
+describe("TIMELOCK", async function() {
     describe("TIMELOCK TEST ENABLE SUMMIT", async function() {
         it(`TIMELOCK: Enable function succeeds`, async function () {
             const { dev, timelock, cartographer } = await poolsFixture()
