@@ -1,7 +1,7 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre from "hardhat";
-import { e18, getTimestamp,  mineBlockWithTimestamp, getSummitToken, everestMethod, days, cartographerMethod, OASIS, getCakeToken, rolloverRound, cartographerGet, PLAINS, cartographerSetParam } from "../utils";
+import { e18, getTimestamp,  mineBlockWithTimestamp, getSummitToken, everestMethod, days, cartographerMethod, OASIS, getCakeToken, rolloverRound, cartographerGet, PLAINS, cartographerSetParam, sumBigNumbers, getSummitBalance, getTokenBalance, tokenAmountAfterWithdrawTax } from "../utils";
 import { mesaUnlockedFixture } from "./fixtures";
 
 
@@ -42,13 +42,13 @@ describe("Fairness Tax", async function() {
 
         const _userStakedAmount = await cartographerGet.userTokenStakedAmount(user1.address, summitToken.address)
         const _taxResetOnDepositBP = await cartographerGet.taxResetOnDepositBP()
-        const _newDepositAmount = (_userStakedAmount * _taxResetOnDepositBP / 10000)
+        const _newDepositAmount = _userStakedAmount.mul(_taxResetOnDepositBP).div(10000)
 
         await cartographerMethod.deposit({
             user: user1,
             tokenAddress: summitToken.address,
             elevation: OASIS,
-            amount: e18(_newDepositAmount),
+            amount: _newDepositAmount,
         })
         const depositTimestamp = await getTimestamp()
         const lastDepositTimestampForTaxFinal = await cartographerGet.tokenLastDepositTimestampForTax(user1.address, summitToken.address)
@@ -69,13 +69,13 @@ describe("Fairness Tax", async function() {
 
         const _userStakedAmount = await cartographerGet.userTokenStakedAmount(user1.address, summitToken.address)
         const _taxResetOnDepositBP = await cartographerGet.taxResetOnDepositBP()
-        const _newDepositAmount = (_userStakedAmount * _taxResetOnDepositBP / 10000) + 1
+        const _newDepositAmount = _userStakedAmount.mul(_taxResetOnDepositBP).div(10000).add(e18(1))
 
         await cartographerMethod.deposit({
             user: user1,
             tokenAddress: summitToken.address,
             elevation: OASIS,
-            amount: e18(_newDepositAmount),
+            amount: _newDepositAmount,
         })
         const depositTimestamp = await getTimestamp()
         const lastDepositTimestampForTaxFinal = await cartographerGet.tokenLastDepositTimestampForTax(user1.address, summitToken.address)
@@ -91,8 +91,8 @@ describe("Fairness Tax", async function() {
     it(`STAKED TOTAL AMOUNT FOR TOKEN: The user's total staked amount for token should be calculated correctly across all elevations`, async function() {
         const { user1 } = await getNamedSigners(hre)
         const summitToken = await getSummitToken()
-        const oasisDepositAmount = 5;
-        const plainsDepositAmount = 10;
+        const oasisDepositAmount = e18(5)
+        const plainsDepositAmount = e18(10)
 
         const userTotalStakedAmountBefore = await cartographerGet.userTokenStakedAmount(user1.address, summitToken.address)
 
@@ -100,7 +100,7 @@ describe("Fairness Tax", async function() {
             user: user1,
             tokenAddress: summitToken.address,
             elevation: OASIS,
-            amount: e18(oasisDepositAmount),
+            amount: oasisDepositAmount,
         })
 
         await rolloverRound(PLAINS)
@@ -113,11 +113,11 @@ describe("Fairness Tax", async function() {
             user: user1,
             tokenAddress: summitToken.address,
             elevation: PLAINS,
-            amount: e18(plainsDepositAmount),
+            amount: plainsDepositAmount,
         })
 
         const userTotalStakedAmountAfter = await cartographerGet.userTokenStakedAmount(user1.address, summitToken.address)
-        expect(userTotalStakedAmountAfter).to.equal(userTotalStakedAmountBefore + oasisDepositAmount + plainsDepositAmount)
+        expect(userTotalStakedAmountAfter).to.equal(sumBigNumbers([userTotalStakedAmountBefore, oasisDepositAmount, plainsDepositAmount]))
     })
 
     it(`TAX BP: The fairness tax decreases correctly to the 0% for native farms, over the duration of the tax decay`, async function() {
@@ -198,7 +198,7 @@ describe("Fairness Tax", async function() {
         })
         const userTotalStakedAmountAfter = await cartographerGet.userTokenStakedAmount(user1.address, cakeToken.address)
 
-        expect(userTotalStakedAmountAfter + 5).to.equal(userTotalStakedAmountBefore)
+        expect(userTotalStakedAmountAfter.add(e18(5))).to.equal(userTotalStakedAmountBefore)
     })
 
     it(`MINIMUM TAX: The 0% tax should be taken when a use withdraws from a farm after the tax has fully decayed (for native farms) `, async function() {
@@ -217,15 +217,15 @@ describe("Fairness Tax", async function() {
         const afterDepositTimestamp = await getTimestamp()
         await mineBlockWithTimestamp(afterDepositTimestamp + days(8))
 
-        const summitTokenBalanceBefore = (await summitToken.balanceOf(user1.address)).toString()
+        const summitTokenBalanceBefore = await getSummitBalance(user1.address)
         await cartographerMethod.withdraw({
             user: user1,
             tokenAddress: summitToken.address,
             elevation: OASIS,
             amount: e18(withdrawAmount),
         })
-        const summitTokenBalanceAfter = (await summitToken.balanceOf(user1.address)).toString()
-        expect(Number(summitTokenBalanceAfter)).to.equal(Number(summitTokenBalanceBefore) + Number(e18(withdrawAmount)))
+        const summitTokenBalanceAfter = await getSummitBalance(user1.address)
+        expect(summitTokenBalanceAfter).to.equal(summitTokenBalanceBefore.add(e18(withdrawAmount)))
     })
 
     it(`MINIMUM TAX: The baseMinimumWithdrawalTax (minimum tax) should be taken when a use withdraws from a farm after the tax has fully decayed (for non-native farms) `, async function() {        
@@ -244,7 +244,7 @@ describe("Fairness Tax", async function() {
         const afterDepositTimestamp = await getTimestamp()
         await mineBlockWithTimestamp(afterDepositTimestamp + days(8))
 
-        const cakeTokenBalanceBefore = (await cakeToken.balanceOf(user1.address)).toString()
+        const cakeTokenBalanceBefore = await getTokenBalance(cakeToken, user1.address)
 
         await cartographerMethod.withdraw({
             user: user1,
@@ -252,13 +252,13 @@ describe("Fairness Tax", async function() {
             elevation: OASIS,
             amount: e18(withdrawAmount),
         })  
-        const cakeTokenBalanceAfter = (await cakeToken.balanceOf(user1.address)).toString()
+        const cakeTokenBalanceAfter = await getTokenBalance(cakeToken, user1.address)
 
 
         const baseMinimumWithdrawalTax = await cartographerGet.baseMinimumWithdrawalTax()
         const realExpectedWithdrawAmount = e18(withdrawAmount).mul((10000 - baseMinimumWithdrawalTax)).div(10000)
 
-        expect(Number(cakeTokenBalanceAfter)).to.equal(Number(cakeTokenBalanceBefore) + Number(realExpectedWithdrawAmount))
+        expect(cakeTokenBalanceAfter).to.equal(sumBigNumbers([cakeTokenBalanceBefore, realExpectedWithdrawAmount]))
     })
 
     it(`TAX WITHDRAW: The 0% withdrawal fee should be taken when a use withdraws from a farm after the tax has fully decayed (native farms) `, async function() {
@@ -266,7 +266,7 @@ describe("Fairness Tax", async function() {
         const summitToken = await getSummitToken()
         const withdrawAmount = 5
 
-        const summitTokenBalanceBefore = (await summitToken.balanceOf(user1.address)).toString()
+        const summitTokenBalanceBefore = await getSummitBalance(user1.address)
 
         await cartographerMethod.withdraw({
             user: user1,
@@ -274,8 +274,8 @@ describe("Fairness Tax", async function() {
             elevation: OASIS,
             amount: e18(withdrawAmount),
         })  
-        const summitTokenBalanceAfter = (await summitToken.balanceOf(user1.address)).toString()
-        expect(Number(summitTokenBalanceAfter)).to.equal(Number(summitTokenBalanceBefore) + Number(e18(withdrawAmount)))
+        const summitTokenBalanceAfter = await getSummitBalance(user1.address)
+        expect(summitTokenBalanceAfter).to.equal(summitTokenBalanceBefore.add(e18(withdrawAmount)))
     })
 
     it(`TAX WITHDRAW: The correct Fairness Tax should be take when as user withdraws their funds while the tax is active (before finished decaying to minimum) `, async function() {
@@ -283,7 +283,7 @@ describe("Fairness Tax", async function() {
         const cakeToken = await getCakeToken()
         const withdrawAmount = 5
 
-        const cakeTokenBalanceBefore = (await cakeToken.balanceOf(user1.address)).toString()
+        const cakeTokenBalanceBefore = await getTokenBalance(cakeToken, user1.address)
 
         await cartographerMethod.withdraw({
             user: user1,
@@ -291,13 +291,13 @@ describe("Fairness Tax", async function() {
             elevation: OASIS,
             amount: e18(withdrawAmount),
         })  
-        const cakeTokenBalanceAfter = (await cakeToken.balanceOf(user1.address)).toString()
+        const cakeTokenBalanceAfter = await getTokenBalance(cakeToken, user1.address)
 
 
         const taxBP = await cartographerGet.taxBP(user1.address, cakeToken.address)
-        const realExpectedWithdrawAmount = e18(withdrawAmount).mul((10000 - taxBP)).div(10000)
+        const realExpectedWithdrawAmount = tokenAmountAfterWithdrawTax(e18(withdrawAmount), taxBP)
 
-        expect(Number(cakeTokenBalanceAfter)).to.equal(Number(cakeTokenBalanceBefore) + Number(realExpectedWithdrawAmount))
+        expect(cakeTokenBalanceAfter).to.equal(cakeTokenBalanceBefore.add(realExpectedWithdrawAmount))
     })
 
     it(`TAX PARAMS: Fairness taxes can be set and updated for each token `, async function() {

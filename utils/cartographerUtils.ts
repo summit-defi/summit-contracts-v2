@@ -109,8 +109,8 @@ export const cartographerGet = {
     tokenLastDepositTimestampForTax: async (userAddress: string, tokenAddress: string): Promise<number> => {
         return (await (await getCartographer()).tokenLastDepositTimestampForTax(userAddress, tokenAddress)).toNumber()
     },
-    userTokenStakedAmount: async (userAddress: string, tokenAddress: string): Promise<number> => {
-        return (await (await getCartographer()).userTokenStakedAmount(userAddress, tokenAddress)).div(e18(1)).toNumber()
+    userTokenStakedAmount: async (userAddress: string, tokenAddress: string): Promise<BigNumber> => {
+        return await (await getCartographer()).userTokenStakedAmount(userAddress, tokenAddress)
     },
     taxResetOnDepositBP: async (): Promise<number> => {
         return (await (await getCartographer()).taxResetOnDepositBP()).toNumber()
