@@ -670,7 +670,7 @@ describe("EVEREST EXTENSIONS", async function() {
 
 
 
-describe.only('EVEREST WHITELISTED TRANSFER ADDRESSES', async function() {
+describe('EVEREST WHITELISTED TRANSFER ADDRESSES', async function() {
     before(async function () {
         const { everestToken, summitToken, user1 } = await oasisUnlockedFixture()
 
