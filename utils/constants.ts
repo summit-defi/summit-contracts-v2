@@ -281,6 +281,8 @@ export const EVENT = {
 
         EverestExtensionAdded: 'EverestExtensionAdded',
         EverestExtensionRemoved: 'EverestExtensionRemoved',
+
+        AddWhitelistedTransferAddress: 'AddWhitelistedTransferAddress',
     },
 
     Expedition: {

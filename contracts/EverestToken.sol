@@ -37,6 +37,8 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     uint256 public totalSummitLocked;
     uint256 public weightedAvgSummitLockDurations;
 
+    EnumerableSet.AddressSet whitelistedTransferAddresses;
+
     struct UserEverestInfo {
         address userAdd;
 
@@ -56,6 +58,11 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     constructor(address _summit) {
         require(_summit != address(0), "SummitToken missing");
         summit = IERC20(_summit);
+
+        // Add burn / mintFrom address as whitelisted address
+        whitelistedTransferAddresses.add(address(0));
+        // Add this address as a whitelisted address
+        whitelistedTransferAddresses.add(address(this));
     }
     
     
@@ -77,6 +84,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     event SetMaxEverestLockMult(uint256 _lockMult);
     event SetLockTimeRequiredForTaxlessSummitWithdraw(uint256 _lockTimeDays);
     event SetLockTimeRequiredForLockedSummitDeposit(uint256 _lockTimeDays);
+    event AddWhitelistedTransferAddress(address _transferAddress);
     event SetPanic(bool _panic);
 
     event EverestExtensionAdded(address indexed extension);
@@ -415,6 +423,27 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
 
     
     
+    
+    
+    
+    // ----------------------------------------------------------------------
+    // --   W H I T E L I S T E D   T R A N S F E R
+    // ----------------------------------------------------------------------
+
+    function addWhitelistedTransferAddress(address _whitelistedAddress) public onlyOwner {
+        require(_whitelistedAddress != address(0), "Whitelisted Address missing");
+        whitelistedTransferAddresses.add(_whitelistedAddress);
+        emit AddWhitelistedTransferAddress(_whitelistedAddress);
+    }
+    
+    function getWhitelistedTransferAddresses() public view returns (address[] memory) {
+        return whitelistedTransferAddresses.values();
+    }
+
+    function _beforeTokenTransfer(address sender, address recipient, uint256) internal view override {
+        require(whitelistedTransferAddresses.contains(sender) || whitelistedTransferAddresses.contains(recipient), "Not a whitelisted transfer");
+    }
+
     
     
     
