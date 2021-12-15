@@ -300,7 +300,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _treasuryBP How much extra is minted for the treasury
     function setSummitDistributionBPs(uint256 _referralsBP, uint256 _treasuryBP) public onlyOwner {
         // Require dev emission less than 25% of total emission
-        require(_treasuryBP  <= 250 && _referralsBP <= 5, "Invalid Distributions");
+        require(_treasuryBP <= 250 && _referralsBP <= 5, "Invalid Distributions");
 
         referralsSummitBP = _referralsBP;
         treasurySummitBP = _treasuryBP;

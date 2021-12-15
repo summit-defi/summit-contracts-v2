@@ -1,5 +1,5 @@
 import hre, { ethers, getChainId } from 'hardhat'
-import { promiseSequenceMap } from '../utils';
+import { getCartographer, promiseSequenceMap } from '../utils';
 import { getConfigs } from '../data'
 import { createExpedition, createPassthroughStrategy, createPool } from './scriptUtils';
 
@@ -43,7 +43,7 @@ async function main() {
   if (completedDeployStep < DeployStep.CreatePools) {
     await promiseSequenceMap(
       pools,
-      async (pool) => await createPool(pool, summitAddress, summitLpAddress)
+      async (pool) => await createPool(pool, summitAddress)
     )
   }
   console.log('\tdone.\n')
@@ -55,7 +55,7 @@ async function main() {
   if (completedDeployStep < DeployStep.CreatePassthroughStrategies) {
     await promiseSequenceMap(
       pools,
-      async (pool) => await createPassthroughStrategy(pool, summitAddress, summitLpAddress)
+      async (pool) => await createPassthroughStrategy(pool, summitAddress)
     )
   }
   console.log('\tdone.\n')

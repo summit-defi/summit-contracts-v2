@@ -23,7 +23,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 0,
+        taxBP: 0,
     },
     {
         name: 'SUMMIT-FTM',
@@ -47,7 +47,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 0,
+        taxBP: 0,
     },
 
     {
@@ -72,7 +72,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0x27c77411074ba90cA35e6f92A79dAd577c05A746',
@@ -100,7 +100,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0xae94e96bF81b3a43027918b138B71a771D381150',
@@ -128,7 +128,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0xEe3a7c885Fd3cc5358FF583F2DAB3b8bC473316f',
@@ -156,7 +156,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0x41D44B276904561Ac51855159516FD4cB2c90968',
@@ -184,7 +184,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0x2a30C5e0d577108F694d2A96179cd73611Ee069b',
@@ -212,7 +212,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0x5d89017d2465115007AbA00da1E6446dF2C19f34',
@@ -240,7 +240,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0x8316b990De26eB530B7B1bb0d87f5b0a304637cd',
@@ -269,7 +269,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 10,
+        taxBP: 10,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0xBdA8bC79705BC60226adCA2766e94Eb5512949a3',
@@ -297,7 +297,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0x2438009ba14A93e82ab43c66838e57bE27A55Aa1',
@@ -325,7 +325,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0xb09cf345294aDD1066543B22FD7384185F7C6fCA',
@@ -353,7 +353,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0x920786cff2A6f601975874Bb24C63f0115Df7dc8',
@@ -381,7 +381,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0xbF07093ccd6adFC3dEB259C557b61E94c1F66945',
@@ -409,7 +409,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         // passthroughStrategy: {
         //     type: PassthroughType.BeefyVaultV6Native,
         //     target: '0x49c68eDb7aeBd968F197121453e41b8704AcdE0C',
@@ -437,7 +437,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0x15DD4398721733D8273FD4Ed9ac5eadC6c018866',
@@ -465,7 +465,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0x0ab24Bfc2503bB536ad667c00685BBB70fA90433',
@@ -493,7 +493,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0x4C25854f6DA3b5848F7B5C71dcb8EEe20b292d3E',
@@ -521,7 +521,7 @@ export const ftmPools: PoolConfig[] = [
                 live: false,
             },
         },
-        fee: 200,
+        taxBP: 200,
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0xAe0AB718971bb2BAd88AE6Bdc4D0eA63F3CD53Ee',

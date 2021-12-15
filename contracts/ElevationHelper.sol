@@ -101,9 +101,7 @@ contract ElevationHelper is Ownable {
 
     /// @dev Creates ElevationHelper contract with cartographer as owner of certain functionality
     /// @param _cartographer Address of main Cartographer contract
-    constructor(address _cartographer, address _expeditionV2)
-        onlyOwner
-    {
+    constructor(address _cartographer, address _expeditionV2) {
         require(_cartographer != address(0), "Cartographer missing");
         require(_expeditionV2 != address(0), "Expedition missing");
         cartographer = _cartographer;

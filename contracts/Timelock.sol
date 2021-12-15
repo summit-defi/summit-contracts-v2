@@ -10,6 +10,8 @@
 
 pragma solidity 0.8.0;
 
+import "@openzeppelin/contracts/utils/math/Math.sol";
+
 contract Timelock {
     event NewAdmin(address indexed newAdmin);
     event NewPendingAdmin(address indexed newPendingAdmin);
@@ -93,7 +95,13 @@ contract Timelock {
 
     function queueTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) public returns (bytes32) {
         require(msg.sender == admin, "Timelock::queueTransaction: Call must come from admin.");
-        uint256 trueDelay = signatureSpecificDelay[sigToHash(signature)] > delay ? signatureSpecificDelay[sigToHash(signature)] : delay;
+        uint256 trueDelay = Math.max(signatureSpecificDelay[sigToHash(signature)], delay);
+
+        if (sigToHash(signature) == this.setFunctionSpecificDelay.selector) {
+            (string memory selector,) = abi.decode(data, (string, uint));
+            uint256 functionSpecificDelay = getFunctionSpecificDelay(selector);
+            trueDelay = Math.max(trueDelay, functionSpecificDelay);
+        }
 
         require(eta >= getBlockTimestamp() + trueDelay, "Timelock::queueTransaction: Estimated execution block must satisfy delay.");
 

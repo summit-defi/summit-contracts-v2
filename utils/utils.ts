@@ -210,9 +210,8 @@ export const writeContractAddresses = (chainId: string, addresses: Array<[string
 // SEEDING
 
 // TOKEN ADDRESS
-export const replaceSummitAddresses = (address: string, summitAddress: string, summitLpAddress: string): string => {
+export const replaceSummitAddresses = (address: string, summitAddress: string): string => {
     if (address === '0xSUMMIT') return summitAddress
-    if (address === '0xSUMMITLP') return summitLpAddress
     return address
 }
 
