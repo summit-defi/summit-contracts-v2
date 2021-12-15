@@ -17,13 +17,14 @@ export interface PoolConfig {
     name: string
     token: string
     allocation: number
+    taxBP: number
+    depositFeeBP: number
     elevations: {
         [NamedElevations.OASIS]: ElevationExistsLive
         [NamedElevations.PLAINS]: ElevationExistsLive
         [NamedElevations.MESA]: ElevationExistsLive
         [NamedElevations.SUMMIT]: ElevationExistsLive
     }
-    fee: number
     passthroughStrategy?: PassthroughStrategyConfig
 }
 

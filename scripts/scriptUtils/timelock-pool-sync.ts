@@ -1,23 +1,26 @@
 import { Contract } from "ethers"
 import { ethers } from "hardhat"
 import { createPassthroughStrategy } from "."
-import { NamedElevations, Contracts, checkForAlreadyQueuedMatchingTimelockTx, PoolConfig, getElevationName, promiseSequenceMap, replaceSummitAddresses, UpdatePoolTxHashes, UpdatePoolTxType, ZEROADD, delay, TxHashAndNote, flatten, getPassthroughStrategy, hardhatChainId } from "../../utils"
-import { TimelockTargetContract, QueueTxConfig, getTxSignatureBase, queueTimelockTransaction, TimelockedTransaction } from "../../utils/timelockUtils"
+import { NamedElevations, Contracts, checkForAlreadyQueuedMatchingTimelockTx, PoolConfig, getElevationName, promiseSequenceMap, replaceSummitAddresses, UpdatePoolTxHashes, UpdatePoolTxType, ZEROADD, delay, TxHashAndNote, flatten, getPassthroughStrategy, hardhatChainId, subCartGet, getContract, cartographerGet, getSummitToken } from "../../utils"
+import { QueueTxConfig, getTxSignatureBase, queueTimelockTransaction } from "../../utils"
+import { TimelockTxSig } from "../../utils/timelockConstants"
 
-const getPoolInfo = async (elevationName: NamedElevations, poolPid: number) => {
-    if (elevationName === NamedElevations.OASIS) {
-        const cartographerOasis = await ethers.getContract(Contracts.CartographerOasis)
-        return await cartographerOasis.oasisPoolInfo(poolPid)
-    } else {
-        const cartographerElevation = await ethers.getContract(Contracts.CartographerElevation)
-        return await cartographerElevation.elevationPoolInfo(poolPid)
-    }
-
+const getPoolLive = async (tokenAddress: string, elevation: number) => {
+    return (await subCartGet.poolInfo(tokenAddress, elevation)).live
 }
+//     
+//     const depositFeeBP = (await cartographerGet.getTokenDepositFee(tokenAddress))
+
+//     return {
+//         live,
+//         taxBP,
+//         depositFeeBP,
+//     }
+// }
 
 
-const getContractFromName = async (queuedTxTargetName: TimelockTargetContract): Promise<Contract> => {
-    return await ethers.getContract(queuedTxTargetName)
+const getContractFromName = async (queuedTxTargetName: string): Promise<Contract> => {
+    return await getContract(queuedTxTargetName)
 }
 
 const queueTransactionInTimelock = async (chainId: string, dryRun: boolean, note: string, { targetContractName, txName, txParams }: QueueTxConfig) => {
@@ -40,22 +43,23 @@ const queueTransactionInTimelock = async (chainId: string, dryRun: boolean, note
     return txHash
 }
 
-export const queueSyncPoolsTimelockTransactions = async (chainId: string, dryRun: boolean, elevation: number, poolConfigs: PoolConfig[],  cartographer: Contract, summitAddress: string, summitLpAddress: string): Promise<TxHashAndNote[]> => {
+export const queueSyncPoolsTimelockTransactions = async (chainId: string, dryRun: boolean, elevation: number, poolConfigs: PoolConfig[]): Promise<TxHashAndNote[]> => {
     const elevationName = getElevationName(elevation)
+    const summitToken = await getSummitToken()
 
     const queuedTxHashes = await promiseSequenceMap(
         poolConfigs,
         async (poolConfig) => {
             let poolQueuedTxHashes: TxHashAndNote[] = []
 
-            const { name: configName, token: configToken, allocation: configAllocation, elevations: configElevations, fee: configFee } = poolConfig
+            const { name: configName, token: configToken, allocation: configAllocation, elevations: configElevations, taxBP: configTaxBP, depositFeeBP: configDepositFeeBP } = poolConfig
             const configElevation = configElevations[elevationName]
 
 
 
             
             // Pool Token / LP Address
-            const tokenAddress = replaceSummitAddresses(configToken, summitAddress, summitLpAddress)
+            const tokenAddress = replaceSummitAddresses(configToken, summitToken.address)
             console.log(`\n\n\n== POOL: ${configName} at The ${elevationName} ==`)
             
 
@@ -63,15 +67,15 @@ export const queueSyncPoolsTimelockTransactions = async (chainId: string, dryRun
 
 
             // Token Allocation Existence & Correct, if not queue to add/update it
-            const allocationExists = await cartographer.tokenAllocExistence(tokenAddress)
+            const allocationExists = await cartographerGet.tokenAllocExistence(tokenAddress)
             console.log('\n-- Allocation --')
             if (!allocationExists) {
                 console.log(`\tAllocation doesnt exist, creating: ${configAllocation}`)
                 const createAllocationNote = `Create ${configName} Allocation: ${configAllocation}`
                 // QUEUE ADD TOKEN ALLOCATION TRANSACTION
                 const createTokenAllocationTxHash = await queueTransactionInTimelock(chainId, dryRun, createAllocationNote, {
-                    targetContractName: TimelockTargetContract.Cartographer,
-                    txName: TimelockedTransaction.Cartographer_CreateTokenAllocation,
+                    targetContractName: Contracts.Cartographer,
+                    txName: TimelockTxSig.Cartographer.CreateTokenAllocation,
                     txParams: [tokenAddress, configAllocation],
                 })
                 if (createTokenAllocationTxHash != null) poolQueuedTxHashes.push({
@@ -82,14 +86,14 @@ export const queueSyncPoolsTimelockTransactions = async (chainId: string, dryRun
             } else {
                 console.log(`\tAllocation exists, validating in sync: ${configAllocation}`)
                 // Validate Token Allocation matches, if not queue to update it
-                const existingAllocation = (await cartographer.tokenBaseAlloc(tokenAddress)).toNumber()
+                const existingAllocation = await cartographerGet.tokenAlloc(tokenAddress)
                 if (existingAllocation !== configAllocation) {
                     console.log(`\t\tAllocation out of sync, syncing ${existingAllocation} => ${configAllocation}`)
                     const updateAllocationNote = `Update ${configName} Allocation: ${existingAllocation} => ${configAllocation}`
                     // QUEUE UPDATE TOKEN ALLOCATION TRANSACTION
                     const setTokenAllocationTxHash = await queueTransactionInTimelock(chainId, dryRun, updateAllocationNote, {
-                        targetContractName: TimelockTargetContract.Cartographer,
-                        txName: TimelockedTransaction.Cartographer_setTokenAlloc,
+                        targetContractName: Contracts.Cartographer,
+                        txName: TimelockTxSig.Cartographer.SetTokenAllocation,
                         txParams: [tokenAddress, configAllocation],
                     })
                     if (setTokenAllocationTxHash != null) poolQueuedTxHashes.push({
@@ -102,9 +106,56 @@ export const queueSyncPoolsTimelockTransactions = async (chainId: string, dryRun
                 }
             }
 
+            // Token TaxBP Correct, if not queue to update it
+            const existingTaxBP = (await cartographerGet.tokenWithdrawalTax(tokenAddress))
+            const taxBPOutOfSync = existingTaxBP !== configTaxBP
+            console.log('\n-- Token Withdraw Tax --')
+            if (taxBPOutOfSync) {
+                console.log(`\tToken TaxBP out of sync, syncing ${existingTaxBP} => ${configTaxBP}`)
+                const updateTaxBPNote = `Update ${configName} TaxBP: ${existingTaxBP} => ${configTaxBP}`
+
+                // QUEUE UPDATE TOKEN TAX BP TRANSACTION
+                const setTokenTaxBPTxHash = await queueTransactionInTimelock(chainId, dryRun, updateTaxBPNote, {
+                    targetContractName: Contracts.Cartographer,
+                    txName: TimelockTxSig.Cartographer.SetTokenWithdrawTax,
+                    txParams: [tokenAddress, configTaxBP],
+                })
+                if (setTokenTaxBPTxHash != null) poolQueuedTxHashes.push({
+                    txHash: setTokenTaxBPTxHash,
+                    note: updateTaxBPNote,
+                })
+                console.log(`\t\t\tqueued.`)
+            } else {
+                console.log(`\t\tpassed.`)
+            }
 
 
-            // const passthroughStrategyAddress = await createPassthroughStrategy(poolConfig, summitAddress, summitLpAddress)
+            // Token DepositFeeBP Correct, if not queue to update it
+            const existingDepositFeeBP = (await cartographerGet.getTokenDepositFee(tokenAddress))
+            const depositFeeBPOutOfSync = existingDepositFeeBP !== configDepositFeeBP
+            console.log('\n-- Token Deposit Fee --')
+            if (depositFeeBPOutOfSync) {
+                console.log(`\tToken DepositFeeBP out of sync, syncing ${existingDepositFeeBP} => ${configDepositFeeBP}`)
+                const updateDepositFeeBPNote = `Update ${configName} DepositFeeBP: ${existingDepositFeeBP} => ${configDepositFeeBP}`
+
+                // QUEUE UPDATE TOKEN TAX BP TRANSACTION
+                const setTokenDepositFeeBPTxHash = await queueTransactionInTimelock(chainId, dryRun, updateDepositFeeBPNote, {
+                    targetContractName: Contracts.Cartographer,
+                    txName: TimelockTxSig.Cartographer.SetTokenDepositFee,
+                    txParams: [tokenAddress, configDepositFeeBP],
+                })
+                if (setTokenDepositFeeBPTxHash != null) poolQueuedTxHashes.push({
+                    txHash: setTokenDepositFeeBPTxHash,
+                    note: updateDepositFeeBPNote,
+                })
+                console.log(`\t\t\tqueued.`)
+            } else {
+                console.log(`\t\tpassed.`)
+            }
+
+
+
+            // const passthroughStrategyAddress = await createPassthroughStrategy(poolConfig, summitToken.address, summitLpAddress)
 
             
 
@@ -127,7 +178,7 @@ export const queueSyncPoolsTimelockTransactions = async (chainId: string, dryRun
             //     if (dryRun) {
             //         newPassthroughStrategyContract = '0x2b4c76d0dc16be1c31d4c1dc53bf9b45987fc75c'
             //     } else {
-            //         newPassthroughStrategyContract = await createPassthroughStrategy(poolConfig, summitAddress, summitLpAddress)
+            //         newPassthroughStrategyContract = await createPassthroughStrategy(poolConfig, summitToken.address, summitLpAddress)
             //     }
 
             //     const setPassthroughStrategyNote = `Set ${configName} Passthrough Strategy: ${newPassthroughStrategyContract}`
@@ -135,8 +186,8 @@ export const queueSyncPoolsTimelockTransactions = async (chainId: string, dryRun
             //     // QUEUE TX
             //     if (newPassthroughStrategyContract != null) {
             //         const setPassthroughStrategyTxHash = await queueTransactionInTimelock(chainId, dryRun, setPassthroughStrategyNote, {
-            //             targetContractName: TimelockTargetContract.Cartographer,
-            //             txName: TimelockedTransaction.Cartographer_SetTokenPassthroughStrategy,
+            //             targetContractName: Contracts.Cartographer,
+            //             txName: TimelockTxSig.Cartographer_SetTokenPassthroughStrategy,
             //             txParams: [tokenAddress, newPassthroughStrategyContract]
             //         })
             //         if (setPassthroughStrategyTxHash != null) poolQueuedTxHashes.push({
@@ -152,15 +203,15 @@ export const queueSyncPoolsTimelockTransactions = async (chainId: string, dryRun
 
             // Pool Existence, if not queue to create it
             console.log('\n-- Pool --')
-            const poolPid = await cartographer.tokenElevationPid(tokenAddress, elevation)
-            if (poolPid === 0) {
-                console.log(`\tPool doesnt exist, creating: add(${configAllocation}, ${elevation}, ${configElevation.live}, ${configFee}, false)`)
-                const createPoolNote = `Create ${configName} Farm at ${elevationName} with params | Token: ${tokenAddress} | Live: ${configElevation.live} | Fee: ${configFee}`
+            const poolExists = await cartographerGet.poolExists(tokenAddress, elevation)
+            if (!poolExists) {
+                console.log(`\tPool doesnt exist, creating: add(${tokenAddress}, ${elevation}, ${configElevation.live}, false)`)
+                const createPoolNote = `Create ${configName} Farm at ${elevationName} with params | Live: ${configElevation.live}`
                 // QUEUE ADD POOL
                 const addFarmTxHash = await queueTransactionInTimelock(chainId, dryRun, createPoolNote, {
-                    targetContractName: TimelockTargetContract.Cartographer,
-                    txName: TimelockedTransaction.Cartographer_AddFarm,
-                    txParams: [tokenAddress, elevation, configElevation.live, configFee, false],
+                    targetContractName: Contracts.Cartographer,
+                    txName: TimelockTxSig.Cartographer.AddFarm,
+                    txParams: [tokenAddress, elevation, configElevation.live, false],
                 })
                 if (addFarmTxHash != null) poolQueuedTxHashes.push({
                     txHash: addFarmTxHash,
@@ -168,18 +219,34 @@ export const queueSyncPoolsTimelockTransactions = async (chainId: string, dryRun
                 })
                 console.log(`\t\tqueued.`)
             } else {
-                console.log(`\tPool exists, checking in sync: ${poolPid}`)
-                // Validate that pool LIVE & FEE matches config, if not queue to update it
-                const { live: existingLive, feeBP: existingFee } = await getPoolInfo(elevationName, poolPid)
-                if (existingLive !== configElevation.live || existingFee !== configFee) {
-                    console.log(`\t\tPool out of sync: ${existingLive !== configElevation.live ? `live: ${existingLive} !== ${configElevation.live}` : ''} ${existingFee !== configFee ? `fee: ${existingFee} !== ${configFee}` : ''}`)
-                    console.log(`\t\tUpdating pool: set(${poolPid}, ${configElevation.live}, ${configFee}, false)`)
-                    const updatePoolNote = `Update ${configName} Farm at ${elevationName} with params | Pid: ${poolPid} | Live: ${configElevation.live} | Fee: ${configFee}`
+                console.log(`\tPool exists, checking in sync`)
+                // Validate that pool LIVE matches config, if not queue to update it
+                const existingLive = await getPoolLive(tokenAddress, elevation)
+
+                // const taxBPOutOfSync = existingTaxBP !== configTaxBP
+                // const depositFeeBPOutOfSync = existingDepositFeeBP !== configDepositFeeBP
+                const liveOutOfSync = existingLive !== configElevation.live
+
+                // TaxBP out of sync, update
+                // if (taxBPOutOfSync) {
+
+                // }
+
+                // // DepositFeeBP out of sync, update
+                // if (depositFeeBPOutOfSync) {
+
+                // }
+
+                // Live out of sync, update
+                if (liveOutOfSync) {
+                    console.log(`\t\tPool live out of sync: ${existingLive} --> ${configElevation.live}`)
+                    console.log(`\t\tUpdating pool: set(${tokenAddress}, ${elevation}, ${configElevation.live}, ${configDepositFeeBP}, false)`)
+                    const updatePoolNote = `Update ${configName} Farm at ${elevationName} with params | Live: ${configElevation.live}`
                     // QUEUE UPDATE POOL LIVE VALUE
                     const setFarmTxHash = await queueTransactionInTimelock(chainId, dryRun, updatePoolNote, {
-                        targetContractName: TimelockTargetContract.Cartographer,
-                        txName: TimelockedTransaction.Cartographer_SetFarm,
-                        txParams: [poolPid, configElevation.live, configFee, false],
+                        targetContractName: Contracts.Cartographer,
+                        txName: TimelockTxSig.Cartographer.SetFarm,
+                        txParams: [tokenAddress, elevation, configElevation.live, false],
                     })
                     if (setFarmTxHash != null) poolQueuedTxHashes.push({
                         txHash: setFarmTxHash,

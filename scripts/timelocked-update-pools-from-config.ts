@@ -9,11 +9,6 @@ const DRY_RUN = false
 
 async function main() {
     const chainId = await getChainId()
-    const cartographer = await getCartographer()
-    const SummitToken = await getSummitToken()
-
-    const summitAddress = SummitToken.address
-    const summitLpAddress = await cartographer.summitLp()
 
     console.log('\n\n== QUEUE TIMELOCK TRANSACTIONS ==')
 
@@ -22,7 +17,7 @@ async function main() {
     const elevationQueuedTxHashes = await promiseSequenceMap(
         [PLAINS, MESA, SUMMIT],
         async (elevation) => {
-            return await queueSyncPoolsTimelockTransactions(chainId, DRY_RUN, elevation, poolConfigs, cartographer, summitAddress, summitLpAddress)
+            return await queueSyncPoolsTimelockTransactions(chainId, DRY_RUN, elevation, poolConfigs)
         }
     )
 

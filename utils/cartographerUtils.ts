@@ -81,6 +81,9 @@ const calculateBonusFromOffset = (offset: number): number => {
 
 export const cartographerGet = {
     tokenAlloc,
+    tokenAllocExistence: async (tokenAddress: string): Promise<boolean> => {
+        return await (await getCartographer()).tokenAllocExistence(tokenAddress)
+    },
     elevAlloc,
     elevationModulatedAllocation,
     tokenElevationIsEarning,
@@ -127,6 +130,9 @@ export const cartographerGet = {
     baseMinimumWithdrawalTax: async (): Promise<number> => {
         return await (await getCartographer()).baseMinimumWithdrawalTax()
     },
+    poolExists: async (tokenAddress: string, elevation: number): Promise<boolean> => {
+        return await (await getCartographer()).poolExistence(tokenAddress, elevation)
+    }
 }
 
 

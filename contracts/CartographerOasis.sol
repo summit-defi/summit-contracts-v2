@@ -7,7 +7,6 @@ import "./interfaces/ISubCart.sol";
 import "./SummitToken.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -43,7 +42,7 @@ OASIS pools guarantee yield, and no multiplying or risk takes place at this elev
 The OASIS does not have totems in the contract, however in the frontend funds staked in the OASIS are represented by the OTTER.
 
 */
-contract CartographerOasis is ISubCart, Ownable, Initializable, ReentrancyGuard {
+contract CartographerOasis is ISubCart, Initializable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 

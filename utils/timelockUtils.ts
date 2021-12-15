@@ -68,14 +68,9 @@ export const timelockTxParamsToCallableArray = (params: TimelockTxParams): Timel
     return [params.targetContract, params.value, params.signature, params.data, params.eta]
 }
 
-export enum TimelockTargetContract {
-    Cartographer = 'Cartographer',
-    CartographerExpedition = 'CartographerExpedition',
-    Timelock = 'Timelock',
-}
 export interface QueueTxConfig {
-    targetContractName: TimelockTargetContract
-    txName: TimelockedTransaction
+    targetContractName: string
+    txName: string
     txParams: any[]
     force?: boolean
     note?: string
@@ -121,35 +116,6 @@ export interface QueueTxConfig {
 
 */
 
-export enum TimelockedTransaction {
-    // Timelock Internal
-    Timelock_SetFunctionSpecificDelay = 'setFunctionSpecificDelay',
-    Timelock_SetDelay = 'setDelay',
-    Timelock_SetPendingAdmin = 'setPendingAdmin',
-
-    // Cartographer
-    Cartographer_Enable = 'enable',
-    Cartographer_SetexpeditionTreasuryAdd = 'setexpeditionTreasuryAdd',
-    Cartographer_SetRolloverRewardInNativeToken = 'setRolloverRewardInNativeToken',
-    Cartographer_SetTrustedSeederAdd = 'setTrustedSeederAdd',
-    Cartographer_SetTotalSummitPerSecond = 'setTotalSummitPerSecond',
-    Cartographer_SetSummitDistributionProfile = 'setSummitDistributionProfile',
-    Cartographer_CreateTokenAllocation = 'createTokenAllocation',
-    Cartographer_setTokenAlloc = 'setTokenAlloc',
-    Cartographer_SetTokenPassthroughStrategy = 'setTokenPassthroughStrategy',
-    Cartographer_RetireTokenPassthroughStrategy = 'retireTokenPassthroughStrategy',
-    Cartographer_AddFarm = 'add',
-    Cartographer_AddExpedition = 'addExpedition',
-    Cartographer_SetFarm = 'set',
-
-    // CartographerExpedition
-    CartographerExpedition_SetSummitInLpIncentiveMultiplier = 'setSummitInLpIncentiveMultiplier',
-    CartographerExpedition_DisableExpedition = 'disableExpeditionPool',
-    CartographerExpedition_EnableExpedition = 'enableExpeditionPool',
-    CartographerExpedition_ExtendExpedition = 'extendExpeditionPool',
-    CartographerExpedition_RestartExpedition = 'restartExpeditionPool',
-}
-
 export const getTxSignature = (params: TimelockTxFunctionParams): string => getTxSignatureBase({ targetContract: params.targetContract, txName: params.txName })
 export const getTxSignatureBase = ({ targetContract, txName }: { targetContract: Contract, txName: string }): string => {
     const contractInterface = targetContract.interface
@@ -158,9 +124,7 @@ export const getTxSignatureBase = ({ targetContract, txName }: { targetContract:
 }
 
 export const getDelay = async (timelock: Contract, txSignature: string): Promise<number> => {
-    const signatureSpecificDelay = (await timelock.signatureSpecificDelay(txSignature)).toNumber()
-    // TODO: uncomment when timelock updated
-    // const signatureSpecificDelay = (await timelock.getFunctionSpecificDelay(txSignature)).toNumber()
+    const signatureSpecificDelay = (await timelock.getFunctionSpecificDelay(txSignature)).toNumber()
     const baseDelay = (await timelock.delay()).toNumber()
     return Math.max(signatureSpecificDelay, baseDelay)
 }
