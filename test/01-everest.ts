@@ -2,7 +2,7 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre from "hardhat";
-import { e18, ERR, toDecimal, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, promiseSequenceMap, consoleLog, getSummitToken, everestGet, everestMethod, days, everestSetParams, getSummitBalance, getEverestBalance, userPromiseSequenceMap, usersSummitBalances, usersEverestBalances, userPromiseSequenceReduce, getEverestToken, getDummyEverestExtension, ZEROADD, expectAllEqual } from "../utils";
+import { e18, ERR, toDecimal, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, promiseSequenceMap, consoleLog, getSummitToken, everestGet, everestMethod, days, everestSetParams, getSummitBalance, getEverestBalance, userPromiseSequenceMap, usersSummitBalances, usersEverestBalances, userPromiseSequenceReduce, getEverestToken, getDummyEverestExtension, ZEROADD, expectAllEqual, erc20Method, Contracts } from "../utils";
 import { oasisUnlockedFixture } from "./fixtures";
 
 
@@ -664,6 +664,79 @@ describe("EVEREST EXTENSIONS", async function() {
             Point3: `EverestInfo: ${toDecimal(userEverestBalance3)}, Ext: ${toDecimal(userDummyExtEverest3)}`,
             Point4: `EverestInfo: ${toDecimal(userEverestBalance4)}, Ext: ${toDecimal(userDummyExtEverest4)}`,
             Point5: `EverestInfo: ${toDecimal(userEverestBalance5)}, Ext: ${toDecimal(userDummyExtEverest5)}`,
+        })
+    })
+})
+
+
+
+describe.only('EVEREST WHITELISTED TRANSFER ADDRESSES', async function() {
+    before(async function () {
+        const { everestToken, summitToken, user1 } = await oasisUnlockedFixture()
+
+        await everestToken.connect(user1).approve(everestToken.address, INF_APPROVE)
+        await summitToken.connect(user1).approve(everestToken.address, INF_APPROVE)
+    })
+    it('WHITELIST LOCK SUMMIT: Locking SUMMIT is successful', async function() {
+        const { user1 } = await getNamedSigners(hre)
+
+        await everestMethod.lockSummit({
+            user: user1,
+            amount: e18(5),
+            lockDuration: days(365)
+        })
+    })
+
+    it('WHITELIST WITHDRAW SUMMIT: Withdrawing locked SUMMIT is successful', async function() {
+        const { user1 } = await getNamedSigners(hre)
+
+        const userEverestInfo = await everestGet.userEverestInfo(user1.address)
+        await mineBlockWithTimestamp(userEverestInfo.lockRelease)
+        await everestMethod.withdrawLockedSummit({
+            user: user1,
+            everestAmount: e18(5),
+        })
+    })
+
+    it(`WHITELIST: Transferring everest to a non-whitelisted address fails with error "Not a whitelisted transfer"`, async function() {
+        const { user1, user2 } = await getNamedSigners(hre)
+
+        await erc20Method.transfer({
+            user: user1,
+            tokenName: Contracts.EverestToken,
+            recipientAddress: user2.address,
+            amount: e18(1),
+            revertErr: 'Not a whitelisted transfer'
+        })
+    })
+
+    it(`WHITELIST: Adding a whitelisted address is successful`, async function() {
+        const { dev, user1, user2 } = await getNamedSigners(hre)
+
+        await everestMethod.addWhitelistedTransferAddress({
+            dev: user1,
+            whitelistedAddress: user2.address,
+            revertErr: ERR.NON_OWNER
+        })
+        await everestMethod.addWhitelistedTransferAddress({
+            dev,
+            whitelistedAddress: ZEROADD,
+            revertErr: 'Whitelisted Address missing'
+        })
+        await everestMethod.addWhitelistedTransferAddress({
+            dev,
+            whitelistedAddress: user2.address,
+        })
+    })
+
+    it(`WHITELIST: Transferring everest to a whitelisted address should succeed`, async function() {
+        const { user1, user2 } = await getNamedSigners(hre)
+
+        await erc20Method.transfer({
+            user: user1,
+            tokenName: Contracts.EverestToken,
+            recipientAddress: user2.address,
+            amount: e18(1),
         })
     })
 })

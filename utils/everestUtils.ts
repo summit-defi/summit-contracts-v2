@@ -215,6 +215,27 @@ export const everestMethod = {
 
 
 
+    addWhitelistedTransferAddress: async ({
+        dev,
+        whitelistedAddress,
+        revertErr,
+    }: {
+        dev: SignerWithAddress
+        whitelistedAddress: string,
+        revertErr?: string,
+    }) => {
+        const everestToken = await getEverestToken()
+        const tx = everestToken.connect(dev).addWhitelistedTransferAddress
+        const txArgs = [whitelistedAddress]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            const eventArgs = [whitelistedAddress]
+            await executeTxExpectEvent(tx, txArgs, everestToken, EVENT.Everest.AddWhitelistedTransferAddress, eventArgs, true)
+        }
+    },
+    
 
     
     addEverestExtension: async ({

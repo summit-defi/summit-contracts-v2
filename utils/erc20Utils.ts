@@ -1,5 +1,6 @@
-import { Contract } from "ethers"
-import { getSummitToken, getEverestToken, getCakeToken, getBifiToken, promiseSequenceMap } from "."
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
+import { BigNumber, Contract } from "ethers"
+import { getSummitToken, getEverestToken, getCakeToken, getBifiToken, promiseSequenceMap, getContract, EVENT, executeTxExpectEvent, executeTxExpectReversion, executeTx } from "."
 
 export const getTokenBalance = async (token: Contract, add: string) => {
     return await token.balanceOf(add)
@@ -21,4 +22,30 @@ export const tokenPromiseSequenceMap = async (transformer: (element: Contract, i
         [summitToken, cakeToken, bifiToken],
         async (user: Contract, index: number, array: Contract[]) => await transformer(user, index, array)
     )
+}
+
+export const erc20Method = {
+    transfer: async ({
+        user,
+        tokenName,
+        recipientAddress,
+        amount,
+        revertErr,
+    }: {
+        user: SignerWithAddress
+        tokenName: string,
+        recipientAddress: string,
+        amount: BigNumber,
+        revertErr?: string,
+    }) => {
+        const token = await getContract(tokenName)
+        const tx = token.connect(user).transfer
+        const txArgs = [recipientAddress, amount]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            await executeTxExpectEvent(tx, txArgs, token, 'Transfer', [user.address, recipientAddress, amount], true)
+        }
+    },
 }
