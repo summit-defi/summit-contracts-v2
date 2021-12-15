@@ -21,10 +21,6 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 
 
-
-import "hardhat/console.sol";
-
-
 /*
 ---------------------------------------------------------------------------------------------
 --   S U M M I T . D E F I
@@ -803,9 +799,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         // Early exit if min tax is greater than tax of this token
         if (tokenMinTax >= tokenTax) return uint16(tokenMinTax);
-
-        console.log("ScaleValue", block.timestamp, lastDepositTimestampForTax, lastDepositTimestampForTax + taxDecayDuration);
-        console.log("ScaleValueTokenTax", tokenMinTax, tokenTax);
 
         return uint16(SummitMath.scaledValue(
             block.timestamp,
