@@ -249,11 +249,6 @@ contract CartographerElevation is ISubCart, Initializable, ReentrancyGuard {
         _poolExists(_token);
         _;
     }
-    modifier poolExistsAndLaunched(address _token) {
-        require(poolTokens.contains(_token), "Pool doesnt exist");
-        require(poolInfo[_token].launched, "Pool not launched yet");
-        _;
-    }
     
 
 
@@ -1040,7 +1035,7 @@ contract CartographerElevation is ISubCart, Initializable, ReentrancyGuard {
 
     function _depositValidate(address _token, address _userAdd)
         internal view
-        userHasSelectedTotem(_userAdd) poolExistsAndLaunched(_token) validUserAdd(_userAdd) elevationInteractionsAvailable
+        userHasSelectedTotem(_userAdd) poolExists(_token) validUserAdd(_userAdd) elevationInteractionsAvailable
     { return; }
 
     

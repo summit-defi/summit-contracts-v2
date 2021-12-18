@@ -18,6 +18,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
 
 
 
@@ -75,6 +77,7 @@ Features of the Summit Ecosystem
 
 contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     using SafeERC20 for IERC20;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
 
     // ---------------------------------------
@@ -111,10 +114,9 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     mapping(address => address) public tokenPassthroughStrategy;                // Passthrough strategy of each stakable token
 
     uint256[4] public elevAlloc;                                                // Total allocation points of all pools at an elevation
-    mapping(address => bool) public tokenAllocExistence;                        // Whether an allocation has been created for a specific token
+    EnumerableSet.AddressSet tokensWithAlloc;                                   // List of tokens with an allocation set
     mapping(address => uint16) public tokenDepositFee;                          // Deposit fee for all farms of this token
     mapping(address => uint16) public tokenWithdrawalTax;                       // Tax for all farms of this token
-    address[] tokensWithAllocation;                                             // List of Token Addresses that have been assigned an allocation
     mapping(address => uint256) public tokenAlloc;                              // A tokens underlying allocation, which is modulated for each elevation
 
     mapping(address => mapping(uint8 => bool)) public poolExistence;            // Whether a pool exists for a token at an elevation
@@ -130,7 +132,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     mapping(address => mapping(address => uint256)) public tokenLastDepositTimestampForTax; // Users' last deposit timestamp for tax
     uint16 public baseMinimumWithdrawalTax = 100;
     uint256 public taxDecayDuration = 7 * 86400;
-    uint256 public taxResetOnDepositBP = 500;
+    uint256 constant public taxResetOnDepositBP = 500;
 
 
 
@@ -164,6 +166,9 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     event SetTokenIsNativeFarm(address indexed _token, bool _isNativeFarm);
     event SetMaxBonusBP(uint256 _maxBonusBP);
     event SummitOwnershipTransferred(address indexed _summitOwner);
+    event SetRolloverRewardInNativeToken(uint256 _reward);
+    event SetTotalSummitPerSecond(uint256 _amount);
+    event SetSummitDistributionBPs(uint256 _treasuryBP, uint256 _referralsBP);
 
 
 
@@ -180,6 +185,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         address _treasuryAdd,
         address _expeditionTreasuryAdd
     ) {
+        require(_treasuryAdd != address(0), "Missing Treasury Address");
+        require(_expeditionTreasuryAdd != address(0), "Missing Expedition Treasury Address");
         treasuryAdd = _treasuryAdd;
         expeditionTreasuryAdd = _expeditionTreasuryAdd;
     }
@@ -280,15 +287,16 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     function setRolloverRewardInNativeToken(uint256 _reward) public onlyOwner {
         require(_reward < 10e18, "Exceeds max reward");
         rolloverReward = _reward;
+        emit SetRolloverRewardInNativeToken(_reward);
     }
 
     /// @dev Updating the total emission of the ecosystem
     /// @param _amount New total emission
     function setTotalSummitPerSecond(uint256 _amount) public onlyOwner {
         // Must be less than 1 SUMMIT per second
-        require(_amount >= 0 && _amount < 1e18, "Invalid emission");
-
+        require(_amount < 1e18, "Invalid emission");
         summitPerSecond = _amount;
+        emit SetTotalSummitPerSecond(_amount);
     }
 
     /// @dev Updating the emission split profile
@@ -296,10 +304,10 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _treasuryBP How much extra is minted for the treasury
     function setSummitDistributionBPs(uint256 _referralsBP, uint256 _treasuryBP) public onlyOwner {
         // Require dev emission less than 25% of total emission
-        require(_treasuryBP <= 250 && _referralsBP <= 5, "Invalid Distributions");
-
+        require(_treasuryBP <= 250 && _referralsBP <= 40, "Invalid Distributions");
         referralsSummitBP = _referralsBP;
         treasurySummitBP = _treasuryBP;
+        emit SetSummitDistributionBPs(_treasuryBP, _referralsBP);
     }
 
 
@@ -332,11 +340,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     }
 
     modifier nonDuplicatedTokenAlloc(address _token) {
-        require(tokenAllocExistence[_token] == false, "Duplicated token alloc");
+        require(!tokensWithAlloc.contains(_token), "Duplicated token alloc");
         _;
     }
     modifier tokenAllocExists(address _token) {
-        require(tokenAllocExistence[_token] == true, "Invalid token alloc");
+        require(tokensWithAlloc.contains(_token), "Invalid token alloc");
         _;
     }
     modifier validAllocation(uint256 _allocation) {
@@ -407,6 +415,15 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     }
 
 
+    /// @dev List of tokens with a set allocation
+    function tokensWithAllocation()
+        public view
+        returns (address[] memory)
+    {
+        return tokensWithAlloc.values();
+    }
+
+
     /// @dev Create a new base allocation for a token. Required before a pool for that token is created
     /// @param _token Token to create allocation for
     /// @param _allocation Allocation shares awarded to token
@@ -415,8 +432,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         onlyOwner nonDuplicatedTokenAlloc(_token) validAllocation(_allocation)
     {
         // Token is marked as having an existing allocation
-        tokenAllocExistence[_token] = true;
-        tokensWithAllocation.push(_token);
+        tokensWithAlloc.add(_token);
 
         // Token's base allocation is set to the passed in value
         tokenAlloc[_token] = _allocation;
@@ -1221,6 +1237,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         public
         onlyOwner
     {
+        require(_taxDecayDuration <= 14 days, "Invalid tax decay duration > 14 days");
         taxDecayDuration = _taxDecayDuration;
         emit SetTaxDecayDuration(_taxDecayDuration);
     }
@@ -1230,7 +1247,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         public
         onlyOwner
     {
-        require(_baseMinimumWithdrawalTax <= 100, "Minimum tax outside 0%-10%");
+        require(_baseMinimumWithdrawalTax <= 1000, "Minimum tax outside 0%-10%");
         baseMinimumWithdrawalTax = _baseMinimumWithdrawalTax;
         emit SetBaseMinimumWithdrawalTax(_baseMinimumWithdrawalTax);
     }
