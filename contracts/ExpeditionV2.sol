@@ -150,6 +150,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
     }
     struct ExpeditionInfo {
         bool live;                          // If the pool is manually enabled / disabled
+        bool launched;
 
         uint256 roundsRemaining;            // Number of rounds of this expedition to run.
 
@@ -520,6 +521,11 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
         internal
     {
         if (!expeditionInfo.live) return;
+
+        if (!expeditionInfo.launched) {
+            expeditionInfo.launched = true;
+            return;
+        }
 
         uint8 winningDeity = elevationHelper.winningTotem(EXPEDITION, _currRound - 1);
 
