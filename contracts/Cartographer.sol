@@ -340,7 +340,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     }
 
     modifier nonDuplicatedTokenAlloc(address _token) {
-        require(tokensWithAlloc.contains(_token), "Duplicated token alloc");
+        require(!tokensWithAlloc.contains(_token), "Duplicated token alloc");
         _;
     }
     modifier tokenAllocExists(address _token) {
