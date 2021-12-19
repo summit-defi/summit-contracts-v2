@@ -115,6 +115,7 @@ export const ERR = {
     NO_REWARDS_TO_REDEEM: 'No referral rewards to redeem',
     ONLY_CARTOGRAPHER_OR_EXPEDITION: 'Only cartographer or expedition',
     TOTEM_NOT_SELECTED: 'Totem not selected',
+    PAUSED: 'Pausable: paused',
 
     // Elevation
     INVALID_ELEV: 'Invalid elev',
