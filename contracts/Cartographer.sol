@@ -8,7 +8,7 @@ import "./EverestToken.sol";
 import "./ElevationHelper.sol";
 import "./SummitReferrals.sol";
 import "./SummitLocking.sol";
-import "./Pausable.sol";
+import "./PresetPausable.sol";
 import "./libs/SummitMath.sol";
 import "./interfaces/ISubCart.sol";
 import "./interfaces/IPassthrough.sol";
@@ -16,7 +16,6 @@ import "./interfaces/IUniswapV2Pair.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
@@ -77,7 +76,7 @@ Features of the Summit Ecosystem
 
 */
 
-contract Cartographer is Ownable, Initializable, ReentrancyGuard, Pausable {
+contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 

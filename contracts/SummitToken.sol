@@ -3,13 +3,13 @@
 pragma solidity 0.8.0;
 
 import "./libs/ERC20Mintable.sol";
-import "./Pausable.sol";
+import "./PresetPausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract SummitToken is ERC20Mintable('SummitToken', 'SUMMIT'), ReentrancyGuard, Pausable, Initializable {
+contract SummitToken is ERC20Mintable('SummitToken', 'SUMMIT'), ReentrancyGuard, PresetPausable, Initializable {
     using SafeERC20 for IERC20;
 
     IERC20 public oldSummit;

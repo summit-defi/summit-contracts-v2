@@ -4,7 +4,7 @@ pragma solidity 0.8.0;
 
 import "./libs/ERC20Mintable.sol";
 import "./BaseEverestExtension.sol";
-import "./Pausable.sol";
+import "./PresetPausable.sol";
 import "./libs/SummitMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
 // EverestToken, governance token of Summit DeFi
-contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGuard, Pausable {
+contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGuard, PresetPausable {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 

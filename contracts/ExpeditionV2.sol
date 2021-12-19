@@ -5,7 +5,7 @@ pragma solidity 0.8.0;
 import "./ElevationHelper.sol";
 import "./SummitToken.sol";
 import "./EverestToken.sol";
-import "./Pausable.sol";
+import "./PresetPausable.sol";
 import "./interfaces/ISubCart.sol";
 import "./SummitLocking.sol";
 import "./interfaces/IUniswapV2Pair.sol";
@@ -90,7 +90,7 @@ WINNINGS:
 
 
 
-contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExtension, Pausable {
+contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExtension, PresetPausable {
     using SafeERC20 for IERC20;
 
     // ---------------------------------------

@@ -3,11 +3,11 @@ pragma solidity 0.8.0;
 
 import "./Cartographer.sol";
 import "./SummitToken.sol";
-import "./Pausable.sol";
+import "./PresetPausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
-contract SummitReferrals is Pausable, ReentrancyGuard {
+contract SummitReferrals is PresetPausable, ReentrancyGuard {
     address public cartographer;
     SummitToken public summit;
     address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
