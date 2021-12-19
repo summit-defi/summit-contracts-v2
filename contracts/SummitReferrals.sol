@@ -3,8 +3,11 @@ pragma solidity 0.8.0;
 
 import "./Cartographer.sol";
 import "./SummitToken.sol";
+import "./Pausable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract SummitReferrals {
+
+contract SummitReferrals is Pausable, ReentrancyGuard {
     address public cartographer;
     SummitToken public summit;
     address constant burnAdd = 0x000000000000000000000000000000000000dEaD;
@@ -71,7 +74,7 @@ contract SummitReferrals {
     }
 
     // To be called after rewards redeemed in Cartographer
-    function redeemReferralRewards() public {
+    function redeemReferralRewards() public whenNotPaused nonReentrant {
         require(pendingReferralRewards[roundIndex][msg.sender] > 0, "No referral rewards to redeem");
         uint256 toBeRedeemed = pendingReferralRewards[roundIndex][msg.sender];
 
@@ -80,7 +83,7 @@ contract SummitReferrals {
             Cartographer(cartographer).referralRewardsMintSafetyHatch(toBeRedeemed);
         }
 
-        safeSummitTransfer(msg.sender, toBeRedeemed);
+        summit.transfer(msg.sender, toBeRedeemed);
         pendingReferralRewards[roundIndex][msg.sender] = 0;
 
         emit ReferralRewardsRedeemed(msg.sender, toBeRedeemed);
@@ -93,17 +96,4 @@ contract SummitReferrals {
     function getPendingReferralRewards(address user) public view returns (uint256) {
         return pendingReferralRewards[roundIndex][user];
     }
-
-
-    // UTIL
-    function safeSummitTransfer(address _to, uint256 _amount) internal {
-        uint256 summitBal = summit.balanceOf(address(this));
-        bool transferSuccess = false;
-        if (_amount > summitBal) {
-            transferSuccess = summit.transfer(_to, summitBal);
-        } else {
-            transferSuccess = summit.transfer(_to, _amount);
-        }
-        require(transferSuccess, "SafeSummitTransfer: failed");
-    }    
 }

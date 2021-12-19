@@ -5,6 +5,7 @@ pragma solidity 0.8.0;
 import "./ElevationHelper.sol";
 import "./SummitToken.sol";
 import "./EverestToken.sol";
+import "./Pausable.sol";
 import "./interfaces/ISubCart.sol";
 import "./SummitLocking.sol";
 import "./interfaces/IUniswapV2Pair.sol";
@@ -89,7 +90,7 @@ WINNINGS:
 
 
 
-contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExtension {
+contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExtension, Pausable {
     using SafeERC20 for IERC20;
 
     // ---------------------------------------
@@ -368,7 +369,8 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
         expeditionInfo.roundsRemaining = (summitFundNonZero || usdcFundNonZero) ? expeditionRunwayRounds : 0;
     }
     function recalculateExpeditionEmissions()
-        public onlyOwner
+        public
+        onlyOwner
     {
         _recalculateExpeditionEmissions();
         emit ExpeditionEmissionsRecalculated(expeditionInfo.roundsRemaining, expeditionInfo.summit.roundEmission, expeditionInfo.usdc.roundEmission);
@@ -376,7 +378,8 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
 
     /// @dev Add funds to the expedition
     function addExpeditionFunds(address _token, uint256 _amount)
-        public nonReentrant
+        public
+        nonReentrant
     {
         require (_token == address(expeditionInfo.summit.token) || _token == address(expeditionInfo.usdc.token), "Invalid token to add to expedition");
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
@@ -491,7 +494,8 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
     ///      Expeditions set to open (expedition.startRound == nextRound) are enabled
     ///      Expeditions set to end are disabled
     function rollover()
-        public
+        public whenNotPaused
+        nonReentrant
     {
         // Ensure that the expedition is ready to be rolled over, ensures only a single user can perform the rollover
         elevationHelper.validateRolloverAvailable(EXPEDITION);
@@ -664,7 +668,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
 
 
     function syncEverestAmount()
-        public
+        public whenNotPaused
         nonReentrant
     {
         _updateUserEverestAmount(
@@ -729,7 +733,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
 
     /// @dev Select a user's deity, update the expedition's deities with the switched funds
     function selectDeity(uint8 _newDeity)
-        public
+        public whenNotPaused
         nonReentrant validDeity(_newDeity) expeditionInteractionsAvailable
     {
         UserExpeditionInfo storage user = _getOrCreateUserInfo(msg.sender);
@@ -760,7 +764,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
 
     /// @dev Change the safety factor of a user
     function selectSafetyFactor(uint8 _newSafetyFactor)
-        public
+        public whenNotPaused
         nonReentrant validSafetyFactor(_newSafetyFactor) expeditionInteractionsAvailable
     {
         UserExpeditionInfo storage user = _getOrCreateUserInfo(msg.sender);
@@ -805,7 +809,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
     }
 
     function joinExpedition()
-        public
+        public whenNotPaused
         userOwnsEverest userIsEligibleToJoinExpedition expeditionInteractionsAvailable
     {
         UserExpeditionInfo storage user = userExpeditionInfo[msg.sender];        
@@ -826,7 +830,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
     }
 
     function harvestExpedition()
-        public
+        public whenNotPaused
         nonReentrant userOwnsEverest expeditionInteractionsAvailable
     {
         UserExpeditionInfo storage user = userExpeditionInfo[msg.sender];        
