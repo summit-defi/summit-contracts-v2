@@ -34,6 +34,9 @@ const getUserTokenWithdrawalTax = async (userAddress: string, tokenAddress: stri
 const getTokenDepositFee = async (tokenAddress: string): Promise<number> => {
     return await (await getCartographer()).tokenDepositFee(tokenAddress)
 }
+const tokensWithAllocation = async (): Promise<string[]> => {
+    return await (await getCartographer()).tokensWithAllocation()
+}
 const calcBonusBPNextSecond = async (userAddress: string, tokenAddress: string) => {
     const lastWithdrawTimestampForBonus = await (await getCartographer()).tokenLastWithdrawTimestampForBonus(userAddress, tokenAddress)
     const nextTimestamp = (await getTimestamp()) + 1
@@ -81,8 +84,9 @@ const calculateBonusFromOffset = (offset: number): number => {
 
 export const cartographerGet = {
     tokenAlloc,
+    tokensWithAllocation,
     tokenAllocExistence: async (tokenAddress: string): Promise<boolean> => {
-        return await (await getCartographer()).tokenAllocExistence(tokenAddress)
+        return (await tokensWithAllocation()).includes(tokenAddress)
     },
     elevAlloc,
     elevationModulatedAllocation,

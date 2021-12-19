@@ -107,6 +107,10 @@ export const subCartGet = {
         return await subCart.elevClaimableRewards(userAddress)
     },
     elevPotentialWinnings: async (elevation: number, userAddress: string): Promise<{ yieldContributed: BigNumber, potentialWinnings: BigNumber }> => {
+        if (elevation === OASIS) return {
+            yieldContributed: e18(0),
+            potentialWinnings: e18(0),
+        }
         const subCart = await getSubCartographer(elevation)
         const potentialWinnings = await subCart.elevPotentialWinnings(userAddress)
         return {

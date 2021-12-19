@@ -4,7 +4,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
 import { e18, ERR, EVENT, toDecimal, Contracts, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, e36, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, e12, e0, consoleLog, expectAllEqual, getBifiToken, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getSummitToken, everestGet, everestMethod, expeditionMethod, expeditionGet, getSummitBalance, getUsdcBalance, UserExpeditionInfo, elevationHelperGet, expeditionSynth, days, rolloverRound } from "../utils";
-import { userPromiseSequenceMap, userPromiseSequenceReduce, usersLockedSummitBalances, usersExpeditionHypotheticalRewards, usersExpeditionInfos, usersExpeditionRewards, usersSummitBalances, usersUsdcBalances } from "../utils/users";
+import { userPromiseSequenceMap, userPromiseSequenceReduce, usersLockedSummitBalances, usersExpeditionPotentialWinnings, usersExpeditionInfos, usersExpeditionRewards, usersSummitBalances, usersUsdcBalances } from "../utils/users";
 import { oasisUnlockedFixture } from "./fixtures";
 
 
@@ -230,6 +230,28 @@ describe("EXPEDITION V2", async function() {
         await expeditionSynth.expectUserAndExpedSuppliesToMatch()
     })
 
+    it('BEFORE UNLOCK: Before the first round rolls over, potential winnings and actual winnings are 0', async function() {
+        const potentialWinnings = await usersExpeditionPotentialWinnings()
+
+        await userPromiseSequenceMap(
+            async (_, userIndex) => {
+                expect(potentialWinnings[userIndex].safeSummit).to.equal(0)
+                expect(potentialWinnings[userIndex].safeUsdc).to.equal(0)
+            }
+        )
+
+        await rolloverRound(EXPEDITION)
+
+        const rewards = await usersExpeditionRewards()
+
+        await userPromiseSequenceMap(
+            async (_, userIndex) => {
+                expect(rewards[userIndex].summit).to.equal(0)
+                expect(rewards[userIndex].usdc).to.equal(0)
+            }
+        )
+    })
+
     it(`EXPEDITION: Rounds yield correct winnings`, async function() {
         const { user1, user2, user3 } = await getNamedSigners(hre)
         
@@ -251,7 +273,7 @@ describe("EXPEDITION V2", async function() {
             async (user) => await expeditionMethod.harvestExpedition({ user })
         )
 
-        const hypothetical = await usersExpeditionHypotheticalRewards()
+        const potentialWinnings = await usersExpeditionPotentialWinnings()
 
         await expeditionSynth.rolloverExpedition()
         const prevWinningTotem = await elevationHelperGet.prevWinningTotem(EXPEDITION)
@@ -261,8 +283,8 @@ describe("EXPEDITION V2", async function() {
         await userPromiseSequenceMap(
             async (_, userIndex) => consoleLog({
                 user: userIndex,
-                hypotheticalSummit: `Safe: ${toDecimal(hypothetical[userIndex].safeSummit)}, Deity: ${toDecimal(hypothetical[userIndex].deitiedSummit)}: Total ${toDecimal(hypothetical[userIndex].safeSummit.add(hypothetical[userIndex].deitiedSummit))}`,
-                hypotheticalUsdc: `Safe: ${toDecimal(hypothetical[userIndex].safeUsdc)}, Deity: ${toDecimal(hypothetical[userIndex].deitiedUsdc)}: Total ${toDecimal(hypothetical[userIndex].safeUsdc.add(hypothetical[userIndex].deitiedUsdc))}`,
+                potentialWinningsSummit: `Safe: ${toDecimal(potentialWinnings[userIndex].safeSummit)}, Deity: ${toDecimal(potentialWinnings[userIndex].deitiedSummit)}: Total ${toDecimal(potentialWinnings[userIndex].safeSummit.add(potentialWinnings[userIndex].deitiedSummit))}`,
+                potentialWinningsUsdc: `Safe: ${toDecimal(potentialWinnings[userIndex].safeUsdc)}, Deity: ${toDecimal(potentialWinnings[userIndex].deitiedUsdc)}: Total ${toDecimal(potentialWinnings[userIndex].safeUsdc.add(potentialWinnings[userIndex].deitiedUsdc))}`,
                 rewardsSummit: toDecimal(rewards[userIndex].summit),
                 rewardsUsdc: toDecimal(rewards[userIndex].usdc),
             })
@@ -272,10 +294,10 @@ describe("EXPEDITION V2", async function() {
             (acc, user, userIndex) => ({
                 summit: acc.summit.add(rewards[userIndex].summit) as BigNumber,
                 usdc: acc.usdc.add(rewards[userIndex].usdc) as BigNumber,
-                safeSummitRewards: acc.safeSummitRewards.add(hypothetical[userIndex].safeSummit),
-                safeUsdcRewards: acc.safeUsdcRewards.add(hypothetical[userIndex].safeUsdc),
-                deitiedSummitRewards: acc.deitiedSummitRewards.add(prevWinningTotem === userParams[user.address].deity ? hypothetical[userIndex].deitiedSummit : 0),
-                deitiedUsdcRewards: acc.deitiedUsdcRewards.add(prevWinningTotem === userParams[user.address].deity ? hypothetical[userIndex].deitiedUsdc : 0)
+                safeSummitRewards: acc.safeSummitRewards.add(potentialWinnings[userIndex].safeSummit),
+                safeUsdcRewards: acc.safeUsdcRewards.add(potentialWinnings[userIndex].safeUsdc),
+                deitiedSummitRewards: acc.deitiedSummitRewards.add(prevWinningTotem === userParams[user.address].deity ? potentialWinnings[userIndex].deitiedSummit : 0),
+                deitiedUsdcRewards: acc.deitiedUsdcRewards.add(prevWinningTotem === userParams[user.address].deity ? potentialWinnings[userIndex].deitiedUsdc : 0)
             }),
             {
                 summit: e18(0),
@@ -294,6 +316,11 @@ describe("EXPEDITION V2", async function() {
             usdcEmission: toDecimal(expeditionInfo.usdcExpeditionToken.roundEmission),
         })
 
+        console.log({
+            summationsSummit: toDecimal(summations.summit),
+            roundEmission: toDecimal(expeditionInfo.summitExpeditionToken.roundEmission)
+        })
+
         expect6FigBigNumberEquals(
             summations.summit,
             expeditionInfo.summitExpeditionToken.roundEmission
@@ -305,8 +332,8 @@ describe("EXPEDITION V2", async function() {
 
         await userPromiseSequenceMap(
             async (user, userIndex) => {
-                expect6FigBigNumberEquals(rewards[userIndex].summit, hypothetical[userIndex].safeSummit.add(prevWinningTotem === userParams[user.address].deity ? hypothetical[userIndex].deitiedSummit : 0))
-                expect6FigBigNumberEquals(rewards[userIndex].usdc, hypothetical[userIndex].safeUsdc.add(prevWinningTotem === userParams[user.address].deity ? hypothetical[userIndex].deitiedUsdc : 0))
+                expect6FigBigNumberEquals(rewards[userIndex].summit, potentialWinnings[userIndex].safeSummit.add(prevWinningTotem === userParams[user.address].deity ? potentialWinnings[userIndex].deitiedSummit : 0))
+                expect6FigBigNumberEquals(rewards[userIndex].usdc, potentialWinnings[userIndex].safeUsdc.add(prevWinningTotem === userParams[user.address].deity ? potentialWinnings[userIndex].deitiedUsdc : 0))
             }
         )
 
