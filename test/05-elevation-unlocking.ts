@@ -2,7 +2,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, PLAINS, MESA, SUMMIT, mineBlockWithTimestamp, cartographerMethod, getSummitToken, OASIS, getCartographer, elevationHelperGet, cartographerSynth, cartographerGet, expect6FigBigNumberAllEqual, expectAllEqual, subCartGet, allElevationPromiseSequenceMap, getBifiToken, getCakeToken, promiseSequenceMap, consoleLog } from "../utils";
+import { e18, ERR, EVENT, PLAINS, MESA, SUMMIT, mineBlockWithTimestamp, cartographerMethod, getSummitToken, OASIS, getCartographer, elevationHelperGet, cartographerSynth, cartographerGet, expect6FigBigNumberAllEqual, expectAllEqual, subCartGet, allElevationPromiseSequenceMap, getBifiToken, getCakeToken, promiseSequenceMap, consoleLog, userPromiseSequenceMap, getTimestamp } from "../utils";
 import { mesaUnlockedFixture, oasisUnlockedFixture, poolsFixture, plainsUnlockedFixture } from "./fixtures";
 
 const switchTotemIfNecessary = async (user: SignerWithAddress, elevation: number, totem: number, revertErr?: string) => {
@@ -54,71 +54,35 @@ const userDepositIntoElevationPools = async (elevation: number) => {
 }
 
 describe("ELEVATION Unlocks", function() {
-  it(`UNLOCK: Before summit enabled all elevations should fail with error "${ERR.ELEVATION_LOCKED_UNTIL_ROLLOVER}"`, async function() {
-    await poolsFixture()
-    const { user1 } = await getNamedSigners(hre)
-    const summitToken = await getSummitToken()
-
-    await initialTotemSelections(user1)
-
-    await cartographerMethod.deposit({
-      user: user1,
-      tokenAddress: summitToken.address,
-      elevation: PLAINS,
-      amount: e18(5),
-      revertErr: ERR.POOL_NOT_AVAILABLE_YET,
+  describe("- PLAINS", async function() {
+    it(`UNLOCK: Before PLAINS unlock, deposits should be enabled, but no yield contributed accumulates and potential winnings are 0`, async function() {
+      await oasisUnlockedFixture()
+  
+      const { user1 } = await getNamedSigners(hre)
+      const summitToken = await getSummitToken()
+      
+      await initialTotemSelections(user1)
+  
+      await userPromiseSequenceMap(
+        async (user) => {
+          await cartographerMethod.deposit({
+            user: user1,
+            tokenAddress: summitToken.address,
+            elevation: PLAINS,
+            amount: e18(5),
+          })
+          const currentTimestamp = await getTimestamp()
+          await mineBlockWithTimestamp(currentTimestamp + 20)
+          const potentialWinnings = await subCartGet.elevPotentialWinnings(PLAINS, user.address)
+          expect(potentialWinnings.potentialWinnings).to.equal(0)
+          expect(potentialWinnings.yieldContributed).to.equal(0)
+        }
+      )
     })
-    await cartographerMethod.deposit({
-      user: user1,
-      tokenAddress: summitToken.address,
-      elevation: MESA,
-      amount: e18(5),
-      revertErr: ERR.POOL_NOT_AVAILABLE_YET,
-    })
-    await cartographerMethod.deposit({
-      user: user1,
-      tokenAddress: summitToken.address,
-      elevation: SUMMIT,
-      amount: e18(5),
-      revertErr: ERR.POOL_NOT_AVAILABLE_YET,
-    })
-  })
-  it(`UNLOCK: Before 2K rollover, all elevations should fail with error "${ERR.POOL_NOT_AVAILABLE_YET}"`, async function() {
-    await oasisUnlockedFixture()
-
-    const { user1 } = await getNamedSigners(hre)
-    const summitToken = await getSummitToken()
-    
-    await initialTotemSelections(user1)
-
-    await cartographerMethod.deposit({
-      user: user1,
-      tokenAddress: summitToken.address,
-      elevation: PLAINS,
-      amount: e18(5),
-      revertErr: ERR.POOL_NOT_AVAILABLE_YET,
-    })
-    await cartographerMethod.deposit({
-      user: user1,
-      tokenAddress: summitToken.address,
-      elevation: MESA,
-      amount: e18(5),
-      revertErr: ERR.POOL_NOT_AVAILABLE_YET,
-    })
-    await cartographerMethod.deposit({
-      user: user1,
-      tokenAddress: summitToken.address,
-      elevation: SUMMIT,
-      amount: e18(5),
-      revertErr: ERR.POOL_NOT_AVAILABLE_YET,
-    })
-  })
-
-  describe("- Two Thousand Meters", async function() {
-    it(`UNLOCK: 2K Rollover should only be available after 2K elevation unlocks, else fails with error "${ERR.ELEVATION_LOCKED}"`, async function() {
+    it(`UNLOCK: PLAINS Rollover should only be available after PLAINS elevation unlocks, else fails with error "${ERR.ELEVATION_LOCKED}"`, async function() {
       const oasisUnlockedFixtureState = await oasisUnlockedFixture()
 
-      const { elevationHelper, user1 } = oasisUnlockedFixtureState
+      const { user1 } = oasisUnlockedFixtureState
       const twoThousandUnlockTime = await elevationHelperGet.unlockTimestamp(PLAINS)
       await mineBlockWithTimestamp(twoThousandUnlockTime - 60)
 
@@ -135,61 +99,21 @@ describe("ELEVATION Unlocks", function() {
         elevation: PLAINS,
       })
     })
-    it(`UNLOCK: Rolling over first 2K round, 2K pools should switch from failing ("${ERR.POOL_NOT_AVAILABLE_YET}") to succeeding`, async function() {
-      const { summitToken, user1 } = await oasisUnlockedFixture()
+    it(`UNLOCK: Rolling over first PLAINS round, no rewards should be earned`, async function() {
+      const { user1 } = await oasisUnlockedFixture()
       
       await initialTotemSelections(user1)
       const twoThousandUnlockTime = await elevationHelperGet.unlockTimestamp(PLAINS)
       await mineBlockWithTimestamp(twoThousandUnlockTime)
 
-      await cartographerMethod.deposit({
-        user: user1,
-        tokenAddress: summitToken.address,
-        elevation: PLAINS,
-        amount: e18(5),
-        revertErr: ERR.POOL_NOT_AVAILABLE_YET,
-      })
-      await cartographerMethod.deposit({
-        user: user1,
-        tokenAddress: summitToken.address,
-        elevation: MESA,
-        amount: e18(5),
-        revertErr: ERR.POOL_NOT_AVAILABLE_YET,
-      })
-      await cartographerMethod.deposit({
-        user: user1,
-        tokenAddress: summitToken.address,
-        elevation: SUMMIT,
-        amount: e18(5),
-        revertErr: ERR.POOL_NOT_AVAILABLE_YET,
-      })
-
-      await cartographerMethod.rollover({
-        elevation: PLAINS
-      })
-
-      await cartographerMethod.deposit({
-        user: user1,
-        tokenAddress: summitToken.address,
-        elevation: PLAINS,
-        amount: e18(5),
-      })
-      await cartographerMethod.deposit({
-        user: user1,
-        tokenAddress: summitToken.address,
-        elevation: MESA,
-        amount: e18(5),
-        revertErr: ERR.POOL_NOT_AVAILABLE_YET,
-      })
-      await cartographerMethod.deposit({
-        user: user1,
-        tokenAddress: summitToken.address,
-        elevation: SUMMIT,
-        amount: e18(5),
-        revertErr: ERR.POOL_NOT_AVAILABLE_YET,
-      })
+      await userPromiseSequenceMap(
+        async (user) => {
+          const claimable = await subCartGet.elevClaimableRewards(PLAINS, user.address)
+          expect(claimable).to.equal(0)
+        }
+      )
     })
-    it(`UNLOCK: 2K Rollover should increase totalAllocPoint`, async function() {
+    it(`UNLOCK: PLAINS Rollover should increase totalAllocPoint`, async function() {
       await oasisUnlockedFixture()
       
       const totalAllocPointInit = await cartographerSynth.totalAlloc()
@@ -221,8 +145,32 @@ describe("ELEVATION Unlocks", function() {
   })
 
 
-  describe("- Five Thousand Meters", async function() {
-    it(`UNLOCK: 5K Rollover should only be available after 5K elevation unlocks, else fails with error "${ERR.ELEVATION_LOCKED}"`, async function() {
+  describe("- MESA", async function() {
+    it(`UNLOCK: Before MESA unlock, deposits should be enabled, but no yield contributed accumulates and potential winnings are 0`, async function() {
+      await oasisUnlockedFixture()
+  
+      const { user1 } = await getNamedSigners(hre)
+      const summitToken = await getSummitToken()
+      
+      await initialTotemSelections(user1)
+  
+      await userPromiseSequenceMap(
+        async (user) => {
+          await cartographerMethod.deposit({
+            user: user1,
+            tokenAddress: summitToken.address,
+            elevation: MESA,
+            amount: e18(5),
+          })
+          const currentTimestamp = await getTimestamp()
+          await mineBlockWithTimestamp(currentTimestamp + 20)
+          const potentialWinnings = await subCartGet.elevPotentialWinnings(MESA, user.address)
+          expect(potentialWinnings.potentialWinnings).to.equal(0)
+          expect(potentialWinnings.yieldContributed).to.equal(0)
+        }
+      )
+    })
+    it(`UNLOCK: MESA Rollover should only be available after MESA elevation unlocks, else fails with error "${ERR.ELEVATION_LOCKED}"`, async function() {
       await plainsUnlockedFixture()
       const fiveThousandUnlockTime = await elevationHelperGet.unlockTimestamp(MESA)
       
@@ -239,47 +187,21 @@ describe("ELEVATION Unlocks", function() {
         elevation: MESA,
       })
     })
-    it(`UNLOCK: Rolling over first 5K round, 5K pools should switch from failing ("${ERR.POOL_NOT_AVAILABLE_YET}") to succeeding`, async function() {
-      const { summitToken, user1 } = await plainsUnlockedFixture()
-
-      const fiveThousandUnlockTime = await elevationHelperGet.unlockTimestamp(MESA)
+    it(`UNLOCK: Rolling over first MESA round, no rewards should be earned`, async function() {
+      const { user1 } = await oasisUnlockedFixture()
+      
       await initialTotemSelections(user1)
-      await mineBlockWithTimestamp(fiveThousandUnlockTime)
+      const twoThousandUnlockTime = await elevationHelperGet.unlockTimestamp(MESA)
+      await mineBlockWithTimestamp(twoThousandUnlockTime)
 
-      await cartographerMethod.deposit({
-        user: user1,
-        tokenAddress: summitToken.address,
-        elevation: MESA,
-        amount: e18(5),
-        revertErr: ERR.POOL_NOT_AVAILABLE_YET,
-      })
-      await cartographerMethod.deposit({
-        user: user1,
-        tokenAddress: summitToken.address,
-        elevation: SUMMIT,
-        amount: e18(5),
-        revertErr: ERR.POOL_NOT_AVAILABLE_YET,
-      })
-
-      await cartographerMethod.rollover({
-        elevation: MESA
-      })
-
-      await cartographerMethod.deposit({
-        user: user1,
-        tokenAddress: summitToken.address,
-        elevation: MESA,
-        amount: e18(5),
-      })
-      await cartographerMethod.deposit({
-        user: user1,
-        tokenAddress: summitToken.address,
-        elevation: SUMMIT,
-        amount: e18(5),
-        revertErr: ERR.POOL_NOT_AVAILABLE_YET,
-      })
+      await userPromiseSequenceMap(
+        async (user) => {
+          const claimable = await subCartGet.elevClaimableRewards(MESA, user.address)
+          expect(claimable).to.equal(0)
+        }
+      )
     })
-    it(`UNLOCK: 5K Rollover should increase totalAllocPoint`, async function() {
+    it(`UNLOCK: MESA Rollover should increase totalAllocPoint`, async function() {
       await plainsUnlockedFixture()
       
       const totalAllocPointInit = await cartographerSynth.totalAlloc()
@@ -308,8 +230,32 @@ describe("ELEVATION Unlocks", function() {
     })
   })
 
-  describe('- Ten Thousand Meters', async function() {
-    it(`UNLOCK: 10K Rollover should only be available after 10K elevation unlocks, else fails with error "${ERR.ELEVATION_LOCKED}"`, async function() {
+  describe('- SUMMIT', async function() {
+    it(`UNLOCK: Before SUMMIT unlock, deposits should be enabled, but no yield contributed accumulates and potential winnings are 0`, async function() {
+      await oasisUnlockedFixture()
+  
+      const { user1 } = await getNamedSigners(hre)
+      const summitToken = await getSummitToken()
+      
+      await initialTotemSelections(user1)
+  
+      await userPromiseSequenceMap(
+        async (user) => {
+          await cartographerMethod.deposit({
+            user: user1,
+            tokenAddress: summitToken.address,
+            elevation: SUMMIT,
+            amount: e18(5),
+          })
+          const currentTimestamp = await getTimestamp()
+          await mineBlockWithTimestamp(currentTimestamp + 20)
+          const potentialWinnings = await subCartGet.elevPotentialWinnings(SUMMIT, user.address)
+          expect(potentialWinnings.potentialWinnings).to.equal(0)
+          expect(potentialWinnings.yieldContributed).to.equal(0)
+        }
+      )
+    })
+    it(`UNLOCK: SUMMIT Rollover should only be available after SUMMIT elevation unlocks, else fails with error "${ERR.ELEVATION_LOCKED}"`, async function() {
       await mesaUnlockedFixture()
 
       const tenThousandUnlockTime = await elevationHelperGet.unlockTimestamp(SUMMIT)
@@ -326,33 +272,21 @@ describe("ELEVATION Unlocks", function() {
         elevation: SUMMIT
       })
     })
-    it(`UNLOCK: Rolling over first 10k round, 10k pools should switch from failing ("${ERR.POOL_NOT_AVAILABLE_YET}") to succeeding`, async function() {
-      const { summitToken, user1 } = await mesaUnlockedFixture()
+    it(`UNLOCK: Rolling over first SUMMIT round, no rewards should be earned`, async function() {
+      const { user1 } = await oasisUnlockedFixture()
+      
+      await initialTotemSelections(user1)
+      const twoThousandUnlockTime = await elevationHelperGet.unlockTimestamp(SUMMIT)
+      await mineBlockWithTimestamp(twoThousandUnlockTime)
 
-      const summitUnlockTimestamp = await elevationHelperGet.unlockTimestamp(SUMMIT)
-      await switchTotemIfNecessary(user1, SUMMIT, 0)
-      await mineBlockWithTimestamp(summitUnlockTimestamp)
-
-      await cartographerMethod.deposit({
-        user: user1,
-        tokenAddress: summitToken.address,
-        elevation: SUMMIT,
-        amount: e18(5),
-        revertErr: ERR.POOL_NOT_AVAILABLE_YET,
-      })
-
-      await cartographerMethod.rollover({
-        elevation: SUMMIT
-      })
-
-      await cartographerMethod.deposit({
-        user: user1,
-        tokenAddress: summitToken.address,
-        elevation: SUMMIT,
-        amount: e18(5),
-      })
+      await userPromiseSequenceMap(
+        async (user) => {
+          const claimable = await subCartGet.elevClaimableRewards(SUMMIT, user.address)
+          expect(claimable).to.equal(0)
+        }
+      )
     })
-    it(`UNLOCK: 10K Rollover should increase totalAllocPoint`, async function() {
+    it(`UNLOCK: SUMMIT Rollover should increase totalAllocPoint`, async function() {
       await mesaUnlockedFixture()
       
       const totalAllocPointInit = await cartographerSynth.totalAlloc()

@@ -94,7 +94,7 @@ export const usersExpeditionRewards = async (): Promise<ExpeditionRewards[]> => 
         async (user) => await expeditionGet.rewards(user.address)
     )
 }
-export const usersExpeditionHypotheticalRewards = async (): Promise<ExpeditionHypotheticalRewards[]> => {
+export const usersExpeditionPotentialWinnings = async (): Promise<ExpeditionHypotheticalRewards[]> => {
     return await userPromiseSequenceMap(
         async (user) => await expeditionGet.potentialWinnings(user.address)
     )

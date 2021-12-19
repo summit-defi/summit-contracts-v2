@@ -118,7 +118,6 @@ export const ERR = {
 
     // Elevation
     INVALID_ELEV: 'Invalid elev',
-    POOL_NOT_AVAILABLE_YET: 'Pool not launched yet',
     ELEVATION_LOCKED: 'Elevation locked',
     NO_TOTEM_SWITCH_ON_DEPOSIT: 'Cant switch totem during deposit',
     INVALID_TOTEM: 'Invalid totem',

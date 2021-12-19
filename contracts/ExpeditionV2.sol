@@ -101,8 +101,6 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
     SummitLocking public summitLocking;
     uint8 constant EXPEDITION = 4;
 
-    uint256 rolledOverRounds;
-
     uint256 public expeditionDeityWinningsMult = 125;
     uint256 public expeditionRunwayRounds = 30;
     
@@ -227,7 +225,6 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
 
         // Initialize Elevation Helper
         elevationHelper = ElevationHelper(_elevationHelper);
-        rolledOverRounds = elevationHelper.roundNumber(EXPEDITION);
 
         emit ExpeditionInitialized(_usdcTokenAddress, _elevationHelper);
     }
@@ -467,7 +464,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
     {
         UserExpeditionInfo storage user = userExpeditionInfo[_userAdd];
 
-        if (!user.entered || !expeditionInfo.live) return (0, 0, 0, 0);
+        if (!user.entered || !expeditionInfo.live || !expeditionInfo.launched) return (0, 0, 0, 0);
 
         uint256 userSafeEverest = _getUserSafeEverest(user, user.safetyFactor);
         uint256 userDeitiedEverest = _getUserDeitiedEverest(user, user.safetyFactor);
@@ -509,8 +506,6 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
 
         _rolloverExpedition(currRound);
 
-        rolledOverRounds = currRound;
-
         emit Rollover(msg.sender);
     }
 
@@ -548,6 +543,8 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
             expeditionInfo.summit.deityMult[winningDeity] += summitDeitiedEmissionMultE18 / expeditionInfo.supplies.deity[winningDeity];
             expeditionInfo.usdc.deityMult[winningDeity] += usdcDeitiedEmissionMultE18 / expeditionInfo.supplies.deity[winningDeity];
         }
+
+        expeditionInfo.roundsRemaining -= 1;
     }
     
 
