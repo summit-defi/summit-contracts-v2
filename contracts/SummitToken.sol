@@ -3,12 +3,13 @@
 pragma solidity 0.8.0;
 
 import "./libs/ERC20Mintable.sol";
+import "./PresetPausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract SummitToken is ERC20Mintable('SummitToken', 'SUMMIT'), ReentrancyGuard, Initializable {
+contract SummitToken is ERC20Mintable('SummitToken', 'SUMMIT'), ReentrancyGuard, PresetPausable, Initializable {
     using SafeERC20 for IERC20;
 
     IERC20 public oldSummit;
@@ -27,7 +28,7 @@ contract SummitToken is ERC20Mintable('SummitToken', 'SUMMIT'), ReentrancyGuard,
 
     /// @dev Token swap from V1 token
     function tokenSwap(uint256 _amount)
-        public
+        public whenNotPaused
         nonReentrant
     {
         require(address(oldSummit) != address(0), "Old SUMMIT not set");

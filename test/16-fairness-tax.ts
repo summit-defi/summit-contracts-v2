@@ -6,7 +6,7 @@ import { mesaUnlockedFixture } from "./fixtures";
 
 
 
-describe("Fairness Tax", async function() {
+describe("FAIRNESS TAX", async function() {
     before(async function () {
         await mesaUnlockedFixture()
     })

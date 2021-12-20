@@ -8,6 +8,7 @@ import "./EverestToken.sol";
 import "./ElevationHelper.sol";
 import "./SummitReferrals.sol";
 import "./SummitLocking.sol";
+import "./PresetPausable.sol";
 import "./libs/SummitMath.sol";
 import "./interfaces/ISubCart.sol";
 import "./interfaces/IPassthrough.sol";
@@ -75,7 +76,7 @@ Features of the Summit Ecosystem
 
 */
 
-contract Cartographer is Ownable, Initializable, ReentrancyGuard {
+contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -235,7 +236,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
         // Initialize the subCarts with the address of elevationHelper
         for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
-            subCartographer(elevation).initialize(_ElevationHelper, address(_summit));
+            _subCartographer(elevation).initialize(_ElevationHelper, address(_summit));
         }
     }
 
@@ -250,7 +251,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         launchTimestamp = block.timestamp;
         elevationHelper.enable(launchTimestamp);
         summitReferrals.enable(address(summit));
-        subCartographer(OASIS).enable(launchTimestamp);
+        _subCartographer(OASIS).enable(launchTimestamp);
     }
 
     /// @dev Transferring Summit Ownership - Huge timelock
@@ -319,17 +320,21 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // --   M O D I F I E R S (Many are split to save contract size)
     // -----------------------------------------------------------------
 
-    function _onlySubCartographer(address _subCartographer) internal view {
+    function _onlySubCartographer(address _isSubCartographer) internal view {
         require(
-            _subCartographer == subCartographers[OASIS] ||
-            _subCartographer == subCartographers[PLAINS] ||
-            _subCartographer == subCartographers[MESA] ||
-            _subCartographer == subCartographers[SUMMIT],
+            _isSubCartographer == subCartographers[OASIS] ||
+            _isSubCartographer == subCartographers[PLAINS] ||
+            _isSubCartographer == subCartographers[MESA] ||
+            _isSubCartographer == subCartographers[SUMMIT],
             "Only subCarts"
         );
     }
     modifier onlySubCartographer() {
         _onlySubCartographer(msg.sender);
+        _;
+    }
+    modifier onlySummitReferrals() {
+        require(msg.sender == address(summitReferrals), "Only Summit Referrals");
         _;
     }
 
@@ -388,7 +393,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // --   S U B   C A R T O G R A P H E R   S E L E C T O R
     // ---------------------------------------------------------------
 
-    function subCartographer(uint8 _elevation) internal view returns (ISubCart) {
+    function _subCartographer(uint8 _elevation) internal view returns (ISubCart) {
         require(_elevation >= OASIS && _elevation <= SUMMIT, "Invalid elev");
         return ISubCart(subCartographers[_elevation]);
     }
@@ -570,7 +575,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         elevationPoolsCount[_elevation] += 1;
 
         // Create the pool in the appropriate sub cartographer
-        subCartographer(_elevation).add(_token, _live);
+        _subCartographer(_elevation).add(_token, _live);
 
         emit PoolCreated(_token, _elevation);
     }
@@ -591,7 +596,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         }
 
         // Updates the pool in the correct subcartographer
-        subCartographer(_elevation).set(_token, _live);
+        _subCartographer(_elevation).set(_token, _live);
 
         emit PoolUpdated(_token, _elevation, _live);
     }
@@ -600,7 +605,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Does what it says on the box
     function massUpdatePools() public {
         for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
-            subCartographer(elevation).massUpdatePools();
+            _subCartographer(elevation).massUpdatePools();
         }
     }
 
@@ -618,8 +623,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     ///      Called by the webservice, but can also be called manually by any user (as failsafe)
     /// @param _elevation Elevation to rollover
     function rollover(uint8 _elevation)
-        public
-        isElevation(_elevation)
+        public whenNotPaused
+        nonReentrant isElevation(_elevation)
     {
         // Ensure that the elevation is ready to be rolled over, ensures only a single user can perform the rollover
         elevationHelper.validateRolloverAvailable(_elevation);
@@ -631,7 +636,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         elevationHelper.rolloverElevation(_elevation);
 
         // Rollover active pools at the elevation
-        subCartographer(_elevation).rollover();
+        _subCartographer(_elevation).rollover();
 
         // Give SUMMIT rewards to user that executed the rollover
         summit.mint(msg.sender, rolloverReward);
@@ -668,7 +673,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     /// @dev Shares of a token at elevation
     /// (@param _token, @param _elevation) Together identify the pool to calculate
-    function tokenElevationShares(address _token, uint8 _elevation) internal view returns (uint256) {
+    function _tokenElevationShares(address _token, uint8 _elevation) internal view returns (uint256) {
         // Escape early if the pool is not currently earning SUMMIT
         if (!poolExistence[_token][_elevation]) return 0;
 
@@ -676,7 +681,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         if (!tokenElevationIsEarning[_token][_elevation]) return 0;
 
         return (
-            subCartographer(_elevation).supply(_token) *
+            _subCartographer(_elevation).supply(_token) *
             elevationModulatedAllocation(_token, _elevation)
         );
     }
@@ -696,17 +701,17 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         //   . The staked supply of the pool at elevation multiplied by
         //   . The modulated allocation of the pool at elevation
         uint256 totalTokenShares = (
-            tokenElevationShares(_token, OASIS) +
-            tokenElevationShares(_token, PLAINS) +
-            tokenElevationShares(_token, MESA) +
-            tokenElevationShares(_token, SUMMIT)
+            _tokenElevationShares(_token, OASIS) +
+            _tokenElevationShares(_token, PLAINS) +
+            _tokenElevationShares(_token, MESA) +
+            _tokenElevationShares(_token, SUMMIT)
         );
 
         // Escape early if nothing is staked in any of the token's pools
         if (totalTokenShares == 0) { return 0; }
 
         // Divide the target pool (token + elevation) shares by total shares (as calculated above)
-        return tokenElevationShares(_token, _elevation) * e12 / totalTokenShares;
+        return _tokenElevationShares(_token, _elevation) * e12 / totalTokenShares;
     }
 
 
@@ -736,7 +741,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _lastRewardTimestamp Calculate the difference to determine emission event count
     /// (@param _token, @param elevation) Pool identifier for calculation
     /// @return Share of overall emission granted to the pool, raised to 1e12
-    function poolEmissionMultiplier(uint256 _lastRewardTimestamp, address _token, uint8 _elevation)
+    function _poolEmissionMultiplier(uint256 _lastRewardTimestamp, address _token, uint8 _elevation)
         internal view
         returns (uint256)
     {
@@ -748,7 +753,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     }
 
 
-    /// @dev Uses poolEmissionMultiplier along with staking summit emission to calculate the pools summit emission over the time span
+    /// @dev Uses _poolEmissionMultiplier along with staking summit emission to calculate the pools summit emission over the time span
     /// @param _lastRewardTimestamp Used for time span
     /// (@param _token, @param _elevation) Pool identifier
     /// @return emission of SUMMIT, not raised to any power
@@ -761,7 +766,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         if (_lastRewardTimestamp == block.timestamp) { return 0; }
 
         // Emission multiplier multiplied by summitPerSecond, finally reducing back to true exponential
-        return poolEmissionMultiplier(_lastRewardTimestamp, _token, _elevation) * summitPerSecond / e12;
+        return _poolEmissionMultiplier(_lastRewardTimestamp, _token, _elevation) * summitPerSecond / e12;
     }
 
 
@@ -777,11 +782,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _elevation Elevation to switch totem on
     /// @param _totem New target totem
     function switchTotem(uint8 _elevation, uint8 _totem)
-        public
+        public whenNotPaused
         nonReentrant isElevation(_elevation) validTotem(_elevation, _totem)
     {
         // Executes the totem switch in the correct subcartographer
-        subCartographer(_elevation).switchTotem(_totem, msg.sender);
+        _subCartographer(_elevation).switchTotem(_totem, msg.sender);
 
         emit SwitchTotem(msg.sender, _elevation, _totem);
     }
@@ -865,7 +870,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     {
         uint256 totalStaked = 0;
         for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
-            totalStaked += subCartographer(elevation).userStakedAmount(_token, _userAdd);
+            totalStaked += _subCartographer(elevation).userStakedAmount(_token, _userAdd);
         }
         return totalStaked;
     }
@@ -875,11 +880,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// (@param _token, @param _elevation) Pool identifier
     /// @param _amount Amount to stake
     function deposit(address _token, uint8 _elevation, uint256 _amount)
-        public
+        public whenNotPaused
         nonReentrant poolExists(_token, _elevation)
     {
         // Executes the deposit in the sub cartographer
-        uint256 amountAfterTax = subCartographer(_elevation)
+        uint256 amountAfterTax = _subCartographer(_elevation)
             .deposit(
                 _token,
                 _amount,
@@ -904,11 +909,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Claim all rewards (or cross compound) of an elevation
     /// @param _elevation Elevation to claim all rewards from
     function claimElevation(uint8 _elevation)
-        public
+        public whenNotPaused
         nonReentrant isOasisOrElevation(_elevation)
     {
         // Harvest across an elevation, return total amount claimed
-        uint256 totalClaimed = subCartographer(_elevation).claimElevation(msg.sender);
+        uint256 totalClaimed = _subCartographer(_elevation).claimElevation(msg.sender);
         
         emit ClaimElevation(msg.sender, _elevation, totalClaimed);
     }
@@ -921,7 +926,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         nonReentrant poolExists(_token, _elevation)
     {
         // Executes the withdrawal in the sub cartographer
-        uint256 amountAfterTax = subCartographer(_elevation)
+        uint256 amountAfterTax = _subCartographer(_elevation)
             .emergencyWithdraw(
                 _token,
                 msg.sender
@@ -940,11 +945,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// (@param _token, @param _elevation) Pool identifier
     /// @param _amount Amount to withdraw, must be > 0 and <= staked amount
     function withdraw(address _token, uint8 _elevation, uint256 _amount)
-        public
+        public whenNotPaused
         nonReentrant poolExists(_token, _elevation)
     {
         // Executes the withdrawal in the sub cartographer
-        uint256 amountAfterTax = subCartographer(_elevation)
+        uint256 amountAfterTax = _subCartographer(_elevation)
             .withdraw(
                 _token,
                 _amount,
@@ -965,13 +970,13 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _elevation Elevation to elevate from
     /// @param _amount Amount of SUMMIT to elevate
     function elevateAndLockStakedSummit(uint8 _elevation, uint256 _amount)
-        public
+        public whenNotPaused
         nonReentrant poolExists(address(summit), _elevation)
     {
         require(_amount > 0, "Elevate non zero amount");
 
         // Withdraw {_amount} of {_token} from {_elevation} pool
-        uint256 elevatedAmount = subCartographer(_elevation)
+        uint256 elevatedAmount = _subCartographer(_elevation)
             .withdraw(
                 address(summit),
                 _amount,
@@ -995,15 +1000,15 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _sourceElevation Elevation to withdraw from
     /// @param _targetElevation Elevation to deposit into
     /// @param _amount Amount to elevate
-    function validateElevate(address _token, uint8 _sourceElevation, uint8 _targetElevation, uint256 _amount)
+    function _validateElevate(address _token, uint8 _sourceElevation, uint8 _targetElevation, uint256 _amount)
         internal view
         poolExists(_token, _sourceElevation) poolExists(_token, _targetElevation)
     {
         require(_amount > 0, "Transfer non zero amount");
         require(_sourceElevation != _targetElevation, "Must change elev");
         require(
-            subCartographer(_sourceElevation).isTotemSelected(msg.sender) &&
-            subCartographer(_targetElevation).isTotemSelected(msg.sender),
+            _subCartographer(_sourceElevation).isTotemSelected(msg.sender) &&
+            _subCartographer(_targetElevation).isTotemSelected(msg.sender),
             "Totem not selected"
         );
     }
@@ -1015,13 +1020,13 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _targetElevation Elevation to deposit into
     /// @param _amount Amount to elevate
     function elevate(address _token, uint8 _sourceElevation, uint8 _targetElevation, uint256 _amount)
-        public
+        public whenNotPaused
         nonReentrant
     {
-        validateElevate(_token, _sourceElevation, _targetElevation, _amount);
+        _validateElevate(_token, _sourceElevation, _targetElevation, _amount);
 
         // Withdraw {_amount} of {_token} from {_sourceElevation} pool
-        uint256 elevatedAmount = subCartographer(_sourceElevation)
+        uint256 elevatedAmount = _subCartographer(_sourceElevation)
             .withdraw(
                 _token,
                 _amount,
@@ -1030,7 +1035,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
             );
         
         // Deposit withdrawn amount of {_token} from source pool {elevatedAmount} into {_targetPid} pool
-        elevatedAmount = subCartographer(_targetElevation)
+        elevatedAmount = _subCartographer(_targetElevation)
             .deposit(
                 _token,
                 elevatedAmount,
@@ -1053,7 +1058,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @dev Utility function to handle claiming Summit rewards with referral rewards
     /// @return Claimed amount with bonuses included
     function claimWinnings(address _userAdd, address _token, uint256 _amount)
-        external
+        external whenNotPaused
         onlySubCartographer
         returns (uint256)
     {
@@ -1084,7 +1089,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     // -----------------------------------------------------
 
     /// @dev Utility function for depositing tokens into passthrough strategy
-    function passthroughDeposit(address _token, uint256 _amount) internal returns (uint256) {
+    function _passthroughDeposit(address _token, uint256 _amount) internal returns (uint256) {
         if (tokenPassthroughStrategy[_token] == address(0)) return _amount;
         return IPassthrough(tokenPassthroughStrategy[_token]).deposit(_amount, expeditionTreasuryAdd, treasuryAdd);
     }
@@ -1093,7 +1098,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _token Token to withdraw from it's passthrough strategy
     /// @param _amount Amount requested to withdraw
     /// @return The true amount withdrawn from the passthrough strategy after the passthrough's tax was taken (if any)
-    function passthroughWithdraw(address _token, uint256 _amount) internal returns (uint256) {
+    function _passthroughWithdraw(address _token, uint256 _amount) internal returns (uint256) {
         if (tokenPassthroughStrategy[_token] == address(0)) return _amount;
         return IPassthrough(tokenPassthroughStrategy[_token]).withdraw(_amount, expeditionTreasuryAdd, treasuryAdd);
     }
@@ -1105,7 +1110,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     /// @param _amount Deposit amount before tax
     /// @return Deposit amount
     function depositTokenManagement(address _userAdd, address _token, uint256 _amount)
-        external
+        external whenNotPaused
         onlySubCartographer
         returns (uint256)
     {
@@ -1120,7 +1125,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         }
 
         // Deposit full amount to passthrough, return amount deposited
-        return passthroughDeposit(_token, amountAfterFee);
+        return _passthroughDeposit(_token, amountAfterFee);
     }
 
 
@@ -1145,7 +1150,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
         returns (uint256)
     {
         // Withdraw full amount from passthrough (if any), if there is a tax that isn't covered by the increase in vault value this may be less than expected full amount
-        uint256 amountAfterTax = passthroughWithdraw(_token, _amount);
+        uint256 amountAfterTax = _passthroughWithdraw(_token, _amount);
 
         // Amount user expects to receive after tax taken
         uint256 expectedWithdrawnAmount = (_amount * (10000 - _getTaxBP(_userAdd, _token))) / 10000;
@@ -1173,7 +1178,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
 
     /// @dev Roll over referral round and burn unclaimed referral rewards
     function rolloverReferral()
-        public
+        public whenNotPaused
+        nonReentrant
     {
         // Validate that a referral burn is unlocked
         elevationHelper.validateReferralBurnAvailable();
@@ -1191,11 +1197,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard {
     }
 
     /// @dev Safety hatch for referral reward round rollover burning needed summit
-    function referralRewardsMintSafetyHatch(uint256 _amount) public {
-        // Only callable by summitReferrals contract
-        require(msg.sender == address(summitReferrals), "Only Summit Referrals");
+    function referralRewardsMintSafetyHatch(uint256 _amount)
+        public whenNotPaused
+        onlySummitReferrals
+    {
         require(_amount > 0, "Non zero");
-
         summit.mint(address(summitReferrals), _amount);
     }
     

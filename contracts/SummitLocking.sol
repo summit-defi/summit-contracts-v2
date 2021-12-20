@@ -6,6 +6,7 @@ import "./SummitToken.sol";
 import "./Cartographer.sol";
 import "./ExpeditionV2.sol";
 import "./EverestToken.sol";
+import "./PresetPausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
@@ -14,7 +15,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 
-contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
+contract SummitLocking is Ownable, Initializable, ReentrancyGuard, PresetPausable {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 
@@ -152,7 +153,7 @@ contract SummitLocking is Ownable, Initializable, ReentrancyGuard {
 
     /// @dev Harvest locked winnings, 50% tax taken on early harvest
     function harvestWinnings(uint256 _epoch, uint256 _amount, bool _lockForEverest)
-        public
+        public whenNotPaused
         nonReentrant
     {
         UserLockedWinnings storage userEpochWinnings = userLockedWinnings[msg.sender][_epoch];

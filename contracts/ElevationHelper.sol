@@ -270,7 +270,8 @@ contract ElevationHelper is Ownable {
     /// @dev Upgrade the RNG module when VRF becomes available on FTM, will only use `getRandomNumber` functionality
     /// @param _summitRNGModuleAdd Address of new VRF randomness module
     function upgradeSummitRNGModule (address _summitRNGModuleAdd)
-        public onlyOwner
+        public
+        onlyOwner
     {
         require(_summitRNGModuleAdd != address(0), "SummitRandomnessModule missing");
         summitRNGModuleAdd = _summitRNGModuleAdd;

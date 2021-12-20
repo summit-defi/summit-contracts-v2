@@ -4,6 +4,7 @@ pragma solidity 0.8.0;
 
 import "./libs/ERC20Mintable.sol";
 import "./BaseEverestExtension.sol";
+import "./PresetPausable.sol";
 import "./libs/SummitMath.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -14,7 +15,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
 // EverestToken, governance token of Summit DeFi
-contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGuard {
+contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGuard, PresetPausable {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -235,7 +236,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     /// @param _summitAmount Amount of SUMMIT to deposit
     /// @param _lockDuration Duration the SUMMIT will be locked for
     function lockSummit(uint256 _summitAmount, uint256 _lockDuration)
-        public
+        public whenNotPaused
         nonReentrant notPanic userNotAlreadyLockingSummit validLockDuration(_lockDuration)
     {
         // Validate and deposit user's SUMMIT
@@ -272,7 +273,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
 
     /// @dev Increase the lock duration of user's locked SUMMIT
     function increaseLockDuration(uint256 _lockDuration)
-        public
+        public whenNotPaused
         nonReentrant notPanic userEverestInfoExists(msg.sender) userOwnsEverest(msg.sender) validLockDuration(_lockDuration)
     {
         uint256 additionalEverestAward = _increaseLockDuration(_lockDuration, msg.sender);
@@ -365,7 +366,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
 
     /// @dev Lock additional summit and extend duration to arbitrary duration
     function lockAndExtendLockDuration(uint256 _summitAmount, uint256 _lockDuration, address _userAdd)
-        public
+        public whenNotPaused
         nonReentrant notPanic userEverestInfoExists(_userAdd) userOwnsEverest(_userAdd) validLockDuration(_lockDuration)
     {
         UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
@@ -385,7 +386,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
 
     /// @dev Increase the users Locked Summit and earn everest
     function increaseLockedSummit(uint256 _summitAmount)
-        public
+        public whenNotPaused
         nonReentrant notPanic userEverestInfoExists(msg.sender) userOwnsEverest(msg.sender)
     {
         uint256 additionalEverestAward = _increaseLockedSummit(
@@ -399,7 +400,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
 
     /// @dev Decrease the Summit and burn everest
     function withdrawLockedSummit(uint256 _everestAmount)
-        public
+        public whenNotPaused
         nonReentrant notPanic userEverestInfoExists(msg.sender) userOwnsEverest(msg.sender) userLockDurationSatisfied validEverestAmountToBurn(_everestAmount)
     {
         UserEverestInfo storage everestInfo = userEverestInfo[msg.sender];

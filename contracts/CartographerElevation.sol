@@ -982,13 +982,6 @@ contract CartographerElevation is ISubCart, Initializable, ReentrancyGuard {
 
 
     /// @dev User interacting with pool getter
-    /// User.staked checks if the user has any funds in the pool
-    /// User.roundRew will only be > 0 after an interaction if the user has any rewards contributed to the pot during a round
-    /// If any of the 3 are true, then the user still has interactions other than 'deposit' that can be meaningfully called on the pool
-    /// User.reVestAmt will only be > 0 if the user has any remaining amount of winnings that can be withdrawn
-    /// User.reVestAmt will only be > 0 if the user has any remaining amount of winnings that can be withdrawn
-    /// This is used to keep `userElevInteractingPools` up to date for switchTotem and claimElevation
-    /// This is also used on the frontend (through public wrapper) to boost the sort order of pools the user is interacting with
     function _userInteractingWithPool(UserInfo storage user)
         internal view
         returns (bool)
