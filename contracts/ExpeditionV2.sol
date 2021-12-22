@@ -745,6 +745,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
         _harvestExpedition(user);
 
         // Update user deity in state
+        uint8 prevDeity = user.deity;
         user.deity = _newDeity;
         user.deitySelected = true;
         user.deitySelectionRound = elevationHelper.roundNumber(EXPEDITION);
@@ -754,7 +755,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
         
         // Transfer deitied everest from previous deity to new deity
         if (user.entered) {
-            expeditionInfo.supplies.deity[user.deity] -= user.deitiedSupply;
+            expeditionInfo.supplies.deity[prevDeity] -= user.deitiedSupply;
             expeditionInfo.supplies.deity[_newDeity] += user.deitiedSupply;
         }
 
