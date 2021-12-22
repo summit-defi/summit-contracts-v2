@@ -145,7 +145,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     }
     function setInflectionLockTime(uint256 _lockTimeDays) public onlyOwner {
         require(_lockTimeDays >= minLockTime && _lockTimeDays <= maxLockTime && _lockTimeDays >= 7 && _lockTimeDays <= 365, "Invalid inflection lock time (7-365 days)");
-        minLockTime = _lockTimeDays * daySeconds;
+        inflectionLockTime = _lockTimeDays * daySeconds;
         emit SetInflectionLockTime(_lockTimeDays);
     }
     function setMaxLockTime(uint256 _lockTimeDays) public onlyOwner {
