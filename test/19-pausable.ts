@@ -28,15 +28,18 @@ describe("PAUSABLE", async function() {
     it('PAUSE: Pause can be enabled', async function() {
         const { dev, user2 } = await getNamedSigners(hre)
 
+        console.log('user2')
         await pausableMethod.pause({
             admin: user2,
             contractName: Contracts.Cartographer,
             revertErr: 'Must have pauser role',
         })
+        console.log('should succeeed')
         await pausableMethod.pause({
             admin: dev,
             contractName: Contracts.Cartographer,
         })
+        console.log('fail already paused')
         await pausableMethod.pause({
             admin: dev,
             contractName: Contracts.Cartographer,

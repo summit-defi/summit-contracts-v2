@@ -147,10 +147,10 @@ const config: HardhatUserConfig = {
     only: [':ERC20$', ':Cartographer$', ':CartographerOasis$', ':CartographerElevation$', ':CartographerExpedition$', ':ElevationHelper$', ':Multicall$', ':SummitReferrals$', ':SummitToken$'],
     spacing: 2
   },
-  // gasReporter: {
-  //   enabled: true,
-  //   excludeContracts: ['dummy/', 'PCS/', 'libs/'],
-  // },
+  gasReporter: {
+    enabled: false,
+    excludeContracts: ['dummy/', 'PCS/', 'libs/'],
+  },
   contractSizer: {
     alphaSort: true,
     runOnCompile: true,

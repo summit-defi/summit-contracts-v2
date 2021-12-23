@@ -30,13 +30,13 @@ contract PresetPausable is AccessControl {
         _;
     }
 
-    function pause() public virtual {
+    function pause() public virtual whenNotPaused {
         require(hasRole(PAUSER_ROLE, msg.sender), "Must have pauser role");
         paused = true;
         emit Paused(_msgSender());
     }
 
-    function unpause() public virtual {
+    function unpause() public virtual whenPaused {
         require(hasRole(PAUSER_ROLE, msg.sender), "Must have pauser role");
         paused = false;
         emit Unpaused(_msgSender());
