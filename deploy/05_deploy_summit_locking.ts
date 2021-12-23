@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, delay } from '../utils';
+import { chainIdAllowsVerification, delay, failableVerify } from '../utils';
 
 const deploySummitLocking: DeployFunction = async function ({
   getNamedAccounts,
@@ -16,9 +16,9 @@ const deploySummitLocking: DeployFunction = async function ({
     log: true,
   });
 
-  if (SummitLocking.newlyDeployed && chainIdAllowsVerification(chainId)) {
-    await delay(10000)
-    await run("verify:verify", {
+  if (chainIdAllowsVerification(chainId)) {
+    await delay(3)
+    await failableVerify({
       address: SummitLocking.address,
     })
   }

@@ -1,6 +1,6 @@
 import { expect } from "chai"
 import { BigNumber, ethers } from "ethers"
-import { network, ethers as hardhatEthers } from "hardhat"
+import hre, { network, ethers as hardhatEthers } from "hardhat"
 import { EVM, getElevationName } from "."
 import { getCreate2Address } from '@ethersproject/address';
 import { pack, keccak256 } from '@ethersproject/solidity';
@@ -18,6 +18,15 @@ export const extractRevertMsg = (err: any) => {
 // ARRAYS
 export const flatten = <T>(arr: T[][]): T[] => {
     return ([] as T[]).concat(...arr);
+}
+
+// Failable verify
+export const failableVerify = async (args: Object) => {
+    try {
+        await hre.run("verify:verify", args)
+    } catch (err: any) {
+        console.log('Verify Failed: ', err.message)
+    }
 }
 
 // BIG NUMBERS

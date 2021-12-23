@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, Contracts, delay } from '../utils';
+import { chainIdAllowsVerification, Contracts, delay, failableVerify } from '../utils';
 
 const deployElevationHelper: DeployFunction = async function ({
   getNamedAccounts,
@@ -50,16 +50,16 @@ const deployElevationHelper: DeployFunction = async function ({
     SummitTrustedSeederRNGModule.address,
   )
 
-  if (ElevationHelper.newlyDeployed && chainIdAllowsVerification(chainId)) {
-    await delay(10000)
-    await run("verify:verify", {
+  if (chainIdAllowsVerification(chainId)) {
+    await delay(3)
+    await failableVerify({
       address: SummitTrustedSeederRNGModule.address,
       constructorArguments: [Cartographer.address],
     })
-    await delay(10000)
-    await run("verify:verify", {
+    await delay(3)
+    await failableVerify({
       address: ElevationHelper.address,
-      constructorArguments: [Cartographer.address],
+      constructorArguments: [Cartographer.address, ExpeditionV2.address],
     })
   }
 };

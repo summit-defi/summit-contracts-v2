@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, delay, emptyHardhatTimelockTransactions, getTimestamp } from '../utils';
+import { chainIdAllowsVerification, delay, emptyHardhatTimelockTransactions, failableVerify, getTimestamp } from '../utils';
 import { ethers } from 'ethers';
 
 const deployTimelock: DeployFunction = async function ({
@@ -28,8 +28,8 @@ const deployTimelock: DeployFunction = async function ({
   console.log('Deployed Timelock')
 
   if (chainIdAllowsVerification(chainId)) {
-    await delay(10000)
-    await run("verify:verify", {
+    await delay(3)
+    await failableVerify({
       address: Timelock.address,
       constructorArguments: [dev, 6 * 3600],
     })
@@ -40,10 +40,10 @@ const deployTimelock: DeployFunction = async function ({
     const setFunctionSpecificDelaySignature = 'setFunctionSpecificDelay(string,uint)'
 
     // Set Expedition Treasury Address
-    const setexpeditionTreasuryAddSignature = 'setexpeditionTreasuryAdd(address)'
-    const setexpeditionTreasuryAddData = abiCoder.encode(
+    const setExpeditionTreasuryAddSignature = 'setExpeditionTreasuryAdd(address)'
+    const setExpeditionTreasuryAddData = abiCoder.encode(
       ['string', 'uint'],
-      [setexpeditionTreasuryAddSignature, 72 * 3600],
+      [setExpeditionTreasuryAddSignature, 72 * 3600],
     )
     await execute(
       'Timelock',
@@ -52,7 +52,7 @@ const deployTimelock: DeployFunction = async function ({
       Timelock.address,
       0,
       setFunctionSpecificDelaySignature,
-      setexpeditionTreasuryAddData,
+      setExpeditionTreasuryAddData,
       timestampWithDelay,
     )
 

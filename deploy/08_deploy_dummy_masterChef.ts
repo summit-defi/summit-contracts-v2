@@ -1,6 +1,6 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, chainIdRequiresDummies, delay, e18 } from '../utils';
+import { chainIdAllowsVerification, chainIdRequiresDummies, delay, e18, failableVerify } from '../utils';
 
 const deployDummyMasterChef: DeployFunction = async function ({
   getNamedAccounts,
@@ -47,14 +47,14 @@ const deployDummyMasterChef: DeployFunction = async function ({
     await execute('DummyCAKE', { from: dev }, 'transfer', user3, e18(500))
 
     await execute('DummyCAKE', { from: dev }, 'transferOwnership', dummyMasterChef.address)
+  }
 
-    if (chainIdAllowsVerification(chainId)) {
-      await delay(10000)
-      await run("verify:verify", {
-        address: cakeToken.address,
-        contract: 'contracts/DummyCAKE.sol:DummyCAKE',
-      })
-    }
+  if (chainIdAllowsVerification(chainId)) {
+    await delay(3)
+    await failableVerify({
+      address: cakeToken.address,
+      contract: 'contracts/dummy/DummyCAKE.sol:DummyCAKE',
+    })
   }
 };
 export default deployDummyMasterChef;

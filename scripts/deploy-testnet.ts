@@ -13,7 +13,7 @@ const DeployStep = {
 
 
 async function main() {
-  const completedDeployStep = DeployStep.None
+  const completedDeployStep = DeployStep.DeployContracts
   console.log(' == Deploying Summit Ecosystem to BSC Testnet ==\n')
 
 
@@ -31,7 +31,7 @@ async function main() {
   const bifiToken = await getBifiToken()
   const cakeToken = await getCakeToken()
   let gasStressTokens = [];
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 6; i++) {
       gasStressTokens.push(await getContract(`GS${i}`));
   }
 

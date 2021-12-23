@@ -32,7 +32,7 @@ task("accounts", "Prints the list of accounts", async (args, hre) => {
  */
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.0",
+    version: "0.8.2",
     settings: {
       optimizer: {
         enabled: true,
@@ -59,8 +59,9 @@ const config: HardhatUserConfig = {
       tags: ['LOCALHOST'],
     },
     bsc_testnet: {
-      url: "https://data-seed-prebsc-1-s3.binance.org:8545/",
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
       chainId: 97,
+      gasPrice: ethers.utils.parseUnits('20', 'gwei').toNumber(),
       accounts: { mnemonic: mnemonics.bsc_testnet },
       tags: ['TESTNET'],
     },
@@ -144,18 +145,18 @@ const config: HardhatUserConfig = {
     path: './data/abi',
     clear: false,
     flat: true,
-    only: [':ERC20$', ':Cartographer$', ':CartographerOasis$', ':CartographerElevation$', ':CartographerExpedition$', ':ElevationHelper$', ':Multicall$', ':SummitReferrals$', ':SummitToken$'],
+    only: [':ERC20$', ':Cartographer$', ':CartographerOasis$', ':CartographerElevation$', ':ElevationHelper$', ':Multicall$', ':SummitReferrals$', ':SummitToken$', ':EverestToken$', ':ExpeditionV2$', 'SummitLocking$'],
     spacing: 2
   },
   gasReporter: {
     enabled: false,
     excludeContracts: ['dummy/', 'PCS/', 'libs/'],
   },
-  contractSizer: {
-    alphaSort: true,
-    runOnCompile: true,
-    disambiguatePaths: false,
-  },
+  // contractSizer: {
+  //   alphaSort: true,
+  //   runOnCompile: true,
+  //   disambiguatePaths: false,
+  // },
   mocha: {
     timeout: 100000
   },
