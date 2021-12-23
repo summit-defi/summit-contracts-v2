@@ -15,6 +15,6 @@ library SummitMath {
         if (maxResult > minResult) {
             return (((scalar - minBound) * (maxResult - minResult) * 1e12) / (maxBound - minBound) / 1e12) + minResult;
         }
-        return (((maxBound - scalar) * (minResult - maxResult) * 1e12) / (maxBound - minBound) / 1e12);
+        return (((maxBound - scalar) * (minResult - maxResult) * 1e12) / (maxBound - minBound) / 1e12) + maxResult;
     }
 }
