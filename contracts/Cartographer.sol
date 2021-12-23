@@ -428,7 +428,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     /// @param _allocation Updated allocation
     function setTokenAllocation(address _token, uint256 _allocation)
         public
-        onlyOwner tokenAllocExists(_token)  validAllocation(_allocation)
+        onlyOwner validAllocation(_allocation)
     {
         // Token is marked as having an existing allocation
         tokensWithAlloc.add(_token);
@@ -722,7 +722,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         //   . Time difference from last reward timestamp
         //   . Tokens allocation as a fraction of total allocation
         //   . Pool's emission multiplier
-        return (_lastRewardTimestamp - block.timestamp) * tokenAllocEmissionMultiplier(_token) * tokenElevationEmissionMultiplier(_token, _elevation) / 1e12;
+        return (block.timestamp - _lastRewardTimestamp) * tokenAllocEmissionMultiplier(_token) * tokenElevationEmissionMultiplier(_token, _elevation) / 1e12;
     }
 
 
@@ -736,7 +736,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         returns (uint256)
     {
         // Escape early if no time has passed
-        if (_lastRewardTimestamp == block.timestamp) { return 0; }
+        if (block.timestamp <= _lastRewardTimestamp) { return 0; }
 
         // Emission multiplier multiplied by summitPerSecond, finally reducing back to true exponential
         return _poolEmissionMultiplier(_lastRewardTimestamp, _token, _elevation) * summitPerSecond / 1e12;

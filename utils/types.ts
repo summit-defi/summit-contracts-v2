@@ -38,7 +38,6 @@ export interface ExpeditionConfig {
 
 
 export enum UpdatePoolTxType {
-    createTokenAllocationTxHash = 'createTokenAllocationTxHash',
     setTokenAllocationTxHash = 'setTokenAllocationTxHash',
     addFarmTxHash = 'addFarmTxHash',
     setFarmTxHash = 'setFarmTxHash',
@@ -51,7 +50,6 @@ export interface TxHashAndNote {
 }
 
 export interface UpdatePoolTxHashes {
-    [UpdatePoolTxType.createTokenAllocationTxHash]?: TxHashAndNote
     [UpdatePoolTxType.setTokenAllocationTxHash]?: TxHashAndNote
     [UpdatePoolTxType.addFarmTxHash]?: TxHashAndNote
     [UpdatePoolTxType.setFarmTxHash]?: TxHashAndNote

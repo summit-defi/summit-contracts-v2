@@ -18,7 +18,6 @@ const deployCartographer: DeployFunction = async function ({
     log: true,
   });
 
-
   if (Cartographer.newlyDeployed && chainIdAllowsVerification(chainId)) {
     await delay(10000)
     await run("verify:verify", {

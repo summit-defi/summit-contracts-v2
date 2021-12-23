@@ -334,6 +334,7 @@ describe("TIMELOCK", async function() {
                 allocation: 4000,
                 taxBP: 700,
                 depositFeeBP: 100,
+                native: true,
                 elevations: {
                     OASIS: {
                         exists: true,

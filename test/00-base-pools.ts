@@ -63,21 +63,6 @@ describe("Base Pools", function() {
         allocation: 4000
       })
     })
-    it(`Creation of duplicated tokenAlloc should fail with error ${ERR.DUPLICATED_TOKEN_ALLOC}`, async function() {
-      const { dev, summitToken } = await baseFixture() 
-
-      await cartographerMethod.setTokenAllocation({
-        dev,
-        tokenAddress: summitToken.address,
-        allocation: 4000
-      })
-      await cartographerMethod.setTokenAllocation({
-        dev,
-        tokenAddress: summitToken.address,
-        allocation: 4000,
-        revertErr: ERR.DUPLICATED_TOKEN_ALLOC
-      })
-    })
     it(`Pool creation without already existing tokenAlloc should fail with error ${ERR.INVALID_TOKEN_ALLOC}`, async function() {
       const { dev, summitToken  } = await baseFixture()
 

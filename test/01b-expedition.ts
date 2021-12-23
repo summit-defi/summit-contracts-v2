@@ -2,9 +2,9 @@ import { BigNumber } from "@ethersproject/bignumber";
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
-import hre, { ethers } from "hardhat";
-import { e18, ERR, EVENT, toDecimal, Contracts, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, e36, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, e12, e0, consoleLog, expectAllEqual, getBifiToken, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getSummitToken, everestGet, everestMethod, expeditionMethod, expeditionGet, getSummitBalance, getUsdcBalance, UserExpeditionInfo, elevationHelperGet, expeditionSynth, days, rolloverRound } from "../utils";
-import { userPromiseSequenceMap, userPromiseSequenceReduce, usersLockedSummitBalances, usersExpeditionPotentialWinnings, usersExpeditionInfos, usersExpeditionRewards, usersSummitBalances, usersUsdcBalances } from "../utils/users";
+import hre from "hardhat";
+import { e18, ERR, toDecimal, INF_APPROVE, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, consoleLog, expectAllEqual, getBifiToken, getUSDCToken, getExpedition, getSummitToken, everestGet, everestMethod, expeditionMethod, expeditionGet, elevationHelperGet, expeditionSynth, days, rolloverRound } from "../utils";
+import { userPromiseSequenceMap, userPromiseSequenceReduce, usersLockedSummitBalances, usersExpeditionPotentialWinnings, usersExpeditionRewards, usersUsdcBalances } from "../utils/users";
 import { oasisUnlockedFixture } from "./fixtures";
 
 
@@ -38,7 +38,7 @@ describe("EXPEDITION V2", async function() {
     it(`EXPEDITION ADD FUNDS: Adding funds to the expedition recalculates emissions correctly`, async function() {
         const { dev } = await getNamedSigners(hre)
         const expedition = await getExpedition()
-        const cakeToken = await getCakeToken()
+        const usdcToken = await getUSDCToken()
         const summitToken = await getSummitToken()
 
         const expeditionRunwayRounds = await expeditionGet.expeditionRunwayRounds()
@@ -50,10 +50,10 @@ describe("EXPEDITION V2", async function() {
         expect(expeditionInfoInit.usdcExpeditionToken.emissionsRemaining).to.equal(e18(0))
         expect(expeditionInfoInit.usdcExpeditionToken.roundEmission).to.equal(e18(0))
 
-        await cakeToken.connect(dev).approve(expedition.address, e18(500))
+        await usdcToken.connect(dev).approve(expedition.address, e18(500))
         await expeditionMethod.addExpeditionFunds({
             user: dev,
-            tokenAddress: cakeToken.address,
+            tokenAddress: usdcToken.address,
             amount: e18(500),
         })
         await expeditionMethod.recalculateExpeditionEmissions({ dev })

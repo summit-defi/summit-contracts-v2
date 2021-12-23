@@ -12,7 +12,6 @@ export enum CartographerSigs {
     SetRolloverRewardInNativeToken = 'setRolloverRewardInNativeToken',
     SetTotalSummitPerSecond = 'setTotalSummitPerSecond',
     SetSummitDistributionProfile = 'setSummitDistributionBPs',
-    CreateTokenAllocation = 'createTokenAllocation',
     SetTokenAllocation = 'setTokenAllocation',
     SetTokenPassthroughStrategy = 'setTokenPassthroughStrategy',
     RetireTokenPassthroughStrategy = 'retireTokenPassthroughStrategy',

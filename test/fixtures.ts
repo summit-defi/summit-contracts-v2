@@ -107,9 +107,9 @@ export const poolsFixture = deployments.createFixture(async (): Promise<FixtureS
   const { cartographer, subCartographers, summitToken, cakeToken, bifiToken, bifiVaultPassthrough, user1, user2, user3 } = baseFixtureState
 
   // POOLS
-  await cartographer.createTokenAllocation(summitToken.address, 4000)
-  await cartographer.createTokenAllocation(cakeToken.address, 100)
-  await cartographer.createTokenAllocation(bifiToken.address, 150)
+  await cartographer.setTokenAllocation(summitToken.address, 4000)
+  await cartographer.setTokenAllocation(cakeToken.address, 100)
+  await cartographer.setTokenAllocation(bifiToken.address, 150)
   await cartographer.add(summitToken.address, OASIS, true, true)
   await cartographer.add(summitToken.address, PLAINS, true, true)
   await cartographer.add(summitToken.address, MESA, true, true)

@@ -44,9 +44,11 @@ export const syncPools = async (elevation: number, poolConfigs: PoolConfig[]) =>
 
             // Token Allocation Existence & Correct, if not queue to add/update it
             const allocationExists = await cartographerGet.tokenAllocExistence(tokenAddress)
+            const existingAllocation = await cartographerGet.tokenAlloc(tokenAddress)
+            
             console.log('\n-- Allocation --')
-            if (!allocationExists) {
-                console.log(`\tAllocation doesnt exist, creating: ${configAllocation}`)
+            if (!allocationExists || existingAllocation !== configAllocation) {
+                console.log(`\tAllocation doesnt exist our out of sync, syncing ${existingAllocation} => ${configAllocation}`)
                 // ADD TOKEN ALLOCATION TRANSACTION
                 await cartographerMethod.setTokenAllocation({
                     dev,
@@ -55,21 +57,7 @@ export const syncPools = async (elevation: number, poolConfigs: PoolConfig[]) =>
                 })
                 console.log(`\t\tdone.`)
             } else {
-                console.log(`\tAllocation exists, validating in sync: ${configAllocation}`)
-                // Validate Token Allocation matches, if not queue to update it
-                const existingAllocation = await cartographerGet.tokenAlloc(tokenAddress)
-                if (existingAllocation !== configAllocation) {
-                    console.log(`\t\tAllocation out of sync, syncing ${existingAllocation} => ${configAllocation}`)
-                    // UPDATE TOKEN ALLOCATION TRANSACTION
-                    await cartographerMethod.setTokenAllocation({
-                        dev,
-                        tokenAddress,
-                        allocation: configAllocation,
-                    })
-                    console.log(`\t\t\tdone.`)
-                } else {
-                    console.log(`\t\tpassed.`)
-                }
+                console.log(`\t\tpassed.`)
             }
 
 
