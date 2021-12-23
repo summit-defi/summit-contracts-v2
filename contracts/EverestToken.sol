@@ -139,7 +139,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
 
 
     function setMinLockTime(uint256 _lockTimeDays) public onlyOwner {
-        require(_lockTimeDays <= maxLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 30, "Invalid minimum lock time (1-30 days)");
+        require(_lockTimeDays <= inflectionLockTime && _lockTimeDays >= 1 && _lockTimeDays <= 30, "Invalid minimum lock time (1-30 days)");
         minLockTime = _lockTimeDays * daySeconds;
         emit SetMinLockTime(_lockTimeDays);
     }
@@ -149,7 +149,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         emit SetInflectionLockTime(_lockTimeDays);
     }
     function setMaxLockTime(uint256 _lockTimeDays) public onlyOwner {
-        require(_lockTimeDays >= minLockTime && _lockTimeDays >= 7 && _lockTimeDays <= 730, "Invalid maximum lock time (7-730 days)");
+        require(_lockTimeDays >= inflectionLockTime && _lockTimeDays >= 7 && _lockTimeDays <= 730, "Invalid maximum lock time (7-730 days)");
         maxLockTime = _lockTimeDays * daySeconds;
         emit SetMaxLockTime(_lockTimeDays);
     }
@@ -284,7 +284,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
         returns (uint256)
     {
         UserEverestInfo storage everestInfo = userEverestInfo[_userAdd];
-        require(_lockDuration >= everestInfo.lockDuration, "Lock duration must strictly increase");
+        require(_lockDuration > everestInfo.lockDuration, "Lock duration must strictly increase");
 
         // Update average lock duration by removing existing lock duration, and adding new duration
         _updateAvgSummitLockDuration(everestInfo.summitLocked, everestInfo.lockDuration, false);
@@ -347,6 +347,7 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
     }
 
     /// @dev Increase the duration of already locked SUMMIT, exit early if user is already locked for a longer duration
+    /// @return Amount of additional everest earned by this increase of lock duration
     function _increaseLockDurationAndReleaseIfNecessary(UserEverestInfo storage everestInfo, uint256 _lockDuration)
         internal
         returns (uint256)
