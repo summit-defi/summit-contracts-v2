@@ -137,8 +137,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     // --   E V E N T S
     // ---------------------------------------
 
-    event TokenAllocCreated(address indexed token, uint256 alloc);
-    event TokenAllocUpdated(address indexed token, uint256 alloc);
+    event SetTokenAllocation(address indexed token, uint256 alloc);
     event PoolCreated(address indexed token, uint8 elevation);
     event PoolUpdated(address indexed token, uint8 elevation, bool live);
     event Deposit(address indexed user, address indexed token, uint8 indexed elevation, uint256 amount);
@@ -424,29 +423,16 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     }
 
 
-    /// @dev Create a new base allocation for a token. Required before a pool for that token is created
-    /// @param _token Token to create allocation for
-    /// @param _allocation Allocation shares awarded to token
-    function createTokenAllocation(address _token, uint256 _allocation)
-        public
-        onlyOwner nonDuplicatedTokenAlloc(_token) validAllocation(_allocation)
-    {
-        // Token is marked as having an existing allocation
-        tokensWithAlloc.add(_token);
-
-        // Token's base allocation is set to the passed in value
-        tokenAlloc[_token] = _allocation;
-
-        emit TokenAllocCreated(_token, _allocation);
-    }
-
-    /// @dev Update the allocation for a token. This modifies existing allocations at each elevation for that token
+    /// @dev Create / Update the allocation for a token. This modifies existing allocations at each elevation for that token
     /// @param _token Token to update allocation for
     /// @param _allocation Updated allocation
     function setTokenAllocation(address _token, uint256 _allocation)
         public
         onlyOwner tokenAllocExists(_token)  validAllocation(_allocation)
     {
+        // Token is marked as having an existing allocation
+        tokensWithAlloc.add(_token);
+
         // Update the tokens allocation at the elevations that token is active at
         for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
             if (tokenElevationIsEarning[_token][elevation]) {
@@ -457,7 +443,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         // Update the token allocation
         tokenAlloc[_token] = _allocation;
 
-        emit TokenAllocUpdated(_token, _allocation);
+        emit SetTokenAllocation(_token, _allocation);
     }
 
 

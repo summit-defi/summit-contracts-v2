@@ -232,28 +232,6 @@ export const cartographerMethod = {
             await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.PoolUpdated, eventArgs, false)
         }
     },
-    createTokenAllocation: async ({
-        dev,
-        tokenAddress,
-        allocation,
-        revertErr,
-    }: {
-        dev: SignerWithAddress,
-        tokenAddress: string,
-        allocation: number,
-        revertErr?: string,
-    }) => {
-        const cartographer = await getCartographer()
-        const tx = cartographer.connect(dev).createTokenAllocation
-        const txArgs = [tokenAddress, allocation]
-        
-        if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
-        } else {
-            const eventArgs = [tokenAddress, allocation]
-            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.TokenAllocCreated, eventArgs, false)
-        }
-    },
     setTokenAllocation: async ({
         dev,
         tokenAddress,
@@ -273,7 +251,7 @@ export const cartographerMethod = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [tokenAddress, allocation]
-            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.TokenAllocUpdated, eventArgs, false)
+            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.SetTokenAllocation, eventArgs, false)
         }
     },
     deposit: async ({

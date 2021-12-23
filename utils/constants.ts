@@ -244,8 +244,7 @@ export const EVENT = {
     ExpeditionExtended: 'ExpeditionExtended',
     ExpeditionRestarted: 'ExpeditionRestarted',
 
-    TokenAllocCreated: 'TokenAllocCreated',
-    TokenAllocUpdated: 'TokenAllocUpdated',
+    SetTokenAllocation: 'SetTokenAllocation',
 
     SET_PASSTHROUGH_STRATEGY: 'PassthroughStrategySet',
     RETIRE_PASSTHROUGH_STRATEGY: 'PassthroughStrategyRetired',

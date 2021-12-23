@@ -48,7 +48,7 @@ export const syncPools = async (elevation: number, poolConfigs: PoolConfig[]) =>
             if (!allocationExists) {
                 console.log(`\tAllocation doesnt exist, creating: ${configAllocation}`)
                 // ADD TOKEN ALLOCATION TRANSACTION
-                await cartographerMethod.createTokenAllocation({
+                await cartographerMethod.setTokenAllocation({
                     dev,
                     tokenAddress,
                     allocation: configAllocation
@@ -161,7 +161,7 @@ export const syncPools = async (elevation: number, poolConfigs: PoolConfig[]) =>
 
 
 
-            
+
 
             // Pool Existence, if not create it
             console.log('\n-- Pool --')
