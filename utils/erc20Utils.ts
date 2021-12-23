@@ -48,4 +48,19 @@ export const erc20Method = {
             await executeTxExpectEvent(tx, txArgs, token, 'Transfer', [user.address, recipientAddress, amount], true)
         }
     },
+    dummyMint: async ({
+        user,
+        tokenName,
+        amount,
+    }: {
+        user: SignerWithAddress
+        tokenName: string,
+        amount: BigNumber,
+    }) => {
+        const token = await getContract(tokenName)
+        const tx = token.connect(user).mint
+        const txArgs = [user.address, amount]
+        
+        await executeTx(tx, txArgs)
+    },
 }

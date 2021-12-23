@@ -5,7 +5,7 @@ import { EVM, getElevationName } from "."
 import { getCreate2Address } from '@ethersproject/address';
 import { pack, keccak256 } from '@ethersproject/solidity';
 import fs from 'fs'
-import { NamedElevations, networkAMMFactories, networkAMMPairCodeHash, networkExportsAddresses, networksOnWhichToVerify, networksWhichExpectUsersToHaveSummit, networksWhichRequireDummies, networkWrappedNativeTokens } from "./constants"
+import { mainnetNetworks, NamedElevations, networkExportsAddresses, networksOnWhichToVerify, networksWhichExpectUsersToHaveSummit, networksWhichRequireDummies, networkWrappedNativeTokens } from "./constants"
 import { JSONQueuedTransaction, TimelockTransactionType, TimelockTxParams, TimelockTxTypeName } from "./timelockUtils";
 
 // ETHERS
@@ -175,17 +175,14 @@ export const chainIdExpectsUserToHaveSummit = (chainId: string) => {
 export const chainIdRequiresDummies = (chainId: string): boolean => {
     return networksWhichRequireDummies.includes(parseInt(chainId))
 }
-export const chainIdAMMFactory = (chainId: string): string | null => {
-    return networkAMMFactories[chainId] || null
-}
-export const chainIdAMMPairCodeHash = (chainId: string): string | null => {
-    return networkAMMPairCodeHash[chainId] || null
-}
 export const chainIdWrappedNativeToken = (chainId: string): string | null => {
     return networkWrappedNativeTokens[chainId] || null
 }
 export const chainIdExportsAddresses = (chainId: string) => {
     return networkExportsAddresses.includes(parseInt(chainId))
+}
+export const chainIdIsMainnet = (chainId: string) => {
+    return mainnetNetworks.includes(parseInt(chainId))
 }
 
 

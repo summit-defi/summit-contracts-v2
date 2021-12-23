@@ -7,7 +7,8 @@
     "queue-sync-farms": "npx hardhat run scripts/timelocked-update-pools-from-config.ts --network ftm_mainnet",
     "queue-misc-txs": "npx hardhat run scripts/queue-timelock-transactions.ts --network ftm_mainnet",
     "testtx": "npx hardhat run scripts/test.ts --network ftm_mainnet",
-    "coverage": "npx hardhat coverage"
+    "coverage": "npx hardhat coverage",
+    "deploy-bsc-testnet": "npx hardhat run scripts/deploy-testnet.ts --network bsc_testnet"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.7",

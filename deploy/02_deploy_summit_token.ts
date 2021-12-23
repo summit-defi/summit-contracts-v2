@@ -24,8 +24,6 @@ const deploySummitToken: DeployFunction = async function ({
 
     const Cartographer = await deployments.get('Cartographer');
     
-    await execute('SummitToken', { from: dev }, 'transferOwnership', Cartographer.address)
-    consoleLog('Transferred Ownership of SUMMIT Token to Cartographer')
 
     if (chainIdExpectsUserToHaveSummit(chainId)) {
       await execute('SummitToken', { from: dev }, 'transfer', user1, e18(500))

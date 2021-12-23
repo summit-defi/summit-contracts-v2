@@ -13,6 +13,12 @@ const deployGasStressTokens: DeployFunction = async function ({
 
   if (!chainIdRequiresDummies(chainId)) return;
 
+  // USDC
+  await deploy('DummyUSDC', { from: dev, log: true });
+  await execute('DummyUSDC', { from: dev }, 'mint', dev, e18(2000000))
+        
+  // GS1-n
+
   let gasStressTokenIds = [];
   for (let i = 0; i <= 29; i++) {
     gasStressTokenIds.push(i);

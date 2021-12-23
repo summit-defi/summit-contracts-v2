@@ -19,6 +19,7 @@ export interface PoolConfig {
     allocation: number
     taxBP: number
     depositFeeBP: number
+    native: boolean
     elevations: {
         [NamedElevations.OASIS]: ElevationExistsLive
         [NamedElevations.PLAINS]: ElevationExistsLive

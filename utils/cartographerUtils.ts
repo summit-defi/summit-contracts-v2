@@ -128,7 +128,7 @@ export const cartographerGet = {
     tokenWithdrawalTax: async (tokenAddress: string): Promise<number> => {
         return await (await getCartographer()).tokenWithdrawalTax(tokenAddress)
     },
-    isNativeFarmToken: async (tokenAddress: string): Promise<number> => {
+    isNativeFarmToken: async (tokenAddress: string): Promise<boolean> => {
         return await (await getCartographer()).isNativeFarmToken(tokenAddress)
     },
     baseMinimumWithdrawalTax: async (): Promise<number> => {

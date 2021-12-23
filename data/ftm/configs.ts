@@ -24,6 +24,7 @@ export const ftmPools: PoolConfig[] = [
             },
         },
         taxBP: 0,
+        depositFeeBP
     },
     {
         name: 'SUMMIT-FTM',

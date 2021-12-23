@@ -8,7 +8,6 @@ import "./EverestToken.sol";
 import "./PresetPausable.sol";
 import "./interfaces/ISubCart.sol";
 import "./SummitLocking.sol";
-import "./interfaces/IUniswapV2Pair.sol";
 import "./BaseEverestExtension.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -240,7 +239,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
     // ------------------------------------------------------
 
     modifier validSafetyFactor(uint8 _safetyFactor) {
-        require(_safetyFactor >= 0 && _safetyFactor <= 100, "Invalid safety factor");
+        require(_safetyFactor <= 100, "Invalid safety factor");
         _;
     }
     function _validUserAdd(address _userAdd) internal pure {

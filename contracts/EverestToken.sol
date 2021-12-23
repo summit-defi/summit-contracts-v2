@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.0;
 
-import "./libs/ERC20Mintable.sol";
 import "./BaseEverestExtension.sol";
 import "./PresetPausable.sol";
 import "./libs/SummitMath.sol";

@@ -1,6 +1,5 @@
 import { DeployFunction } from 'hardhat-deploy/types'
-import { getLpPair } from '../scripts/scriptUtils'
-import { chainIdAMMFactory, chainIdExportsAddresses, chainIdWrappedNativeToken, writeContractAddresses } from '../utils'
+import { chainIdExportsAddresses, chainIdRequiresDummies, getContract, writeContractAddresses } from '../utils'
 
 const exportAddresses: DeployFunction = async function ({
     deployments,
@@ -12,12 +11,6 @@ const exportAddresses: DeployFunction = async function ({
     const cartographer = await deployments.get('Cartographer')
     const SummitToken = await deployments.get('SummitToken')
     
-    const ammFactory = await chainIdAMMFactory(chainId)
-    const wrappedNativeToken = await chainIdWrappedNativeToken(chainId)
-    const summitLpAddress = await getLpPair(SummitToken.address, wrappedNativeToken!, ammFactory!, false)
-    // const dummySummitLp = await deployments.get('DummySUMMITLP')
-    // const bifiToken = await deployments.get('DummyBIFI')
-    // const cakeToken = await deployments.get('DummyCAKE')
     const cartographerOasis = await deployments.get('CartographerOasis')
     const cartographerElevation = await deployments.get('CartographerElevation')
     const cartographerExpedition = await deployments.get('CartographerExpedition')
@@ -25,9 +18,25 @@ const exportAddresses: DeployFunction = async function ({
     const summitReferrals = await deployments.get('SummitReferrals')
     const timelock = await deployments.get('Timelock')
 
+    let additionalAddresses = [] as any[]
+    if (chainIdRequiresDummies(chainId)) {
+        const usdcToken = await deployments.get('DummyUSDC')
+        const bifiToken = await deployments.get('DummyBIFI')
+        const cakeToken = await deployments.get('DummyCAKE')
+        let gasStressTokens = [];
+        for (let i = 0; i < 12; i++) {
+            gasStressTokens.push(await getContract(`GS${i}`));
+        }        
+        additionalAddresses = [
+            ['dummyUSDC', usdcToken.address],
+            ['dummyBIFI', bifiToken.address],
+            ['dummyCAKE', cakeToken.address],
+            gasStressTokens.map((token, index) => [`dummyGS${index}`, token.address]),
+        ]
+    }
+
     writeContractAddresses(chainId, [
         ['summitToken', SummitToken.address],
-        ['summitLpToken', summitLpAddress],
         ['cartographer', cartographer.address],
         ['cartographerOasis', cartographerOasis.address],
         ['cartographerElevation', cartographerElevation.address],
@@ -35,6 +44,7 @@ const exportAddresses: DeployFunction = async function ({
         ['elevationHelper', elevationHelper.address],
         ['summitReferrals', summitReferrals.address],
         ['timelock', timelock.address],
+        ...additionalAddresses,
     ])
 }
 
