@@ -934,8 +934,10 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
 
         // Farm bonus handling, sets the last withdraw timestamp to 7 days ago (tax decay duration) to begin earning bonuses immediately
         // Update to the max of (current last withdraw timestamp, current timestamp - 7 days), which ensures the first 7 days are never building bonus
-        uint256 currentLastWithdrawTimestamp = tokenLastWithdrawTimestampForBonus[msg.sender][_token];
-        tokenLastWithdrawTimestampForBonus[msg.sender][_token] = Math.max(currentLastWithdrawTimestamp, (block.timestamp - taxDecayDuration));
+        tokenLastWithdrawTimestampForBonus[msg.sender][_token] = Math.max(
+            tokenLastWithdrawTimestampForBonus[msg.sender][_token],
+            block.timestamp - taxDecayDuration
+        );
 
         emit EmergencyWithdraw(msg.sender, _token, _elevation, amountAfterTax);
     }
@@ -959,8 +961,10 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
 
         // Farm bonus handling, sets the last withdraw timestamp to 7 days ago (tax decay duration) to begin earning bonuses immediately
         // Update to the max of (current last withdraw timestamp, current timestamp - 7 days), which ensures the first 7 days are never building bonus
-        uint256 currentLastWithdrawTimestamp = tokenLastWithdrawTimestampForBonus[msg.sender][_token];
-        tokenLastWithdrawTimestampForBonus[msg.sender][_token] = Math.max(currentLastWithdrawTimestamp, (block.timestamp - taxDecayDuration));
+        tokenLastWithdrawTimestampForBonus[msg.sender][_token] = Math.max(
+            tokenLastWithdrawTimestampForBonus[msg.sender][_token],
+            block.timestamp - taxDecayDuration
+        );
 
         emit Withdraw(msg.sender, _token, _elevation, amountAfterTax);
     }
