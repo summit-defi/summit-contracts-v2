@@ -446,14 +446,24 @@ contract CartographerOasis is ISubCart, Initializable, ReentrancyGuard {
         nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
         returns (uint256)
     {
-        return _unifiedWithdraw(
-            poolInfo[_token],
-            userInfo[_token][_userAdd],
-            userInfo[_token][_userAdd].staked,
-            _userAdd,
-            false,
-            true
-        );
+        OasisPoolInfo storage pool = poolInfo[_token];
+        UserInfo storage user = userInfo[_token][_userAdd];
+
+        // Signal cartographer to perform withdrawal function
+        uint256 amountAfterFee = cartographer.withdrawalTokenManagement(_userAdd, _token, user.staked);
+
+        // Update pool running supply total with amount withdrawn
+        pool.supply -= user.staked;
+
+        // Reset user's staked and debt     
+        user.staked = 0;
+        user.debt = 0;
+
+        // If the user is interacting with this pool after the meat of the transaction completes
+        _markUserInteractingWithPool(_token, _userAdd, false);
+
+        // Return amount withdrawn
+        return amountAfterFee;
     }
 
 
@@ -481,8 +491,7 @@ contract CartographerOasis is ISubCart, Initializable, ReentrancyGuard {
             userInfo[_token][_userAdd],
             _amount,
             _userAdd,
-            _isElevate,
-            false
+            _isElevate
         );
     }
 
@@ -564,18 +573,15 @@ contract CartographerOasis is ISubCart, Initializable, ReentrancyGuard {
     /// @param _amount Amount to withdraw
     /// @param _userAdd User address
     /// @param _isInternalTransfer Flag to switch off certain functionality for elevate withdraw
-    /// @param _isEmergencyWithdraw Whether the withdraw should have minimum effects
     /// @return Amount withdrawn
-    function _unifiedWithdraw(OasisPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer, bool _isEmergencyWithdraw)
+    function _unifiedWithdraw(OasisPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer)
         internal
         returns (uint256)
     {
         // Validate amount attempting to withdraw
         require(_amount > 0 && user.staked >= _amount, "Bad withdrawal");
 
-        if (!_isEmergencyWithdraw) {
-            updatePool(pool.token);
-        }
+        updatePool(pool.token);
 
         // Signal cartographer to perform withdrawal function if not elevating funds
         // Elevated funds remain in the cartographer, or in the passthrough target, so no need to withdraw from anywhere as they would be immediately re-deposited

@@ -817,19 +817,6 @@ contract CartographerElevation is ISubCart, Initializable, ReentrancyGuard {
     // --   W I N N I N G S   I N T E R A C T I O N S
     // ------------------------------------------------------------
     
-    /// @dev Emergency Withdraw reset user
-    /// @param pool Pool info
-    /// @param _userAdd USer's address used for redeeming rewards and checking for if rounds won
-    function _emergencyWithdrawResetUser(ElevationPoolInfo storage pool, address _userAdd) internal {
-        userInfo[pool.token][_userAdd] = UserInfo({
-            roundRew: 0,
-            staked: 0,
-            roundDebt: 0,
-            winningsDebt: 0,
-            prevInteractedRound: 0
-        });
-    }
-    
     /// @dev Claim any available winnings, and 
     /// @param pool Pool info
     /// @param user User info
@@ -1065,6 +1052,20 @@ contract CartographerElevation is ISubCart, Initializable, ReentrancyGuard {
     }
 
 
+    /// @dev Emergency Withdraw reset user
+    /// @param pool Pool info
+    /// @param _userAdd USer's address used for redeeming rewards and checking for if rounds won
+    function _emergencyWithdrawResetUser(ElevationPoolInfo storage pool, address _userAdd) internal {
+        userInfo[pool.token][_userAdd] = UserInfo({
+            roundRew: 0,
+            staked: 0,
+            roundDebt: 0,
+            winningsDebt: 0,
+            prevInteractedRound: 0
+        });
+    }
+
+
     /// @dev Emergency withdraw without rewards
     /// @param _token Pool to emergency withdraw from
     /// @param _userAdd User emergency withdrawing
@@ -1074,14 +1075,26 @@ contract CartographerElevation is ISubCart, Initializable, ReentrancyGuard {
         nonReentrant onlyCartographer poolExists(_token) validUserAdd(_userAdd)
         returns (uint256)
     {
-        return _unifiedWithdraw(
-            poolInfo[_token],
-            userInfo[_token][_userAdd],
-            userInfo[_token][_userAdd].staked,
-            _userAdd,
-            false,
-            true
-        );
+        ElevationPoolInfo storage pool = poolInfo[_token];
+        UserInfo storage user = userInfo[_token][_userAdd];
+
+        uint256 staked = user.staked;
+
+        // Reset User Info
+        _emergencyWithdrawResetUser(pool, _userAdd);
+        
+        // Signal cartographer to perform withdrawal function
+        uint256 amountAfterFee = cartographer.withdrawalTokenManagement(_userAdd, _token, staked);
+
+        // Remove withdrawn amount from pool's running supply accumulators
+        pool.totemSupplies[_getUserTotem(_userAdd)] -= staked;
+        pool.supply -= staked;
+
+        // If the user is interacting with this pool after the meat of the transaction completes
+        _markUserInteractingWithPool(_token, _userAdd, false);
+
+        // Return amount withdraw
+        return amountAfterFee;
     }
 
 
@@ -1110,8 +1123,7 @@ contract CartographerElevation is ISubCart, Initializable, ReentrancyGuard {
             userInfo[_token][_userAdd],
             _amount,
             _userAdd,
-            _isElevate,
-            false
+            _isElevate
         );
     }
 
@@ -1189,9 +1201,8 @@ contract CartographerElevation is ISubCart, Initializable, ReentrancyGuard {
     /// @param _amount Amount to withdraw
     /// @param _userAdd User address
     /// @param _isInternalTransfer Flag to switch off certain functionality for elevate withdraw
-    /// @param _isEmergencyWithdraw Flag to bypass emissions
     /// @return Amount withdrawn
-    function _unifiedWithdraw(ElevationPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer, bool _isEmergencyWithdraw)
+    function _unifiedWithdraw(ElevationPoolInfo storage pool, UserInfo storage user, uint256 _amount, address _userAdd, bool _isInternalTransfer)
         internal
         returns (uint256)
     {
@@ -1200,19 +1211,11 @@ contract CartographerElevation is ISubCart, Initializable, ReentrancyGuard {
         
         uint8 totem = _getUserTotem(_userAdd);
 
-        if (_isEmergencyWithdraw) {
+        // Bring pool to present
+        updatePool(pool.token);
 
-            // Reset user back to base state
-            _emergencyWithdrawResetUser(pool, _userAdd);
-
-        } else {
-
-            // Bring pool to present
-            updatePool(pool.token);
-
-            // Update the users interaction in the pool
-            _updateUserRoundInteraction(pool, user, totem, _amount, false);
-        }
+        // Update the users interaction in the pool
+        _updateUserRoundInteraction(pool, user, totem, _amount, false);
         
         // Signal cartographer to perform withdrawal function if not elevating funds
         // Elevated funds remain in the cartographer, or in the passthrough target, so no need to withdraw from anywhere as they would be immediately re-deposited
