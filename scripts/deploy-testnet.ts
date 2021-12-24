@@ -1,6 +1,6 @@
 import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
 import hre from 'hardhat'
-import { allElevationPromiseSequenceMap, Contracts, e18, e6, erc20Method, expeditionMethod, getBifiToken, getCakeToken, getCartographer, getContract, getEverestToken, getSummitToken, getUSDCToken, PoolConfig } from '../utils';
+import { allElevationPromiseSequenceMap, Contracts, e18, e6, erc20Method, expeditionMethod, getBifiToken, getCakeToken, getCartographer, getContract, getEverestToken, getExpedition, getSummitToken, getUSDCToken, PoolConfig } from '../utils';
 import { summitTokenMethod } from '../utils/summitTokenUtils';
 import { syncPools } from './scriptUtils';
 
@@ -13,7 +13,7 @@ const DeployStep = {
 
 
 async function main() {
-  const completedDeployStep = DeployStep.DeployContracts
+  const completedDeployStep = DeployStep.CreatePools
   console.log(' == Deploying Summit Ecosystem to BSC Testnet ==\n')
 
 
@@ -120,30 +120,54 @@ async function main() {
     const { dev } = await getNamedSigners(hre)
     const dummyUSDC = await getUSDCToken()
     const summitToken = await getSummitToken()
+    const expeditionV2 = await getExpedition()
+
+    // MINT USDC
     await erc20Method.dummyMint({
       user: dev,
       tokenName: Contracts.DummyUSDC,
       amount: e6(100000),
     })
-    await erc20Method.dummyMint({
+    // ADD USDC EXPEDITION FUNDS
+    await erc20Method.approve({
       user: dev,
-      tokenName: Contracts.DummyCAKE,
-      amount: e18(1000000),
-    })
-    await summitTokenMethod.tokenSwap({
-      user: dev,
-      oldSummitAmount: e18(1000000),
+      tokenName: Contracts.DummyUSDC,
+      approvalAddress: expeditionV2.address
     })
     await expeditionMethod.addExpeditionFunds({
       user: dev,
       tokenAddress: dummyUSDC.address,
       amount: e6(100000),
     })
+
+    // MINT CAKE, swap for SUMMIT
+    await erc20Method.dummyMint({
+      user: dev,
+      tokenName: Contracts.DummyCAKE,
+      amount: e18(1000000),
+    })
+    await erc20Method.approve({
+      user: dev,
+      tokenName: Contracts.DummyCAKE,
+      approvalAddress: summitToken.address
+    })
+    await summitTokenMethod.tokenSwap({
+      user: dev,
+      oldSummitAmount: e18(1000000),
+    })
+    // ADD SUMMIT EXPEDITION FUNDS    
+    await erc20Method.approve({
+      user: dev,
+      tokenName: Contracts.SummitToken,
+      approvalAddress: expeditionV2.address
+    })
     await expeditionMethod.addExpeditionFunds({
       user: dev,
       tokenAddress: summitToken.address,
-      amount: e6(100000),
+      amount: e18(50000),
     })
+
+    // RECALC EMISSIONS
     await expeditionMethod.recalculateExpeditionEmissions({
       dev
     })

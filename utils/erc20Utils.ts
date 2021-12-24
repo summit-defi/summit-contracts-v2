@@ -1,6 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { BigNumber, Contract } from "ethers"
-import { getSummitToken, getEverestToken, getCakeToken, getBifiToken, promiseSequenceMap, getContract, EVENT, executeTxExpectEvent, executeTxExpectReversion, executeTx, getUSDCToken } from "."
+import { getSummitToken, getEverestToken, getCakeToken, getBifiToken, promiseSequenceMap, getContract, EVENT, executeTxExpectEvent, executeTxExpectReversion, executeTx, getUSDCToken, INF_APPROVE } from "."
 
 export const getTokenBalance = async (token: Contract, add: string) => {
     return await token.balanceOf(add)
@@ -47,6 +47,21 @@ export const erc20Method = {
         } else {
             await executeTxExpectEvent(tx, txArgs, token, 'Transfer', [user.address, recipientAddress, amount], true)
         }
+    },
+    approve: async ({
+        user,
+        tokenName,
+        approvalAddress,
+    }: {
+        user: SignerWithAddress
+        tokenName: string,
+        approvalAddress: string,
+    }) => {
+        const token = await getContract(tokenName)
+        const tx = token.connect(user).approve
+        const txArgs = [approvalAddress, INF_APPROVE]
+        
+        await executeTx(tx, txArgs)
     },
     dummyMint: async ({
         user,
