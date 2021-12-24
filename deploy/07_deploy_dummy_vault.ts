@@ -1,6 +1,6 @@
 import {HardhatRuntimeEnvironment} from 'hardhat/types';
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, chainIdRequiresDummies, delay, e18 } from '../utils';
+import { chainIdAllowsVerification, chainIdRequiresDummies, delay, e18, failableVerify } from '../utils';
 
 const deployDummyVault: DeployFunction = async function ({
   getNamedAccounts,
@@ -20,6 +20,7 @@ const deployDummyVault: DeployFunction = async function ({
     from: dev,
     log: true,
   });
+
   const dummyVault = await deploy('BeefyVaultV6', {
     from: dev,
     args: [bifiToken.address, 'mooBIFI', 'mooBIFI'],
@@ -33,20 +34,20 @@ const deployDummyVault: DeployFunction = async function ({
   })
 
   if (bifiToken.newlyDeployed) {
-    await execute('DummyBIFI', { from: dev }, 'mint', dev, e18(20000000))
-    await execute('DummyBIFI', { from: dev }, 'transfer', user1, e18(500))
-    await execute('DummyBIFI', { from: dev }, 'transfer', user2, e18(500))
-    await execute('DummyBIFI', { from: dev }, 'transfer', user3, e18(500))
+    await execute('DummyBIFI', { from: dev, gasLimit: 120000 }, 'mint', dev, e18(20000000))
+    await execute('DummyBIFI', { from: dev, gasLimit: 120000 }, 'transfer', user1, e18(500))
+    await execute('DummyBIFI', { from: dev, gasLimit: 120000 }, 'transfer', user2, e18(500))
+    await execute('DummyBIFI', { from: dev, gasLimit: 120000 }, 'transfer', user3, e18(500))
 
-    await execute('DummyBIFI', { from: dev }, 'transferOwnership', dummyVault.address)
+    await execute('DummyBIFI', { from: dev, gasLimit: 120000 }, 'transferOwnership', dummyVault.address)
+  }
 
-    if (chainIdAllowsVerification(chainId)) {
-      await delay(10000)
-      await run("verify:verify", {
-        address: bifiToken.address,
-        contract: 'contracts/DummyBIFI.sol:DummyBIFI',
-      })
-    }
+  if (chainIdAllowsVerification(chainId)) {
+    await delay(3)
+    failableVerify({
+      address: bifiToken.address,
+      contract: 'contracts/dummy/DummyBIFI.sol:DummyBIFI',
+    })
   }
 };
 export default deployDummyVault;

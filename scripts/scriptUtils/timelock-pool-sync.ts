@@ -68,43 +68,28 @@ export const queueSyncPoolsTimelockTransactions = async (chainId: string, dryRun
 
             // Token Allocation Existence & Correct, if not queue to add/update it
             const allocationExists = await cartographerGet.tokenAllocExistence(tokenAddress)
+            const existingAllocation = await cartographerGet.tokenAlloc(tokenAddress)
             console.log('\n-- Allocation --')
-            if (!allocationExists) {
-                console.log(`\tAllocation doesnt exist, creating: ${configAllocation}`)
-                const createAllocationNote = `Create ${configName} Allocation: ${configAllocation}`
+            if (!allocationExists || existingAllocation !== configAllocation) {
+                console.log(`\tAllocation doesnt exist or out of sync, syncing ${existingAllocation} => ${configAllocation}`)
+                const allocationNote = `Set ${configName} Allocation: ${configAllocation}`
                 // QUEUE ADD TOKEN ALLOCATION TRANSACTION
-                const createTokenAllocationTxHash = await queueTransactionInTimelock(chainId, dryRun, createAllocationNote, {
+                const setTokenAllocationTxHash = await queueTransactionInTimelock(chainId, dryRun, allocationNote, {
                     targetContractName: Contracts.Cartographer,
-                    txName: TimelockTxSig.Cartographer.CreateTokenAllocation,
+                    txName: TimelockTxSig.Cartographer.SetTokenAllocation,
                     txParams: [tokenAddress, configAllocation],
                 })
-                if (createTokenAllocationTxHash != null) poolQueuedTxHashes.push({
-                    txHash: createTokenAllocationTxHash,
-                    note: createAllocationNote,
+                if (setTokenAllocationTxHash != null) poolQueuedTxHashes.push({
+                    txHash: setTokenAllocationTxHash,
+                    note: allocationNote,
                 })
                 console.log(`\t\tqueued.`)
             } else {
-                console.log(`\tAllocation exists, validating in sync: ${configAllocation}`)
-                // Validate Token Allocation matches, if not queue to update it
-                const existingAllocation = await cartographerGet.tokenAlloc(tokenAddress)
-                if (existingAllocation !== configAllocation) {
-                    console.log(`\t\tAllocation out of sync, syncing ${existingAllocation} => ${configAllocation}`)
-                    const updateAllocationNote = `Update ${configName} Allocation: ${existingAllocation} => ${configAllocation}`
-                    // QUEUE UPDATE TOKEN ALLOCATION TRANSACTION
-                    const setTokenAllocationTxHash = await queueTransactionInTimelock(chainId, dryRun, updateAllocationNote, {
-                        targetContractName: Contracts.Cartographer,
-                        txName: TimelockTxSig.Cartographer.SetTokenAllocation,
-                        txParams: [tokenAddress, configAllocation],
-                    })
-                    if (setTokenAllocationTxHash != null) poolQueuedTxHashes.push({
-                        txHash: setTokenAllocationTxHash,
-                        note: updateAllocationNote,
-                    })
-                    console.log(`\t\t\tqueued.`)
-                } else {
-                    console.log(`\t\tpassed.`)
-                }
+                console.log(`\t\tpassed.`)
             }
+
+
+
 
             // Token TaxBP Correct, if not queue to update it
             const existingTaxBP = (await cartographerGet.tokenWithdrawalTax(tokenAddress))
@@ -128,6 +113,8 @@ export const queueSyncPoolsTimelockTransactions = async (chainId: string, dryRun
             } else {
                 console.log(`\t\tpassed.`)
             }
+
+            
 
 
             // Token DepositFeeBP Correct, if not queue to update it

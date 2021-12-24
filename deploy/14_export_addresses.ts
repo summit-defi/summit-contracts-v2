@@ -1,40 +1,55 @@
 import { DeployFunction } from 'hardhat-deploy/types'
-import { getLpPair } from '../scripts/scriptUtils'
-import { chainIdAMMFactory, chainIdExportsAddresses, chainIdWrappedNativeToken, writeContractAddresses } from '../utils'
+import { chainIdExportsAddresses, chainIdRequiresDummies, getBifiToken, getCakeToken, getCartographer, getContract, getElevationHelper, getEverestToken, getExpedition, getSubCartographers, getSummitLocking, getSummitReferrals, getSummitToken, getTimelock, getUSDCToken, writeContractAddresses } from '../utils'
 
 const exportAddresses: DeployFunction = async function ({
-    deployments,
     getChainId,
 }) {
     const chainId = await getChainId()
     if (!chainIdExportsAddresses(chainId)) return;
 
-    const cartographer = await deployments.get('Cartographer')
-    const SummitToken = await deployments.get('SummitToken')
-    
-    const ammFactory = await chainIdAMMFactory(chainId)
-    const wrappedNativeToken = await chainIdWrappedNativeToken(chainId)
-    const summitLpAddress = await getLpPair(SummitToken.address, wrappedNativeToken!, ammFactory!, false)
-    // const dummySummitLp = await deployments.get('DummySUMMITLP')
-    // const bifiToken = await deployments.get('DummyBIFI')
-    // const cakeToken = await deployments.get('DummyCAKE')
-    const cartographerOasis = await deployments.get('CartographerOasis')
-    const cartographerElevation = await deployments.get('CartographerElevation')
-    const cartographerExpedition = await deployments.get('CartographerExpedition')
-    const elevationHelper = await deployments.get('ElevationHelper')
-    const summitReferrals = await deployments.get('SummitReferrals')
-    const timelock = await deployments.get('Timelock')
+    const cartographer = await getCartographer()
+    const SummitToken = await getSummitToken()
+    const oldSummitToken = await SummitToken.oldSummit()
+    const EverestToken = await getEverestToken()
+    const subCartographers = await getSubCartographers()
+    const elevationHelper = await getElevationHelper()
+    const summitReferrals = await getSummitReferrals()
+    const ExpeditionV2 = await getExpedition()
+    const SummitLocking = await getSummitLocking()
+    const timelock = await getTimelock()
+
+    let additionalAddresses = [] as any[]
+    if (chainIdRequiresDummies(chainId)) {
+        const usdcToken = await getUSDCToken()
+        const bifiToken = await getBifiToken()
+        const cakeToken = await getCakeToken()
+        let gasStressTokens = [];
+        for (let i = 0; i < 6; i++) {
+            gasStressTokens.push(await getContract(`GS${i}`));
+        }        
+        additionalAddresses = [
+            ['dummyUSDC', usdcToken.address],
+            ['dummyBIFI', bifiToken.address],
+            ['dummyCAKE', cakeToken.address],
+            gasStressTokens.map((token, index) => [`dummyGS${index}`, token.address]),
+        ]
+    }
 
     writeContractAddresses(chainId, [
         ['summitToken', SummitToken.address],
-        ['summitLpToken', summitLpAddress],
+        ['oldSummitToken', oldSummitToken],
+        ['everestToken', EverestToken.address],
         ['cartographer', cartographer.address],
-        ['cartographerOasis', cartographerOasis.address],
-        ['cartographerElevation', cartographerElevation.address],
-        ['cartographerExpedition', cartographerExpedition.address],
+        ['cartographerOasis', subCartographers[0].address],
+        ['cartographerPlains', subCartographers[1].address],
+        ['cartographerMesa', subCartographers[2].address],
+        ['cartographerSummit', subCartographers[3].address],
+        ['expedition', ExpeditionV2.address],
+        ['summitLocking', SummitLocking.address],
         ['elevationHelper', elevationHelper.address],
         ['summitReferrals', summitReferrals.address],
         ['timelock', timelock.address],
+        ...additionalAddresses,
     ])
 }
 

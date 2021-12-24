@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, delay } from '../utils';
+import { chainIdAllowsVerification, delay, failableVerify } from '../utils';
 
 const deploySummitReferrals: DeployFunction = async function ({
   getNamedAccounts,
@@ -19,9 +19,9 @@ const deploySummitReferrals: DeployFunction = async function ({
     log: true,
   });
 
-  if (SummitReferrals.newlyDeployed && chainIdAllowsVerification(chainId)) {
-    await delay(10000)
-    await run("verify:verify", {
+  if (chainIdAllowsVerification(chainId)) {
+    await delay(3)
+    await failableVerify({
       address: SummitReferrals.address,
       constructorArguments: [Cartographer.address],
     })

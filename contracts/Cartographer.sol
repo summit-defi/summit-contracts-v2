@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.0;
+pragma solidity 0.8.2;
 import "./SummitToken.sol";
 import "./CartographerOasis.sol";
 import "./CartographerElevation.sol";
@@ -12,7 +12,6 @@ import "./PresetPausable.sol";
 import "./libs/SummitMath.sol";
 import "./interfaces/ISubCart.sol";
 import "./interfaces/IPassthrough.sol";
-import "./interfaces/IUniswapV2Pair.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -89,8 +88,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     uint8 constant PLAINS = 1;
     uint8 constant MESA = 2;
     uint8 constant SUMMIT = 3;
-    uint256 constant e12 = 1e12;
-
 
     SummitToken public summit;
     bool public enabled = false;                                                // Whether the ecosystem has been enabled for earning
@@ -105,8 +102,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     EverestToken public everest;
     SummitLocking public summitLocking;
 
-    uint256 public launchTimestamp = 1641028149;                                // 2022-1-1, will be updated when summit ecosystem switched on
-    uint256 public summitPerSecond = 15e16;                                             // Amount of Summit minted per second to be distributed to users
+    uint256 public summitPerSecond = 5e16;                                      // Amount of Summit minted per second to be distributed to users
     uint256 public treasurySummitBP = 200;                                      // Amount of Summit minted per second to the treasury
     uint256 public referralsSummitBP = 20;                                      // Amount of Summit minted per second as referral rewards
 
@@ -141,8 +137,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     // --   E V E N T S
     // ---------------------------------------
 
-    event TokenAllocCreated(address indexed token, uint256 alloc);
-    event TokenAllocUpdated(address indexed token, uint256 alloc);
+    event SetTokenAllocation(address indexed token, uint256 alloc);
     event PoolCreated(address indexed token, uint8 elevation);
     event PoolUpdated(address indexed token, uint8 elevation, bool live);
     event Deposit(address indexed user, address indexed token, uint8 indexed elevation, uint256 amount);
@@ -186,8 +181,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         address _treasuryAdd,
         address _expeditionTreasuryAdd
     ) {
-        require(_treasuryAdd != address(0), "Missing Treasury Address");
-        require(_expeditionTreasuryAdd != address(0), "Missing Expedition Treasury Address");
+        require(_treasuryAdd != address(0), "Missing Treasury");
+        require(_expeditionTreasuryAdd != address(0), "Missing Exped Treasury");
         treasuryAdd = _treasuryAdd;
         expeditionTreasuryAdd = _expeditionTreasuryAdd;
     }
@@ -248,10 +243,9 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         enabled = true;
 
         // Setting and propagating the true summit address and launch timestamp
-        launchTimestamp = block.timestamp;
-        elevationHelper.enable(launchTimestamp);
+        elevationHelper.enable(block.timestamp);
         summitReferrals.enable(address(summit));
-        _subCartographer(OASIS).enable(launchTimestamp);
+        _subCartographer(OASIS).enable(block.timestamp);
     }
 
     /// @dev Transferring Summit Ownership - Huge timelock
@@ -353,7 +347,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         _;
     }
     modifier validAllocation(uint256 _allocation) {
-        require(_allocation >= 0 && _allocation <= 10000, "Allocation must be <= 100X");
+        require(_allocation <= 10000, "Allocation must be <= 100X");
         _;
     }
 
@@ -429,29 +423,16 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     }
 
 
-    /// @dev Create a new base allocation for a token. Required before a pool for that token is created
-    /// @param _token Token to create allocation for
-    /// @param _allocation Allocation shares awarded to token
-    function createTokenAllocation(address _token, uint256 _allocation)
-        public
-        onlyOwner nonDuplicatedTokenAlloc(_token) validAllocation(_allocation)
-    {
-        // Token is marked as having an existing allocation
-        tokensWithAlloc.add(_token);
-
-        // Token's base allocation is set to the passed in value
-        tokenAlloc[_token] = _allocation;
-
-        emit TokenAllocCreated(_token, _allocation);
-    }
-
-    /// @dev Update the allocation for a token. This modifies existing allocations at each elevation for that token
+    /// @dev Create / Update the allocation for a token. This modifies existing allocations at each elevation for that token
     /// @param _token Token to update allocation for
     /// @param _allocation Updated allocation
     function setTokenAllocation(address _token, uint256 _allocation)
         public
-        onlyOwner tokenAllocExists(_token)  validAllocation(_allocation)
+        onlyOwner validAllocation(_allocation)
     {
+        // Token is marked as having an existing allocation
+        tokensWithAlloc.add(_token);
+
         // Update the tokens allocation at the elevations that token is active at
         for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
             if (tokenElevationIsEarning[_token][elevation]) {
@@ -462,7 +443,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         // Update the token allocation
         tokenAlloc[_token] = _allocation;
 
-        emit TokenAllocUpdated(_token, _allocation);
+        emit SetTokenAllocation(_token, _allocation);
     }
 
 
@@ -651,12 +632,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     // -----------------------------------------------------
     // --   S U M M I T   E M I S S I O N
     // -----------------------------------------------------
-
-
-    /// @dev Returns the time elapsed between two timestamps
-    function timeDiffSeconds(uint256 _from, uint256 _to) public pure returns (uint256) {
-        return _to - _from;
-    }
+    
 
     /// @dev Returns the modulated allocation of a token at elevation, escaping early if the pool is not live
     /// @param _token Tokens allocation
@@ -664,7 +640,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     /// @return True allocation of the pool at elevation
     function elevationModulatedAllocation(address _token, uint8 _elevation) public view returns (uint256) {
         // Escape early if the pool is not currently earning SUMMIT
-        if (!tokenElevationIsEarning[_token][_elevation]) { return 0; }
+        if (!tokenElevationIsEarning[_token][_elevation]) return 0;
 
         // Fetch the modulated base allocation for the token at elevation
         return elevationHelper.elevationModulatedAllocation(tokenAlloc[_token], _elevation);
@@ -674,11 +650,8 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     /// @dev Shares of a token at elevation
     /// (@param _token, @param _elevation) Together identify the pool to calculate
     function _tokenElevationShares(address _token, uint8 _elevation) internal view returns (uint256) {
-        // Escape early if the pool is not currently earning SUMMIT
-        if (!poolExistence[_token][_elevation]) return 0;
-
-        // Gas Saver: This overlaps with same line in elevationModulatedAllocation, however elevationModulatedAllocation needs to be accurate independently for the frontend
-        if (!tokenElevationIsEarning[_token][_elevation]) return 0;
+        // Escape early if the pool doesn't exist or is not currently earning SUMMIT
+        if (!poolExistence[_token][_elevation] || !tokenElevationIsEarning[_token][_elevation]) return 0;
 
         return (
             _subCartographer(_elevation).supply(_token) *
@@ -708,10 +681,10 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         );
 
         // Escape early if nothing is staked in any of the token's pools
-        if (totalTokenShares == 0) { return 0; }
+        if (totalTokenShares == 0) return 0;
 
         // Divide the target pool (token + elevation) shares by total shares (as calculated above)
-        return _tokenElevationShares(_token, _elevation) * e12 / totalTokenShares;
+        return _tokenElevationShares(_token, _elevation) * 1e12 / totalTokenShares;
     }
 
 
@@ -733,7 +706,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
 
         if (totalAlloc == 0) return 0;
 
-        return tokenTotalAlloc * e12 / totalAlloc;
+        return tokenTotalAlloc * 1e12 / totalAlloc;
     }
 
 
@@ -749,7 +722,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         //   . Time difference from last reward timestamp
         //   . Tokens allocation as a fraction of total allocation
         //   . Pool's emission multiplier
-        return timeDiffSeconds(_lastRewardTimestamp, block.timestamp) * tokenAllocEmissionMultiplier(_token) * tokenElevationEmissionMultiplier(_token, _elevation) / e12;
+        return (block.timestamp - _lastRewardTimestamp) * tokenAllocEmissionMultiplier(_token) * tokenElevationEmissionMultiplier(_token, _elevation) / 1e12;
     }
 
 
@@ -763,10 +736,10 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         returns (uint256)
     {
         // Escape early if no time has passed
-        if (_lastRewardTimestamp == block.timestamp) { return 0; }
+        if (block.timestamp <= _lastRewardTimestamp) { return 0; }
 
         // Emission multiplier multiplied by summitPerSecond, finally reducing back to true exponential
-        return _poolEmissionMultiplier(_lastRewardTimestamp, _token, _elevation) * summitPerSecond / e12;
+        return _poolEmissionMultiplier(_lastRewardTimestamp, _token, _elevation) * summitPerSecond / 1e12;
     }
 
 
@@ -1205,7 +1178,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         public whenNotPaused
         onlySummitReferrals
     {
-        require(_amount > 0, "Non zero");
         summit.mint(address(summitReferrals), _amount);
     }
     
@@ -1247,7 +1219,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         public
         onlyOwner
     {
-        require(_taxDecayDuration <= 14 days, "Invalid tax decay duration > 14 days");
+        require(_taxDecayDuration <= 14 days, "Invalid duration > 14d");
         taxDecayDuration = _taxDecayDuration;
         emit SetTaxDecayDuration(_taxDecayDuration);
     }

@@ -15,12 +15,13 @@ export const Contracts = {
     DummyCAKE: 'DummyCAKE',
     DummyMasterChef: 'MasterChef',
     MasterChefPassthrough: 'MasterChefPassthrough',
-
+    
     Timelock: 'Timelock',
-
+    
     EverestToken: 'EverestToken',
     DummyEverestExtension: 'DummyEverestExtension',
-
+    
+    DummyUSDC: 'DummyUSDC',
     ExpeditionV2: 'ExpeditionV2',
 
     SummitLocking: 'SummitLocking',
@@ -243,8 +244,7 @@ export const EVENT = {
     ExpeditionExtended: 'ExpeditionExtended',
     ExpeditionRestarted: 'ExpeditionRestarted',
 
-    TokenAllocCreated: 'TokenAllocCreated',
-    TokenAllocUpdated: 'TokenAllocUpdated',
+    SetTokenAllocation: 'SetTokenAllocation',
 
     SET_PASSTHROUGH_STRATEGY: 'PassthroughStrategySet',
     RETIRE_PASSTHROUGH_STRATEGY: 'PassthroughStrategyRetired',
@@ -352,17 +352,10 @@ export const networksWhichRequireDummies = [
     31337,  // HARDHAT
 ]
 
-export const networkAMMFactories: { [key: string]: string } = {
-    56: '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73',   // BSC MAINNET
-    97: '0x6725F303b657a9451d8BA641348b6761A6CC7a17',   // BSC TESTNET
-    250: '0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3',  // FTM MAINNET
-}
-
-export const networkAMMPairCodeHash: { [key: string]: string } = {
-    56: '0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73',   // BSC MAINNET
-    97: '0x6725F303b657a9451d8BA641348b6761A6CC7a17',   // BSC TESTNET
-    250: '0xcdf2deca40a0bd56de8e3ce5c7df6727e5b1bf2ac96f283fa9c4b3e6b42ea9d2',  // SPOOKYSWAP
-}
+export const mainnetNetworks = [
+    0xfa2,  // FTM TESTNET
+    56,     // BSC MAINNET
+]
 
 export const networkWrappedNativeTokens: { [key: string]: string } = {
     56: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',   // BSC MAINNET

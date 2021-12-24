@@ -57,25 +57,10 @@ describe("Base Pools", function() {
     it('Creation of tokenAlloc should succeed', async function() {
       const { dev, summitToken } = await baseFixture() 
 
-      await cartographerMethod.createTokenAllocation({
+      await cartographerMethod.setTokenAllocation({
         dev,
         tokenAddress: summitToken.address,
         allocation: 4000
-      })
-    })
-    it(`Creation of duplicated tokenAlloc should fail with error ${ERR.DUPLICATED_TOKEN_ALLOC}`, async function() {
-      const { dev, summitToken } = await baseFixture() 
-
-      await cartographerMethod.createTokenAllocation({
-        dev,
-        tokenAddress: summitToken.address,
-        allocation: 4000
-      })
-      await cartographerMethod.createTokenAllocation({
-        dev,
-        tokenAddress: summitToken.address,
-        allocation: 4000,
-        revertErr: ERR.DUPLICATED_TOKEN_ALLOC
       })
     })
     it(`Pool creation without already existing tokenAlloc should fail with error ${ERR.INVALID_TOKEN_ALLOC}`, async function() {
@@ -93,7 +78,7 @@ describe("Base Pools", function() {
     it('Non-Admin pool creation should fail', async function() {
       const { dev, user1, summitToken } = await baseFixture()
 
-      await cartographerMethod.createTokenAllocation({
+      await cartographerMethod.setTokenAllocation({
         dev,
         tokenAddress: summitToken.address,
         allocation: 4000
@@ -110,7 +95,7 @@ describe("Base Pools", function() {
     it('Admin pool creation should succeed', async function() {
       const { dev, summitToken } = await baseFixture()
 
-      await cartographerMethod.createTokenAllocation({
+      await cartographerMethod.setTokenAllocation({
         dev,
         tokenAddress: summitToken.address,
         allocation: 4000
@@ -148,7 +133,7 @@ describe("Base Pools", function() {
 
       await promiseSequenceMap(
         allocations,
-        async (tokenAllocation) => await cartographerMethod.createTokenAllocation({
+        async (tokenAllocation) => await cartographerMethod.setTokenAllocation({
           dev,
           ...tokenAllocation
         })

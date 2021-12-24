@@ -19,6 +19,7 @@ export interface PoolConfig {
     allocation: number
     taxBP: number
     depositFeeBP: number
+    native: boolean
     elevations: {
         [NamedElevations.OASIS]: ElevationExistsLive
         [NamedElevations.PLAINS]: ElevationExistsLive
@@ -37,7 +38,6 @@ export interface ExpeditionConfig {
 
 
 export enum UpdatePoolTxType {
-    createTokenAllocationTxHash = 'createTokenAllocationTxHash',
     setTokenAllocationTxHash = 'setTokenAllocationTxHash',
     addFarmTxHash = 'addFarmTxHash',
     setFarmTxHash = 'setFarmTxHash',
@@ -50,7 +50,6 @@ export interface TxHashAndNote {
 }
 
 export interface UpdatePoolTxHashes {
-    [UpdatePoolTxType.createTokenAllocationTxHash]?: TxHashAndNote
     [UpdatePoolTxType.setTokenAllocationTxHash]?: TxHashAndNote
     [UpdatePoolTxType.addFarmTxHash]?: TxHashAndNote
     [UpdatePoolTxType.setFarmTxHash]?: TxHashAndNote

@@ -48,7 +48,7 @@ describe("GAS STRESS TESTS", function() {
       await promiseSequenceMap(
           Object.values(gasStressTokenInfo),
           async (tokenInfo) => {
-            await cartographerMethod.createTokenAllocation({
+            await cartographerMethod.setTokenAllocation({
               dev,
               tokenAddress: tokenInfo.token.address,
               allocation: 100
@@ -103,7 +103,7 @@ describe("GAS STRESS TESTS", function() {
       const tokenName = `GS${summitActivePoolsCount}`
       const gasStressToken = await getContract(tokenName)
 
-      await cartographerMethod.createTokenAllocation({
+      await cartographerMethod.setTokenAllocation({
         dev,
         tokenAddress: gasStressToken.address,
         allocation: 100,

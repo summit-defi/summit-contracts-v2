@@ -44,7 +44,7 @@ describe("ACTIVE POOLS LIST", async function() {
         const activePoolsInit = await subCartGet.getActivePools(PLAINS)
         expect(activePoolsInit.includes(gs1.address)).to.be.false
 
-        await cartographerMethod.createTokenAllocation({
+        await cartographerMethod.setTokenAllocation({
             dev,
             tokenAddress: gs1.address,
             allocation: 200
@@ -90,7 +90,7 @@ describe("ACTIVE POOLS LIST", async function() {
         const activePoolsInit = await subCartGet.getActivePools(PLAINS)
         expect(activePoolsInit.includes(gs2.address)).to.be.false
 
-        await cartographerMethod.createTokenAllocation({
+        await cartographerMethod.setTokenAllocation({
             dev,
             tokenAddress: gs2.address,
             allocation: 200

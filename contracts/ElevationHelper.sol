@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: MIT
-pragma solidity 0.8.0;
+pragma solidity 0.8.2;
 
 import "./interfaces/ISummitRNGModule.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -61,8 +61,8 @@ contract ElevationHelper is Ownable {
 
     
     uint256 constant baseRoundDuration = 3600;                              // Duration (seconds) of the smallest round chunk
-    uint256[5] public durationMult = [0, 2, 2, 2, 24];                      // Number of round chunks for each elevation
-    uint256[5] public pendingDurationMult = [0, 2, 2, 2, 24];               // Duration mult that takes effect at the end of the round
+    uint256[5] public durationMult = [0, 2, 2, 2, 6];                      // Number of round chunks for each elevation
+    uint256[5] public pendingDurationMult = [0, 2, 2, 2, 6];               // Duration mult that takes effect at the end of the round
 
     uint256[5] public unlockTimestamp;                                      // Time at which each elevation unlocks to the public
     uint256[5] public roundNumber;                                          // Current round of each elevation
@@ -73,7 +73,7 @@ contract ElevationHelper is Ownable {
     mapping(uint8 => mapping(uint256 => uint8)) public winningTotem;        // The specific winning totem for each elevation round
 
 
-    uint256 constant referralDurationMult = 24 * 7;                         // Round chunk multiplier for the unclaimed referral rewards burn
+    uint256 constant referralDurationMult = 24 * 1;                         // Round chunk multiplier for the unclaimed referral rewards burn
     uint256 public referralRound;                                           // Incrementor of the referral round
     uint256 public referralBurnTimestamp;                                   // Time at which burning unclaimed referral rewards becomes available
 
@@ -120,17 +120,17 @@ contract ElevationHelper is Ownable {
         // Setting when each elevation of the ecosystem unlocks
         unlockTimestamp = [
             nextHourTimestamp,                       // Oasis - throwaway
-            nextHourTimestamp + 1 days,              // Plains
-            nextHourTimestamp + 3 days,              // Mesa
-            nextHourTimestamp + 5 days,              // Summit
-            nextHourTimestamp + 7 days               // Expedition
+            nextHourTimestamp + 0 days,              // Plains
+            nextHourTimestamp + 1 days,              // Mesa
+            nextHourTimestamp + 2 days,              // Summit
+            nextHourTimestamp + 3 days               // Expedition
         ];
 
         // The first 'round' ends when the elevation unlocks
         roundEndTimestamp = unlockTimestamp;
         
         // Timestamp the first unclaimed referral rewards burn becomes available
-        referralBurnTimestamp = nextHourTimestamp + 7 days;    
+        referralBurnTimestamp = nextHourTimestamp + 1 days;    
 
         // Timestamp of the first seed round starting
         ISummitRNGModule(summitRNGModuleAdd).setSeedRoundEndTimestamp(unlockTimestamp[PLAINS] - roundEndLockoutDuration);

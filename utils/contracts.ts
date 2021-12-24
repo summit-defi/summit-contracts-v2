@@ -13,6 +13,7 @@ export const getSummitReferrals = async () => await getContract(Contracts.Summit
 export const getBifiToken = async () => await getContract(Contracts.DummyBIFI)
 export const getBifiVault = async () => await getContract(Contracts.BeefyVault)
 export const getBifiVaultPassthrough = async () => await getContract(Contracts.BeefyVaultPassthrough)
+export const getUSDCToken = async () => await getContract(Contracts.DummyUSDC)
 export const getCakeToken = async () => await getContract(Contracts.DummyCAKE)
 export const getMasterChef = async () => await getContract(Contracts.DummyMasterChef)
 export const getMasterChefPassthrough = async () => await getContract(Contracts.MasterChefPassthrough)

@@ -4,12 +4,12 @@ import hre from "hardhat";
 import { e18, getTimestamp,  mineBlockWithTimestamp, getSummitToken, everestMethod, days, cartographerMethod, OASIS, getCakeToken, rolloverRound, cartographerGet, PLAINS, cartographerSetParam, sumBigNumbers, getSummitBalance, getTokenBalance, tokenAmountAfterWithdrawTax, pausableMethod, Contracts, ERR, mineBlocks } from "../utils";
 import { mesaUnlockedFixture } from "./fixtures";
 
-describe.only("PAUSABLE", async function() {
+describe("PAUSABLE", async function() {
     before(async function () {
         await mesaUnlockedFixture()
     })
 
-    it(`PAUSABLE: Adding a pause roll is successful`, async function() {
+    it(`PAUSABLE: Adding a pause role is successful`, async function() {
         const { dev, user1 } = await getNamedSigners(hre)
 
         await pausableMethod.grantPauserRole({
@@ -31,7 +31,7 @@ describe.only("PAUSABLE", async function() {
         await pausableMethod.pause({
             admin: user2,
             contractName: Contracts.Cartographer,
-            revertErr: 'ERC20PresetMinterPauser: must have pauser role to pause',
+            revertErr: 'Must have pauser role',
         })
         await pausableMethod.pause({
             admin: dev,
@@ -50,7 +50,7 @@ describe.only("PAUSABLE", async function() {
         await pausableMethod.unpause({
             admin: user2,
             contractName: Contracts.Cartographer,
-            revertErr: 'ERC20PresetMinterPauser: must have pauser role to unpause',
+            revertErr: 'Must have pauser role',
         })
         await pausableMethod.unpause({
             admin: dev,

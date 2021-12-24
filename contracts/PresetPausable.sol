@@ -1,25 +1,44 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract PresetPausable is AccessControlEnumerable, Pausable {
+contract PresetPausable is AccessControl {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+    bool public paused;
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(PAUSER_ROLE, msg.sender);
+        paused = false;
     }
 
-    function pause() public virtual {
-        require(hasRole(PAUSER_ROLE, msg.sender), "ERC20PresetMinterPauser: must have pauser role to pause");
-        _pause();
+    event Paused(address account);
+    event Unpaused(address account);
+
+    function _whenNotPaused() internal view {
+        require(!paused, "Pausable: paused");
+    }
+    modifier whenNotPaused() {
+        _whenNotPaused();
+        _;
+    }
+    
+    modifier whenPaused() {
+        require(paused, "Pausable: not paused");
+        _;
     }
 
-    function unpause() public virtual {
-        require(hasRole(PAUSER_ROLE, msg.sender), "ERC20PresetMinterPauser: must have pauser role to unpause");
-        _unpause();
+    function pause() public virtual whenNotPaused {
+        require(hasRole(PAUSER_ROLE, msg.sender), "Must have pauser role");
+        paused = true;
+        emit Paused(_msgSender());
+    }
+
+    function unpause() public virtual whenPaused {
+        require(hasRole(PAUSER_ROLE, msg.sender), "Must have pauser role");
+        paused = false;
+        emit Unpaused(_msgSender());
     }
 }
