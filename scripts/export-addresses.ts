@@ -1,11 +1,8 @@
-import { DeployFunction } from 'hardhat-deploy/types'
-import { chainIdExportsAddresses, chainIdRequiresDummies, getBifiToken, getCakeToken, getCartographer, getContract, getElevationHelper, getEverestToken, getExpedition, getSubCartographers, getSummitLocking, getSummitToken, getTimelock, getUSDCToken, writeContractAddresses } from '../utils'
+import { getChainId } from 'hardhat'
+import { chainIdRequiresDummies, getBifiToken, getCakeToken, getCartographer, getContract, getElevationHelper, getEverestToken, getExpedition, getSubCartographers, getSummitLocking, getSummitToken, getTimelock, getUSDCToken, writeContractAddresses } from '../utils'
 
-const exportAddresses: DeployFunction = async function ({
-    getChainId,
-}) {
+async function main() {
     const chainId = await getChainId()
-    if (!chainIdExportsAddresses(chainId)) return;
 
     const cartographer = await getCartographer()
     const SummitToken = await getSummitToken()
@@ -27,11 +24,14 @@ const exportAddresses: DeployFunction = async function ({
             gasStressTokens.push(await getContract(`GS${i}`));
         }        
         additionalAddresses = [
-            ['dummyUSDC', usdcToken.address],
-            ['dummyBIFI', bifiToken.address],
-            ['dummyCAKE', cakeToken.address],
-            gasStressTokens.map((token, index) => [`dummyGS${index}`, token.address]),
+            ['USDC', usdcToken.address],
+            ['BIFI', bifiToken.address],
+            ['CAKE', cakeToken.address],
+            ...gasStressTokens.map((token, index) => [`GS${index}`, token.address]),
         ]
+        console.log({
+            additionalAddresses
+        })
     }
 
     writeContractAddresses(chainId, [
@@ -51,7 +51,9 @@ const exportAddresses: DeployFunction = async function ({
     ])
 }
 
-export default exportAddresses
-exportAddresses.tags = ['exportAddresses', 'TESTNET', 'MAINNET']
-exportAddresses.runAtTheEnd = true
-exportAddresses.dependencies = ['initializeContracts', 'Timelock']
+main()
+    .then(() => process.exit(0))
+    .catch(error => {
+        console.error(error);
+        process.exit(1);
+    });

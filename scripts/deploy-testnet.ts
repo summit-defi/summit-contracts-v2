@@ -48,7 +48,7 @@ async function main() {
       token: summitToken.address,
       allocation: 1500,
       taxBP: 700,
-      depositFeeBP: 100,
+      depositFeeBP: 0,
       native: true,
       elevations: baseElevations,
     },

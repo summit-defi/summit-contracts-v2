@@ -9,7 +9,6 @@ export const getCartographer = async () => await getContract(Contracts.Cartograp
 export const getElevationHelper = async () => await getContract(Contracts.ElevationHelper)
 export const getSummitTrustedSeeder = async () => await getContract(Contracts.SummitTrustedSeederRNGModule)
 export const getSummitToken = async () => await getContract(Contracts.SummitToken)
-export const getSummitReferrals = async () => await getContract(Contracts.SummitReferrals)
 export const getBifiToken = async () => await getContract(Contracts.DummyBIFI)
 export const getBifiVault = async () => await getContract(Contracts.BeefyVault)
 export const getBifiVaultPassthrough = async () => await getContract(Contracts.BeefyVaultPassthrough)

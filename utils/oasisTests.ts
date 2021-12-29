@@ -3,7 +3,7 @@ import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat';
 import { cartographerGet, cartographerMethod, cartographerSynth, consoleLog, Contracts, depositedAfterFee, e18, EVENT, expect6FigBigNumberEquals, getSubCartographer, mineBlock, OASIS, promiseSequenceMap, subCartGet, subCartMethod, toDecimal } from '.';
-import { getContract, getSummitReferrals, getSummitToken } from './contracts';
+import { getContract, getSummitToken } from './contracts';
 import { summitLockingGet } from './summitLockingUtils';
 import { userPromiseSequenceMap, userPromiseSequenceReduce } from './users';
 import { e12, getExpectedDistributionsOnClaim, getTimestamp, mineBlocks, tokenAmountAfterDepositFee } from './utils';
@@ -96,11 +96,9 @@ const redeemTransfersCorrectSUMMITToAddresses = (tokenName: string) => {
     it('CLAIM: Claiming rewards transfers correct amount to summitLocking', async function() {
       const { user1, dev } = await getNamedSigners(hre)
       const token = await getContract(tokenName)
-      const summitReferrals = await getSummitReferrals()
 
 
       const userClaimedInit = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
-      const referralSummitInit = await token.balanceOf(summitReferrals.address)
       const devSummitInit = await token.balanceOf(dev.address)
 
       await mineBlocks(5)
@@ -108,7 +106,6 @@ const redeemTransfersCorrectSUMMITToAddresses = (tokenName: string) => {
       const expectedRewards = (await subCartGet.poolClaimableRewards(token.address, OASIS, user1.address))
         .add(await cartographerSynth.farmSummitEmissionOverDuration(token.address, OASIS, 1))
       const {
-        referralExpected,
         treasuryExpected
       } = getExpectedDistributionsOnClaim(expectedRewards)
 
@@ -119,17 +116,14 @@ const redeemTransfersCorrectSUMMITToAddresses = (tokenName: string) => {
       })
 
       const userClaimedFinal = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
-      const referralSummitFinal = await token.balanceOf(summitReferrals.address)
       const devSummitFinal = await token.balanceOf(dev.address)
 
       consoleLog({
         user: `${toDecimal(userClaimedInit)} --> ${toDecimal(userClaimedFinal)}: Δ ${toDecimal(userClaimedFinal.sub(userClaimedInit))}`,
         dev: `${toDecimal(devSummitInit)} --> ${toDecimal(devSummitFinal)}: Δ ${toDecimal(devSummitFinal.sub(devSummitInit))}`,
-        referral: `${toDecimal(referralSummitInit)} --> ${toDecimal(referralSummitFinal)}: Δ ${toDecimal(referralSummitFinal.sub(referralSummitInit))}`,
       })
 
       expect6FigBigNumberEquals(userClaimedFinal, userClaimedInit.add(expectedRewards))
-      expect6FigBigNumberEquals(referralSummitFinal, referralSummitInit.add(referralExpected))
       expect6FigBigNumberEquals(devSummitFinal, devSummitInit.add(treasuryExpected))
     })
 }

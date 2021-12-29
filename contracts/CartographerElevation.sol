@@ -156,6 +156,8 @@ contract CartographerElevation is ISubCart, Initializable, ReentrancyGuard {
     mapping(address => mapping(address => UserInfo)) public userInfo;            // Users running staking / vesting information
     mapping(address => UserElevationInfo) public userElevationInfo;// User's totem info at each elevation
 
+    mapping(uint256 => uint256) public roundWinningsMult;
+
 
 
 
@@ -686,8 +688,8 @@ contract CartographerElevation is ISubCart, Initializable, ReentrancyGuard {
         external override
         onlyCartographer
     {
-        uint256 currRound = elevationHelper.roundNumber(elevation);
-        uint8 winningTotem = elevationHelper.winningTotem(elevation, currRound - 1);
+        uint256 prevRound = elevationHelper.roundNumber(elevation) == 0 ? 0 : elevationHelper.roundNumber(elevation) - 1;
+        uint8 winningTotem = elevationHelper.winningTotem(elevation, prevRound);
 
         // Iterate through active pools of elevation, sum total rewards earned (all totems), and winning totems's rewards
         uint256 elevTotalRewards = 0;
@@ -703,12 +705,12 @@ contract CartographerElevation is ISubCart, Initializable, ReentrancyGuard {
         }
 
         // Calculate the winnings multiplier of the round that just ended from the combined reward amounts
-        uint256 elevWinningsMult = winningTotemRewards == 0 ? 0 : elevTotalRewards * 1e12 / winningTotemRewards;
+        roundWinningsMult[prevRound] = winningTotemRewards == 0 ? 0 : elevTotalRewards * 1e12 / winningTotemRewards;
 
         // Update and rollover all active pools
         for (uint16 index = 0; index < pools.length; index++) {
             // Rollover Pool
-            rolloverPool(pools[index], currRound - 1, elevWinningsMult);
+            rolloverPool(pools[index], prevRound, roundWinningsMult[prevRound]);
         }
     }
     
