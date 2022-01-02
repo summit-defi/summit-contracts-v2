@@ -97,8 +97,8 @@ contract CartographerElevation is ISubCart, Initializable, ReentrancyGuard {
     // --   V A R I A B L E S
     // ---------------------------------------
 
-    Cartographer cartographer;
-    ElevationHelper elevationHelper;
+    Cartographer public cartographer;
+    ElevationHelper public elevationHelper;
     uint8 public elevation;
     address public summitTokenAddress;
 

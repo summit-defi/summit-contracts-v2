@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.2;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 
-contract PresetPausable is AccessControl {
+contract PresetPausable is AccessControlEnumerable {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bool public paused;
 
