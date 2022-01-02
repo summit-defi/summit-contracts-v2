@@ -310,9 +310,6 @@ contract ElevationHelper is Ownable {
         external
         onlyCartographerOrExpedition elevationOrExpedition(_elevation)
     {
-        // No winning totem should be selected for round 0, which takes place when the elevation is locked
-        if (roundNumber[_elevation] == 0) { return; }
-
         uint256 rand = ISummitRNGModule(summitRNGModuleAdd).getRandomNumber(_elevation, roundNumber[_elevation]);
 
         // Uses the random number to select the winning totem
