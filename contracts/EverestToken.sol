@@ -26,10 +26,12 @@ contract EverestToken is ERC20('EverestToken', 'EVEREST'), Ownable, ReentrancyGu
 
     bool public panic = false;
 
-    uint256 public daySeconds = 24 * 3600;
+    uint256 public constant daySeconds = 24 * 3600;
+
     uint256 public minLockTime = 7 days;
     uint256 public inflectionLockTime = 30 days;
     uint256 public maxLockTime = 365 days;
+    
     uint256 public minEverestLockMult = 1000;
     uint256 public inflectionEverestLockMult = 10000;
     uint256 public maxEverestLockMult = 25000;
