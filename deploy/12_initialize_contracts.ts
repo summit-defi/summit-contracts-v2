@@ -23,7 +23,6 @@ const initializeContracts: DeployFunction = async function ({
     const USDCToken = await deployments.get(Contracts.DummyUSDC)
     const SubCartographers = await getSubCartographers()
     const ElevationHelper = await deployments.get(Contracts.ElevationHelper)
-    const SummitReferrals = await deployments.get(Contracts.SummitReferrals)
     const ExpeditionV2 = await deployments.get(Contracts.ExpeditionV2)
     const SummitLocking = await deployments.get(Contracts.SummitLocking)
 
@@ -40,7 +39,6 @@ const initializeContracts: DeployFunction = async function ({
       'initialize',
       SummitToken.address,
       ElevationHelper.address,
-      SummitReferrals.address,
       SubCartographers[OASIS].address,
       SubCartographers[PLAINS].address,
       SubCartographers[MESA].address,
@@ -110,7 +108,7 @@ initializeContracts.dependencies = [
   'CartographerElevation', 
   'CartographerExpedition', 
   'ElevationHelper', 
-  'SummitReferrals',
+  '',
   'SummitLocking',
   'EverestToken',
   'ExpeditionV2',

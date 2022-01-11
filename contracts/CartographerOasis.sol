@@ -52,7 +52,7 @@ contract CartographerOasis is ISubCart, Initializable, ReentrancyGuard {
     // ---------------------------------------
 
     Cartographer public cartographer;
-    uint256 public launchTimestamp = 1641028149;                        // 2022-1-1, will be updated when summit ecosystem switched on
+    uint256 public launchTimestamp = 1672527600;                        // 2023-1-1, will be updated when summit ecosystem switched on
     uint8 constant OASIS = 0;                                           // Named constant to make reusable elevation functions easier to parse visually
     address public summitTokenAddress;
     
@@ -174,7 +174,7 @@ contract CartographerOasis is ISubCart, Initializable, ReentrancyGuard {
     /// @dev Creates a pool at the oasis
     /// @param _token Pool token
     /// @param _live Whether the pool is enabled initially
-    function add(address _token,  bool _live)
+    function add(address _token, bool _live)
         external override
         onlyCartographer nonDuplicated(_token)
     {

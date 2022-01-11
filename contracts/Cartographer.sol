@@ -6,7 +6,6 @@ import "./CartographerOasis.sol";
 import "./CartographerElevation.sol";
 import "./EverestToken.sol";
 import "./ElevationHelper.sol";
-import "./SummitReferrals.sol";
 import "./SummitLocking.sol";
 import "./PresetPausable.sol";
 import "./libs/SummitMath.sol";
@@ -65,14 +64,6 @@ Features of the Summit Ecosystem
 
     - Random number generation immune to Block Withholding Attack through open source webserver
     - Stopwatch functionality through open source webserver
-    
-    - Referrals (
-        . No limit to number of users referred
-        . 1% bonus of each referred user's SUMMIT rewards
-        . 1% bonus of own SUMMIT rewards if you have been referred
-      )
-    - Automatic unclaimed referral rewards burns
-
 */
 
 contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable {
@@ -97,14 +88,12 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     address public treasuryAdd;                                                 // Treasury address, see docs for spend breakdown
     address public expeditionTreasuryAdd;                                       // Expedition Treasury address, intermediate address to convert to stablecoins
     ElevationHelper public elevationHelper;
-    SummitReferrals public summitReferrals;
     address[4] public subCartographers;
     EverestToken public everest;
     SummitLocking public summitLocking;
 
     uint256 public summitPerSecond = 5e16;                                      // Amount of Summit minted per second to be distributed to users
     uint256 public treasurySummitBP = 200;                                      // Amount of Summit minted per second to the treasury
-    uint256 public referralsSummitBP = 20;                                      // Amount of Summit minted per second as referral rewards
 
     uint16[4] public elevationPoolsCount;                                       // List of all pool identifiers (PIDs)
 
@@ -143,7 +132,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     event Deposit(address indexed user, address indexed token, uint8 indexed elevation, uint256 amount);
     event ClaimElevation(address indexed user, uint8 indexed elevation, uint256 totalClaimed);
     event Rollover(address indexed user, uint256 elevation);
-    event RolloverReferral(address indexed user);
     event SwitchTotem(address indexed user, uint8 indexed elevation, uint8 totem);
     event Elevate(address indexed user, address indexed token, uint8 sourceElevation, uint8 targetElevation, uint256 amount);
     event EmergencyWithdraw(address indexed user, address indexed token, uint8 indexed elevation, uint256 amount);
@@ -164,7 +152,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     event SummitOwnershipTransferred(address indexed _summitOwner);
     event SetRolloverRewardInNativeToken(uint256 _reward);
     event SetTotalSummitPerSecond(uint256 _amount);
-    event SetSummitDistributionBPs(uint256 _treasuryBP, uint256 _referralsBP);
+    event SetSummitDistributionBPs(uint256 _treasuryBP);
 
 
 
@@ -191,7 +179,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     function initialize(
         address _summit,
         address _ElevationHelper,
-        address _SummitReferrals,
         address _CartographerOasis,
         address _CartographerPlains,
         address _CartographerMesa,
@@ -205,7 +192,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         require(
             _summit != address(0) &&
             _ElevationHelper != address(0) &&
-            _SummitReferrals != address(0) &&
             _CartographerOasis != address(0) &&
             _CartographerPlains != address(0) &&
             _CartographerMesa != address(0) &&
@@ -218,7 +204,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         summit = SummitToken(_summit);
 
         elevationHelper = ElevationHelper(_ElevationHelper);
-        summitReferrals = SummitReferrals(_SummitReferrals);
 
         subCartographers[OASIS] = _CartographerOasis;
         subCartographers[PLAINS] = _CartographerPlains;
@@ -244,7 +229,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
 
         // Setting and propagating the true summit address and launch timestamp
         elevationHelper.enable(block.timestamp);
-        summitReferrals.enable(address(summit));
         _subCartographer(OASIS).enable(block.timestamp);
     }
 
@@ -295,14 +279,12 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     }
 
     /// @dev Updating the emission split profile
-    /// @param _referralsBP How much extra is minted for referrals
     /// @param _treasuryBP How much extra is minted for the treasury
-    function setSummitDistributionBPs(uint256 _referralsBP, uint256 _treasuryBP) public onlyOwner {
+    function setSummitDistributionBPs(uint256 _treasuryBP) public onlyOwner {
         // Require dev emission less than 25% of total emission
-        require(_treasuryBP <= 250 && _referralsBP <= 40, "Invalid Distributions");
-        referralsSummitBP = _referralsBP;
+        require(_treasuryBP <= 250, "Invalid Distributions");
         treasurySummitBP = _treasuryBP;
-        emit SetSummitDistributionBPs(_treasuryBP, _referralsBP);
+        emit SetSummitDistributionBPs(_treasuryBP);
     }
 
 
@@ -325,10 +307,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     }
     modifier onlySubCartographer() {
         _onlySubCartographer(msg.sender);
-        _;
-    }
-    modifier onlySummitReferrals() {
-        require(msg.sender == address(summitReferrals), "Only Summit Referrals");
         _;
     }
 
@@ -1032,7 +1010,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     // -----------------------------------------------------
 
 
-    /// @dev Utility function to handle claiming Summit rewards with referral rewards
+    /// @dev Utility function to handle claiming Summit rewards with bonuses
     /// @return Claimed amount with bonuses included
     function claimWinnings(address _userAdd, address _token, uint256 _amount)
         external whenNotPaused
@@ -1045,14 +1023,10 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
 
         // Mint Summit user has won, and additional mints for distribution
         summit.mint(address(summitLocking), totalWinnings);
-        summit.mint(address(summitReferrals), totalWinnings * referralsSummitBP / 10000);
         summit.mint(treasuryAdd, totalWinnings * treasurySummitBP / 10000);
 
         // Send users claimable winnings to SummitLocking.sol
         summitLocking.addLockedWinnings(totalWinnings, bonusWinnings, _userAdd);
-
-        // If the user has been referred, add the 1% bonus to that user and their referrer
-        summitReferrals.addReferralRewardsIfNecessary(_userAdd, _amount);
 
         emit ClaimWinnings(_userAdd, totalWinnings);
 
@@ -1142,43 +1116,6 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         IERC20(_token).safeTransfer(_userAdd, amountAfterTax);
 
         return amountAfterTax;
-    }
-
-
-
-
-
-    // -----------------------------------------------------
-    // --   R E F E R R A L S
-    // -----------------------------------------------------
-
-
-    /// @dev Roll over referral round and burn unclaimed referral rewards
-    function rolloverReferral()
-        public whenNotPaused
-        nonReentrant
-    {
-        // Validate that a referral burn is unlocked
-        elevationHelper.validateReferralBurnAvailable();
-
-        // Burn unclaimed rewards and rollover round
-        summitReferrals.burnUnclaimedReferralRewardsAndRolloverRound(msg.sender);
-
-        // Rollover round number in elevation helper
-        elevationHelper.rolloverReferralBurn();
-
-        // Give SUMMIT rewards to user that executed the rollover
-        summit.mint(msg.sender, rolloverReward);
-
-        emit RolloverReferral(msg.sender);
-    }
-
-    /// @dev Safety hatch for referral reward round rollover burning needed summit
-    function referralRewardsMintSafetyHatch(uint256 _amount)
-        public whenNotPaused
-        onlySummitReferrals
-    {
-        summit.mint(address(summitReferrals), _amount);
     }
     
     

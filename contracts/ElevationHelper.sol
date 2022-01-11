@@ -78,14 +78,6 @@ contract ElevationHelper is Ownable, VRFConsumerBase {
     mapping(bytes32 => uint8) public elevationHelpers;                      // Evelation helper mapping from requestId
 
 
-    uint256 constant referralDurationMult = 24 * 1;                         // Round chunk multiplier for the unclaimed referral rewards burn
-    uint256 public referralRound;                                           // Incrementor of the referral round
-    uint256 public referralBurnTimestamp;                                   // Time at which burning unclaimed referral rewards becomes available
-
-
-
-
-
     // ---------------------------------------
     // --   E V E N T S
     // ---------------------------------------
@@ -152,9 +144,6 @@ contract ElevationHelper is Ownable, VRFConsumerBase {
 
         // The first 'round' ends when the elevation unlocks
         roundEndTimestamp = unlockTimestamp;
-        
-        // Timestamp the first unclaimed referral rewards burn becomes available
-        referralBurnTimestamp = nextHourTimestamp + 1 days;    
     }
 
 
@@ -268,16 +257,6 @@ contract ElevationHelper is Ownable, VRFConsumerBase {
     /// @param _elevation Which elevation to check
     function currentRoundStartTime(uint8 _elevation) external view returns(uint256) {
         return roundEndTimestamp[_elevation] - roundDurationSeconds(_elevation);
-    }
-
-    /// @dev Time remaining until next available referral burn event
-    function referralBurnTimeRemaining() external view returns (uint256) {
-        return referralBurnTimestamp - block.timestamp;
-    }
-
-    /// @dev Validate unclaimed referral rewards available for burning
-    function validateReferralBurnAvailable() external view {
-        require(block.timestamp >= referralBurnTimestamp, "Referral burn not available");
     }
 
 
@@ -443,18 +422,6 @@ contract ElevationHelper is Ownable, VRFConsumerBase {
         expeditionDeityDivider[currentExpeditionRound() + 1] = divider;
 
         emit DeityDividerSelected(currentExpeditionRound() + 1, divider);
-    }
-    
-
-
-    // ------------------------------------------------------------------
-    // --   R O L L O V E R   R E F E R R A L   B U R N
-    // ------------------------------------------------------------------
-    
-    /// @dev Rollover referral burn round
-    function rolloverReferralBurn() external  onlyCartographer {
-        referralRound += 1;
-        referralBurnTimestamp += baseRoundDuration * referralDurationMult;
     }
 
 

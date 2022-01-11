@@ -1,6 +1,5 @@
 import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
-import { boolean, string } from "hardhat/internal/core/params/argumentTypes"
 import { claimAmountBonus, claimAmountWithBonusAdded, days, e18, e12, e6, elevationPromiseSequenceReduce, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getBifiToken, getCakeToken, getTimestamp, OASIS, subCartGet, sumBigNumbers, toDecimal, tokenAmountAfterDepositFee, tokenAmountAfterWithdrawTax, tokenPromiseSequenceMap } from "."
 import { getCartographer, getSummitToken } from "./contracts"
 
@@ -523,24 +522,6 @@ export const cartographerMethod = {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.RETIRE_PASSTHROUGH_STRATEGY, null, false)
-        }
-    },
-    rolloverReferral: async ({
-        user,
-        revertErr,
-    }: {
-        user: SignerWithAddress,
-        revertErr?: string,
-    }) => {
-        const cartographer = await getCartographer()
-        const tx = cartographer.connect(user).rolloverReferral
-        const txArgs = [] as any[]
-        
-        if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
-        } else {
-            const eventArgs = [user.address]
-            await executeTxExpectEvent(tx, txArgs, cartographer, EVENT.RolloverReferral, eventArgs, false)
         }
     },
     migrateSummitOwnership: async ({

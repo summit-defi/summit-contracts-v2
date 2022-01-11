@@ -31,9 +31,6 @@ export const elevationHelperGet = {
     currentRoundStartTime: async (elevation: number): Promise<number> => {
         return (await (await getElevationHelper()).currentRoundStartTime(elevation)).toNumber()
     },
-    referralBurnTimestamp: async (): Promise<number> => {
-        return (await (await getElevationHelper()).referralBurnTimestamp()).toNumber()
-    },
     historicalTotemStats: async (elevation: number) => {
         const history = await (await getElevationHelper()).historicalWinningTotems(elevation)
         return {
