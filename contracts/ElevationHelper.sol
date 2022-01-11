@@ -1,9 +1,9 @@
 //SPDX-License-Identifier: MIT
 pragma solidity 0.8.2;
 
-import "./interfaces/ISummitRNGModule.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@chainlink/contracts/src/v0.8/VRFConsumerBase.sol";
 
 
 
@@ -38,7 +38,7 @@ Handles the duration of each round
 
 */
 
-contract ElevationHelper is Ownable {
+contract ElevationHelper is Ownable, VRFConsumerBase {
     // ---------------------------------------
     // --   V A R I A B L E S
     // ---------------------------------------
@@ -72,13 +72,17 @@ contract ElevationHelper is Ownable {
     mapping(uint8 => mapping(uint256 => uint256)) public totemWinsAccum;    // Accumulator of the total number of wins for each totem
     mapping(uint8 => mapping(uint256 => uint8)) public winningTotem;        // The specific winning totem for each elevation round
 
+    // for chainlink VRF purpose
+    bytes32 internal keyHash;                                               // keyHash that is needed to call requestRandomness function
+    uint256 internal fee;                                                   // Fee that is needed to call requestRandomness function (Varies by network)
+    mapping(bytes32 => uint8) public elevationHelpers;                      // Evelation helper mapping from requestId
+
 
     uint256 constant referralDurationMult = 24 * 1;                         // Round chunk multiplier for the unclaimed referral rewards burn
     uint256 public referralRound;                                           // Incrementor of the referral round
     uint256 public referralBurnTimestamp;                                   // Time at which burning unclaimed referral rewards becomes available
 
 
-    address public summitRNGModuleAdd;                                      // VRF module address
 
 
 
@@ -88,7 +92,6 @@ contract ElevationHelper is Ownable {
 
     event WinningTotemSelected(uint8 indexed elevation, uint256 indexed round, uint8 indexed totem);
     event DeityDividerSelected(uint256 indexed expeditionRound, uint256 indexed deityDivider);
-    event UpgradeSummitRNGModule(address indexed _summitRNGModuleAdd);
     event SetElevationRoundDurationMult(uint8 indexed _elevation, uint8 _mult);
     event SetElevationAllocMultiplier(uint8 indexed _elevation, uint16 _allocMultiplier);
 
@@ -101,11 +104,32 @@ contract ElevationHelper is Ownable {
 
     /// @dev Creates ElevationHelper contract with cartographer as owner of certain functionality
     /// @param _cartographer Address of main Cartographer contract
-    constructor(address _cartographer, address _expeditionV2) {
+    /// @param _expeditionV2 Address of expedictionV2 contract
+    /// @param _vrfCoordinator address of VRFCoordinator contract
+    /// @param _linkToken address of LINK token contract
+    /// @param _fee address of LINK token contract
+    /// @param _keyHash address of LINK token contract
+    constructor(
+        address _cartographer, 
+        address _expeditionV2, 
+        address _vrfCoordinator, 
+        address _linkToken, 
+        bytes32 _keyHash, 
+        uint256 _fee
+    ) 
+        VRFConsumerBase(
+            _vrfCoordinator,
+            _linkToken
+        )
+    {
         require(_cartographer != address(0), "Cartographer missing");
         require(_expeditionV2 != address(0), "Expedition missing");
         cartographer = _cartographer;
         expeditionV2 = _expeditionV2;
+
+        // chainlink VRF configuration
+        keyHash = _keyHash;
+        fee = _fee; // 0.1 LINK (Varies by network)        
     }
 
     /// @dev Turns on the Summit ecosystem across all contracts
@@ -131,9 +155,6 @@ contract ElevationHelper is Ownable {
         
         // Timestamp the first unclaimed referral rewards burn becomes available
         referralBurnTimestamp = nextHourTimestamp + 1 days;    
-
-        // Timestamp of the first seed round starting
-        ISummitRNGModule(summitRNGModuleAdd).setSeedRoundEndTimestamp(unlockTimestamp[PLAINS] - roundEndLockoutDuration);
     }
 
 
@@ -267,17 +288,6 @@ contract ElevationHelper is Ownable {
     // --   P A R A M E T E R S
     // ------------------------------------------------------------------
 
-    /// @dev Upgrade the RNG module when VRF becomes available on FTM, will only use `getRandomNumber` functionality
-    /// @param _summitRNGModuleAdd Address of new VRF randomness module
-    function upgradeSummitRNGModule (address _summitRNGModuleAdd)
-        public
-        onlyOwner
-    {
-        require(_summitRNGModuleAdd != address(0), "SummitRandomnessModule missing");
-        summitRNGModuleAdd = _summitRNGModuleAdd;
-        emit UpgradeSummitRNGModule(_summitRNGModuleAdd);
-    }
-
 
     /// @dev Update round duration mult of an elevation
     function setElevationRoundDurationMult(uint8 _elevation, uint8 _mult)
@@ -331,19 +341,46 @@ contract ElevationHelper is Ownable {
         // No winning totem should be selected for round 0, which takes place when the elevation is locked
         if (roundNumber[_elevation] == 0) { return; }
 
-        uint256 rand = ISummitRNGModule(summitRNGModuleAdd).getRandomNumber(_elevation, roundNumber[_elevation]);
-
-        // Uses the random number to select the winning totem
-        uint8 winner = chooseWinningTotem(_elevation, rand);
-
-        // Updates data with the winning totem
-        markWinningTotem(_elevation, winner);
-
-        // If necessary, uses the random number to generate the next deity divider for expeditions
-        if (_elevation == EXPEDITION)
-            setNextDeityDivider(rand);
+        // call to get random number
+        bytes32 requestId = getRandomNumber();
+        elevationHelpers[requestId] = _elevation;
     }
 
+    // ---------------------------------------
+    // --   chainlink VRF functions
+    // ---------------------------------------
+
+    /** 
+     * Requests randomness 
+     */
+
+    /// @dev Requests randomness 
+    /// @return requestId
+    function getRandomNumber() public returns (bytes32 requestId) {
+        require(LINK.balanceOf(address(this)) >= fee, "Not enough LINK - fill contract with faucet");
+        return requestRandomness(keyHash, fee);
+    }
+
+    /// @dev Callback function used by VRF Coordinator
+    /// @param _requestId RequestId from getRandomNumber function
+    /// @param _rand Random number from getRandomNumber function
+    function fulfillRandomness(bytes32 _requestId, uint256 _rand) internal override {
+        uint8 elevation = elevationHelpers[_requestId];
+         // Uses the random number to select the winning totem
+        uint8 winner = chooseWinningTotem(elevation, _rand);
+
+        // Updates data with the winning totem
+        markWinningTotem(elevation, winner);
+
+        // If necessary, uses the random number to generate the next deity divider for expeditions
+        if (elevation == EXPEDITION)
+            setNextDeityDivider(_rand);
+    }
+
+    /// @dev Withdraw Link token from contract
+    function withdrawLink() external onlyOwner {
+        LINK.transfer(msg.sender, LINK.balanceOf(address(this)));
+    }
 
     /// @dev Final step in the rollover pipeline, incrementing the round numbers to bring current
     /// @param _elevation Which elevation is being updated
