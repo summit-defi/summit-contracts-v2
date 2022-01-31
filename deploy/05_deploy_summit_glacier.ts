@@ -1,7 +1,7 @@
 import {DeployFunction} from 'hardhat-deploy/types'
 import { chainIdAllowsVerification, delay, failableVerify } from '../utils';
 
-const deploySummitLocking: DeployFunction = async function ({
+const deploySummitGlacier: DeployFunction = async function ({
   getNamedAccounts,
   deployments,
   getChainId,
@@ -11,7 +11,7 @@ const deploySummitLocking: DeployFunction = async function ({
   const {dev} = await getNamedAccounts();
   const chainId = await getChainId()
 
-  const SummitLocking = await deploy('SummitLocking', {
+  const SummitGlacier = await deploy('SummitGlacier', {
     from: dev,
     log: true,
   });
@@ -19,10 +19,10 @@ const deploySummitLocking: DeployFunction = async function ({
   if (chainIdAllowsVerification(chainId)) {
     await delay(3)
     await failableVerify({
-      address: SummitLocking.address,
+      address: SummitGlacier.address,
     })
   }
 };
-export default deploySummitLocking;
-deploySummitLocking.tags = ['SummitLocking', 'LOCALHOST', 'TESTNET', 'MAINNET']
-deploySummitLocking.dependencies = ['Cartographer']
+export default deploySummitGlacier;
+deploySummitGlacier.tags = ['SummitGlacier', 'LOCALHOST', 'TESTNET', 'MAINNET']
+deploySummitGlacier.dependencies = ['Cartographer']

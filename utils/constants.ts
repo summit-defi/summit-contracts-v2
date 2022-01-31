@@ -23,7 +23,7 @@ export const Contracts = {
     DummyUSDC: 'DummyUSDC',
     ExpeditionV2: 'ExpeditionV2',
 
-    SummitLocking: 'SummitLocking',
+    SummitGlacier: 'SummitGlacier',
     SummitTrustedSeederRNGModule: 'SummitTrustedSeederRNGModule',
 }
 
@@ -249,7 +249,7 @@ export const EVENT = {
 
     TIMELOCK_EXECUTE_TRANSACTION: 'ExecuteTransaction',
 
-    SummitLocking: {
+    SummitGlacier: {
         WinningsLocked: 'WinningsLocked',
         WinningsHarvested: 'WinningsHarvested',
         SetPanic: 'SetPanic',

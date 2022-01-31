@@ -6,7 +6,7 @@ import "./CartographerOasis.sol";
 import "./CartographerElevation.sol";
 import "./EverestToken.sol";
 import "./ElevationHelper.sol";
-import "./SummitLocking.sol";
+import "./SummitGlacier.sol";
 import "./PresetPausable.sol";
 import "./libs/SummitMath.sol";
 import "./interfaces/ISubCart.sol";
@@ -90,7 +90,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     ElevationHelper public elevationHelper;
     address[4] public subCartographers;
     EverestToken public everest;
-    SummitLocking public summitLocking;
+    SummitGlacier public summitGlacier;
 
     uint256 public summitPerSecond = 5e16;                                      // Amount of Summit minted per second to be distributed to users
     uint256 public treasurySummitBP = 200;                                      // Amount of Summit minted per second to the treasury
@@ -184,7 +184,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         address _CartographerMesa,
         address _CartographerSummit,
         address _everest,
-        address _summitLocking
+        address _summitGlacier
     )
         external
         initializer onlyOwner
@@ -197,7 +197,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
             _CartographerMesa != address(0) &&
             _CartographerSummit != address(0) &&
             _everest != address(0) &&
-            _summitLocking != address(0),
+            _summitGlacier != address(0),
             "Contract is zero"
         );
 
@@ -212,7 +212,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
 
         everest = EverestToken(_everest);
         summit.approve(_everest, type(uint256).max);
-        summitLocking = SummitLocking(_summitLocking);
+        summitGlacier = SummitGlacier(_summitGlacier);
 
         // Initialize the subCarts with the address of elevationHelper
         for (uint8 elevation = OASIS; elevation <= SUMMIT; elevation++) {
@@ -1022,11 +1022,11 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         uint256 totalWinnings = _amount + bonusWinnings;
 
         // Mint Summit user has won, and additional mints for distribution
-        summit.mint(address(summitLocking), totalWinnings);
+        summit.mint(address(summitGlacier), totalWinnings);
         summit.mint(treasuryAdd, totalWinnings * treasurySummitBP / 10000);
 
-        // Send users claimable winnings to SummitLocking.sol
-        summitLocking.addLockedWinnings(totalWinnings, bonusWinnings, _userAdd);
+        // Send users claimable winnings to SummitGlacier.sol
+        summitGlacier.addLockedWinnings(totalWinnings, bonusWinnings, _userAdd);
 
         emit ClaimWinnings(_userAdd, totalWinnings);
 

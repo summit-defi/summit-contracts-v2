@@ -1,8 +1,8 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre from "hardhat";
-import { e18, ERR, toDecimal, getTimestamp, deltaBN, mineBlockWithTimestamp, promiseSequenceMap, getSummitToken, everestGet, everestMethod, days, getSummitBalance, getEverestBalance, userPromiseSequenceMap, allElevationPromiseSequenceMap, cartographerMethod, rolloverRoundUntilWinningTotem, getUserTotems, OASIS, getCakeToken, getBifiToken, epochDuration, getSummitLocking, rolloverIfAvailable, rolloverRound, sumBigNumbers, tokenPromiseSequenceMap, cartographerGet, expect6FigBigNumberEquals, BURNADD, expectAllEqual } from "../utils";
-import { summitLockingGet, summitLockingMethod } from "../utils/summitLockingUtils";
+import { e18, ERR, toDecimal, getTimestamp, deltaBN, mineBlockWithTimestamp, promiseSequenceMap, getSummitToken, everestGet, everestMethod, days, getSummitBalance, getEverestBalance, userPromiseSequenceMap, allElevationPromiseSequenceMap, cartographerMethod, rolloverRoundUntilWinningTotem, getUserTotems, OASIS, getCakeToken, getBifiToken, epochDuration, getSummitGlacier, rolloverIfAvailable, rolloverRound, sumBigNumbers, tokenPromiseSequenceMap, cartographerGet, expect6FigBigNumberEquals, BURNADD, expectAllEqual } from "../utils";
+import { summitGlacierGet, summitGlacierMethod } from "../utils/summitGlacierUtils";
 import { oasisUnlockedFixture, summitUnlockedFixture } from "./fixtures";
 
 
@@ -41,17 +41,17 @@ describe("SUMMIT LOCKING", async function() {
         const timestamp = await getTimestamp()
         const currentEpoch = Math.floor(timestamp / epochDuration)
 
-        const summitLockingCurrentEpoch = await summitLockingGet.getCurrentEpoch()
+        const summitGlacierCurrentEpoch = await summitGlacierGet.getCurrentEpoch()
 
-        expect(currentEpoch).to.equal(summitLockingCurrentEpoch)
+        expect(currentEpoch).to.equal(summitGlacierCurrentEpoch)
     })
 
-    it(`LOCKING: Claiming summit transfers correct amount to summit-locking contract`, async function() {
+    it(`LOCKING: Claiming summit transfers correct amount to summit-glacier contract`, async function() {
         const { user1 } = await getNamedSigners(hre)
         const summitToken = await getSummitToken()
         const cakeToken = await getCakeToken()
         const bifiToken = await getBifiToken()
-        const summitLocking = await getSummitLocking()
+        const summitGlacier = await getSummitGlacier()
 
         // Deposit into oasis
         await allElevationPromiseSequenceMap(
@@ -78,10 +78,10 @@ describe("SUMMIT LOCKING", async function() {
                     await rolloverRoundUntilWinningTotem(elevation, 0)
                 }
 
-                const summitLockingContractSummit0 = await getSummitBalance(summitLocking.address)
-                const currentEpoch = await summitLockingGet.getCurrentEpoch()
-                const lockedSummit0 = await summitLockingGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
-                const lockedSummitTest0 = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+                const summitGlacierContractSummit0 = await getSummitBalance(summitGlacier.address)
+                const currentEpoch = await summitGlacierGet.getCurrentEpoch()
+                const lockedSummit0 = await summitGlacierGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
+                const lockedSummitTest0 = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
                 expect(lockedSummit0).to.equal(lockedSummitTest0)
                 
                 // Claim from single farm
@@ -91,12 +91,12 @@ describe("SUMMIT LOCKING", async function() {
                     elevation: OASIS
                 })
                 
-                const summitLockingContractSummit1 = await getSummitBalance(summitLocking.address)
+                const summitGlacierContractSummit1 = await getSummitBalance(summitGlacier.address)
                 
-                const lockedSummit1 = await summitLockingGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
-                const lockedSummitTest1 = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+                const lockedSummit1 = await summitGlacierGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
+                const lockedSummitTest1 = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
                 expect(lockedSummit1).to.equal(lockedSummitTest1)
-                expect(deltaBN(summitLockingContractSummit0, summitLockingContractSummit1)).to.equal(deltaBN(lockedSummit0, lockedSummit1))
+                expect(deltaBN(summitGlacierContractSummit0, summitGlacierContractSummit1)).to.equal(deltaBN(lockedSummit0, lockedSummit1))
                 
                 // Claim from remaining farms
                 await cartographerMethod.claimElevation({
@@ -104,102 +104,102 @@ describe("SUMMIT LOCKING", async function() {
                     elevation: OASIS,
                 })
 
-                const summitLockingContractSummit2 = await getSummitBalance(summitLocking.address)
+                const summitGlacierContractSummit2 = await getSummitBalance(summitGlacier.address)
                 
-                const lockedSummit2 = await summitLockingGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
-                const lockedSummitTest2 = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+                const lockedSummit2 = await summitGlacierGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
+                const lockedSummitTest2 = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
                 expect(lockedSummit2).to.equal(lockedSummitTest2)
-                expect(deltaBN(summitLockingContractSummit1, summitLockingContractSummit2)).to.equal(deltaBN(lockedSummit1, lockedSummit2))
+                expect(deltaBN(summitGlacierContractSummit1, summitGlacierContractSummit2)).to.equal(deltaBN(lockedSummit1, lockedSummit2))
             }
         )
     })
 
     it(`LOCKING: Epochs mature after the correct duration (hasEpochMatured)`, async function() {
         // Correct epoch being selected by timestamp
-        const currentEpoch = await summitLockingGet.getCurrentEpoch()
+        const currentEpoch = await summitGlacierGet.getCurrentEpoch()
         const currentTimestamp = await getTimestamp()
-        const currentEpochStartTimestamp = await summitLockingGet.getEpochStartTimestamp(currentEpoch)
-        const nextEpochStartTimestamp = await summitLockingGet.getEpochStartTimestamp(currentEpoch + 1)
+        const currentEpochStartTimestamp = await summitGlacierGet.getEpochStartTimestamp(currentEpoch)
+        const nextEpochStartTimestamp = await summitGlacierGet.getEpochStartTimestamp(currentEpoch + 1)
 
         expect(currentTimestamp >= currentEpochStartTimestamp).to.be.true
         expect(currentTimestamp <= nextEpochStartTimestamp).to.be.true
 
         // Epoch Maturation
-        const epochLockCount = await summitLockingGet.getYieldLockEpochCount()
-        const epochLockDuration = await summitLockingGet.getEpochDuration()
-        const currentEpochMatureTimestamp = await summitLockingGet.getEpochMatureTimestamp(currentEpoch)
+        const epochLockCount = await summitGlacierGet.getYieldLockEpochCount()
+        const epochLockDuration = await summitGlacierGet.getEpochDuration()
+        const currentEpochMatureTimestamp = await summitGlacierGet.getEpochMatureTimestamp(currentEpoch)
 
         expect(currentEpochMatureTimestamp - currentEpochStartTimestamp).to.equal(epochLockCount * epochLockDuration)
 
-        const currentEpochMature0 = await summitLockingGet.getHasEpochMatured(currentEpoch)
+        const currentEpochMature0 = await summitGlacierGet.getHasEpochMatured(currentEpoch)
         expect(currentEpochMature0).to.be.false
         
         await mineBlockWithTimestamp(currentEpochMatureTimestamp - 1)
 
-        const currentEpochMature1 = await summitLockingGet.getHasEpochMatured(currentEpoch)
+        const currentEpochMature1 = await summitGlacierGet.getHasEpochMatured(currentEpoch)
         expect(currentEpochMature1).to.be.false
 
         await mineBlockWithTimestamp(currentEpochMatureTimestamp)
 
-        const currentEpochMature2 = await summitLockingGet.getHasEpochMatured(currentEpoch)
+        const currentEpochMature2 = await summitGlacierGet.getHasEpochMatured(currentEpoch)
         expect(currentEpochMature2).to.be.true
     })
 
     it(`LOCKING: Updating yield lock epoch count changes duration of locking time`, async function() {
         const { dev } = await getNamedSigners(hre)
 
-        const currentEpoch = await summitLockingGet.getCurrentEpoch()
-        const currentEpochStartTimestamp = await summitLockingGet.getEpochStartTimestamp(currentEpoch)
+        const currentEpoch = await summitGlacierGet.getCurrentEpoch()
+        const currentEpochStartTimestamp = await summitGlacierGet.getEpochStartTimestamp(currentEpoch)
 
-        const epochLockCount = await summitLockingGet.getYieldLockEpochCount()
-        const epochLockDuration = await summitLockingGet.getEpochDuration()
-        const currentEpochMatureTimestamp0 = await summitLockingGet.getEpochMatureTimestamp(currentEpoch)
+        const epochLockCount = await summitGlacierGet.getYieldLockEpochCount()
+        const epochLockDuration = await summitGlacierGet.getEpochDuration()
+        const currentEpochMatureTimestamp0 = await summitGlacierGet.getEpochMatureTimestamp(currentEpoch)
 
         expect(currentEpochMatureTimestamp0 - currentEpochStartTimestamp).to.equal(epochLockCount * epochLockDuration)
-        const hasEpochMatured0 = await summitLockingGet.getHasEpochMatured(currentEpoch)
+        const hasEpochMatured0 = await summitGlacierGet.getHasEpochMatured(currentEpoch)
         expect(hasEpochMatured0).to.be.false
 
         // Update yield lock epoch count
-        await summitLockingMethod.setYieldLockEpochCount({
+        await summitGlacierMethod.setYieldLockEpochCount({
             dev,
             yieldLockEpochCount: 2,
         })
 
-        const currentEpochMatureTimestamp1 = await summitLockingGet.getEpochMatureTimestamp(currentEpoch)
+        const currentEpochMatureTimestamp1 = await summitGlacierGet.getEpochMatureTimestamp(currentEpoch)
         expect(currentEpochMatureTimestamp1 - currentEpochStartTimestamp).to.equal(2 * epochLockDuration)
-        const hasEpochMatured1 = await summitLockingGet.getHasEpochMatured(currentEpoch)
+        const hasEpochMatured1 = await summitGlacierGet.getHasEpochMatured(currentEpoch)
         expect(hasEpochMatured1).to.be.false
 
         // Update yield lock epoch count
-        await summitLockingMethod.setYieldLockEpochCount({
+        await summitGlacierMethod.setYieldLockEpochCount({
             dev,
             yieldLockEpochCount: 0,
         })
 
-        const currentEpochMatureTimestamp2 = await summitLockingGet.getEpochMatureTimestamp(currentEpoch)
+        const currentEpochMatureTimestamp2 = await summitGlacierGet.getEpochMatureTimestamp(currentEpoch)
         expect(currentEpochMatureTimestamp2 - currentEpochStartTimestamp).to.equal(0 * epochLockDuration)
-        const hasEpochMatured2 = await summitLockingGet.getHasEpochMatured(currentEpoch)
+        const hasEpochMatured2 = await summitGlacierGet.getHasEpochMatured(currentEpoch)
         expect(hasEpochMatured2).to.be.true
 
         // Update yield lock epoch count
-        await summitLockingMethod.setYieldLockEpochCount({
+        await summitGlacierMethod.setYieldLockEpochCount({
             dev,
             yieldLockEpochCount: epochLockCount,
         })
 
-        const currentEpochMatureTimestamp3 = await summitLockingGet.getEpochMatureTimestamp(currentEpoch)
+        const currentEpochMatureTimestamp3 = await summitGlacierGet.getEpochMatureTimestamp(currentEpoch)
         expect(currentEpochMatureTimestamp3 - currentEpochStartTimestamp).to.equal(epochLockCount * epochLockDuration)
-        const hasEpochMatured3 = await summitLockingGet.getHasEpochMatured(currentEpoch)
+        const hasEpochMatured3 = await summitGlacierGet.getHasEpochMatured(currentEpoch)
         expect(hasEpochMatured3).to.be.false
     })
 
     it(`LOCKING: User interacting epochs are added and removed, and fetched correctly`, async function() {
         const { user1 } = await getNamedSigners(hre)
-        const interactingEpochs0 = await summitLockingGet.getUserInteractingEpochs(user1.address)
+        const interactingEpochs0 = await summitGlacierGet.getUserInteractingEpochs(user1.address)
         const interactingEpoch0 = interactingEpochs0[0]
-        const currentEpoch = await summitLockingGet.getCurrentEpoch()
+        const currentEpoch = await summitGlacierGet.getCurrentEpoch()
 
-        const epoch0Harvestable = await summitLockingGet.getUserEpochHarvestableWinnings(user1.address, interactingEpoch0)
+        const epoch0Harvestable = await summitGlacierGet.getUserEpochHarvestableWinnings(user1.address, interactingEpoch0)
 
         console.log({
             interactingEpochs0,
@@ -209,14 +209,14 @@ describe("SUMMIT LOCKING", async function() {
         expect(interactingEpochs0.includes(interactingEpoch0)).to.be.true
 
         // Harvest entirety of first interacting epoch
-        await summitLockingMethod.harvestWinnings({
+        await summitGlacierMethod.harvestWinnings({
             user: user1,
             epoch: interactingEpoch0,
             amount: epoch0Harvestable
         })
 
         // Expect first interacting epoch to be removed from the user's interacting epochs list
-        const interactingEpochs1 = await summitLockingGet.getUserInteractingEpochs(user1.address)
+        const interactingEpochs1 = await summitGlacierGet.getUserInteractingEpochs(user1.address)
         expect(interactingEpochs1.includes(interactingEpoch0)).to.be.false
 
         // Claim OASIS to interact with current epoch
@@ -225,32 +225,32 @@ describe("SUMMIT LOCKING", async function() {
             elevation: OASIS,
         })
 
-        const interactingEpochs2 = await summitLockingGet.getUserInteractingEpochs(user1.address)
+        const interactingEpochs2 = await summitGlacierGet.getUserInteractingEpochs(user1.address)
         expect(interactingEpochs2.includes(currentEpoch)).to.be.true
 
         // Harvest half of current epoch winnings
-        const currentEpochHarvestable = await summitLockingGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
-        await summitLockingMethod.harvestWinnings({
+        const currentEpochHarvestable = await summitGlacierGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
+        await summitGlacierMethod.harvestWinnings({
             user: user1,
             epoch: currentEpoch,
             amount: currentEpochHarvestable.div(2)
         })
 
         // Expect user to still be interacting with the current epoch
-        const interactingEpochs3 = await summitLockingGet.getUserInteractingEpochs(user1.address)
+        const interactingEpochs3 = await summitGlacierGet.getUserInteractingEpochs(user1.address)
         expect(interactingEpochs3.includes(currentEpoch)).to.be.true
 
 
         // Harvest remainder of current epoch winnings
-        const currentEpochRemainingHarvestable = await summitLockingGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
-        await summitLockingMethod.harvestWinnings({
+        const currentEpochRemainingHarvestable = await summitGlacierGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
+        await summitGlacierMethod.harvestWinnings({
             user: user1,
             epoch: currentEpoch,
             amount: currentEpochRemainingHarvestable
         })
 
         // Expect user to still be interacting with the current epoch
-        const interactingEpochs4 = await summitLockingGet.getUserInteractingEpochs(user1.address)
+        const interactingEpochs4 = await summitGlacierGet.getUserInteractingEpochs(user1.address)
         expect(interactingEpochs4.includes(currentEpoch)).to.be.false
     })
 
@@ -259,8 +259,8 @@ describe("SUMMIT LOCKING", async function() {
         const currentTimestamp = await getTimestamp()
         await mineBlockWithTimestamp(currentTimestamp + days(14))
 
-        const lifetimeWinnings0 = await summitLockingGet.getUserLifetimeWinnings(user1.address)
-        const lifetimeBonuses0 = await summitLockingGet.getUserLifetimeBonusWinnings(user1.address)
+        const lifetimeWinnings0 = await summitGlacierGet.getUserLifetimeWinnings(user1.address)
+        const lifetimeBonuses0 = await summitGlacierGet.getUserLifetimeBonusWinnings(user1.address)
         
         // Total claimable
         const oasisTokenClaimableWithBonuses = await tokenPromiseSequenceMap(
@@ -281,8 +281,8 @@ describe("SUMMIT LOCKING", async function() {
             eventOnly: true
         }) 
         
-        const lifetimeWinnings1 = await summitLockingGet.getUserLifetimeWinnings(user1.address)
-        const lifetimeBonuses1 = await summitLockingGet.getUserLifetimeBonusWinnings(user1.address)
+        const lifetimeWinnings1 = await summitGlacierGet.getUserLifetimeWinnings(user1.address)
+        const lifetimeBonuses1 = await summitGlacierGet.getUserLifetimeBonusWinnings(user1.address)
 
         console.log({
             lifetimeBonuses: toDecimal(deltaBN(lifetimeBonuses0, lifetimeBonuses1)),
@@ -295,17 +295,17 @@ describe("SUMMIT LOCKING", async function() {
 
     it(`ACCESS: Only Cartographer and ExpeditionV2 can add locked winnings`, async function() {
         const { user1 } = await getNamedSigners(hre)
-        const summitLocking = await getSummitLocking()
+        const summitGlacier = await getSummitGlacier()
 
         await expect(
-            summitLocking.connect(user1).addLockedWinnings(e18(5), e18(1), user1.address)
+            summitGlacier.connect(user1).addLockedWinnings(e18(5), e18(1), user1.address)
         ).to.be.revertedWith(ERR.ONLY_CARTOGRAPHER_OR_EXPEDITION)
     })
 
 
     it(`HARVEST: Harvesting summit before the lock period has matured incurs 50% tax`, async function() {
         const { user1, exped } = await getNamedSigners(hre)
-        const currentEpoch = await summitLockingGet.getCurrentEpoch()
+        const currentEpoch = await summitGlacierGet.getCurrentEpoch()
 
         const currentTimestamp = await getTimestamp()
         await mineBlockWithTimestamp(currentTimestamp + 120)
@@ -315,20 +315,20 @@ describe("SUMMIT LOCKING", async function() {
         }) 
 
 
-        const userLockedInit = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+        const userLockedInit = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
         const userSummitInit = await getSummitBalance(user1.address)
         const expedSummitInit = await getSummitBalance(exped.address)
         const burnedSummitInit = await getSummitBalance(BURNADD)
 
         // Harvest available locked summit
-        const harvestable = await summitLockingGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
-        await summitLockingMethod.harvestWinnings({
+        const harvestable = await summitGlacierGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
+        await summitGlacierMethod.harvestWinnings({
             user: user1,
             epoch: currentEpoch,
             amount: harvestable
         })
 
-        const userLockedFinal = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+        const userLockedFinal = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
         const userSummitFinal = await getSummitBalance(user1.address)
         const expedSummitFinal = await getSummitBalance(exped.address)
         const burnedSummitFinal = await getSummitBalance(BURNADD)
@@ -341,7 +341,7 @@ describe("SUMMIT LOCKING", async function() {
 
     it(`HARVEST: Harvesting summit after lock matures transfers 100% of funds correctly to user`, async function() {
         const { user1, exped } = await getNamedSigners(hre)
-        const currentEpoch = await summitLockingGet.getCurrentEpoch()
+        const currentEpoch = await summitGlacierGet.getCurrentEpoch()
 
         const currentTimestamp = await getTimestamp()
         await mineBlockWithTimestamp(currentTimestamp + 120)
@@ -351,24 +351,24 @@ describe("SUMMIT LOCKING", async function() {
         }) 
 
 
-        const userLockedInit = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+        const userLockedInit = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
         const userSummitInit = await getSummitBalance(user1.address)
         const expedSummitInit = await getSummitBalance(exped.address)
         const burnedSummitInit = await getSummitBalance(BURNADD)
 
         // Mature the current epoch
-        const currentEpochMatureTimestamp = await summitLockingGet.getEpochMatureTimestamp(currentEpoch)
+        const currentEpochMatureTimestamp = await summitGlacierGet.getEpochMatureTimestamp(currentEpoch)
         await mineBlockWithTimestamp(currentEpochMatureTimestamp)
 
         // Harvest available locked summit
-        const harvestable = await summitLockingGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
-        await summitLockingMethod.harvestWinnings({
+        const harvestable = await summitGlacierGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
+        await summitGlacierMethod.harvestWinnings({
             user: user1,
             epoch: currentEpoch,
             amount: harvestable
         })
 
-        const userLockedFinal = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+        const userLockedFinal = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
         const userSummitFinal = await getSummitBalance(user1.address)
         const expedSummitFinal = await getSummitBalance(exped.address)
         const burnedSummitFinal = await getSummitBalance(BURNADD)
@@ -382,7 +382,7 @@ describe("SUMMIT LOCKING", async function() {
 
     it(`COMPOUND: Compounding summit for everest is available at any time regardless of lock period maturity`, async function() {
         const { user1, exped } = await getNamedSigners(hre)
-        const currentEpoch = await summitLockingGet.getCurrentEpoch()
+        const currentEpoch = await summitGlacierGet.getCurrentEpoch()
 
         const currentTimestamp = await getTimestamp()
         await mineBlockWithTimestamp(currentTimestamp + 120)
@@ -392,15 +392,15 @@ describe("SUMMIT LOCKING", async function() {
         }) 
 
 
-        const userLockedInit = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+        const userLockedInit = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
         const userEverestInfoSummitLockedInit = (await everestGet.userEverestInfo(user1.address)).summitLocked
         const expedSummitInit = await getSummitBalance(exped.address)
         const burnedSummitInit = await getSummitBalance(BURNADD)
 
         // Harvest half of available locked summit
-        const harvestable = await summitLockingGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
-        expect(await summitLockingGet.getHasEpochMatured(currentEpoch)).to.be.false
-        await summitLockingMethod.harvestWinnings({
+        const harvestable = await summitGlacierGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
+        expect(await summitGlacierGet.getHasEpochMatured(currentEpoch)).to.be.false
+        await summitGlacierMethod.harvestWinnings({
             user: user1,
             epoch: currentEpoch,
             amount: harvestable.div(2),
@@ -408,19 +408,19 @@ describe("SUMMIT LOCKING", async function() {
         })
 
         // Mature the current epoch
-        const currentEpochMatureTimestamp = await summitLockingGet.getEpochMatureTimestamp(currentEpoch)
+        const currentEpochMatureTimestamp = await summitGlacierGet.getEpochMatureTimestamp(currentEpoch)
         await mineBlockWithTimestamp(currentEpochMatureTimestamp)
 
         // Harvest available locked summit
-        expect(await summitLockingGet.getHasEpochMatured(currentEpoch)).to.be.true
-        await summitLockingMethod.harvestWinnings({
+        expect(await summitGlacierGet.getHasEpochMatured(currentEpoch)).to.be.true
+        await summitGlacierMethod.harvestWinnings({
             user: user1,
             epoch: currentEpoch,
             amount: harvestable.div(2),
             lockForEverest: true
         })
 
-        const userLockedFinal = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+        const userLockedFinal = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
         const userEverestInfoSummitLockedFinal = (await everestGet.userEverestInfo(user1.address)).summitLocked
         const expedSummitFinal = await getSummitBalance(exped.address)
         const burnedSummitFinal = await getSummitBalance(BURNADD)
@@ -463,21 +463,21 @@ describe("COMPOUNDING LOCKED SUMMIT & ELEVATING SUMMIT", async function() {
             elevation: OASIS
         })
 
-        const currentEpoch = await summitLockingGet.getCurrentEpoch()
-        expect(await summitLockingGet.getHasEpochMatured(currentEpoch)).to.be.false
+        const currentEpoch = await summitGlacierGet.getCurrentEpoch()
+        expect(await summitGlacierGet.getHasEpochMatured(currentEpoch)).to.be.false
 
         const userEverestInit = await getEverestBalance(user1.address)
         const userEverestInfoInit = await everestGet.userEverestInfo(user1.address)
 
         
         // Compound locked summit
-        const harvestable = await summitLockingGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
+        const harvestable = await summitGlacierGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
 
         const expectedEverestEarnedFromDurationIncrease = await everestGet.getAdditionalEverestAwardForLockDurationIncrease(user1.address, days(30))
         const expectedEverestFromCompound = await everestGet.getExpectedEverestAward(harvestable, days(30))
         const totalExpectedEverest = sumBigNumbers([expectedEverestEarnedFromDurationIncrease, expectedEverestFromCompound])
         
-        await summitLockingMethod.harvestWinnings({
+        await summitGlacierMethod.harvestWinnings({
             user: user1,
             epoch: currentEpoch,
             amount: harvestable,
@@ -530,21 +530,21 @@ describe("COMPOUNDING LOCKED SUMMIT & ELEVATING SUMMIT", async function() {
             elevation: OASIS
         })
 
-        const currentEpoch = await summitLockingGet.getCurrentEpoch()
-        expect(await summitLockingGet.getHasEpochMatured(currentEpoch)).to.be.false
+        const currentEpoch = await summitGlacierGet.getCurrentEpoch()
+        expect(await summitGlacierGet.getHasEpochMatured(currentEpoch)).to.be.false
 
         const userEverestInit = await getEverestBalance(user1.address)
         const userEverestInfoInit = await everestGet.userEverestInfo(user1.address)
 
         
         // Compound locked summit
-        const harvestable = await summitLockingGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
+        const harvestable = await summitGlacierGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
 
         const expectedEverestEarnedFromDurationIncrease = await everestGet.getAdditionalEverestAwardForLockDurationIncrease(user1.address, days(30))
         const expectedEverestFromCompound = await everestGet.getExpectedEverestAward(harvestable, days(100))
         const totalExpectedEverest = sumBigNumbers([expectedEverestEarnedFromDurationIncrease, expectedEverestFromCompound])
         
-        await summitLockingMethod.harvestWinnings({
+        await summitGlacierMethod.harvestWinnings({
             user: user1,
             epoch: currentEpoch,
             amount: harvestable,
@@ -606,19 +606,19 @@ describe("COMPOUNDING LOCKED SUMMIT & ELEVATING SUMMIT", async function() {
             elevation: OASIS
         })
 
-        const currentEpoch = await summitLockingGet.getCurrentEpoch()
+        const currentEpoch = await summitGlacierGet.getCurrentEpoch()
         const userEverestInit = await getEverestBalance(user1.address)
         const userEverestInfoInit = await everestGet.userEverestInfo(user1.address)
 
         
         // Compound locked summit
-        const harvestable = await summitLockingGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
+        const harvestable = await summitGlacierGet.getUserEpochHarvestableWinnings(user1.address, currentEpoch)
 
         const expectedEverestEarnedFromDurationIncrease = await everestGet.getAdditionalEverestAwardForLockDurationIncrease(user1.address, days(30))
         const expectedEverestFromCompound = await everestGet.getExpectedEverestAward(harvestable, days(30))
         const totalExpectedEverest = sumBigNumbers([expectedEverestEarnedFromDurationIncrease, expectedEverestFromCompound])
         
-        await summitLockingMethod.harvestWinnings({
+        await summitGlacierMethod.harvestWinnings({
             user: user1,
             epoch: currentEpoch,
             amount: harvestable,

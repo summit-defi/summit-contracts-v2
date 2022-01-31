@@ -38,4 +38,4 @@ const deployEverestToken: DeployFunction = async function ({
 };
 export default deployEverestToken;
 deployEverestToken.tags = ['EverestToken', 'LOCALHOST', 'TESTNET', 'MAINNET']
-deployEverestToken.dependencies = ['Cartographer', 'SummitToken', 'SummitLocking']
+deployEverestToken.dependencies = ['Cartographer', 'SummitToken', 'SummitGlacier']

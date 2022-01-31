@@ -1,8 +1,8 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre from "hardhat";
-import { e18, ERR, toDecimal, getTimestamp, deltaBN, mineBlockWithTimestamp, promiseSequenceMap, getSummitToken, everestGet, everestMethod, days, getSummitBalance, getEverestBalance, userPromiseSequenceMap, allElevationPromiseSequenceMap, cartographerMethod, rolloverRoundUntilWinningTotem, getUserTotems, OASIS, getCakeToken, getBifiToken, epochDuration, getSummitLocking, rolloverIfAvailable, rolloverRound, sumBigNumbers, tokenPromiseSequenceMap, cartographerGet, expect6FigBigNumberEquals, BURNADD, expectAllEqual, subCartGet, consoleLog, PLAINS, checkmarkIfBNEquals, checkmarkIfEquals, cartographerSetParam } from "../utils";
-import { summitLockingGet, summitLockingMethod } from "../utils/summitLockingUtils";
+import { e18, ERR, toDecimal, getTimestamp, deltaBN, mineBlockWithTimestamp, promiseSequenceMap, getSummitToken, everestGet, everestMethod, days, getSummitBalance, getEverestBalance, userPromiseSequenceMap, allElevationPromiseSequenceMap, cartographerMethod, rolloverRoundUntilWinningTotem, getUserTotems, OASIS, getCakeToken, getBifiToken, epochDuration, getSummitGlacier, rolloverIfAvailable, rolloverRound, sumBigNumbers, tokenPromiseSequenceMap, cartographerGet, expect6FigBigNumberEquals, BURNADD, expectAllEqual, subCartGet, consoleLog, PLAINS, checkmarkIfBNEquals, checkmarkIfEquals, cartographerSetParam } from "../utils";
+import { summitGlacierGet, summitGlacierMethod } from "../utils/summitGlacierUtils";
 import { mesaUnlockedFixture, oasisUnlockedFixture, summitUnlockedFixture } from "./fixtures";
 
 
@@ -134,8 +134,8 @@ describe("STAKING BONUSES", async function() {
             async (offsetWithBonus) => {
                 await mineBlockWithTimestamp(offsetWithBonus.timestamp - 1)
 
-                const lifetimeWinningsInit = await summitLockingGet.getUserLifetimeWinnings(user1.address)
-                const lifetimeBonusWinningsInit = await summitLockingGet.getUserLifetimeBonusWinnings(user1.address)
+                const lifetimeWinningsInit = await summitGlacierGet.getUserLifetimeWinnings(user1.address)
+                const lifetimeBonusWinningsInit = await summitGlacierGet.getUserLifetimeBonusWinnings(user1.address)
 
                 const claimableRewards = await cartographerGet.getTokenClaimableWithEmission(user1.address, summitToken.address, OASIS)
 
@@ -151,8 +151,8 @@ describe("STAKING BONUSES", async function() {
                 expect(cartBonusBP).to.equal(offsetWithBonus.bonus)
 
                 // Bonus Emissions Correct
-                const lifetimeWinningsFinal = await summitLockingGet.getUserLifetimeWinnings(user1.address)
-                const lifetimeBonusWinningsFinal = await summitLockingGet.getUserLifetimeBonusWinnings(user1.address)
+                const lifetimeWinningsFinal = await summitGlacierGet.getUserLifetimeWinnings(user1.address)
+                const lifetimeBonusWinningsFinal = await summitGlacierGet.getUserLifetimeBonusWinnings(user1.address)
 
                 const expectedBonusDelta = claimableRewards.mul(offsetWithBonus.bonus).div(10000)
                 const bonusDelta = deltaBN(lifetimeBonusWinningsInit, lifetimeBonusWinningsFinal)

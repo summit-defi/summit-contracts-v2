@@ -7,7 +7,7 @@ import { access } from 'fs';
 import hre, { ethers } from 'hardhat';
 import { cartographerGet, cartographerMethod, cartographerSynth, consoleLog, deltaBN, depositedAfterFee, e18, elevationHelperGet, ERR, EVENT, getCartographer, getContract, getSummitBalance, getTokenBalance, getTotemCount, getUserTotems, mineBlock, rolloverRound, rolloverRounds, rolloverRoundUntilLosingTotem, rolloverRoundUntilWinningTotem, subCartGet, subCartMethod, sumBigNumbers, toDecimal, usersPoolYieldsContributed } from '.';
 import { OASIS, TOTEM_COUNT } from './constants';
-import { summitLockingGet } from './summitLockingUtils';
+import { summitGlacierGet } from './summitGlacierUtils';
 import { userPromiseSequenceMap, userPromiseSequenceReduce, usersPotentialWinnings, usersRewards, usersStaked, usersTotemInfos } from './users';
 import { e12, expect6FigBigNumberEquals, expect6FigBigNumberAllEqual, expectBigNumberArraysEqual, expectBigNumberGreaterThan, expectBigNumberLessThan, mineBlocks, stringifyBigNumberArray, getTimestamp, mineBlockWithTimestamp, increaseTimestampAndMine, e0, e6, tokenAmountAfterWithdrawTax } from './utils';
 
@@ -617,7 +617,7 @@ const emergencyWithdraw = (tokenName: string, elevation: number) => {
     const token = await getContract(tokenName)
 
     const userInfoInit = await subCartGet.userInfo(token.address, elevation, user1.address)
-    const userLockedInit = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+    const userLockedInit = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
     const userBalanceInit = await getTokenBalance(token, user1.address)
 
     const userTokenTaxBP = await cartographerGet.getUserTokenWithdrawalTax(user1.address, token.address)
@@ -630,7 +630,7 @@ const emergencyWithdraw = (tokenName: string, elevation: number) => {
     })
 
     const userInfoFinal = await subCartGet.userInfo(token.address, elevation, user1.address)
-    const userLockedFinal = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+    const userLockedFinal = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
     const userBalanceFinal = await getTokenBalance(token, user1.address)
 
     expect(userInfoFinal.debt).to.equal(0)

@@ -24,7 +24,7 @@ const initializeContracts: DeployFunction = async function ({
     const SubCartographers = await getSubCartographers()
     const ElevationHelper = await deployments.get(Contracts.ElevationHelper)
     const ExpeditionV2 = await deployments.get(Contracts.ExpeditionV2)
-    const SummitLocking = await deployments.get(Contracts.SummitLocking)
+    const SummitGlacier = await deployments.get(Contracts.SummitGlacier)
 
     // TODO: INITIALIZE WITH REAL VALUES FOR FTM
     const mainnetSummitToken = ''
@@ -44,7 +44,7 @@ const initializeContracts: DeployFunction = async function ({
       SubCartographers[MESA].address,
       SubCartographers[SUMMIT].address,
       EverestToken.address,
-      SummitLocking.address,
+      SummitGlacier.address,
     )
     consoleLog('Cartographer Initialized')
 
@@ -68,7 +68,7 @@ const initializeContracts: DeployFunction = async function ({
 
     // Initialize Summit Locking
     await execute(
-      Contracts.SummitLocking,
+      Contracts.SummitGlacier,
       { from: dev },
       'initialize',
       SummitToken.address,
@@ -109,7 +109,7 @@ initializeContracts.dependencies = [
   'CartographerExpedition', 
   'ElevationHelper', 
   '',
-  'SummitLocking',
+  'SummitGlacier',
   'EverestToken',
   'ExpeditionV2',
 ]

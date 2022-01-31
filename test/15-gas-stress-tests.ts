@@ -2,7 +2,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre from "hardhat";
 import { ERR, e18, rolloverRoundUntilWinningTotem, toDecimal, rolloverRound, deltaBN, expect6FigBigNumberAllEqual, promiseSequenceMap, rolloverRoundUntilLosingTotem, consoleLog, cartographerMethod, SUMMIT, cartographerGet, tokenPromiseSequenceMap, subCartGet, getContract, getCartographer, getCakeToken, getSummitToken, sumBigNumbers, getUserTotems, userPromiseSequenceMap, FULL_TESTS } from "../utils";
-import { summitLockingGet } from "../utils/summitLockingUtils";
+import { summitGlacierGet } from "../utils/summitGlacierUtils";
 import { plainsUnlockedFixture } from "./fixtures";
 
 
@@ -309,7 +309,7 @@ describe("GAS STRESS TESTS", function() {
 
 
       const totalClaimable = sumBigNumbers(userInteractingFarmsClaimable)
-      const userSummitLockedInit = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+      const userSummitLockedInit = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
       
       await cartographerMethod.claimElevation({
         user: user1,
@@ -317,7 +317,7 @@ describe("GAS STRESS TESTS", function() {
         eventOnly: true
       })
 
-      const userSummitLockedFinal = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+      const userSummitLockedFinal = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
       const userSummitLockedDelta = deltaBN(userSummitLockedFinal, userSummitLockedInit)
       
       consoleLog({

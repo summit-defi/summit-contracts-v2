@@ -4,7 +4,7 @@ import { expect } from 'chai'
 import hre, { ethers } from 'hardhat';
 import { cartographerGet, cartographerMethod, cartographerSynth, consoleLog, Contracts, depositedAfterFee, e18, EVENT, expect6FigBigNumberEquals, getSubCartographer, mineBlock, OASIS, promiseSequenceMap, subCartGet, subCartMethod, toDecimal } from '.';
 import { getContract, getSummitToken } from './contracts';
-import { summitLockingGet } from './summitLockingUtils';
+import { summitGlacierGet } from './summitGlacierUtils';
 import { userPromiseSequenceMap, userPromiseSequenceReduce } from './users';
 import { e12, getExpectedDistributionsOnClaim, getTimestamp, mineBlocks, tokenAmountAfterDepositFee } from './utils';
 
@@ -93,12 +93,12 @@ const pendingSUMMITRedeemedOnDeposit = (tokenName: string, depositFee: number = 
 }
 
 const redeemTransfersCorrectSUMMITToAddresses = (tokenName: string) => {
-    it('CLAIM: Claiming rewards transfers correct amount to summitLocking', async function() {
+    it('CLAIM: Claiming rewards transfers correct amount to summitGlacier', async function() {
       const { user1, dev } = await getNamedSigners(hre)
       const token = await getContract(tokenName)
 
 
-      const userClaimedInit = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+      const userClaimedInit = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
       const devSummitInit = await token.balanceOf(dev.address)
 
       await mineBlocks(5)
@@ -115,7 +115,7 @@ const redeemTransfersCorrectSUMMITToAddresses = (tokenName: string) => {
         elevation: OASIS,
       })
 
-      const userClaimedFinal = await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user1.address)
+      const userClaimedFinal = await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user1.address)
       const devSummitFinal = await token.balanceOf(dev.address)
 
       consoleLog({

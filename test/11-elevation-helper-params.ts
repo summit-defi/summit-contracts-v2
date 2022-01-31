@@ -1,8 +1,8 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre from "hardhat";
-import { e18, ERR, toDecimal, getTimestamp, deltaBN, mineBlockWithTimestamp, promiseSequenceMap, getSummitToken, everestGet, everestMethod, days, getSummitBalance, getEverestBalance, userPromiseSequenceMap, allElevationPromiseSequenceMap, cartographerMethod, rolloverRoundUntilWinningTotem, getUserTotems, OASIS, getCakeToken, getBifiToken, epochDuration, getSummitLocking, rolloverIfAvailable, rolloverRound, sumBigNumbers, tokenPromiseSequenceMap, cartographerGet, expect6FigBigNumberEquals, BURNADD, expectAllEqual, usersInteractingPoolsLists, subCartGet, onlyElevationPromiseSequenceMap, getInvUserTotems, getContract, PLAINS, cartographerSynth, elevationHelperMethod, sumNumbers, e12, mineBlocks } from "../utils";
-import { summitLockingGet, summitLockingMethod } from "../utils/summitLockingUtils";
+import { e18, ERR, toDecimal, getTimestamp, deltaBN, mineBlockWithTimestamp, promiseSequenceMap, getSummitToken, everestGet, everestMethod, days, getSummitBalance, getEverestBalance, userPromiseSequenceMap, allElevationPromiseSequenceMap, cartographerMethod, rolloverRoundUntilWinningTotem, getUserTotems, OASIS, getCakeToken, getBifiToken, epochDuration, getSummitGlacier, rolloverIfAvailable, rolloverRound, sumBigNumbers, tokenPromiseSequenceMap, cartographerGet, expect6FigBigNumberEquals, BURNADD, expectAllEqual, usersInteractingPoolsLists, subCartGet, onlyElevationPromiseSequenceMap, getInvUserTotems, getContract, PLAINS, cartographerSynth, elevationHelperMethod, sumNumbers, e12, mineBlocks } from "../utils";
+import { summitGlacierGet, summitGlacierMethod } from "../utils/summitGlacierUtils";
 import { oasisUnlockedFixture, summitUnlockedFixture } from "./fixtures";
 
 

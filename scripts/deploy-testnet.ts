@@ -13,7 +13,7 @@ const DeployStep = {
 
 
 async function main() {
-  const completedDeployStep = DeployStep.CreatePools
+  const completedDeployStep = DeployStep.None
   console.log(' == Deploying Summit Ecosystem to BSC Testnet ==\n')
 
 
@@ -22,9 +22,9 @@ async function main() {
     await hre.run('deploy', { tags: 'TESTNET' })
   }
   console.log('\tdone.\n')
+  
+  
   const Cartographer = await getCartographer()
-
-
   const summitToken = await getSummitToken()
   const everestToken = await getEverestToken()
   const usdcToken = await getContract('DummyUSDC')

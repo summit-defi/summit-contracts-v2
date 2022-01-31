@@ -7,7 +7,7 @@ import "./SummitToken.sol";
 import "./EverestToken.sol";
 import "./PresetPausable.sol";
 import "./interfaces/ISubCart.sol";
-import "./SummitLocking.sol";
+import "./SummitGlacier.sol";
 import "./BaseEverestExtension.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -98,7 +98,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
 
     SummitToken public summit;
     ElevationHelper elevationHelper;
-    SummitLocking public summitLocking;
+    SummitGlacier public summitGlacier;
     uint8 constant EXPEDITION = 4;
 
     uint256 public expeditionDeityWinningsMult = 125;
@@ -196,14 +196,14 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
     constructor(
         address _summit,
         address _everest,
-        address _summitLocking
+        address _summitGlacier
     ) {
         require(_summit != address(0), "Summit required");
         require(_everest != address(0), "Everest required");
-        require(_summitLocking != address(0), "SummitLocking Required");
+        require(_summitGlacier != address(0), "SummitGlacier Required");
         summit = SummitToken(_summit);
         everest = EverestToken(_everest);
-        summitLocking = SummitLocking(_summitLocking);
+        summitGlacier = SummitGlacier(_summitGlacier);
     }
 
 
@@ -382,7 +382,6 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
     {
         require (_token == address(expeditionInfo.summit.token) || _token == address(expeditionInfo.usdc.token), "Invalid token to add to expedition");
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        _recalculateExpeditionEmissions();
 
         emit ExpeditionFundsAdded(_token, _amount);
     }
@@ -531,10 +530,14 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
         (uint256 summitSafeEmissionMultE18, uint256 usdcSafeEmissionMultE18, uint256 summitDeitiedEmissionMultE18, uint256 usdcDeitiedEmissionMultE18) = _calculateEmissionMultipliers();
 
         // Mark current round's emission to be distributed
-        expeditionInfo.summit.markedForDist += (summitSafeEmissionMultE18 + summitDeitiedEmissionMultE18) / 1e18;
-        expeditionInfo.usdc.markedForDist += (usdcSafeEmissionMultE18 + usdcDeitiedEmissionMultE18) / 1e18;
-        expeditionInfo.summit.distributed += (summitSafeEmissionMultE18 + summitDeitiedEmissionMultE18) / 1e18;
-        expeditionInfo.usdc.distributed += (usdcSafeEmissionMultE18 + usdcDeitiedEmissionMultE18) / 1e18;
+        uint256 summitEmitted = (summitSafeEmissionMultE18 + summitDeitiedEmissionMultE18) / 1e18;
+        uint256 usdcEmitted = (usdcSafeEmissionMultE18 + usdcDeitiedEmissionMultE18) / 1e18;
+        expeditionInfo.summit.markedForDist += summitEmitted;
+        expeditionInfo.usdc.markedForDist += usdcEmitted;
+        expeditionInfo.summit.distributed += summitEmitted;
+        expeditionInfo.usdc.distributed += usdcEmitted;
+        expeditionInfo.summit.emissionsRemaining -= summitEmitted;
+        expeditionInfo.usdc.emissionsRemaining -= usdcEmitted;
 
         // Update the guaranteed emissions mults
         if (expeditionInfo.supplies.safe > 0) {
@@ -642,8 +645,8 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
             user.summit.lifetimeWinnings += summitWinnings;
 
             // Claim SUMMIT winnings (lock for 30 days)
-            expeditionInfo.summit.token.safeTransfer(address(summitLocking), summitWinnings);
-            summitLocking.addLockedWinnings(summitWinnings, 0, user.userAdd);
+            expeditionInfo.summit.token.safeTransfer(address(summitGlacier), summitWinnings);
+            summitGlacier.addLockedWinnings(summitWinnings, 0, user.userAdd);
             expeditionInfo.summit.markedForDist -= summitWinnings;
         }
 
@@ -793,6 +796,52 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
             expeditionInfo.supplies.deity[user.deity] = expeditionInfo.supplies.deity[user.deity] - existingDeitiedSupply + user.deitiedSupply;
         }
 
+        emit SafetyFactorSelected(msg.sender, _newSafetyFactor);
+    }
+
+
+    /// @dev Select a user's deity, update the expedition's deities with the switched funds
+    function selectDeityAndSafetyFactor(uint8 _newDeity, uint8 _newSafetyFactor)
+        public whenNotPaused
+        nonReentrant validDeity(_newDeity) expeditionInteractionsAvailable
+    {
+        UserExpeditionInfo storage user = _getOrCreateUserInfo(msg.sender);
+
+        // Early exit if deity is same as current
+        require(!user.deitySelected || user.deity != _newDeity, "Deity must be different");
+        // Early exit if safety factor is the same
+        require(!user.safetyFactorSelected || user.safetyFactor != _newSafetyFactor, "SafetyFactor must be different");
+
+        // Harvest any winnings in this expedition
+        _harvestExpedition(user);
+
+        // Update user deity in state
+        uint8 prevDeity = user.deity;
+        user.deity = _newDeity;
+        user.deitySelected = true;
+        user.deitySelectionRound = elevationHelper.roundNumber(EXPEDITION);
+
+        // Update safety factor in user state
+        uint256 existingSafeSupply = user.safeSupply;
+        uint256 existingDeitiedSupply = user.deitiedSupply;
+        user.safetyFactor = _newSafetyFactor;
+        user.safetyFactorSelected = true;
+        
+        // Update user's interaction in this expedition
+        _updateUserRoundInteraction(user);
+        
+        if (user.entered) {
+            // Transfer deitied everest from previous deity to new deity
+            expeditionInfo.supplies.deity[prevDeity] -= user.deitiedSupply;
+            expeditionInfo.supplies.deity[_newDeity] += user.deitiedSupply;
+            
+            // Remove safe and deitied everest from existing supply states
+            expeditionInfo.supplies.safe = expeditionInfo.supplies.safe - existingSafeSupply + user.safeSupply;
+            expeditionInfo.supplies.deitied = expeditionInfo.supplies.deitied - existingDeitiedSupply + user.deitiedSupply;
+            expeditionInfo.supplies.deity[user.deity] = expeditionInfo.supplies.deity[user.deity] - existingDeitiedSupply + user.deitiedSupply;
+        }
+
+        emit DeitySelected(msg.sender, _newDeity, user.deitySelectionRound);
         emit SafetyFactorSelected(msg.sender, _newSafetyFactor);
     }
 

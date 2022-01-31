@@ -1,5 +1,5 @@
 import { getChainId } from 'hardhat'
-import { chainIdRequiresDummies, getBifiToken, getCakeToken, getCartographer, getContract, getElevationHelper, getEverestToken, getExpedition, getSubCartographers, getSummitLocking, getSummitToken, getTimelock, getUSDCToken, writeContractAddresses } from '../utils'
+import { chainIdRequiresDummies, getBifiToken, getCakeToken, getCartographer, getContract, getElevationHelper, getEverestToken, getExpedition, getSubCartographers, getSummitGlacier, getSummitToken, getTimelock, getUSDCToken, writeContractAddresses } from '../utils'
 
 async function main() {
     const chainId = await getChainId()
@@ -11,7 +11,7 @@ async function main() {
     const subCartographers = await getSubCartographers()
     const elevationHelper = await getElevationHelper()
     const ExpeditionV2 = await getExpedition()
-    const SummitLocking = await getSummitLocking()
+    const SummitGlacier = await getSummitGlacier()
     const timelock = await getTimelock()
 
     let additionalAddresses = [] as any[]
@@ -44,7 +44,7 @@ async function main() {
         ['cartographerMesa', subCartographers[2].address],
         ['cartographerSummit', subCartographers[3].address],
         ['expedition', ExpeditionV2.address],
-        ['summitLocking', SummitLocking.address],
+        ['summitGlacier', SummitGlacier.address],
         ['elevationHelper', elevationHelper.address],
         ['timelock', timelock.address],
         ...additionalAddresses,

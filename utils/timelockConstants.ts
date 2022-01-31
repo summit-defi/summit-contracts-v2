@@ -40,7 +40,7 @@ export enum EverestTokenSigs {
     RemoveEverestExtension = 'removeEverestExtension',
     SetPanic = 'setPanic',
 }
-export enum SummitLockingSigs {
+export enum SummitGlacierSigs {
     SetPanic = 'setPanic',
     SetYieldLockEpochCount = 'setYieldLockEpochCount',
 }
@@ -63,7 +63,7 @@ export const TimelockTxSig = {
     Cartographer: CartographerSigs,
     ElevationHelper: ElevationHelperSigs,
     EverestToken: EverestTokenSigs,
-    SummitLocking: SummitLockingSigs,
+    SummitGlacier: SummitGlacierSigs,
     Expedition: ExpeditionSigs,
     SummitTrustedSeederRNGModule: SummitTrustedSeederRNGModuleSigs,
 }
@@ -73,7 +73,7 @@ export const TimelockTxSigSpecificDelay = {
     Cartographer: {},
     ElevationHelper: {},
     EverestToken: {},
-    SummitLocking: {},
+    SummitGlacier: {},
     Expedition: {},
     SummitTrustedSeederRNGModule: {},
 }

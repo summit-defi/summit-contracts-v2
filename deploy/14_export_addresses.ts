@@ -1,5 +1,5 @@
 import { DeployFunction } from 'hardhat-deploy/types'
-import { chainIdExportsAddresses, chainIdRequiresDummies, getBifiToken, getCakeToken, getCartographer, getContract, getElevationHelper, getEverestToken, getExpedition, getSubCartographers, getSummitLocking, getSummitToken, getTimelock, getUSDCToken, writeContractAddresses } from '../utils'
+import { chainIdExportsAddresses, chainIdRequiresDummies, getBifiToken, getCakeToken, getCartographer, getContract, getElevationHelper, getEverestToken, getExpedition, getSubCartographers, getSummitGlacier, getSummitToken, getTimelock, getUSDCToken, writeContractAddresses } from '../utils'
 
 const exportAddresses: DeployFunction = async function ({
     getChainId,
@@ -14,7 +14,7 @@ const exportAddresses: DeployFunction = async function ({
     const subCartographers = await getSubCartographers()
     const elevationHelper = await getElevationHelper()
     const ExpeditionV2 = await getExpedition()
-    const SummitLocking = await getSummitLocking()
+    const SummitGlacier = await getSummitGlacier()
     const timelock = await getTimelock()
 
     let additionalAddresses = [] as any[]
@@ -44,7 +44,7 @@ const exportAddresses: DeployFunction = async function ({
         ['cartographerMesa', subCartographers[2].address],
         ['cartographerSummit', subCartographers[3].address],
         ['expedition', ExpeditionV2.address],
-        ['summitLocking', SummitLocking.address],
+        ['summitGlacier', SummitGlacier.address],
         ['elevationHelper', elevationHelper.address],
         ['timelock', timelock.address],
         ...additionalAddresses,

@@ -145,7 +145,7 @@ const config: HardhatUserConfig = {
     path: './data/abi',
     clear: false,
     flat: true,
-    only: [':ERC20$', ':Cartographer$', ':CartographerOasis$', ':CartographerElevation$', ':ElevationHelper$', ':Multicall$', ':SummitToken$', ':EverestToken$', ':ExpeditionV2$', 'SummitLocking$'],
+    only: [':ERC20$', ':Cartographer$', ':CartographerOasis$', ':CartographerElevation$', ':ElevationHelper$', ':Multicall$', ':SummitToken$', ':EverestToken$', ':ExpeditionV2$', 'SummitGlacier$'],
     spacing: 2
   },
   gasReporter: {

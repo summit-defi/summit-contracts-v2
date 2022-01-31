@@ -13,11 +13,11 @@ const deployExpeditionV2: DeployFunction = async function ({
 
   const SummitToken = await deployments.get(Contracts.SummitToken);
   const EverestToken = await deployments.get(Contracts.EverestToken)
-  const SummitLocking = await deployments.get(Contracts.SummitLocking)
+  const SummitGlacier = await deployments.get(Contracts.SummitGlacier)
 
   const ExpeditionV2 = await deploy('ExpeditionV2', {
     from: dev,
-    args: [SummitToken.address, EverestToken.address, SummitLocking.address],
+    args: [SummitToken.address, EverestToken.address, SummitGlacier.address],
     log: true,
   });
 
@@ -25,10 +25,10 @@ const deployExpeditionV2: DeployFunction = async function ({
     await delay(3)
     await failableVerify({
       address: ExpeditionV2.address,
-      constructorArguments: [SummitToken.address, EverestToken.address, SummitLocking.address],
+      constructorArguments: [SummitToken.address, EverestToken.address, SummitGlacier.address],
     })
   }
 };
 export default deployExpeditionV2;
 deployExpeditionV2.tags = ['ExpeditionV2', 'LOCALHOST', 'TESTNET', 'MAINNET']
-deployExpeditionV2.dependencies = ['Cartographer', 'EverestToken', 'SummitToken', 'SummitLocking']
+deployExpeditionV2.dependencies = ['Cartographer', 'EverestToken', 'SummitToken', 'SummitGlacier']

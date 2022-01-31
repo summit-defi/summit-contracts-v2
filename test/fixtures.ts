@@ -2,7 +2,7 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { Contract } from "ethers";
 import { deployments } from "hardhat";
-import { OASIS, PLAINS, MESA, SUMMIT, EXPEDITION, INF_APPROVE, e18, mineBlockWithTimestamp, getSeeds, mineBlocks, TOKEN_FEE, Contracts, getSubCartographers, promiseSequenceMap, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getMasterChef, getMasterChefPassthrough, getSummitToken, getTimelock, elevationHelperGet, getSummitTrustedSeeder, expeditionMethod, rolloverRound, getDummyEverestExtension, getSummitLocking } from "../utils";
+import { OASIS, PLAINS, MESA, SUMMIT, EXPEDITION, INF_APPROVE, e18, mineBlockWithTimestamp, getSeeds, mineBlocks, TOKEN_FEE, Contracts, getSubCartographers, promiseSequenceMap, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getMasterChef, getMasterChefPassthrough, getSummitToken, getTimelock, elevationHelperGet, getSummitTrustedSeeder, expeditionMethod, rolloverRound, getDummyEverestExtension, getSummitGlacier } from "../utils";
 
 interface FixtureState {
   readonly dev: SignerWithAddress
@@ -22,7 +22,7 @@ interface FixtureState {
   readonly subCartographers: Contract[]
   readonly elevationHelper: Contract
   readonly summitTrustedSeederRNGModule: Contract
-  readonly summitLocking: Contract
+  readonly summitGlacier: Contract
   readonly timelock: Contract
   readonly everestToken: Contract
   readonly expeditionV2: Contract
@@ -45,7 +45,7 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
   const subCartographers = await getSubCartographers()
   const elevationHelper = await getElevationHelper()
   const summitTrustedSeederRNGModule = await getSummitTrustedSeeder()
-  const summitLocking = await getSummitLocking()
+  const summitGlacier = await getSummitGlacier()
   const timelock = await getTimelock()
   const everestToken = await getEverestToken()
   const expeditionV2 = await getExpedition()
@@ -90,7 +90,7 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
     subCartographers,
     elevationHelper,
     summitTrustedSeederRNGModule,
-    summitLocking,
+    summitGlacier,
     timelock,
     everestToken,
     expeditionV2,
@@ -185,12 +185,12 @@ export const expeditionUnlockedFixture = deployments.createFixture(async (): Pro
 export const timelockedFixture = deployments.createFixture(async (): Promise<FixtureState> => {
   const expeditionUnlockedFixtureState = await summitUnlockedFixture();
 
-  const { dev, cartographer, elevationHelper, everestToken, summitLocking, expeditionV2, summitTrustedSeederRNGModule, timelock } = expeditionUnlockedFixtureState
+  const { dev, cartographer, elevationHelper, everestToken, summitGlacier, expeditionV2, summitTrustedSeederRNGModule, timelock } = expeditionUnlockedFixtureState
 
   await cartographer.connect(dev).transferOwnership(timelock.address)
   await elevationHelper.connect(dev).transferOwnership(timelock.address)
   await everestToken.connect(dev).transferOwnership(timelock.address)
-  await summitLocking.connect(dev).transferOwnership(timelock.address)
+  await summitGlacier.connect(dev).transferOwnership(timelock.address)
   await expeditionV2.connect(dev).transferOwnership(timelock.address)
   await summitTrustedSeederRNGModule.connect(dev).transferOwnership(timelock.address)
   await timelock.connect(dev).setPendingAdmin(dev.address)

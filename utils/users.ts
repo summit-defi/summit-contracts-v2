@@ -4,7 +4,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import hre from 'hardhat'
 import { UserInfo } from "os"
 import { everestGet, expeditionGet, ExpeditionHypotheticalRewards, ExpeditionInfo, ExpeditionRewards, getEverestBalance, getSummitBalance, getUsdcBalance, promiseSequenceMap, subCartGet, UserEverestInfo, UserExpeditionInfo, UserTotemInfo } from "."
-import { summitLockingGet } from "./summitLockingUtils"
+import { summitGlacierGet } from "./summitGlacierUtils"
 
 
 export const userPromiseSequenceMap = async (transformer: (element: SignerWithAddress, index: number, array: SignerWithAddress[]) => Promise<any>) => {
@@ -58,7 +58,7 @@ export const usersSummitBalances = async (): Promise<BigNumber[]> => {
 }
 export const usersLockedSummitBalances = async (): Promise<BigNumber[]> => {
     return await userPromiseSequenceMap(
-        async (user) => await summitLockingGet.getUserCurrentEpochHarvestableWinnings(user.address)
+        async (user) => await summitGlacierGet.getUserCurrentEpochHarvestableWinnings(user.address)
     )
 }
 export const usersEverestBalances = async (): Promise<BigNumber[]> => {

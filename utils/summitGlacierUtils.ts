@@ -2,7 +2,7 @@
 
 import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
-import { EVENT, executeTxExpectEvent, executeTxExpectReversion, getSummitLocking } from "."
+import { EVENT, executeTxExpectEvent, executeTxExpectReversion, getSummitGlacier } from "."
 
 export interface UserLockedWinnings {
     winnings: BigNumber
@@ -13,18 +13,18 @@ export interface UserLockedWinnings {
 const epochDuration = 3600 * 24 * 7
 
 const getYieldLockEpochCount = async () => {
-    return (await getSummitLocking()).yieldLockEpochCount()
+    return (await getSummitGlacier()).yieldLockEpochCount()
 }
 const epochStartTimestamp = (epoch: number) => {
     return epoch * epochDuration
 }
 
 const getCurrentEpoch = async () => {
-    return (await (await getSummitLocking()).getCurrentEpoch()).toNumber()
+    return (await (await getSummitGlacier()).getCurrentEpoch()).toNumber()
 }
 
 const getUserEpochLockedWinnings = async (userAddress: string, epoch: number): Promise<UserLockedWinnings> => {
-    const userLockedWinnings = await (await getSummitLocking()).userLockedWinnings(userAddress, epoch)
+    const userLockedWinnings = await (await getSummitGlacier()).userLockedWinnings(userAddress, epoch)
     return {
         winnings: userLockedWinnings.winnings,
         bonusEarned: userLockedWinnings.bonusEarned,
@@ -36,26 +36,26 @@ const getUserEpochHarvestableWinnings = async (userAddress: string, epoch: numbe
     return userLockedWinnings.winnings.sub(userLockedWinnings.claimedWinnings)
 }
 
-export const summitLockingGet = {
+export const summitGlacierGet = {
     getEpochDuration: async () => {
         return epochDuration
     },
     getYieldLockEpochCount,
     getCurrentEpoch,
     getHasEpochMatured: async (epoch: number) => {
-        return await (await getSummitLocking()).hasEpochMatured(epoch);
+        return await (await getSummitGlacier()).hasEpochMatured(epoch);
     },
     getEpochStartTimestamp: async (epoch: number) => {
-        return (await (await getSummitLocking()).getEpochStartTimestamp(epoch)).toNumber();
+        return (await (await getSummitGlacier()).getEpochStartTimestamp(epoch)).toNumber();
     },
     getEpochMatureTimestamp: async (epoch: number) => {
-        return (await (await getSummitLocking()).getEpochMatureTimestamp(epoch)).toNumber();
+        return (await (await getSummitGlacier()).getEpochMatureTimestamp(epoch)).toNumber();
     },
     getUserLifetimeWinnings: async (userAddress: string) => {
-        return await (await getSummitLocking()).userLifetimeWinnings(userAddress)
+        return await (await getSummitGlacier()).userLifetimeWinnings(userAddress)
     },
     getUserLifetimeBonusWinnings: async (userAddress: string) => {
-        return await (await getSummitLocking()).userLifetimeBonusWinnings(userAddress)
+        return await (await getSummitGlacier()).userLifetimeBonusWinnings(userAddress)
     },
     getUserEpochLockedWinnings,
     getUserEpochHarvestableWinnings,
@@ -64,15 +64,15 @@ export const summitLockingGet = {
         return await getUserEpochHarvestableWinnings(userAddress, currentEpoch)
     },
     getPanicFundsReleased: async () => {
-        return (await getSummitLocking()).getPanicFundsReleased()
+        return (await getSummitGlacier()).getPanicFundsReleased()
     },
     getUserInteractingEpochs: async (userAddress: string): Promise<number[]> => {
-        const interactingEpochs = await (await getSummitLocking()).getUserInteractingEpochs(userAddress)
+        const interactingEpochs = await (await getSummitGlacier()).getUserInteractingEpochs(userAddress)
         return interactingEpochs.map((epoch: BigNumber) => epoch.toNumber())
     }
 }
 
-export const summitLockingMethod = {
+export const summitGlacierMethod = {
     harvestWinnings: async ({
         user,
         epoch,
@@ -86,15 +86,15 @@ export const summitLockingMethod = {
         lockForEverest?: boolean,
         revertErr?: string,
     }) => {
-        const summitLocking = await getSummitLocking()
-        const tx = summitLocking.connect(user).harvestWinnings
+        const summitGlacier = await getSummitGlacier()
+        const tx = summitGlacier.connect(user).harvestWinnings
         const txArgs = [epoch, amount, lockForEverest]
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [user.address, epoch, amount, lockForEverest]
-            await executeTxExpectEvent(tx, txArgs, summitLocking, EVENT.SummitLocking.WinningsHarvested, eventArgs, true)
+            await executeTxExpectEvent(tx, txArgs, summitGlacier, EVENT.SummitGlacier.WinningsHarvested, eventArgs, true)
         }
     },
     setYieldLockEpochCount: async ({
@@ -106,15 +106,15 @@ export const summitLockingMethod = {
         yieldLockEpochCount: number,
         revertErr?: string,
     }) => {
-        const summitLocking = await getSummitLocking()
-        const tx = summitLocking.connect(dev).setYieldLockEpochCount
+        const summitGlacier = await getSummitGlacier()
+        const tx = summitGlacier.connect(dev).setYieldLockEpochCount
         const txArgs = [yieldLockEpochCount]
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [yieldLockEpochCount]
-            await executeTxExpectEvent(tx, txArgs, summitLocking, EVENT.SummitLocking.SetYieldLockEpochCount, eventArgs, true)
+            await executeTxExpectEvent(tx, txArgs, summitGlacier, EVENT.SummitGlacier.SetYieldLockEpochCount, eventArgs, true)
         }
     },
     setPanic: async ({
@@ -126,15 +126,15 @@ export const summitLockingMethod = {
         panic: boolean,
         revertErr?: string,
     }) => {
-        const summitLocking = await getSummitLocking()
-        const tx = summitLocking.connect(dev).setPanic
+        const summitGlacier = await getSummitGlacier()
+        const tx = summitGlacier.connect(dev).setPanic
         const txArgs = [panic]
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
         } else {
             const eventArgs = [panic]
-            await executeTxExpectEvent(tx, txArgs, summitLocking, EVENT.SummitLocking.SetPanic, eventArgs, true)
+            await executeTxExpectEvent(tx, txArgs, summitGlacier, EVENT.SummitGlacier.SetPanic, eventArgs, true)
         }
     },
 }

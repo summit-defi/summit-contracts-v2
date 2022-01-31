@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 
-contract SummitLocking is Ownable, Initializable, ReentrancyGuard, PresetPausable {
+contract SummitGlacier is Ownable, Initializable, ReentrancyGuard, PresetPausable {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 

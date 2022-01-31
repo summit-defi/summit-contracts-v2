@@ -19,5 +19,5 @@ export const getMasterChefPassthrough = async () => await getContract(Contracts.
 export const getTimelock = async () => await getContract(Contracts.Timelock)
 export const getEverestToken = async () => await getContract(Contracts.EverestToken)
 export const getExpedition = async () => await getContract(Contracts.ExpeditionV2)
-export const getSummitLocking = async () => await getContract(Contracts.SummitLocking)
+export const getSummitGlacier = async () => await getContract(Contracts.SummitGlacier)
 export const getDummyEverestExtension = async () => await getContract(Contracts.DummyEverestExtension)
