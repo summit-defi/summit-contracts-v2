@@ -369,6 +369,9 @@ contract ElevationHelper is Ownable {
     /// @param _elevation Elevation to store at
     /// @param _winner Selected winning totem
     function markWinningTotem(uint8 _elevation, uint8 _winner) internal {
+        // No totem marked as the winner for the first round (unlocking the elevation)
+        if (roundNumber[_elevation] == 0) return;
+
         totemWinsAccum[_elevation][_winner] += 1;
         winningTotem[_elevation][roundNumber[_elevation]] = _winner;   
 
@@ -398,9 +401,8 @@ contract ElevationHelper is Ownable {
     /// @param _elevation Which elevation to check historical winners of
     /// @return Array of 20 values, first 10 of which are win count accumulators for each totem, last 10 of which are winners of previous 10 rounds of play
     function historicalWinningTotems(uint8 _elevation) public view allElevations(_elevation) returns (uint256[] memory, uint256[] memory) {
-
         uint256 round = roundNumber[_elevation];
-        uint256 winHistoryDepth = Math.min(10, round);
+        uint256 winHistoryDepth = Math.min(10, round - 1);
 
         uint256[] memory winsAccum = new uint256[](totemCount[_elevation]);
         uint256[] memory prevWinHistory = new uint256[](winHistoryDepth);

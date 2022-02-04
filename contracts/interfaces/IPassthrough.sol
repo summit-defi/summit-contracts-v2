@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 interface IPassthrough {
     function token() external view returns (IERC20);
     function enact() external;
-    function deposit(uint256, address, address) external returns (uint256);
-    function withdraw(uint256, address, address) external returns (uint256);
-    function retire(address, address) external;
+    function deposit(uint256, address, address, address) external returns (uint256);
+    function withdraw(uint256, address, address, address) external returns (uint256);
+    function retire(address, address, address) external;
 }

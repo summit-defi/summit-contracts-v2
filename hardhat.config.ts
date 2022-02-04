@@ -136,6 +136,13 @@ const config: HardhatUserConfig = {
       bsc_mainnet: namedAddresses.trustedSeeder,
       ftm_testnet: namedAddresses.trustedSeeder,
       ftm_mainnet: namedAddresses.trustedSeeder,
+    },
+    lpGenerator: {
+      default: 6,
+      bsc_testnet: namedAddresses.lpGenerator,
+      bsc_mainnet: namedAddresses.lpGenerator,
+      ftm_testnet: namedAddresses.lpGenerator,
+      ftm_mainnet: namedAddresses.lpGenerator,
     }
   },
   etherscan: {

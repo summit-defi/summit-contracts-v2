@@ -83,9 +83,10 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     SummitToken public summit;
     bool public enabled = false;                                                // Whether the ecosystem has been enabled for earning
 
-    uint256 public rolloverReward = 2e18;                                       // Amount of SUMMIT which will be rewarded for rolling over a round
+    uint256 public rolloverReward = 0e18;                                       // Amount of SUMMIT which will be rewarded for rolling over a round
 
     address public treasuryAdd;                                                 // Treasury address, see docs for spend breakdown
+    address public lpGeneratorAdd;                                              // Address that accumulates funds that will be converted into LP
     address public expeditionTreasuryAdd;                                       // Expedition Treasury address, intermediate address to convert to stablecoins
     ElevationHelper public elevationHelper;
     address[4] public subCartographers;
@@ -93,7 +94,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     SummitGlacier public summitGlacier;
 
     uint256 public summitPerSecond = 5e16;                                      // Amount of Summit minted per second to be distributed to users
-    uint256 public treasurySummitBP = 200;                                      // Amount of Summit minted per second to the treasury
+    uint256 public treasurySummitBP = 2000;                                     // Amount of Summit minted per second to the treasury
 
     uint16[4] public elevationPoolsCount;                                       // List of all pool identifiers (PIDs)
 
@@ -140,6 +141,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     event ClaimWinnings(address indexed user, uint256 amount);
     event SetExpeditionTreasuryAddress(address indexed user, address indexed newAddress);
     event SetTreasuryAddress(address indexed user, address indexed newAddress);
+    event SetLpGeneratorAddress(address indexed user, address indexed newAddress);
     event PassthroughStrategySet(address indexed token, address indexed passthroughStrategy);
     event PassthroughStrategyRetired(address indexed token, address indexed passthroughStrategy);
 
@@ -150,7 +152,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     event SetTokenIsNativeFarm(address indexed _token, bool _isNativeFarm);
     event SetMaxBonusBP(uint256 _maxBonusBP);
     event SummitOwnershipTransferred(address indexed _summitOwner);
-    event SetRolloverRewardInNativeToken(uint256 _reward);
+    event SetRolloverReward(uint256 _reward);
     event SetTotalSummitPerSecond(uint256 _amount);
     event SetSummitDistributionBPs(uint256 _treasuryBP);
 
@@ -167,12 +169,15 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     /// @dev Constructor simply setting addresses on creation
     constructor(
         address _treasuryAdd,
-        address _expeditionTreasuryAdd
+        address _expeditionTreasuryAdd,
+        address _lpGeneratorAdd
     ) {
         require(_treasuryAdd != address(0), "Missing Treasury");
         require(_expeditionTreasuryAdd != address(0), "Missing Exped Treasury");
+        require(_lpGeneratorAdd != address(0), "Missing Lp Generator Add");
         treasuryAdd = _treasuryAdd;
         expeditionTreasuryAdd = _expeditionTreasuryAdd;
+        lpGeneratorAdd = _lpGeneratorAdd;
     }
 
     /// @dev Initialize, simply setting addresses, these contracts need the Cartographer address so it must be separate from the constructor
@@ -262,11 +267,20 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         emit SetExpeditionTreasuryAddress(msg.sender, _expeditionTreasuryAdd);
     }
 
+
+    /// @dev Updating the LP Generator address
+    /// @param _lpGeneratorAdd New lp Generator address
+    function setLpGeneratorAdd(address _lpGeneratorAdd) public onlyOwner {
+        require(_lpGeneratorAdd != address(0), "Missing address");
+        lpGeneratorAdd = _lpGeneratorAdd;
+        emit SetLpGeneratorAddress(msg.sender, _lpGeneratorAdd);
+    }
+
     /// @dev Update the amount of native token equivalent to reward for rolling over a round
-    function setRolloverRewardInNativeToken(uint256 _reward) public onlyOwner {
+    function setRolloverReward(uint256 _reward) public onlyOwner {
         require(_reward < 10e18, "Exceeds max reward");
         rolloverReward = _reward;
-        emit SetRolloverRewardInNativeToken(_reward);
+        emit SetRolloverReward(_reward);
     }
 
     /// @dev Updating the total emission of the ecosystem
@@ -501,7 +515,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
         // Early exit if token doesn't have passthrough strategy
         if(tokenPassthroughStrategy[_token] == address(0)) return;
 
-        IPassthrough(tokenPassthroughStrategy[_token]).retire(expeditionTreasuryAdd, treasuryAdd);
+        IPassthrough(tokenPassthroughStrategy[_token]).retire(expeditionTreasuryAdd, treasuryAdd, lpGeneratorAdd);
         tokenPassthroughStrategy[_token] = address(0);
     }
 
@@ -1042,7 +1056,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     /// @dev Utility function for depositing tokens into passthrough strategy
     function _passthroughDeposit(address _token, uint256 _amount) internal returns (uint256) {
         if (tokenPassthroughStrategy[_token] == address(0)) return _amount;
-        return IPassthrough(tokenPassthroughStrategy[_token]).deposit(_amount, expeditionTreasuryAdd, treasuryAdd);
+        return IPassthrough(tokenPassthroughStrategy[_token]).deposit(_amount, expeditionTreasuryAdd, treasuryAdd, lpGeneratorAdd);
     }
 
     /// @dev Utility function for withdrawing tokens from passthrough strategy
@@ -1051,7 +1065,7 @@ contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable
     /// @return The true amount withdrawn from the passthrough strategy after the passthrough's tax was taken (if any)
     function _passthroughWithdraw(address _token, uint256 _amount) internal returns (uint256) {
         if (tokenPassthroughStrategy[_token] == address(0)) return _amount;
-        return IPassthrough(tokenPassthroughStrategy[_token]).withdraw(_amount, expeditionTreasuryAdd, treasuryAdd);
+        return IPassthrough(tokenPassthroughStrategy[_token]).withdraw(_amount, expeditionTreasuryAdd, treasuryAdd, lpGeneratorAdd);
     }
 
 

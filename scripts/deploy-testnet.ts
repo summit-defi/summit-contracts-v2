@@ -1,19 +1,20 @@
 import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
 import hre from 'hardhat'
-import { allElevationPromiseSequenceMap, Contracts, e18, e6, erc20Method, expeditionMethod, getBifiToken, getCakeToken, getCartographer, getContract, getEverestToken, getExpedition, getSummitToken, getUSDCToken, PoolConfig } from '../utils';
+import { allElevationPromiseSequenceMap, Contracts, e18, e6, erc20Method, everestMethod, expeditionMethod, getBifiToken, getCakeToken, getCartographer, getContract, getEverestToken, getExpedition, getSummitToken, getUSDCToken, PoolConfig, SUMMIT } from '../utils';
 import { summitTokenMethod } from '../utils/summitTokenUtils';
 import { syncPools } from './scriptUtils';
 
 const DeployStep = {
   None: 0,
   DeployContracts: 1,
-  CreatePools: 2,
-  InitializeExpedition: 3,
+  EverestWhitelistCartographer: 2,
+  CreatePools: 3,
+  InitializeExpedition: 4,
 }
 
 
 async function main() {
-  const completedDeployStep = DeployStep.None
+  const completedDeployStep = DeployStep.CreatePools
   console.log(' == Deploying Summit Ecosystem to BSC Testnet ==\n')
 
 
@@ -23,7 +24,7 @@ async function main() {
   }
   console.log('\tdone.\n')
   
-  
+  const { dev } = await getNamedSigners(hre)
   const Cartographer = await getCartographer()
   const summitToken = await getSummitToken()
   const everestToken = await getEverestToken()
@@ -101,12 +102,24 @@ async function main() {
 
 
 
+  console.log(' -- Whitelist Cartographer as Everest Target -- ')
+  if (completedDeployStep < DeployStep.EverestWhitelistCartographer) {
+    await everestMethod.addWhitelistedTransferAddress({
+      dev,
+      whitelistedAddress: Cartographer.address
+    })
+  }
+  console.log('\tdone.\n')
+
+
 
 
   console.log(' -- Create Pools -- ')
   if (completedDeployStep < DeployStep.CreatePools) {
     await allElevationPromiseSequenceMap(
-      async (elevation) => await syncPools(elevation, testnetPools)
+      async (elevation) => {
+        await syncPools(elevation, testnetPools)
+      }
     )
 
     const massUpdateTx = await Cartographer.massUpdatePools()
@@ -117,7 +130,6 @@ async function main() {
 
   console.log(' -- Initialize Expedition -- ')
   if (completedDeployStep < DeployStep.InitializeExpedition) {
-    const { dev } = await getNamedSigners(hre)
     const dummyUSDC = await getUSDCToken()
     const summitToken = await getSummitToken()
     const expeditionV2 = await getExpedition()

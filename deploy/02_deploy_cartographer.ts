@@ -8,7 +8,7 @@ const deployCartographer: DeployFunction = async function ({
   run,
 }) {
   const {deploy} = deployments;
-  const {dev, exped} = await getNamedAccounts()
+  const {dev, exped, lpGenerator} = await getNamedAccounts()
   const chainId = await getChainId()
 
   console.log({
@@ -17,7 +17,7 @@ const deployCartographer: DeployFunction = async function ({
 
   const Cartographer = await deploy('Cartographer', {
     from: dev,
-    args: [dev, exped],
+    args: [dev, exped, lpGenerator],
     log: true,
   });
 
@@ -25,7 +25,7 @@ const deployCartographer: DeployFunction = async function ({
     await delay(3)
     await failableVerify({
       address: Cartographer.address,
-      constructorArguments: [dev, exped],
+      constructorArguments: [dev, exped, lpGenerator],
     })
   }
 };

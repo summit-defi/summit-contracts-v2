@@ -2,7 +2,6 @@ import { BigNumber } from "@ethersproject/bignumber"
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import hre from 'hardhat'
-import { UserInfo } from "os"
 import { everestGet, expeditionGet, ExpeditionHypotheticalRewards, ExpeditionInfo, ExpeditionRewards, getEverestBalance, getSummitBalance, getUsdcBalance, promiseSequenceMap, subCartGet, UserEverestInfo, UserExpeditionInfo, UserTotemInfo } from "."
 import { summitGlacierGet } from "./summitGlacierUtils"
 

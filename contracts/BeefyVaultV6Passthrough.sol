@@ -77,7 +77,7 @@ contract BeefyVaultV6Passthrough is IPassthrough {
 
 
     /// @dev Deposit the amount of passthrough token in contract to the vault and update balance
-    function deposit(uint256 _amount, address, address)
+    function deposit(uint256 _amount, address, address, address)
         external override
         onlyCartographer
         returns (uint256)
@@ -101,13 +101,14 @@ contract BeefyVaultV6Passthrough is IPassthrough {
         return minDepositedAmount;
     }
 
-    function distributeRemainingBalance(address _expeditionTreasuryAdd, address _treasuryAdd) internal {
+    function distributeRemainingBalance(address _expeditionTreasuryAdd, address _treasuryAdd, address _lpGeneratorAdd) internal {
         uint256 toDistribute = passthroughToken.balanceOf(address(this));
 
         if (toDistribute == 0) return;
 
-        passthroughToken.safeTransfer(_expeditionTreasuryAdd, toDistribute * 92 / 100);
-        passthroughToken.safeTransfer(_treasuryAdd, toDistribute * 8 / 100);
+        passthroughToken.safeTransfer(_expeditionTreasuryAdd, toDistribute * 60 / 100);
+        passthroughToken.safeTransfer(_lpGeneratorAdd, toDistribute * 20 / 100);
+        passthroughToken.safeTransfer(_treasuryAdd, toDistribute * 20 / 100);
     }
 
 
@@ -115,7 +116,8 @@ contract BeefyVaultV6Passthrough is IPassthrough {
     /// @param _amount Amount to withdraw for user
     /// @param _expeditionTreasuryAdd Address of expedition accumulator
     /// @param _treasuryAdd Address of dev fund accumulator
-    function withdraw(uint256 _amount, address _expeditionTreasuryAdd, address _treasuryAdd)
+    /// @param _lpGeneratorAdd Address of dev fund accumulator
+    function withdraw(uint256 _amount, address _expeditionTreasuryAdd, address _treasuryAdd, address _lpGeneratorAdd)
         external override
         onlyCartographer
         returns (uint256)
@@ -142,12 +144,12 @@ contract BeefyVaultV6Passthrough is IPassthrough {
         passthroughToken.safeTransfer(cartographer, usersTrueWithdrawnAmount);
 
         // Distribute remaining rewards in this contract
-        distributeRemainingBalance(_expeditionTreasuryAdd, _treasuryAdd);
+        distributeRemainingBalance(_expeditionTreasuryAdd, _treasuryAdd, _lpGeneratorAdd);
 
         return usersTrueWithdrawnAmount;
     }
 
-    function retire(address _expeditionTreasuryAdd, address _treasuryAdd)
+    function retire(address _expeditionTreasuryAdd, address _treasuryAdd, address _lpGeneratorAdd)
         external override
         onlyCartographer
     {
@@ -167,6 +169,6 @@ contract BeefyVaultV6Passthrough is IPassthrough {
         balance = 0;
 
         // Distribute the remaining rewards in this contract
-        distributeRemainingBalance(_expeditionTreasuryAdd, _treasuryAdd);
+        distributeRemainingBalance(_expeditionTreasuryAdd, _treasuryAdd, _lpGeneratorAdd);
     }
 }

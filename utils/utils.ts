@@ -148,7 +148,7 @@ export const mineBlocks = async (blockCount: number) => {
     }
 }
 export const getExpectedDistributionsOnClaim = (rewards: BigNumber) => ({
-    treasuryExpected: rewards.mul(200).div(10000)
+    treasuryExpected: rewards.mul(2000).div(10000)
 })
 export const tokenAmountAfterWithdrawTax = (amount: BigNumber, tax: number): BigNumber => {
     return amount.mul(10000 - tax).div(10000)
