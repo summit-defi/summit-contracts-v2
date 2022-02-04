@@ -1,9 +1,9 @@
-import { ftmPools, ftmExpeditions } from "./ftm/configs"
-import { PoolConfig, ExpeditionConfig } from "../utils"
+import { ftmPools } from "./ftm/configs"
+import { PoolConfig } from "../utils"
 
-export const getConfigs = (chainId: string): { pools: PoolConfig[], expeditions: ExpeditionConfig[] } => {
+export const getPoolConfigs = (chainId: string): PoolConfig[] => {
     switch (chainId) {
-        case '250': return { pools: ftmPools, expeditions: ftmExpeditions }
+        case '250': return ftmPools
         default: throw new Error('Invalid Chain Id')
     }
 }

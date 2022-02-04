@@ -1,7 +1,7 @@
 import { Contract } from "ethers"
 import { ethers } from "hardhat"
 import { createPassthroughStrategy } from "."
-import { NamedElevations, Contracts, checkForAlreadyQueuedMatchingTimelockTx, PoolConfig, getElevationName, promiseSequenceMap, replaceSummitAddresses, UpdatePoolTxHashes, UpdatePoolTxType, ZEROADD, delay, TxHashAndNote, flatten, getPassthroughStrategy, hardhatChainId, subCartGet, getContract, cartographerGet, getSummitToken } from "../../utils"
+import { NamedElevations, Contracts, checkForAlreadyQueuedMatchingTimelockTx, PoolConfig, getElevationName, promiseSequenceMap, replaceSummitAddresses, UpdatePoolTxHashes, UpdatePoolTxType, ZEROADD, delay, TxHashAndNote, flatten, getPassthroughStrategy, hardhatChainId, subCartGet, getContract, cartographerGet, getSummitToken, getEverestToken } from "../../utils"
 import { QueueTxConfig, getTxSignatureBase, queueTimelockTransaction } from "../../utils"
 import { TimelockTxSig } from "../../utils/timelockConstants"
 
@@ -46,6 +46,7 @@ const queueTransactionInTimelock = async (chainId: string, dryRun: boolean, note
 export const queueSyncPoolsTimelockTransactions = async (chainId: string, dryRun: boolean, elevation: number, poolConfigs: PoolConfig[]): Promise<TxHashAndNote[]> => {
     const elevationName = getElevationName(elevation)
     const summitToken = await getSummitToken()
+    const everestToken = await getEverestToken()
 
     const queuedTxHashes = await promiseSequenceMap(
         poolConfigs,
@@ -59,7 +60,7 @@ export const queueSyncPoolsTimelockTransactions = async (chainId: string, dryRun
 
             
             // Pool Token / LP Address
-            const tokenAddress = replaceSummitAddresses(configToken, summitToken.address)
+            const tokenAddress = replaceSummitAddresses(configToken, summitToken.address, everestToken.address)
             console.log(`\n\n\n== POOL: ${configName} at The ${elevationName} ==`)
             
 

@@ -345,7 +345,7 @@ export const networksWhichRequireDummies = [
 ]
 
 export const mainnetNetworks = [
-    0xfa2,  // FTM TESTNET
+    250,    // FTM MAINNET
     56,     // BSC MAINNET
 ]
 
@@ -353,4 +353,16 @@ export const networkWrappedNativeTokens: { [key: string]: string } = {
     56: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',   // BSC MAINNET
     97: '0xae13d989dac2f0debff460ac112a837c89baa7cd',   // BSC TESTNET
     250: '0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83',  // FTM MAINNET
+}
+
+export const chainTreasuryAddress: { [key: string]: string } = {
+    250: '0x76aB12ef8fC166559a9CF2AB763be83C0fca71E2'
+}
+
+export const chainExpedTreasuryAddress: { [key: string]: string } = {
+    250: '0xF3265e6b1e9683E719d88a658D25b61888713188'
+}
+
+export const chainLpGeneratorAddress: { [key: string]: string } = {
+    250: '0x85d6F6A0E2632e2c6E9E2b2f753A4c2a38D07031'
 }

@@ -1,11 +1,12 @@
 import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers"
 import hre from "hardhat"
-import { PoolConfig, getElevationName, promiseSequenceMap, replaceSummitAddresses, subCartGet, cartographerGet, getSummitToken, cartographerMethod, cartographerSetParam } from "../../utils"
+import { PoolConfig, getElevationName, promiseSequenceMap, replaceSummitAddresses, subCartGet, cartographerGet, getSummitToken, cartographerMethod, cartographerSetParam, getEverestToken } from "../../utils"
 
 export const syncPools = async (elevation: number, poolConfigs: PoolConfig[]) => {
     const { dev } = await getNamedSigners(hre)
     const elevationName = getElevationName(elevation)
     const summitToken = await getSummitToken()
+    const everestToken = await getEverestToken()
 
     await promiseSequenceMap(
         poolConfigs,
@@ -16,7 +17,7 @@ export const syncPools = async (elevation: number, poolConfigs: PoolConfig[]) =>
 
             
             // Pool Token / LP Address
-            const tokenAddress = replaceSummitAddresses(configToken, summitToken.address)
+            const tokenAddress = replaceSummitAddresses(configToken, summitToken.address, everestToken.address)
             console.log(`\n\n\n== POOL: ${configName} at The ${elevationName} ==`)
 
 

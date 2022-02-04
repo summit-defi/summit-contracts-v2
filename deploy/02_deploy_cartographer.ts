@@ -15,6 +15,10 @@ const deployCartographer: DeployFunction = async function ({
     chainId
   })
 
+  const treasuryAddress = getChainTreasuryAddress(chainId) || dev
+  const expedTreasuryAddress = getChainExpedTreasuryAddress(chainId) || exped
+  const lpGeneratorAddress = getChainLpGeneratorAddress(chainId) || lpGenerator
+
   const Cartographer = await deploy('Cartographer', {
     from: dev,
     args: [dev, exped, lpGenerator],

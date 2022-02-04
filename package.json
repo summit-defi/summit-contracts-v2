@@ -9,7 +9,8 @@
     "testtx": "npx hardhat run scripts/test.ts --network ftm_mainnet",
     "coverage": "npx hardhat coverage",
     "deploy-bsc-testnet": "npx hardhat run scripts/deploy-testnet.ts --network bsc_testnet",
-    "export-bsc-testnet-addresses": "npx hardhat run scripts/export-addresses.ts --network bsc_testnet"
+    "export-bsc-testnet-addresses": "npx hardhat run scripts/export-addresses.ts --network bsc_testnet",
+    "deploy-fantom-v2": "npx hardhat run scripts/deploy-ftm-v2.ts --network ftm_mainnet"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "npm:hardhat-deploy-ethers@^0.3.0-beta.7",

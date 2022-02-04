@@ -102,9 +102,6 @@ describe("OASIS Pools", function() {
     // RUNNING LP SUPPLY
     oasisTests.lpSupplyUpdatesWithDepositsAndWithdrawals(Contracts.SummitToken)
 
-
-    // TODO: Deposit fee tests
-
     // REWARDS UPDATING AND SPLITTING
     oasisTests.rewardsCorrectlyDistributed(Contracts.SummitToken)
     elevationTests.emergencyWithdraw(Contracts.SummitToken, OASIS)

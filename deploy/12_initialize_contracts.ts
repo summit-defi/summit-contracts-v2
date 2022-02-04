@@ -26,9 +26,8 @@ const initializeContracts: DeployFunction = async function ({
     const ExpeditionV2 = await deployments.get(Contracts.ExpeditionV2)
     const SummitGlacier = await deployments.get(Contracts.SummitGlacier)
 
-    // TODO: INITIALIZE WITH REAL VALUES FOR FTM
-    const mainnetSummitToken = ''
-    const mainnetUSDCAddress = ''
+    const mainnetSummitToken = '0x8F9bCCB6Dd999148Da1808aC290F2274b13D7994'
+    const mainnetUSDCAddress = '0x04068da6c83afcfa0e13ba15a6696662335d5b75'
     const tokenSwapSummitAddress = isMainnet ? mainnetSummitToken : CakeToken.address
     const expeditionUSDCAddress = isMainnet ? mainnetUSDCAddress : USDCToken.address
     
@@ -66,7 +65,7 @@ const initializeContracts: DeployFunction = async function ({
     )
     consoleLog('Transferred Ownership of SUMMIT Token to Cartographer')
 
-    // Initialize Summit Locking
+    // Initialize Summit Glacier
     await execute(
       Contracts.SummitGlacier,
       { from: dev },
@@ -107,8 +106,7 @@ initializeContracts.dependencies = [
   'CartographerOasis', 
   'CartographerElevation', 
   'CartographerExpedition', 
-  'ElevationHelper', 
-  '',
+  'ElevationHelper',
   'SummitGlacier',
   'EverestToken',
   'ExpeditionV2',

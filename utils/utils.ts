@@ -1,11 +1,11 @@
 import { expect } from "chai"
 import { BigNumber, ethers } from "ethers"
 import hre, { network, ethers as hardhatEthers } from "hardhat"
-import { EVM, getElevationName } from "."
+import { chainTreasuryAddress, EVM, getElevationName } from "."
 import { getCreate2Address } from '@ethersproject/address';
 import { pack, keccak256 } from '@ethersproject/solidity';
 import fs from 'fs'
-import { mainnetNetworks, NamedElevations, networkExportsAddresses, networksOnWhichToVerify, networksWhichExpectUsersToHaveSummit, networksWhichRequireDummies, networkWrappedNativeTokens } from "./constants"
+import { chainExpedTreasuryAddress, chainLpGeneratorAddress, mainnetNetworks, NamedElevations, networkExportsAddresses, networksOnWhichToVerify, networksWhichExpectUsersToHaveSummit, networksWhichRequireDummies, networkWrappedNativeTokens } from "./constants"
 import { JSONQueuedTransaction, TimelockTransactionType, TimelockTxParams, TimelockTxTypeName } from "./timelockUtils";
 
 // ETHERS
@@ -192,6 +192,15 @@ export const chainIdExportsAddresses = (chainId: string) => {
 export const chainIdIsMainnet = (chainId: string) => {
     return mainnetNetworks.includes(parseInt(chainId))
 }
+export const getChainTreasuryAddress = (chainId: string) => {
+    return chainTreasuryAddress[chainId]
+}
+export const getChainExpedTreasuryAddress = (chainId: string) => {
+    return chainExpedTreasuryAddress[chainId]
+}
+export const getChainLpGeneratorAddress = (chainId: string) => {
+    return chainLpGeneratorAddress[chainId]
+}
 
 
 // CONTRACT ADDRESSES
@@ -215,8 +224,9 @@ export const writeContractAddresses = (chainId: string, addresses: Array<[string
 // SEEDING
 
 // TOKEN ADDRESS
-export const replaceSummitAddresses = (address: string, summitAddress: string): string => {
+export const replaceSummitAddresses = (address: string, summitAddress: string, everestAddress: string): string => {
     if (address === '0xSUMMIT') return summitAddress
+    if (address === '0xEVEREST') return everestAddress
     return address
 }
 

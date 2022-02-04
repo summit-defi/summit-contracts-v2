@@ -1,6 +1,6 @@
 import hre, { ethers, getChainId } from 'hardhat'
 import { Contracts, MESA, OASIS, promiseSequenceMap, SUMMIT, PLAINS } from '../utils';
-import { getConfigs } from '../data';
+import { getPoolConfigs } from '../data';
 import { queueSyncPoolsTimelockTransactions } from './scriptUtils/timelock-pool-sync';
 
 
@@ -12,7 +12,7 @@ async function main() {
 
     console.log('\n\n== QUEUE TIMELOCK TRANSACTIONS ==')
 
-    const poolConfigs = getConfigs(chainId).pools
+    const poolConfigs = getPoolConfigs(chainId).pools
 
     const elevationQueuedTxHashes = await promiseSequenceMap(
         [PLAINS, MESA, SUMMIT],
