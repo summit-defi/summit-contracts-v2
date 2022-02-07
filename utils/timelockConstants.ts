@@ -78,15 +78,17 @@ export const TimelockTxSig = {
 const week = 24 * 7
 const three_days = 24 * 3
 
-export const TimelockTxSigSpecificDelay = {
+export const TimelockTxSigSpecificDelay: { [key: string]: { [key: string]: number | null }} = {
+    Global: {
+        [OwnedContractSigs.TransferOwnership]: week,
+        [OwnedContractSigs.RenounceOwnership]: week,
+    },
     Timelock: {
         [TimelockSigs.SetFunctionSpecificDelay]: null,
         [TimelockSigs.SetDelay]: null,
         [TimelockSigs.SetPendingAdmin]: week,
     },
     Cartographer: {
-        [OwnedContractSigs.TransferOwnership]: week,
-        [OwnedContractSigs.RenounceOwnership]: week,
         [CartographerSigs.MigrateSummitOwnership]: week,
         [CartographerSigs.SetTreasuryAdd]: null,
         [CartographerSigs.SetExpeditionTreasuryAdd]: null,
@@ -107,15 +109,11 @@ export const TimelockTxSigSpecificDelay = {
         [CartographerSigs.SetMaxBonusBP]: null,
     },
     ElevationHelper: {
-        [OwnedContractSigs.TransferOwnership]: week,
-        [OwnedContractSigs.RenounceOwnership]: week,
         [ElevationHelperSigs.UpgradeSummitRNGModule]: three_days,
         [ElevationHelperSigs.SetElevationRoundDurationMult]: null,
         [ElevationHelperSigs.SetElevationAllocMultiplier]: null,
     },
     EverestToken: {
-        [OwnedContractSigs.TransferOwnership]: week,
-        [OwnedContractSigs.RenounceOwnership]: week,
         [EverestTokenSigs.SetMinLockTime]: null,
         [EverestTokenSigs.SetInflectionLockTime]: null,
         [EverestTokenSigs.SetMaxLockTime]: null,
@@ -128,14 +126,10 @@ export const TimelockTxSigSpecificDelay = {
         [EverestTokenSigs.SetPanic]: null,
     },
     SummitGlacier: {
-        [OwnedContractSigs.TransferOwnership]: week,
-        [OwnedContractSigs.RenounceOwnership]: week,
         [SummitGlacierSigs.SetPanic]: null,
         [SummitGlacierSigs.SetYieldLockEpochCount]: three_days,
     },
     Expedition: {
-        [OwnedContractSigs.TransferOwnership]: week,
-        [OwnedContractSigs.RenounceOwnership]: week,
         [ExpeditionSigs.SetExpeditionDeityWinningsMult]: null,
         [ExpeditionSigs.SetExpeditionRunwayRounds]: null,
         [ExpeditionSigs.RecalculateExpeditionEmissions]: null,
@@ -143,8 +137,6 @@ export const TimelockTxSigSpecificDelay = {
         [ExpeditionSigs.EnableExpedition]: null,
     },
     SummitTrustedSeederRNGModule: {
-        [OwnedContractSigs.TransferOwnership]: week,
-        [OwnedContractSigs.RenounceOwnership]: week,
         [SummitTrustedSeederRNGModuleSigs.SetElevationHelper]: null,
         [SummitTrustedSeederRNGModuleSigs.SetTrustedSeederAdd]: null,
     },

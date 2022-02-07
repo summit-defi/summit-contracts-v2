@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types';
-import { chainIdAllowsVerification, delay, failableVerify } from '../utils';
+import { chainIdAllowsVerification, delay, failableVerify, getChainExpedTreasuryAddress, getChainLpGeneratorAddress, getChainTreasuryAddress } from '../utils';
 
 const deployCartographer: DeployFunction = async function ({
   getNamedAccounts,
@@ -21,7 +21,7 @@ const deployCartographer: DeployFunction = async function ({
 
   const Cartographer = await deploy('Cartographer', {
     from: dev,
-    args: [dev, exped, lpGenerator],
+    args: [treasuryAddress, expedTreasuryAddress, lpGeneratorAddress],
     log: true,
   });
 
@@ -29,7 +29,7 @@ const deployCartographer: DeployFunction = async function ({
     await delay(3)
     await failableVerify({
       address: Cartographer.address,
-      constructorArguments: [dev, exped, lpGenerator],
+      constructorArguments: [treasuryAddress, expedTreasuryAddress, lpGeneratorAddress],
     })
   }
 };

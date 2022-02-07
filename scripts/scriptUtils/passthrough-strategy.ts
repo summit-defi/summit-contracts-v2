@@ -110,7 +110,8 @@ export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress:
             chainId,
             pool.name,
             tokenAddress,
-            tokenPassthroughStrategy
+            tokenPassthroughStrategy,
+            target,
         )
     }
 

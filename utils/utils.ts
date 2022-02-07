@@ -295,7 +295,7 @@ export const writePoolAllocation = (chainId: string, poolSymbol: string, allocat
     const output = JSON.stringify(poolPids, (k, v) => v === undefined ? null : v, 2)
     fs.writeFileSync(filename, output)
 }
-export const writePassthroughStrategy = (chainId: string, poolSymbol: string, token: string, passthroughStrategy: string) => {
+export const writePassthroughStrategy = (chainId: string, poolSymbol: string, token: string, passthroughContract: string, targetVaultContract: string) => {
     const chainName = getChainName(chainId)
     const filename = `./data/${chainName}/passthroughStrategies.json`
     const passthroughStrategiesJSON = fs.readFileSync(filename)
@@ -303,7 +303,8 @@ export const writePassthroughStrategy = (chainId: string, poolSymbol: string, to
 
     if (!passthroughStrategies[poolSymbol]) passthroughStrategies[poolSymbol] = {} 
     passthroughStrategies[poolSymbol].token = token
-    passthroughStrategies[poolSymbol].passthroughStrategy = passthroughStrategy
+    passthroughStrategies[poolSymbol].passthroughContract = passthroughContract
+    passthroughStrategies[poolSymbol].targetVaultContract = targetVaultContract
 
     const output = JSON.stringify(passthroughStrategies, null, 2)
     fs.writeFileSync(filename, output)
@@ -312,8 +313,7 @@ export const writePassthroughStrategy = (chainId: string, poolSymbol: string, to
 export interface JSONPassthroughStrategy {
     token: string,
     passthroughContract: string,
-    proposedPassthroughStrategy: string,
-    proposalUnlock: string,
+    targetVaultContract: string,
 }
 export const getPassthroughStrategy = (chainId: string, poolSymbol: string): JSONPassthroughStrategy => {
     const chainName = getChainName(chainId)
@@ -340,9 +340,9 @@ export const writeExpeditionPid = (chainId: string, expeditionSymbol: string, cr
 export const computePairAddress = (factoryAddress: string, pairInitHash: string, tokenA: string, tokenB: string) => {
     const [token0, token1] = sortTokens(tokenA, tokenB);
     return getCreate2Address(
-      factoryAddress,
-      keccak256(['bytes'], [pack(['address', 'address'], [token0, token1])]),
-      pairInitHash
+        factoryAddress,
+        keccak256(['bytes'], [pack(['address', 'address'], [token0, token1])]),
+        pairInitHash
     );
 };
 

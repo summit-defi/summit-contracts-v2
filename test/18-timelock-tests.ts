@@ -2,11 +2,19 @@ import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers, getChainId } from "hardhat";
 import { queueSyncPoolsTimelockTransactions } from "../scripts/scriptUtils/timelock-pool-sync";
+import { syncTimelockFunctionSpecificDelays } from "../scripts/scriptUtils/sync-timelock-func-specific-delays";
 import { mineBlockWithTimestamp, Contracts, ERR, getTimestamp, EVENT, PoolConfig, promiseSequenceMap, OASIS, cancelQueuedTimelockTransaction, cancelQueuedTimelockTransactionByHash, encodeQueuedTransactionHash, executeQueuedTimelockTransactionByHash, getCartographer, getDelay, getSummitToken, getTimelock, getTimelockTxParams, getTxSignatureBase, queueTimelockTransaction, testableTimelockTransaction, testableTimelockTransactionByHash, TimelockTransactionType, TimelockTxFunctionParams, PLAINS, MESA } from "../utils";
 import { TimelockTxSig } from "../utils/timelockConstants";
 import { poolsFixture, timelockedFixture } from "./fixtures";
+import { transferContractOwnershipToTimelock } from "../scripts/scriptUtils";
 
 describe("TIMELOCK", async function() {
+    it.only('Timelock sync function specific sigs, transfer contracts ownership to Timelock', async function() {
+        await poolsFixture()
+        await syncTimelockFunctionSpecificDelays()
+        await transferContractOwnershipToTimelock()
+    })
+
     describe("TIMELOCK TEST ENABLE SUMMIT", async function() {
         it(`TIMELOCK: Enable function succeeds`, async function () {
             const { dev, timelock, cartographer } = await poolsFixture()

@@ -1,9 +1,8 @@
 import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
 import hre, { getChainId } from 'hardhat'
 import { getPoolConfigs } from '../data';
-import { allElevationPromiseSequenceMap, Contracts, e18, e6, erc20Method, everestMethod, expeditionMethod, getBifiToken, getCakeToken, getCartographer, getContract, getEverestToken, getExpedition, getSummitToken, getUSDCToken, pausableMethod, PoolConfig, SUMMIT } from '../utils';
-import { summitTokenMethod } from '../utils/summitTokenUtils';
-import { syncPools } from './scriptUtils';
+import { allElevationPromiseSequenceMap, Contracts, everestMethod, getCartographer, pausableMethod } from '../utils';
+import { syncPools, syncTimelockFunctionSpecificDelays, transferContractOwnershipToTimelock } from './scriptUtils';
 
 const DeployStep = {
   None: 0,
@@ -11,9 +10,8 @@ const DeployStep = {
   PauseSummitTokenV2: 2,
   EverestWhitelistCartographer: 3,
   CreatePools: 4,
-  InitializeExpedition: 5,
-  InitializeTimelock: 6,
-  SetTimelockDurations: 7,
+  InitializeTimelock: 5,
+  TransferContractOwnershipToTimelock: 6,
 }
 
 
@@ -74,63 +72,25 @@ async function main() {
   console.log('\tdone.\n')
 
 
-  console.log(' -- Initialize Expedition -- ')
-  if (completedDeployStep < DeployStep.InitializeExpedition) {
-    const dummyUSDC = await getUSDCToken()
-    const summitToken = await getSummitToken()
-    const expeditionV2 = await getExpedition()
 
-    // MINT USDC
-    await erc20Method.dummyMint({
-      user: dev,
-      tokenName: Contracts.DummyUSDC,
-      amount: e6(100000),
-    })
-    // ADD USDC EXPEDITION FUNDS
-    await erc20Method.approve({
-      user: dev,
-      tokenName: Contracts.DummyUSDC,
-      approvalAddress: expeditionV2.address
-    })
-    await expeditionMethod.addExpeditionFunds({
-      user: dev,
-      tokenAddress: dummyUSDC.address,
-      amount: e6(100000),
-    })
 
-    // MINT CAKE, swap for SUMMIT
-    await erc20Method.dummyMint({
-      user: dev,
-      tokenName: Contracts.DummyCAKE,
-      amount: e18(1000000),
-    })
-    await erc20Method.approve({
-      user: dev,
-      tokenName: Contracts.DummyCAKE,
-      approvalAddress: summitToken.address
-    })
-    await summitTokenMethod.tokenSwap({
-      user: dev,
-      oldSummitAmount: e18(1000000),
-    })
-    // ADD SUMMIT EXPEDITION FUNDS    
-    await erc20Method.approve({
-      user: dev,
-      tokenName: Contracts.SummitToken,
-      approvalAddress: expeditionV2.address
-    })
-    await expeditionMethod.addExpeditionFunds({
-      user: dev,
-      tokenAddress: summitToken.address,
-      amount: e18(50000),
-    })
-
-    // RECALC EMISSIONS
-    await expeditionMethod.recalculateExpeditionEmissions({
-      dev
-    })
+  console.log(' -- Initialize Timelock -- ')
+  if (completedDeployStep < DeployStep.InitializeTimelock) {
+    await syncTimelockFunctionSpecificDelays()
   }
   console.log('\tdone.\n')
+
+
+
+
+  console.log(' -- Transfer Contract Ownership to Timelock -- ')
+  if (completedDeployStep < DeployStep.TransferContractOwnershipToTimelock) {
+    await transferContractOwnershipToTimelock()
+  }
+  console.log('\tdone.\n')
+
+
+
 
 
   console.log(' == Deployment Complete ==')

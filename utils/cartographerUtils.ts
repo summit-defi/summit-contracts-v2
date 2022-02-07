@@ -135,6 +135,9 @@ export const cartographerGet = {
     },
     poolExists: async (tokenAddress: string, elevation: number): Promise<boolean> => {
         return await (await getCartographer()).poolExistence(tokenAddress, elevation)
+    },
+    tokenPassthroughStrategy: async (tokenAddress: string): Promise<string> => {
+        return await (await getCartographer()).tokenPassthroughStrategy(tokenAddress)
     }
 }
 
