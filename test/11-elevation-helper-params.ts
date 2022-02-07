@@ -1,6 +1,5 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
-import hre from "hardhat";
+import hre, { ethers } from "hardhat";
 import { e18, ERR, toDecimal, getTimestamp, deltaBN, mineBlockWithTimestamp, promiseSequenceMap, getSummitToken, everestGet, everestMethod, days, getSummitBalance, getEverestBalance, userPromiseSequenceMap, allElevationPromiseSequenceMap, cartographerMethod, rolloverRoundUntilWinningTotem, getUserTotems, OASIS, getCakeToken, getBifiToken, epochDuration, getSummitGlacier, rolloverIfAvailable, rolloverRound, sumBigNumbers, tokenPromiseSequenceMap, cartographerGet, expect6FigBigNumberEquals, BURNADD, expectAllEqual, usersInteractingPoolsLists, subCartGet, onlyElevationPromiseSequenceMap, getInvUserTotems, getContract, PLAINS, cartographerSynth, elevationHelperMethod, sumNumbers, e12, mineBlocks } from "../utils";
 import { summitGlacierGet, summitGlacierMethod } from "../utils/summitGlacierUtils";
 import { oasisUnlockedFixture, summitUnlockedFixture } from "./fixtures";
@@ -34,7 +33,7 @@ describe("UPDATING ELEVATION EMISSIONS", async function() {
     })
 
     it(`ALLOC MULTIPLIER: Invalid alloc multipliers should revert with err "${ERR.ELEVATION_HELPER.MULT_CANT_EXCEED_3X}"`, async function() {
-        const { dev } = await getNamedSigners(hre)
+        const { dev } = await ethers.getNamedSigners()
 
         await elevationHelperMethod.setElevationAllocMultiplier({
             dev,
@@ -45,7 +44,7 @@ describe("UPDATING ELEVATION EMISSIONS", async function() {
     })
 
     it('ALLOC MULTIPLIER: Updating the emissions of the OASIS updates accordingly', async function () {
-        const { dev } = await getNamedSigners(hre)
+        const { dev } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         const elevAllocInit = [100, 110, 125, 150]
@@ -82,7 +81,7 @@ describe("UPDATING ELEVATION EMISSIONS", async function() {
         )
     })
     it('ALLOC MULTIPLIER: Updating the emissions of Elevations updates after round rollover', async function () {
-        const { dev } = await getNamedSigners(hre)
+        const { dev } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         const elevAllocInit = [50, 110, 125, 150]
@@ -132,7 +131,7 @@ describe("UPDATING ELEVATION EMISSIONS", async function() {
         )
     })
     it('ALLOC MULTIPLIER: Setting the allocation to 0 earns 0 rewards', async function() {
-        const { dev, user1 } = await getNamedSigners(hre)
+        const { dev, user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         await elevationHelperMethod.setElevationAllocMultiplier({
@@ -170,7 +169,7 @@ describe("UPDATING ELEVATION EMISSIONS", async function() {
 
 
     it(`ROUND DURATION: Elevation round durations can be updated`, async function() {
-        const { dev } = await getNamedSigners(hre)
+        const { dev } = await ethers.getNamedSigners()
         await rolloverRound(PLAINS)
 
         await elevationHelperMethod.setElevationRoundDurationMult({

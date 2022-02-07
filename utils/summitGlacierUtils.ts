@@ -1,7 +1,7 @@
 // BASE GETTERS
 
 import { BigNumber } from "@ethersproject/bignumber"
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 import { EVENT, executeTxExpectEvent, executeTxExpectReversion, getSummitGlacier } from "."
 
 export interface UserLockedWinnings {

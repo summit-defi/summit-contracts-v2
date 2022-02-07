@@ -1,7 +1,6 @@
-import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers'
 import { Contract } from 'ethers'
 import hre, { getChainId, artifacts, ethers } from 'hardhat'
-import { chainIdAllowsVerification, consoleLog, delay, e18, OASIS, toDecimal } from '../utils'
+import { chainIdAllowsVerification, consoleLog, delay, e18, getCartographer, OASIS, toDecimal } from '../utils'
 
 
 async function main() {
@@ -17,7 +16,7 @@ async function main() {
 
     await hre.run('deploy')
 
-    const { dev } = await getNamedSigners(hre)
+    const { dev } = await ethers.getNamedSigners()
     const chainId = await getChainId()
     const Cartographer = await getCartographer()
     const pcsRouterAdd = '0x10ED43C718714eb63d5aA57B78B54704E256024E'

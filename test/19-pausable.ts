@@ -1,6 +1,5 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
-import hre from "hardhat";
+import hre, { ethers } from "hardhat";
 import { e18, getTimestamp,  mineBlockWithTimestamp, getSummitToken, everestMethod, days, cartographerMethod, OASIS, getCakeToken, rolloverRound, cartographerGet, PLAINS, cartographerSetParam, sumBigNumbers, getSummitBalance, getTokenBalance, tokenAmountAfterWithdrawTax, pausableMethod, Contracts, ERR, mineBlocks } from "../utils";
 import { mesaUnlockedFixture } from "./fixtures";
 
@@ -10,7 +9,7 @@ describe("PAUSABLE", async function() {
     })
 
     it(`PAUSABLE: Adding a pause role is successful`, async function() {
-        const { dev, user1 } = await getNamedSigners(hre)
+        const { dev, user1 } = await ethers.getNamedSigners()
 
         await pausableMethod.grantPauserRole({
             admin: user1,
@@ -26,7 +25,7 @@ describe("PAUSABLE", async function() {
     })
 
     it('PAUSE: Pause can be enabled', async function() {
-        const { dev, user2 } = await getNamedSigners(hre)
+        const { dev, user2 } = await ethers.getNamedSigners()
 
         await pausableMethod.pause({
             admin: user2,
@@ -45,7 +44,7 @@ describe("PAUSABLE", async function() {
     })
 
     it('UNPAUSE: Pause can be cancelled', async function() {
-        const { dev, user2 } = await getNamedSigners(hre)
+        const { dev, user2 } = await ethers.getNamedSigners()
 
         await pausableMethod.unpause({
             admin: user2,
@@ -64,7 +63,7 @@ describe("PAUSABLE", async function() {
     })
 
     it('CARTOGRAPHER: Pausing shuts down functionality', async function() {
-        const { dev, user2 } = await getNamedSigners(hre)
+        const { dev, user2 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         await rolloverRound(PLAINS)

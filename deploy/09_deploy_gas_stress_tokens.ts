@@ -33,7 +33,7 @@ const deployGasStressTokens: DeployFunction = async function ({
         await execute(tokenName, { from: dev }, 'transfer', user3, e18(500))
 
         if (chainIdAllowsVerification(chainId)) {
-          await delay(3)
+          
           await failableVerify({
             address: token.address,
             contract: `contracts/dummy/GasStressTokens.sol:${tokenName}`,

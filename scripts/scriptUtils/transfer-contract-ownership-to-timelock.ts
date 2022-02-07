@@ -1,9 +1,8 @@
-import hre from 'hardhat'
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers"
+import hre, { ethers } from 'hardhat'
 import { Contracts, getTimelock, ownableMethod, promiseSequenceMap } from "../../utils"
 
 export const transferContractOwnershipToTimelock = async () => {
-    const { dev } = await getNamedSigners(hre)
+    const { dev } = await ethers.getNamedSigners()
     const timelock = await getTimelock()
 
     await promiseSequenceMap(

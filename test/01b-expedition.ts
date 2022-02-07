@@ -1,8 +1,7 @@
+import hre, { ethers } from "hardhat";
 import { BigNumber } from "@ethersproject/bignumber";
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai"
-import hre from "hardhat";
 import { e18, ERR, toDecimal, INF_APPROVE, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, consoleLog, expectAllEqual, getBifiToken, getUSDCToken, getExpedition, getSummitToken, everestGet, everestMethod, expeditionMethod, expeditionGet, elevationHelperGet, expeditionSynth, days, rolloverRound } from "../utils";
 import { userPromiseSequenceMap, userPromiseSequenceReduce, usersLockedSummitBalances, usersExpeditionPotentialWinnings, usersExpeditionRewards, usersUsdcBalances } from "../utils/users";
 import { oasisUnlockedFixture } from "./fixtures";
@@ -25,7 +24,7 @@ describe("EXPEDITION V2", async function() {
     })
 
     it(`EXPEDITION ADD FUNDS: Adding incorrect funds fails with error "${ERR.EXPEDITION_V2.INVALID_EXPED_TOKEN}"`, async function() {
-        const { dev } = await getNamedSigners(hre)
+        const { dev } = await ethers.getNamedSigners()
         const bifiToken = await getBifiToken()
         
         await expeditionMethod.addExpeditionFunds({
@@ -36,7 +35,7 @@ describe("EXPEDITION V2", async function() {
         })
     })
     it(`EXPEDITION ADD FUNDS: Adding funds to the expedition recalculates emissions correctly`, async function() {
-        const { dev } = await getNamedSigners(hre)
+        const { dev } = await ethers.getNamedSigners()
         const expedition = await getExpedition()
         const usdcToken = await getUSDCToken()
         const summitToken = await getSummitToken()
@@ -86,7 +85,7 @@ describe("EXPEDITION V2", async function() {
     })
 
     it('SYNC EVEREST: Sync everest keeps values correct', async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         const expeditionInfoInit = await expeditionGet.expeditionInfo()
         const userExpedInfoInit = await expeditionGet.userExpeditionInfo(user1.address)
@@ -107,7 +106,7 @@ describe("EXPEDITION V2", async function() {
     })
 
     it('EXPEDITION: Users can only enter expedition if they own everest, have selected a deity, and have selected a safety factor', async function() {
-        const { user1, user2, user3 } = await getNamedSigners(hre)
+        const { user1, user2, user3 } = await ethers.getNamedSigners()
 
         enum RequirementStep {
             Everest,
@@ -253,7 +252,7 @@ describe("EXPEDITION V2", async function() {
     })
 
     it(`EXPEDITION: Rounds yield correct winnings`, async function() {
-        const { user1, user2, user3 } = await getNamedSigners(hre)
+        const { user1, user2, user3 } = await ethers.getNamedSigners()
         
         const userParams = {
             [user1.address]: {
@@ -402,7 +401,7 @@ describe("EXPEDITION V2", async function() {
 
 
     it(`DEITIES: Switching to invalid deity should fail with error ${ERR.EXPEDITION_V2.INVALID_DEITY}`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         await expeditionMethod.selectDeity({
             user: user1,
@@ -412,7 +411,7 @@ describe("EXPEDITION V2", async function() {
     })
 
     it('DEITIES: Users should be able to switch to valid deities', async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         await expeditionSynth.rolloverExpedition()
         await expeditionSynth.expectUserAndExpedSuppliesToMatch()
@@ -454,7 +453,7 @@ describe("EXPEDITION V2", async function() {
     })
 
     it('SAFETY FACTOR: Users should be able to switch to valid safety factors', async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         await expeditionSynth.rolloverExpedition()
         
@@ -522,7 +521,7 @@ describe("EXPEDITION V2", async function() {
     })
 
     it('EVEREST CHANGE: Users should be able to increase or remove locked everest and update expeditions', async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         await rolloverRound(EXPEDITION)
         

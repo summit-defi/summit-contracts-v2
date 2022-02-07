@@ -1,7 +1,6 @@
-import { Contracts, getSeeds, getTimestamp } from '../utils';
+import { getElevationHelper, getSeeds, getTimestamp } from '../utils';
 import hre, { ethers } from 'hardhat';
-import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import cron from 'node-cron'
 
 const delay = async (n: number) => await new Promise(resolve => setTimeout(resolve, n * 1000));
@@ -35,7 +34,7 @@ const getSeedRoundTimeRemaining = async (nextTopOfSeedRound: number) => {
 }
 
 async function main() {
-    const { trustedSeeder } = await getNamedSigners(hre)
+    const { trustedSeeder } = await ethers.getNamedSigners()
     const elevationHelper = await getElevationHelper()
 
 

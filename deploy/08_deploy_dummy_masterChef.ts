@@ -50,7 +50,7 @@ const deployDummyMasterChef: DeployFunction = async function ({
   }
 
   if (chainIdAllowsVerification(chainId)) {
-    await delay(3)
+    
     await failableVerify({
       address: cakeToken.address,
       contract: 'contracts/dummy/DummyCAKE.sol:DummyCAKE',

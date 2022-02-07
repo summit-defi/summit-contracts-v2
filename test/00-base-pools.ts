@@ -1,12 +1,11 @@
 import { BigNumber } from "@ethersproject/bignumber";
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
 import { consoleLog, ERR, EVENT, MESA, mineBlockWithTimestamp, OASIS, SUMMIT, PLAINS, ZEROADD, promiseSequenceMap, allElevationPromiseSequenceMap, getSubCartographers, Contracts, getCakeToken, getCartographer, getElevationHelper, getSummitToken, cartographerMethod, cartographerGet, elevationHelperGet, e18, subCartMethod, subCartGet, delay } from "../utils";
 import { baseFixture, plainsUnlockedFixture } from "./fixtures";
 
 const userDepositIntoPools = async () => {
-  const { user1 } = await getNamedSigners(hre)
+  const { user1 } = await ethers.getNamedSigners()
   const summitToken = await getSummitToken()
   const cakeToken = await getCakeToken()
 
@@ -109,7 +108,7 @@ describe("Base Pools", function() {
       })
     })
     it(`Deploying another OASIS SUMMIT Pool should fail with error ${ERR.DUPLICATED}`, async function() {
-      const { dev } = await getNamedSigners(hre)
+      const { dev } = await ethers.getNamedSigners()
       const summitToken = await getSummitToken()
 
       await cartographerMethod.add({
@@ -193,7 +192,7 @@ describe("Base Pools", function() {
     })
     it('Pools can be disabled and reenabled', async function() {
       await plainsUnlockedFixture()
-      const { dev, user1 } = await getNamedSigners(hre)
+      const { dev, user1 } = await ethers.getNamedSigners()
       const summitToken = await getSummitToken()
 
       await cartographerMethod.deposit({
@@ -236,7 +235,7 @@ describe("Base Pools", function() {
     })
     it('Tokens total alloc points can be updated', async function() {
       await plainsUnlockedFixture()
-      const { dev, user1 } = await getNamedSigners(hre)
+      const { dev, user1 } = await ethers.getNamedSigners()
       const summitToken = await getSummitToken()
 
       await cartographerMethod.deposit({

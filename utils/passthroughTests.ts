@@ -1,5 +1,4 @@
-import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat';
 import { cartographerGet, cartographerMethod, cartographerSetParam, consoleLog, deltaBN, depositedAfterFee, e18, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getMasterChef, getMasterChefPassthrough, rolloverIfAvailable, subCartGet, toDecimal, tokenAmountAfterWithdrawTax } from '.';
@@ -22,7 +21,7 @@ const switchTotemIfNecessary = async (user: SignerWithAddress, elevation: number
 // VAULT TESTING
 const vaultTests = (elevation: number) => {
     it('SET PASSTHROUGH STRATEGY: Setting passthrough strategy is successful', async function() {
-        const { dev } = await getNamedSigners(hre)
+        const { dev } = await ethers.getNamedSigners()
 
         const beefyVaultPassthrough = await getBifiVaultPassthrough()
         const bifiToken = await getBifiToken()
@@ -107,7 +106,7 @@ const vaultTests = (elevation: number) => {
         expect(deltaBN(vaultBifiInit, vaultBifiFinal)).to.equal(totalUsersDepositedAfterFee.add(e16(3)))
     })
     it('VAULT WITHDRAW: Withdrawing from passthrough vault transfers funds correctly', async function() {
-        const { exped, dev } = await getNamedSigners(hre)
+        const { exped, dev } = await ethers.getNamedSigners()
         const bifiVault = await getBifiVault()
         const bifiVaultPassthrough = await getBifiVaultPassthrough()
         const bifiToken = await getBifiToken()
@@ -178,7 +177,7 @@ const vaultTests = (elevation: number) => {
 
 const switchPassthroughStrategyVaultToMasterChef = (elevation: number) => {
     it('RETIRE PASSTHROUGH STRATEGY: Retiring transfers users funds back to cartographer', async function() {
-        const { dev, user1 } = await getNamedSigners(hre)
+        const { dev, user1 } = await ethers.getNamedSigners()
 
         const cartographer = await getCartographer()
 
@@ -208,7 +207,7 @@ const switchPassthroughStrategyVaultToMasterChef = (elevation: number) => {
         expect6FigBigNumberEquals(cartographerBifiDelta, e18(5))
     })
     it('SET PASSTHROUGH STRATEGY: Setting new passthrough strategy transfers funds to masterchef', async function() {
-        const { dev } = await getNamedSigners(hre)
+        const { dev } = await ethers.getNamedSigners()
 
         const cartographer = await getCartographer()
         const masterChefPassthrough = await getMasterChefPassthrough()
@@ -249,7 +248,7 @@ const switchPassthroughStrategyVaultToMasterChef = (elevation: number) => {
 
 const masterChefTests = (elevation: number) => {
     it('MASTER CHEF DEPOSIT: Depositing into pool with passthrough masterChef transfers funds correctly', async function() {
-        const { exped, dev } = await getNamedSigners(hre)
+        const { exped, dev } = await ethers.getNamedSigners()
 
         const masterChef = await getMasterChef()
         const masterChefPassthrough = await getMasterChefPassthrough()
@@ -320,7 +319,7 @@ const masterChefTests = (elevation: number) => {
         expect(devCakeBalanceFinal.sub(devCakeBalanceInit).gt(0)).to.be.true
     })
     it('MASTER CHEF WITHDRAW: Withdrawing from passthrough masterChef transfers funds correctly', async function() {
-        const { exped, dev } = await getNamedSigners(hre)
+        const { exped, dev } = await ethers.getNamedSigners()
         
         const masterChef = await getMasterChef()
         const masterChefPassthrough = await getMasterChefPassthrough()
@@ -393,7 +392,7 @@ const masterChefTests = (elevation: number) => {
 
 const switchPassthroughStrategyMasterChefToVault = (elevation: number) => {
     it('SWITCH PASSTHROUGH STRATEGY: Switching transfers users funds to vault directly', async function() {
-        const { dev } = await getNamedSigners(hre)
+        const { dev } = await ethers.getNamedSigners()
 
         const bifiToken = await getBifiToken()
 

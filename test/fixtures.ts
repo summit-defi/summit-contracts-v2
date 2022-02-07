@@ -1,5 +1,4 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Contract } from "ethers";
 import { deployments } from "hardhat";
 import { OASIS, PLAINS, MESA, SUMMIT, EXPEDITION, INF_APPROVE, e18, mineBlockWithTimestamp, getSeeds, mineBlocks, TOKEN_FEE, Contracts, getSubCartographers, promiseSequenceMap, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getElevationHelper, getEverestToken, getExpedition, getMasterChef, getMasterChefPassthrough, getSummitToken, getTimelock, elevationHelperGet, getSummitTrustedSeeder, expeditionMethod, rolloverRound, getDummyEverestExtension, getSummitGlacier } from "../utils";
@@ -33,7 +32,7 @@ export const baseFixture = deployments.createFixture(async (hre, options): Promi
   const { deployments, ethers } = hre
   await deployments.all()
   await deployments.fixture();
-  const { dev, exped, user1, user2, user3, trustedSeeder } = await getNamedSigners(hre)
+  const { dev, exped, user1, user2, user3, trustedSeeder } = await ethers.getNamedSigners()
   const summitToken = await getSummitToken()
   const cakeToken = await getCakeToken()
   const dummyMasterChef = await getMasterChef()

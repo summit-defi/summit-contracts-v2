@@ -1,6 +1,5 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai'
 import { Contract } from 'ethers';
 import { access } from 'fs';
@@ -46,7 +45,7 @@ const sumUsersTotemDeposited = async (elevation: number, tokenAddress: string) =
 // DEPOSIT
 const standardDepositShouldSucceed = (tokenName: string, elevation: number) => {
   it('DEPOSIT: Standard deposit should succeed', async function() {
-    const { user1 } = await getNamedSigners(hre)
+    const { user1 } = await ethers.getNamedSigners()
     const token = await getContract(tokenName)
     const userTotems = await getUserTotems()
     await switchTotemIfNecessary(user1, elevation, userTotems[user1.address])
@@ -68,7 +67,7 @@ const standardDepositShouldSucceed = (tokenName: string, elevation: number) => {
 }
 const depositShouldUpdatePoolAndTotemInfo = (tokenName: string, elevation: number) => {
   it('DEPOSIT: Deposit should update pool and totem info', async function() {
-    const { user1, user2, user3 } = await getNamedSigners(hre)
+    const { user1, user2, user3 } = await ethers.getNamedSigners()
     const token = await getContract(tokenName)
 
     await switchTotemIfNecessary(user1, elevation, 0)
@@ -130,7 +129,7 @@ const depositShouldUpdatePoolAndTotemInfo = (tokenName: string, elevation: numbe
 // PENDING CURR ROUND
 const elevationPoolRewardsShouldIncreaseEachBlock = (tokenName: string, elevation: number) => {
   it('PENDING: Elevation pool struct rewards should increase each block', async function() {
-    const { dev, user1, user2, user3 } = await getNamedSigners(hre)
+    const { dev, user1, user2, user3 } = await ethers.getNamedSigners()
     const token = await getContract(tokenName)
 
     const depositAmounts = {
@@ -342,7 +341,7 @@ const winningsMatchPotentialWinnings = (tokenName: string, elevation: number) =>
 
 const rolloverMultipleRounds = (tokenName: string, elevation: number) => {
   it('ROLLOVER: Rolling over multiple rounds yields correct rewards', async function() {
-    const { user1, user3 } = await getNamedSigners(hre)
+    const { user1, user3 } = await ethers.getNamedSigners()
     const token = await getContract(tokenName)
 
     await rolloverRound(elevation)
@@ -533,7 +532,7 @@ const correctWinnersHistoricalData = (tokenName: string, elevation: number) => {
 // TOTEMS
 const switchingTotems = (tokenName: string, elevation: number) => {
   it(`TOTEMS: Switching to invalid totem should fail with error ${ERR.INVALID_TOTEM}`, async function() {
-    const { user1 } = await getNamedSigners(hre)
+    const { user1 } = await ethers.getNamedSigners()
     const cartographer = await getCartographer()
 
     await cartographerMethod.switchTotem({
@@ -544,7 +543,7 @@ const switchingTotems = (tokenName: string, elevation: number) => {
     })
   })
   it('TOTEMS: Users should be able to switch to valid totems', async function() {
-    const { user1 } = await getNamedSigners(hre)
+    const { user1 } = await ethers.getNamedSigners()
     const token = await getContract(tokenName)
 
     const targetTotem = TOTEM_COUNT[elevation] - 1
@@ -613,7 +612,7 @@ const switchingTotems = (tokenName: string, elevation: number) => {
 
 const emergencyWithdraw = (tokenName: string, elevation: number) => {
   it('EMERGENCY WITHDRAW: Users should be able to emergency withdraw and fully exit a farm', async function() {
-    const { user1 } = await getNamedSigners(hre)
+    const { user1 } = await ethers.getNamedSigners()
     const token = await getContract(tokenName)
 
     const userInfoInit = await subCartGet.userInfo(token.address, elevation, user1.address)

@@ -28,7 +28,7 @@ const deployTimelock: DeployFunction = async function ({
   console.log('Deployed Timelock')
 
   if (chainIdAllowsVerification(chainId)) {
-    await delay(3)
+    
     await failableVerify({
       address: Timelock.address,
       constructorArguments: [dev, 6 * 3600],

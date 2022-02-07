@@ -1,6 +1,5 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
-import hre from "hardhat";
+import hre, { ethers } from "hardhat";
 import { ERR, e18, rolloverRoundUntilWinningTotem, toDecimal, rolloverRound, deltaBN, expect6FigBigNumberAllEqual, promiseSequenceMap, rolloverRoundUntilLosingTotem, consoleLog, cartographerMethod, SUMMIT, cartographerGet, tokenPromiseSequenceMap, subCartGet, getContract, getCartographer, getCakeToken, getSummitToken, sumBigNumbers, getUserTotems, userPromiseSequenceMap, FULL_TESTS } from "../utils";
 import { summitGlacierGet } from "../utils/summitGlacierUtils";
 import { plainsUnlockedFixture } from "./fixtures";
@@ -21,7 +20,7 @@ describe("GAS STRESS TESTS", function() {
   })
   if (FULL_TESTS) {
     it(`GAS STRESS POOLS: Elevations will allow up to 24 active pools`, async function () {
-      const { dev, user1, user2, user3 } = await getNamedSigners(hre)
+      const { dev, user1, user2, user3 } = await ethers.getNamedSigners()
 
       const poolsCount = await cartographerGet.poolsCount()
 
@@ -95,7 +94,7 @@ describe("GAS STRESS TESTS", function() {
 
     // ACTIVE POOLS CAP TESTS
     it(`ACTIVE POOLS CAP: Attempting to add another pool should fail with error "${ERR.TOO_MANY_ACTIVE_POOLS}"`, async function() {
-      const { dev } = await getNamedSigners(hre)
+      const { dev } = await ethers.getNamedSigners()
 
       const summitActivePoolsCount = await subCartGet.getActivePoolsCount(SUMMIT)
       expect(summitActivePoolsCount).to.equal(24)
@@ -119,7 +118,7 @@ describe("GAS STRESS TESTS", function() {
       })
     })
     it(`ACTIVE POOLS CAP: Removing a pool should preserve active pools count until rollover, at which point it should decrement`, async function () {
-      const { dev } = await getNamedSigners(hre)
+      const { dev } = await ethers.getNamedSigners()
       const cakeToken = await getCakeToken()
 
       const summitActivePoolsCountInit = await subCartGet.getActivePoolsCount(SUMMIT)
@@ -144,7 +143,7 @@ describe("GAS STRESS TESTS", function() {
       expect(summitActivePoolsCountFinal).to.equal(23)
     })
     it(`ACTIVE POOLS CAP: Setting a pool live should add it to the active pools count instantly`, async function () {
-      const { dev } = await getNamedSigners(hre)
+      const { dev } = await ethers.getNamedSigners()
       const cakeToken = await getCakeToken()
 
       const summitActivePoolsCountInit = await subCartGet.getActivePoolsCount(SUMMIT)
@@ -174,7 +173,7 @@ describe("GAS STRESS TESTS", function() {
 
     // USER INTERACTING POOLS STRESS TEST
     it(`INTERACTING POOLS CAP: Attempting to add another pool should fail with error "${ERR.TOO_MANY_STAKED_POOLS}"`, async function() {
-      const { user1 } = await getNamedSigners(hre)
+      const { user1 } = await ethers.getNamedSigners()
 
       const gasStressInfo = {
           name: 'GS20',
@@ -191,7 +190,7 @@ describe("GAS STRESS TESTS", function() {
       })
     })
     it(`INTERACTING POOLS: Exiting a pool should reduce interacting pools count when there are no winnings to harvest or rewards generated in current round`, async function() {
-      const { user1 } = await getNamedSigners(hre)
+      const { user1 } = await ethers.getNamedSigners()
 
       const gasStressInfo = {
           name: 'GS1',
@@ -233,7 +232,7 @@ describe("GAS STRESS TESTS", function() {
     })
 
     it(`INTERACTING POOLS: Exiting a pool should reduce interacting pools count only after all winnings are harvested`, async function() {
-      const { user1 } = await getNamedSigners(hre)
+      const { user1 } = await ethers.getNamedSigners()
 
       const gasStressInfo = {
           name: 'GS5',
@@ -277,7 +276,7 @@ describe("GAS STRESS TESTS", function() {
 
     // SWITCH TOTEM MAX GAS
     it(`SWITCH TOTEM: Switching totem with 12 active pools with winnings should succeed`, async function() {
-      const { user1 } = await getNamedSigners(hre)
+      const { user1 } = await ethers.getNamedSigners()
 
       await rolloverRoundUntilWinningTotem(SUMMIT, 0)
 
@@ -292,7 +291,7 @@ describe("GAS STRESS TESTS", function() {
 
     // HARVEST ALL / CROSS COMPOUND ALL
     it(`HARVEST ALL: Harvesting all winnings from 12 active pools with winnings should succeed`, async function() {
-      const { user1 } = await getNamedSigners(hre)
+      const { user1 } = await ethers.getNamedSigners()
 
       // Ensure winnings on all farms, then ensure that all has vested
       await rolloverRoundUntilWinningTotem(SUMMIT, 1)

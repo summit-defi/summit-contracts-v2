@@ -12,7 +12,7 @@ async function main() {
 
     console.log('\n\n== QUEUE TIMELOCK TRANSACTIONS ==')
 
-    const poolConfigs = getPoolConfigs(chainId).pools
+    const poolConfigs = getPoolConfigs(chainId)
 
     const elevationQueuedTxHashes = await promiseSequenceMap(
         [PLAINS, MESA, SUMMIT],

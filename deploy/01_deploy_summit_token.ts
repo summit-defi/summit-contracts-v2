@@ -11,10 +11,6 @@ const deploySummitToken: DeployFunction = async function ({
   const {dev, user1, user2, user3} = await getNamedAccounts();
   const chainId = await getChainId()
 
-  console.log({
-    dev
-  })
-
   const SummitToken = await deploy('SummitToken', {
     from: dev,
     log: true,
@@ -22,11 +18,10 @@ const deploySummitToken: DeployFunction = async function ({
 
 
   if (SummitToken.newlyDeployed) {
-    // Mint initial summit, change summit token owner
-    await execute('SummitToken', { from: dev }, 'mint', dev, e18(2000000))
-    consoleLog('Minted Initial SUMMIT Token')    
-
+    
     if (chainIdExpectsUserToHaveSummit(chainId)) {
+      // Mint initial summit, change summit token owner
+      await execute('SummitToken', { from: dev }, 'mint', dev, e18(2000000))
       await execute('SummitToken', { from: dev }, 'transfer', user1, e18(500))
       await execute('SummitToken', { from: dev }, 'transfer', user2, e18(500))
       await execute('SummitToken', { from: dev }, 'transfer', user3, e18(500))
@@ -37,7 +32,7 @@ const deploySummitToken: DeployFunction = async function ({
   
 
   if (chainIdAllowsVerification(chainId)) {
-    await delay(3)
+    
     await failableVerify({
       address: SummitToken.address,
     })

@@ -22,7 +22,7 @@ const deployExpeditionV2: DeployFunction = async function ({
   });
 
   if (chainIdAllowsVerification(chainId)) {
-    await delay(3)
+    
     await failableVerify({
       address: ExpeditionV2.address,
       constructorArguments: [SummitToken.address, EverestToken.address, SummitGlacier.address],

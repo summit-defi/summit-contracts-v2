@@ -1,5 +1,4 @@
-import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
-import hre from 'hardhat'
+import hre, { ethers } from 'hardhat'
 import { allElevationPromiseSequenceMap, Contracts, e18, e6, erc20Method, everestMethod, expeditionMethod, getBifiToken, getCakeToken, getCartographer, getContract, getEverestToken, getExpedition, getSummitToken, getUSDCToken, PoolConfig, SUMMIT } from '../utils';
 import { summitTokenMethod } from '../utils/summitTokenUtils';
 import { syncPools } from './scriptUtils';
@@ -24,7 +23,7 @@ async function main() {
   }
   console.log('\tdone.\n')
   
-  const { dev } = await getNamedSigners(hre)
+  const { dev } = await ethers.getNamedSigners()
   const Cartographer = await getCartographer()
   const summitToken = await getSummitToken()
   const everestToken = await getEverestToken()

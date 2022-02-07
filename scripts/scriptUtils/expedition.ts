@@ -1,10 +1,9 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import hre, { getChainId, ethers } from "hardhat";
 import { EXPEDITION, ExpeditionConfig, getCartographer, writeExpeditionPid } from "../../utils";
 
 export const createExpedition = async (expedition: ExpeditionConfig) => {
     const chainId = await getChainId()
-    const { dev } = await getNamedSigners(hre)
+    const { dev } = await ethers.getNamedSigners()
     const Cartographer = await getCartographer()
 
     console.log(`\tCreate Expedition: ${expedition.name}`)

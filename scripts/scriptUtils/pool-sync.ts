@@ -1,10 +1,9 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers"
-import hre, { getChainId } from "hardhat"
+import hre, { ethers, getChainId } from "hardhat"
 import { PoolConfig, getElevationName, promiseSequenceMap, replaceSummitAddresses, subCartGet, cartographerGet, getSummitToken, cartographerMethod, cartographerSetParam, getEverestToken, ZEROADD, getPassthroughStrategy, getCartographer } from "../../utils"
 import { createPassthroughStrategy } from "./passthrough-strategy"
 
 export const syncPools = async (elevation: number, poolConfigs: PoolConfig[]) => {
-    const { dev } = await getNamedSigners(hre)
+    const { dev } = await ethers.getNamedSigners()
     const elevationName = getElevationName(elevation)
     const summitToken = await getSummitToken()
     const everestToken = await getEverestToken()

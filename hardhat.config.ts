@@ -1,8 +1,8 @@
 import "@nomiclabs/hardhat-waffle"
 import 'hardhat-deploy'
+import "@nomiclabs/hardhat-etherscan"
 import "@nomiclabs/hardhat-ethers"
 import "@nomiclabs/hardhat-ganache"
-import "@nomiclabs/hardhat-etherscan"
 import 'hardhat-abi-exporter'
 import 'hardhat-contract-sizer'
 import 'hardhat-gas-reporter'
@@ -82,7 +82,7 @@ const config: HardhatUserConfig = {
     ftm_mainnet: {
       url: "https://rpc.ftm.tools/",
       chainId: 250,
-      gasPrice: ethers.utils.parseUnits('10000', 'gwei').toNumber(),
+      gasPrice: ethers.utils.parseUnits('500', 'gwei').toNumber(),
       accounts: { mnemonic: mnemonics.ftm_testnet },
       tags: ['MAINNET'],
     }
@@ -146,7 +146,10 @@ const config: HardhatUserConfig = {
     }
   },
   etherscan: {
-    apiKey: apiKey.bscscan
+    apiKey: apiKey.ftmscan
+    // bsc: apiKey.bscscan,
+    // bscTestnet: apiKey.bscscan,
+    // opera: apiKey.ftmscan,
   },
   abiExporter: {
     path: './data/abi',

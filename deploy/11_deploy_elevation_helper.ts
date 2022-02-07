@@ -51,12 +51,12 @@ const deployElevationHelper: DeployFunction = async function ({
   )
 
   if (chainIdAllowsVerification(chainId)) {
-    await delay(3)
+    
     await failableVerify({
       address: SummitTrustedSeederRNGModule.address,
       constructorArguments: [Cartographer.address],
     })
-    await delay(3)
+    
     await failableVerify({
       address: ElevationHelper.address,
       constructorArguments: [Cartographer.address, ExpeditionV2.address],

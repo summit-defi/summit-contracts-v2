@@ -1,6 +1,5 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers"
+import hre, { ethers } from 'hardhat'
 import { expect } from "chai"
-import hre from 'hardhat'
 import { e18, getCakeToken, ZEROADD, getSummitToken, INF_APPROVE, getSummitBalance, deltaBN, cartographerMethod } from "../utils"
 import { summitTokenMethod } from "../utils/summitTokenUtils"
 import { plainsUnlockedFixture } from "./fixtures"
@@ -16,7 +15,7 @@ describe("SUMMIT TOKEN SWAP", function() {
         })
     })
     it('SUMMIT TOKEN SWAP: Should succeed and return the correct amount of SUMMIT', async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const cakeToken = await getCakeToken()
         const summitToken = await getSummitToken()
         

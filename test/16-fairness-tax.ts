@@ -1,6 +1,5 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
-import hre from "hardhat";
+import hre, { ethers } from "hardhat";
 import { e18, getTimestamp,  mineBlockWithTimestamp, getSummitToken, everestMethod, days, cartographerMethod, OASIS, getCakeToken, rolloverRound, cartographerGet, PLAINS, cartographerSetParam, sumBigNumbers, getSummitBalance, getTokenBalance, tokenAmountAfterWithdrawTax } from "../utils";
 import { mesaUnlockedFixture } from "./fixtures";
 
@@ -12,7 +11,7 @@ describe("FAIRNESS TAX", async function() {
     })
 
     it(`TAX TIMESTAMP: TokenLastDepositTimestampForTax is set correctly on initial deposit`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         const lastDepositTimestampForTaxInit = await cartographerGet.tokenLastDepositTimestampForTax(user1.address, summitToken.address)
@@ -35,7 +34,7 @@ describe("FAIRNESS TAX", async function() {
     })
 
     it(`TAX TIMESTAMP: The fairness tax should not reset for a token when a use deposits < 5% of their current staked amount`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         const lastDepositTimestampForTaxInit = await cartographerGet.tokenLastDepositTimestampForTax(user1.address, summitToken.address)
@@ -62,7 +61,7 @@ describe("FAIRNESS TAX", async function() {
     })
 
     it(`TAX TIMESTAMP: The fairness tax should reset for a token when a use deposits > 5% of their current staked amount`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         const lastDepositTimestampForTaxInit = await cartographerGet.tokenLastDepositTimestampForTax(user1.address, summitToken.address)
@@ -89,7 +88,7 @@ describe("FAIRNESS TAX", async function() {
     })
 
     it(`STAKED TOTAL AMOUNT FOR TOKEN: The user's total staked amount for token should be calculated correctly across all elevations`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
         const oasisDepositAmount = e18(5)
         const plainsDepositAmount = e18(10)
@@ -121,7 +120,7 @@ describe("FAIRNESS TAX", async function() {
     })
 
     it(`TAX BP: The fairness tax decreases correctly to the 0% for native farms, over the duration of the tax decay`, async function() {
-        const { dev, user1 } = await getNamedSigners(hre)
+        const { dev, user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         await cartographerSetParam.setTokenIsNativeFarm({
@@ -148,7 +147,7 @@ describe("FAIRNESS TAX", async function() {
     })
 
     it(`TAX BP: The fairness tax decreases correctly to the minimum value, over the duration of the tax decay`, async function() {
-        const { dev, user1 } = await getNamedSigners(hre)
+        const { dev, user1 } = await ethers.getNamedSigners()
         const cakeToken = await getCakeToken()
 
         const taxBPEarlier = await cartographerGet.taxBP(user1.address, cakeToken.address)
@@ -175,7 +174,7 @@ describe("FAIRNESS TAX", async function() {
     })
 
     it(`WAIVED TAX: The fairness tax is waived when a use elevates their SUMMIT from the elevation farms to the Expedition`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const cakeToken = await getSummitToken()
 
         await cartographerMethod.deposit({
@@ -202,7 +201,7 @@ describe("FAIRNESS TAX", async function() {
     })
 
     it(`MINIMUM TAX: The 0% tax should be taken when a use withdraws from a farm after the tax has fully decayed (for native farms) `, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
         const depositAmount = 5
         const withdrawAmount = 5
@@ -229,7 +228,7 @@ describe("FAIRNESS TAX", async function() {
     })
 
     it(`MINIMUM TAX: The baseMinimumWithdrawalTax (minimum tax) should be taken when a use withdraws from a farm after the tax has fully decayed (for non-native farms) `, async function() {        
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const cakeToken = await getCakeToken()
         const depositAmount = 5
         const withdrawAmount = 5
@@ -262,7 +261,7 @@ describe("FAIRNESS TAX", async function() {
     })
 
     it(`TAX WITHDRAW: The 0% withdrawal fee should be taken when a use withdraws from a farm after the tax has fully decayed (native farms) `, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
         const withdrawAmount = 5
 
@@ -279,7 +278,7 @@ describe("FAIRNESS TAX", async function() {
     })
 
     it(`TAX WITHDRAW: The correct Fairness Tax should be take when as user withdraws their funds while the tax is active (before finished decaying to minimum) `, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const cakeToken = await getCakeToken()
         const withdrawAmount = 5
 
@@ -301,7 +300,7 @@ describe("FAIRNESS TAX", async function() {
     })
 
     it(`TAX PARAMS: Fairness taxes can be set and updated for each token `, async function() {
-        const { dev } = await getNamedSigners(hre)
+        const { dev } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
         const cakeToken = await getCakeToken()
 
@@ -325,7 +324,7 @@ describe("FAIRNESS TAX", async function() {
     })    
 
     it(`TAX PARAMS: Making a token as a native farm is successful `, async function() {
-        const { dev } = await getNamedSigners(hre)
+        const { dev } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
         const cakeToken = await getCakeToken()
 

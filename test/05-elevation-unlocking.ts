@@ -1,5 +1,4 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
 import { e18, ERR, EVENT, PLAINS, MESA, SUMMIT, mineBlockWithTimestamp, cartographerMethod, getSummitToken, OASIS, getCartographer, elevationHelperGet, cartographerSynth, cartographerGet, expect6FigBigNumberAllEqual, expectAllEqual, subCartGet, allElevationPromiseSequenceMap, getBifiToken, getCakeToken, promiseSequenceMap, consoleLog, userPromiseSequenceMap, getTimestamp } from "../utils";
@@ -22,7 +21,7 @@ const initialTotemSelections = async (user: SignerWithAddress) => {
 }
 
 const userDepositIntoElevationPools = async (elevation: number) => {
-  const { user1 } = await getNamedSigners(hre)
+  const { user1 } = await ethers.getNamedSigners()
   const summitToken = await getSummitToken()
   const cakeToken = await getCakeToken()
   const bifiToken = await getBifiToken()
@@ -58,7 +57,7 @@ describe("ELEVATION Unlocks", function() {
     it(`UNLOCK: Before PLAINS unlock, deposits should be enabled, but no yield contributed accumulates and potential winnings are 0`, async function() {
       await oasisUnlockedFixture()
   
-      const { user1 } = await getNamedSigners(hre)
+      const { user1 } = await ethers.getNamedSigners()
       const summitToken = await getSummitToken()
       
       await initialTotemSelections(user1)
@@ -149,7 +148,7 @@ describe("ELEVATION Unlocks", function() {
     it(`UNLOCK: Before MESA unlock, deposits should be enabled, but no yield contributed accumulates and potential winnings are 0`, async function() {
       await oasisUnlockedFixture()
   
-      const { user1 } = await getNamedSigners(hre)
+      const { user1 } = await ethers.getNamedSigners()
       const summitToken = await getSummitToken()
       
       await initialTotemSelections(user1)
@@ -234,7 +233,7 @@ describe("ELEVATION Unlocks", function() {
     it(`UNLOCK: Before SUMMIT unlock, deposits should be enabled, but no yield contributed accumulates and potential winnings are 0`, async function() {
       await oasisUnlockedFixture()
   
-      const { user1 } = await getNamedSigners(hre)
+      const { user1 } = await ethers.getNamedSigners()
       const summitToken = await getSummitToken()
       
       await initialTotemSelections(user1)

@@ -1,6 +1,5 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
+import hre, { ethers } from "hardhat";
 import { expect } from "chai"
-import hre from "hardhat";
 import { e18, ERR, toDecimal, getTimestamp, deltaBN, mineBlockWithTimestamp, promiseSequenceMap, getSummitToken, everestGet, everestMethod, days, getSummitBalance, getEverestBalance, userPromiseSequenceMap, allElevationPromiseSequenceMap, cartographerMethod, rolloverRoundUntilWinningTotem, getUserTotems, OASIS, getCakeToken, getBifiToken, epochDuration, getSummitGlacier, rolloverIfAvailable, rolloverRound, sumBigNumbers, tokenPromiseSequenceMap, cartographerGet, expect6FigBigNumberEquals, BURNADD, expectAllEqual } from "../utils";
 import { summitGlacierGet, summitGlacierMethod } from "../utils/summitGlacierUtils";
 import { oasisUnlockedFixture, summitUnlockedFixture } from "./fixtures";
@@ -47,7 +46,7 @@ describe("SUMMIT LOCKING", async function() {
     })
 
     it(`LOCKING: Claiming summit transfers correct amount to summit-glacier contract`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
         const cakeToken = await getCakeToken()
         const bifiToken = await getBifiToken()
@@ -146,7 +145,7 @@ describe("SUMMIT LOCKING", async function() {
     })
 
     it(`LOCKING: Updating yield lock epoch count changes duration of locking time`, async function() {
-        const { dev } = await getNamedSigners(hre)
+        const { dev } = await ethers.getNamedSigners()
 
         const currentEpoch = await summitGlacierGet.getCurrentEpoch()
         const currentEpochStartTimestamp = await summitGlacierGet.getEpochStartTimestamp(currentEpoch)
@@ -194,7 +193,7 @@ describe("SUMMIT LOCKING", async function() {
     })
 
     it(`LOCKING: User interacting epochs are added and removed, and fetched correctly`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const interactingEpochs0 = await summitGlacierGet.getUserInteractingEpochs(user1.address)
         const interactingEpoch0 = interactingEpochs0[0]
         const currentEpoch = await summitGlacierGet.getCurrentEpoch()
@@ -255,7 +254,7 @@ describe("SUMMIT LOCKING", async function() {
     })
 
     it(`LOCKING: Lifetime winnings and Lifetime bonuses increments correctly`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const currentTimestamp = await getTimestamp()
         await mineBlockWithTimestamp(currentTimestamp + days(14))
 
@@ -294,7 +293,7 @@ describe("SUMMIT LOCKING", async function() {
     })
 
     it(`ACCESS: Only Cartographer and ExpeditionV2 can add locked winnings`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitGlacier = await getSummitGlacier()
 
         await expect(
@@ -304,7 +303,7 @@ describe("SUMMIT LOCKING", async function() {
 
 
     it(`HARVEST: Harvesting summit before the lock period has matured incurs 50% tax`, async function() {
-        const { user1, exped } = await getNamedSigners(hre)
+        const { user1, exped } = await ethers.getNamedSigners()
         const currentEpoch = await summitGlacierGet.getCurrentEpoch()
 
         const currentTimestamp = await getTimestamp()
@@ -340,7 +339,7 @@ describe("SUMMIT LOCKING", async function() {
     })
 
     it(`HARVEST: Harvesting summit after lock matures transfers 100% of funds correctly to user`, async function() {
-        const { user1, exped } = await getNamedSigners(hre)
+        const { user1, exped } = await ethers.getNamedSigners()
         const currentEpoch = await summitGlacierGet.getCurrentEpoch()
 
         const currentTimestamp = await getTimestamp()
@@ -381,7 +380,7 @@ describe("SUMMIT LOCKING", async function() {
 
 
     it(`COMPOUND: Compounding summit for everest is available at any time regardless of lock period maturity`, async function() {
-        const { user1, exped } = await getNamedSigners(hre)
+        const { user1, exped } = await ethers.getNamedSigners()
         const currentEpoch = await summitGlacierGet.getCurrentEpoch()
 
         const currentTimestamp = await getTimestamp()

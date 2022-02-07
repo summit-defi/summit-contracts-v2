@@ -1,5 +1,4 @@
 import { BigNumber } from '@ethersproject/bignumber';
-import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers';
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat';
 import { cartographerGet, cartographerMethod, cartographerSynth, consoleLog, Contracts, depositedAfterFee, e18, EVENT, expect6FigBigNumberEquals, getSubCartographer, mineBlock, OASIS, promiseSequenceMap, subCartGet, subCartMethod, toDecimal } from '.';
@@ -12,7 +11,7 @@ import { e12, getExpectedDistributionsOnClaim, getTimestamp, mineBlocks, tokenAm
 // DEPOSIT
 const standardDepositShouldSucceed = (tokenName: string, depositFee: number = 0) => {
   it('DEPOSIT: Standard deposit should succeed', async function() {
-    const { user1 } = await getNamedSigners(hre)
+    const { user1 } = await ethers.getNamedSigners()
     const token = await ethers.getContract(tokenName)
 
     const initialStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
@@ -34,7 +33,7 @@ const standardDepositShouldSucceed = (tokenName: string, depositFee: number = 0)
 // PENDING
 const pendingSUMMITShouldIncreaseEachBlock = (tokenName: string) => {
     it('PENDING: Users pending SUMMIT should increase each block', async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const token = await getContract(tokenName)
     
         const timestampBefore = await getTimestamp()
@@ -76,7 +75,7 @@ const pendingSUMMITShouldIncreaseEachBlock = (tokenName: string) => {
 
 const pendingSUMMITRedeemedOnDeposit = (tokenName: string, depositFee: number = 0) => {
     it('DEPOSIT / CLAIM: User should claim pending rewards on further deposit', async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const token = await getContract(tokenName)
 
         const initialStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
@@ -94,7 +93,7 @@ const pendingSUMMITRedeemedOnDeposit = (tokenName: string, depositFee: number = 
 
 const redeemTransfersCorrectSUMMITToAddresses = (tokenName: string) => {
     it('CLAIM: Claiming rewards transfers correct amount to summitGlacier', async function() {
-      const { user1, dev } = await getNamedSigners(hre)
+      const { user1, dev } = await ethers.getNamedSigners()
       const token = await getContract(tokenName)
 
 
@@ -132,7 +131,7 @@ const redeemTransfersCorrectSUMMITToAddresses = (tokenName: string) => {
 // WITHDRAW
 const pendingSUMMITRedeemedOnWithdrawal = (tokenName: string) => {
   it('WITHDRAW / CLAIM: User should claim pending rewards on withdraw', async function() {
-      const { user1 } = await getNamedSigners(hre)
+      const { user1 } = await ethers.getNamedSigners()
       const token = await getContract(tokenName)
 
       const initialStaked = (await subCartGet.userInfo(token.address, OASIS, user1.address)).staked
@@ -163,7 +162,7 @@ const pendingSUMMITRedeemedOnWithdrawal = (tokenName: string) => {
   // RUNNING LP SUPPLY
   const lpSupplyUpdatesWithDepositsAndWithdrawals = (tokenName: string, depositFee: number = 0) => {
     it('LPSUPPLY: Should increase and decrease with deposits and withdrawals', async function() {
-        const { user1, user2, user3 } = await getNamedSigners(hre)
+        const { user1, user2, user3 } = await ethers.getNamedSigners()
         const token = await getContract(tokenName)
 
         const txs = [

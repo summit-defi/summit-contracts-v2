@@ -1,9 +1,8 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import hre, { artifacts, ethers, getChainId } from "hardhat";
 import { writeContractAddresses } from "../../utils";
 
 export const createLpPair = async (summitAddress: string, tokenBAddress: string, factoryAddress: string, writeAddresses: boolean) => {
-    const { dev } = await getNamedSigners(hre)
+    const { dev } = await ethers.getNamedSigners()
     const factoryArtifact = await artifacts.readArtifact("IPancakeFactory")
     const factory = await new ethers.Contract(factoryAddress, factoryArtifact.abi, ethers.provider)
 

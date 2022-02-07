@@ -1,6 +1,5 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
-import hre from "hardhat";
+import hre, { ethers } from "hardhat";
 import { e18, ERR, toDecimal, getTimestamp, deltaBN, mineBlockWithTimestamp, promiseSequenceMap, getSummitToken, everestGet, everestMethod, days, getSummitBalance, getEverestBalance, userPromiseSequenceMap, allElevationPromiseSequenceMap, cartographerMethod, rolloverRoundUntilWinningTotem, getUserTotems, OASIS, getCakeToken, getBifiToken, epochDuration, getSummitGlacier, rolloverIfAvailable, rolloverRound, sumBigNumbers, tokenPromiseSequenceMap, cartographerGet, expect6FigBigNumberEquals, BURNADD, expectAllEqual, subCartGet, consoleLog, PLAINS, checkmarkIfBNEquals, checkmarkIfEquals, cartographerSetParam } from "../utils";
 import { summitGlacierGet, summitGlacierMethod } from "../utils/summitGlacierUtils";
 import { mesaUnlockedFixture, oasisUnlockedFixture, summitUnlockedFixture } from "./fixtures";
@@ -12,7 +11,7 @@ describe("STAKING BONUSES", async function() {
     })
 
     it(`BONUS TIMESTAMP: TokenLastWithdrawTimestampForBonus is set correctly on initial deposit`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         const lastWithdrawTimestampForBonusInit = await cartographerGet.tokenLastWithdrawTimestampForBonus(user1.address, summitToken.address)
@@ -34,7 +33,7 @@ describe("STAKING BONUSES", async function() {
         })
     })
     it(`BONUS TIMESTAMP: TokenLastWithdrawTimestampForBonus doesn't update on further deposits`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         const lastWithdrawTimestampForBonusInit = await cartographerGet.tokenLastWithdrawTimestampForBonus(user1.address, summitToken.address)
@@ -55,7 +54,7 @@ describe("STAKING BONUSES", async function() {
     })
 
     it(`BONUS ACCRUAL: Before bonus starts accruing: TokenLastWithdrawTimestampForBonus doesnt update on withdraw`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         const lastWithdrawTimestampForBonusInit = await cartographerGet.tokenLastWithdrawTimestampForBonus(user1.address, summitToken.address)
@@ -75,7 +74,7 @@ describe("STAKING BONUSES", async function() {
         })
     })
     it(`BONUS ACCRUAL: Harvesting winnings doesn't reset bonus BP`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         const lastWithdrawTimestampForBonusInit = await cartographerGet.tokenLastWithdrawTimestampForBonus(user1.address, summitToken.address)
@@ -90,7 +89,7 @@ describe("STAKING BONUSES", async function() {
         expect(lastWithdrawTimestampForBonusFinal).to.equal(lastWithdrawTimestampForBonusInit)
     })
     it(`BONUS ACCRUAL: Bonus start accruing at 7 days, and accrues correctly and earns correctly over duration of 7 days, and remains at max indefinitely`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         const lastWithdrawTimestampForBonusInit = await cartographerGet.tokenLastWithdrawTimestampForBonus(user1.address, summitToken.address)
@@ -172,7 +171,7 @@ describe("STAKING BONUSES", async function() {
     })
 
     it(`BONUS WITHDRAW: Withdraw after bonus starts accruing resets bonus to 0%, and starts accruing immediately`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         const lastWithdrawTimestampForBonusInit = await cartographerGet.tokenLastWithdrawTimestampForBonus(user1.address, summitToken.address)
@@ -198,7 +197,7 @@ describe("STAKING BONUSES", async function() {
         expect(bonusFinal).to.equal(100)
     })
     it(`BONUS TOKENS: Bonuses are tracked for each token independently`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const cakeToken = await getCakeToken()
         const summitToken = await getSummitToken()
 
@@ -229,7 +228,7 @@ describe("STAKING BONUSES", async function() {
         expect(summitBonusFinal).to.equal(700)
     })
     it(`BONUS TOKENS: Withdrawing from any farm of same token resets bonus to 0%`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const cakeToken = await getCakeToken()
 
         const cakeBonusInit = await cartographerGet.getBonusBP(user1.address, cakeToken.address)
@@ -254,7 +253,7 @@ describe("STAKING BONUSES", async function() {
     })
     
     it(`BONUS PARAMS: MaxBonusBP can be updated`, async function() {
-        const { dev, user1 } = await getNamedSigners(hre)
+        const { dev, user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
         const cakeToken = await getCakeToken()
 

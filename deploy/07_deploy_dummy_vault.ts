@@ -43,7 +43,7 @@ const deployDummyVault: DeployFunction = async function ({
   }
 
   if (chainIdAllowsVerification(chainId)) {
-    await delay(3)
+    
     failableVerify({
       address: bifiToken.address,
       contract: 'contracts/dummy/DummyBIFI.sol:DummyBIFI',

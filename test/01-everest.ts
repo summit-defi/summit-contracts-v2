@@ -1,7 +1,6 @@
+import hre, { ethers } from "hardhat";
 import { BigNumber } from "@ethersproject/bignumber";
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
-import hre from "hardhat";
 import { e18, ERR, toDecimal, INF_APPROVE, getTimestamp, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, promiseSequenceMap, consoleLog, getSummitToken, everestGet, everestMethod, days, everestSetParams, getSummitBalance, getEverestBalance, userPromiseSequenceMap, usersSummitBalances, usersEverestBalances, userPromiseSequenceReduce, getEverestToken, getDummyEverestExtension, ZEROADD, expectAllEqual, erc20Method, Contracts } from "../utils";
 import { oasisUnlockedFixture } from "./fixtures";
 
@@ -22,7 +21,7 @@ describe("EVEREST", async function() {
 
 
     it(`EVEREST: Locking for invalid lock duration throws error "${ERR.EVEREST.INVALID_LOCK_DURATION}"`, async function () {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         await everestMethod.lockSummit({
             user: user1,
@@ -39,7 +38,7 @@ describe("EVEREST", async function() {
         })
     })
     it(`EVEREST: Locking more than user's balance throws error "${ERR.ERC20.EXCEEDS_BALANCE}"`, async function () {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         await everestMethod.lockSummit({
             user: user1,
@@ -49,7 +48,7 @@ describe("EVEREST", async function() {
         })
     })
     it(`REMOVE EVEREST: User without locked everest cannot withdraw, or throws "${ERR.EVEREST.USER_DOESNT_EXIST}"`, async function () {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         await everestMethod.withdrawLockedSummit({
             user: user1,
@@ -113,7 +112,7 @@ describe("EVEREST", async function() {
     })
 
     it(`INCREASE EVEREST: User with already locked summit cannot do another initial lock, or throws "${ERR.EVEREST.ALREADY_LOCKING_SUMMIT}"`, async function () {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         await everestMethod.lockSummit({
             user: user1,
@@ -124,7 +123,7 @@ describe("EVEREST", async function() {
     })
 
     it(`INCREASE LOCK DURATION: Users should be able to increase their lock duration and earn more EVEREST`, async function() {
-        const { user2 } = await getNamedSigners(hre)
+        const { user2 } = await ethers.getNamedSigners()
 
         await everestMethod.increaseLockDuration({
             user: user2,
@@ -160,7 +159,7 @@ describe("EVEREST", async function() {
     })
 
     it(`INCREASE EVEREST: User with already locked summit should be able to lock more summit`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         
         const userSummitInit = await getSummitBalance(user1.address)
         const userEverestInit = await getEverestBalance(user1.address)
@@ -200,7 +199,7 @@ describe("EVEREST", async function() {
     })
 
     it(`REMOVE EVEREST: User's lock must mature before decreasing locked summit, or throws "${ERR.EVEREST.EVEREST_LOCKED}"`, async function () {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         await everestMethod.withdrawLockedSummit({
             user: user1,
@@ -210,7 +209,7 @@ describe("EVEREST", async function() {
     })
 
     it(`REMOVE EVEREST: After lock matured, User cannot withdraw 0 or more than their locked everest, or throws "${ERR.EVEREST.BAD_WITHDRAW}"`, async function () {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         const everestInfo = await everestGet.userEverestInfo(user1.address)
         await mineBlockWithTimestamp(everestInfo.lockRelease)
@@ -229,7 +228,7 @@ describe("EVEREST", async function() {
     })
 
     it(`REMOVE EVEREST: Valid summit withdraw is successful`, async function () {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         const everestInfoInit = await everestGet.userEverestInfo(user1.address)
         const halfEverestAmount = everestInfoInit.everestOwned.div(2)
@@ -308,7 +307,7 @@ describe("EVEREST RUNNING AVERAGE", async function() {
         await summitToken.connect(user3).approve(everestToken.address, INF_APPROVE)
     })
     it('EVEREST RUNNING AVG: Lock / withdraw events should update the running average', async function() {
-        const { user1, user2, user3 } = await getNamedSigners(hre)
+        const { user1, user2, user3 } = await ethers.getNamedSigners()
 
         let totalSummitLocked = e18(0)
 
@@ -407,7 +406,7 @@ describe("EVEREST PANIC", async function() {
         await summitToken.connect(user1).approve(everestToken.address, INF_APPROVE)
     })
     it('PANIC: Panic recover funds not callable when not in panic mode', async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         await everestMethod.lockSummit({
             user: user1,
@@ -421,7 +420,7 @@ describe("EVEREST PANIC", async function() {
         })
     })
     it('PANIC: Panic can be turned on', async function () {
-        const { user1, dev } = await getNamedSigners(hre)
+        const { user1, dev } = await ethers.getNamedSigners()
 
         expect(await everestGet.panic()).to.be.false
 
@@ -455,7 +454,7 @@ describe("EVEREST PANIC", async function() {
         expect(await everestGet.panic()).to.be.true
     })
     it('PANIC: Users can recover their SUMMIT without it maturing in panic mode', async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         const userEverestInfoInit = await everestGet.userEverestInfo(user1.address)
@@ -472,7 +471,7 @@ describe("EVEREST PANIC", async function() {
         expect(userEverestInfoFinal.summitLocked).to.equal(0)
     })
     it(`PANIC: User facing functions all turn off in panic mode, throwing "${ERR.EVEREST.NOT_AVAILABLE_DURING_PANIC}"`, async function () {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         await everestMethod.lockSummit({
             user: user1,
@@ -510,7 +509,7 @@ describe("EVEREST EXTENSIONS", async function() {
         await summitToken.connect(user1).approve(everestToken.address, INF_APPROVE)
     })
     it(`EXTENSION: Adding an extension is successful`, async function() {
-        const { dev, user1 } = await getNamedSigners(hre)
+        const { dev, user1 } = await ethers.getNamedSigners()
         const dummyEverestExtension = await getDummyEverestExtension()
 
         const everestExtensionsInit = await everestGet.getEverestExtensions()
@@ -551,7 +550,7 @@ describe("EVEREST EXTENSIONS", async function() {
         expect(everestExtensionsFinal.includes(dummyEverestExtension.address)).to.be.true
     })
     it(`EXTENSION: Removing an everest extension is successful`, async function() {
-        const { dev, user1 } = await getNamedSigners(hre)
+        const { dev, user1 } = await ethers.getNamedSigners()
         const dummyEverestExtension = await getDummyEverestExtension()
 
         const everestExtensionsInit = await everestGet.getEverestExtensions()
@@ -592,7 +591,7 @@ describe("EVEREST EXTENSIONS", async function() {
         expect(everestExtensionsFinal.includes(dummyEverestExtension.address)).to.be.false
     })
     it(`EXTENSION: Updating user's everest amount updates extension's everest amounts`, async function() {
-        const { dev, user1 } = await getNamedSigners(hre)
+        const { dev, user1 } = await ethers.getNamedSigners()
         const dummyEverestExtension = await getDummyEverestExtension()
 
         const userDummyExtEverest0 = await dummyEverestExtension.userEverest(user1.address)
@@ -678,7 +677,7 @@ describe('EVEREST WHITELISTED TRANSFER ADDRESSES', async function() {
         await summitToken.connect(user1).approve(everestToken.address, INF_APPROVE)
     })
     it('WHITELIST LOCK SUMMIT: Locking SUMMIT is successful', async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         await everestMethod.lockSummit({
             user: user1,
@@ -688,7 +687,7 @@ describe('EVEREST WHITELISTED TRANSFER ADDRESSES', async function() {
     })
 
     it('WHITELIST WITHDRAW SUMMIT: Withdrawing locked SUMMIT is successful', async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
 
         const userEverestInfo = await everestGet.userEverestInfo(user1.address)
         await mineBlockWithTimestamp(userEverestInfo.lockRelease)
@@ -699,7 +698,7 @@ describe('EVEREST WHITELISTED TRANSFER ADDRESSES', async function() {
     })
 
     it(`WHITELIST: Transferring everest to a non-whitelisted address fails with error "Not a whitelisted transfer"`, async function() {
-        const { user1, user2 } = await getNamedSigners(hre)
+        const { user1, user2 } = await ethers.getNamedSigners()
 
         await erc20Method.transfer({
             user: user1,
@@ -711,7 +710,7 @@ describe('EVEREST WHITELISTED TRANSFER ADDRESSES', async function() {
     })
 
     it(`WHITELIST: Adding a whitelisted address is successful`, async function() {
-        const { dev, user1, user2 } = await getNamedSigners(hre)
+        const { dev, user1, user2 } = await ethers.getNamedSigners()
 
         await everestMethod.addWhitelistedTransferAddress({
             dev: user1,
@@ -730,7 +729,7 @@ describe('EVEREST WHITELISTED TRANSFER ADDRESSES', async function() {
     })
 
     it(`WHITELIST: Transferring everest to a whitelisted address should succeed`, async function() {
-        const { user1, user2 } = await getNamedSigners(hre)
+        const { user1, user2 } = await ethers.getNamedSigners()
 
         await erc20Method.transfer({
             user: user1,

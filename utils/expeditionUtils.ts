@@ -1,5 +1,5 @@
 import { BigNumber } from "@ethersproject/bignumber"
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 import { expect } from "chai"
 import { string } from "hardhat/internal/core/params/argumentTypes"
 import { consoleLog, e0, e18, elevationHelperGet, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, EXPEDITION, getElevationHelper, getExpedition, getSummitBalance, getUsdcBalance, mineBlockWithTimestamp, toDecimal, usersExpeditionInfos } from "."

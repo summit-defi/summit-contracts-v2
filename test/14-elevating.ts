@@ -1,5 +1,4 @@
 import { Contract } from "@ethersproject/contracts";
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
 import { e18, ERR, EVENT, OASIS, PLAINS, MESA, SUMMIT, EXPEDITION, depositedAfterFee, mineBlockWithTimestamp, toDecimal, expect6FigBigNumberEquals, deltaBN, expect6FigBigNumberAllEqual, promiseSequenceMap, rolloverIfAvailable, consoleLog, Contracts, rolloverRound, cartographerMethod, subCartGet, tokenAmountAfterDepositFee, cartographerGet, getSummitToken, cartographerSetParam, onlyElevationPromiseSequenceMap } from "../utils";
@@ -7,7 +6,7 @@ import { expeditionUnlockedFixture } from "./fixtures";
 
 
 const elevateTestSeries = async (token: Contract) => {
-    const { user1 } = await getNamedSigners(hre)
+    const { user1 } = await ethers.getNamedSigners()
 
     const amount = e18(5)
     const depositFee = await cartographerGet.getTokenDepositFee(token.address)
@@ -86,7 +85,7 @@ describe("Elevation", function() {
         await elevateTestSeries(bifiToken)
     })
     it(`Elevating to a pool at the current elevation will fail with error ${ERR.ELEVATE.NO_SAME_ELEV_TRANSFER}`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         await cartographerMethod.elevate({
@@ -99,7 +98,7 @@ describe("Elevation", function() {
         })
     })
     it(`Elevating with zero amount will fail with error ${ERR.ELEVATE.NON_ZERO_AMOUNT}`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         await cartographerMethod.elevate({
@@ -112,7 +111,7 @@ describe("Elevation", function() {
         })
     })
     it(`Elevating more than staked will fail with error ${ERR.BAD_WITHDRAWAL}`, async function() {
-        const { user1 } = await getNamedSigners(hre)
+        const { user1 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         await cartographerMethod.elevate({
@@ -125,7 +124,7 @@ describe("Elevation", function() {
         })
     })
     it(`Elevating to an elevation without a selected totem should fail with error ${ERR.TOTEM_NOT_SELECTED}`, async function() {
-        const { user2 } = await getNamedSigners(hre)
+        const { user2 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
 
         await cartographerMethod.deposit({

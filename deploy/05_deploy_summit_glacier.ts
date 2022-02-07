@@ -17,7 +17,7 @@ const deploySummitGlacier: DeployFunction = async function ({
   });
 
   if (chainIdAllowsVerification(chainId)) {
-    await delay(3)
+    
     await failableVerify({
       address: SummitGlacier.address,
     })

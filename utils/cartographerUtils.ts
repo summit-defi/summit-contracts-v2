@@ -1,5 +1,5 @@
 import { BigNumber } from "@ethersproject/bignumber"
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 import { claimAmountBonus, claimAmountWithBonusAdded, days, e18, e12, e6, elevationPromiseSequenceReduce, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getBifiToken, getCakeToken, getTimestamp, OASIS, subCartGet, sumBigNumbers, toDecimal, tokenAmountAfterDepositFee, tokenAmountAfterWithdrawTax, tokenPromiseSequenceMap } from "."
 import { getCartographer, getSummitToken } from "./contracts"
 

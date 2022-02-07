@@ -21,7 +21,7 @@ const deployCartographerOasis: DeployFunction = async function ({
   });
 
   if (chainIdAllowsVerification(chainId)) {
-    await delay(3)
+    
     await failableVerify({
       address: CartographerOasis.address,
       constructorArguments: [Cartographer.address],

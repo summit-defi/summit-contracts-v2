@@ -1,6 +1,5 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
-import hre from "hardhat";
+import hre, { ethers } from "hardhat";
 import { ERR, PLAINS, mineBlockWithTimestamp, getSeeds, mineBlock, summitTrustedSeederMethod, elevationHelperGet, summitTrustedSeederGet, rolloverRound, getTimestamp } from "../utils";
 import { plainsUnlockedFixture } from "./fixtures";
 
@@ -10,7 +9,7 @@ describe("Seeding Random Numbers", function() {
       await plainsUnlockedFixture()
   })
   it(`SEEDING: Sending sealed and unsealed seed should fail until nextSeedRoundAvailable returns true`, async function() {
-    const { trustedSeeder } = await getNamedSigners(hre)
+    const { trustedSeeder } = await ethers.getNamedSigners()
     const { unsealedSeed, sealedSeed } = getSeeds('summit', trustedSeeder.address)
 
     await summitTrustedSeederMethod.receiveSealedSeed({
@@ -54,7 +53,7 @@ describe("Seeding Random Numbers", function() {
     expect(nextSeedRoundAvailableTrue).to.be.true    
   })
   it(`SEEDING: Sending a sealed seed should succeed, and nextSeedRoundAvailable should become false`, async function() {
-    const { trustedSeeder } = await getNamedSigners(hre)
+    const { trustedSeeder } = await ethers.getNamedSigners()
 
     const { sealedSeed } = getSeeds('summit', trustedSeeder.address)
 
@@ -68,7 +67,7 @@ describe("Seeding Random Numbers", function() {
     expect(nextSeedRoundAvailableFalse).to.be.false
   })
   it(`SEEDING: Sending another sealed seed should fail with error ${ERR.SEEDING.ALREADY_SEALED_SEEDED}`, async function() {
-    const { trustedSeeder } = await getNamedSigners(hre)
+    const { trustedSeeder } = await ethers.getNamedSigners()
 
     const { sealedSeed } = getSeeds('summit2', trustedSeeder.address)
 
@@ -89,7 +88,7 @@ describe("Seeding Random Numbers", function() {
     expect(futureBlockMinedTrue).to.be.true
   })
   it(`SEEDING: Sending incorrect unsealed seed should fail with error ${ERR.SEEDING.UNSEALED_SEED_NOT_MATCH}`, async function() {
-    const { trustedSeeder } = await getNamedSigners(hre)
+    const { trustedSeeder } = await ethers.getNamedSigners()
 
     const { unsealedSeed } = getSeeds('summitWRONG', trustedSeeder.address)
 
@@ -100,7 +99,7 @@ describe("Seeding Random Numbers", function() {
     })
   })
   it(`SEEDING: After future block mined, sending the unsealed seed should succeed`, async function() {
-    const { trustedSeeder } = await getNamedSigners(hre)
+    const { trustedSeeder } = await ethers.getNamedSigners()
 
     const { unsealedSeed } = getSeeds('summit', trustedSeeder.address)
 
@@ -113,7 +112,7 @@ describe("Seeding Random Numbers", function() {
 
 
   it(`SEEDING: Non trusted seeder attempting to seed should fail with error ${ERR.SEEDING.ONLY_TRUSTED_SEEDER}`, async function() {
-    const { user1, trustedSeeder } = await getNamedSigners(hre)
+    const { user1, trustedSeeder } = await ethers.getNamedSigners()
     
     await rolloverRound(PLAINS)
 
@@ -129,7 +128,7 @@ describe("Seeding Random Numbers", function() {
     })
   })
   it(`SEEDING: Trusted seeding address can be updated`, async function() {
-    const { dev, user1, trustedSeeder } = await getNamedSigners(hre)
+    const { dev, user1, trustedSeeder } = await ethers.getNamedSigners()
     
     await summitTrustedSeederMethod.setTrustedSeederAdd({
       dev,
@@ -151,7 +150,7 @@ describe("Seeding Random Numbers", function() {
   })
   it(`SEEDING: Sending unsealed seed before future block reached should fail with error ${ERR.SEEDING.FUTURE_BLOCK_NOT_REACHED}`, async function() {
     // This is tested at end because we already have a new sealed seed sent to elevationHelperGet
-    const { user1 } = await getNamedSigners(hre)
+    const { user1 } = await ethers.getNamedSigners()
 
     const { unsealedSeed } = getSeeds('summitUser1', user1.address)
 

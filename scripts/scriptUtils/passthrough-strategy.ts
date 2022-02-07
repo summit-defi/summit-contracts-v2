@@ -1,11 +1,10 @@
 import { ContractFactory } from '@ethersproject/contracts'
-import { getNamedSigners } from '@nomiclabs/hardhat-ethers/dist/src/helpers'
 import hre, { ethers, getChainId, run } from 'hardhat'
 import { delay, getCartographer, PassthroughType, PoolConfig, replaceSummitAddresses, writePassthroughStrategy, ZEROADD } from '../../utils'
 
 export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress: string, everestAddress: string): Promise<string | undefined> => {
     const chainId = await getChainId()
-    const { dev } = await getNamedSigners(hre)
+    const { dev } = await ethers.getNamedSigners()
     const Cartographer = await getCartographer()
     const tokenAddress = replaceSummitAddresses(pool.token, summitAddress, everestAddress)
         

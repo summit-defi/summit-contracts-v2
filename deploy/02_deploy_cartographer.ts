@@ -26,7 +26,7 @@ const deployCartographer: DeployFunction = async function ({
   });
 
   if (chainIdAllowsVerification(chainId)) {
-    await delay(3)
+    
     await failableVerify({
       address: Cartographer.address,
       constructorArguments: [treasuryAddress, expedTreasuryAddress, lpGeneratorAddress],

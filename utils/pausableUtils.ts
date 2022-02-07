@@ -1,5 +1,5 @@
 import { BigNumber } from "@ethersproject/bignumber"
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 import { expect } from "chai"
 import { e18, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getContract, getEverestToken } from "."
 

@@ -1,4 +1,3 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers, getChainId } from "hardhat";
 import { queueSyncPoolsTimelockTransactions } from "../scripts/scriptUtils/timelock-pool-sync";
@@ -9,11 +8,11 @@ import { poolsFixture, timelockedFixture } from "./fixtures";
 import { transferContractOwnershipToTimelock } from "../scripts/scriptUtils";
 
 describe("TIMELOCK", async function() {
-    it.only('Timelock sync function specific sigs, transfer contracts ownership to Timelock', async function() {
-        await poolsFixture()
-        await syncTimelockFunctionSpecificDelays()
-        await transferContractOwnershipToTimelock()
-    })
+    // it.only('Timelock sync function specific sigs, transfer contracts ownership to Timelock', async function() {
+    //     await poolsFixture()
+    //     await syncTimelockFunctionSpecificDelays()
+    //     await transferContractOwnershipToTimelock()
+    // })
 
     describe("TIMELOCK TEST ENABLE SUMMIT", async function() {
         it(`TIMELOCK: Enable function succeeds`, async function () {
@@ -79,7 +78,7 @@ describe("TIMELOCK", async function() {
         })
         
         it(`TIMELOCK SET DELAY: SetDelay must be a timelocked call with valid parameters, else throw errors`, async function () {
-            const { dev } = await getNamedSigners(hre)
+            const { dev } = await ethers.getNamedSigners()
             const timelock = await getTimelock()
 
             // Must be timelocked call
@@ -129,7 +128,7 @@ describe("TIMELOCK", async function() {
         })
         
         it(`TIMELOCK SET FUNCTION SPECIFIC DELAY: SetFunctionSpecificDelay must be a timelocked call with valid parameters, else throw errors`, async function () {
-            const { dev } = await getNamedSigners(hre)
+            const { dev } = await ethers.getNamedSigners()
             const timelock = await getTimelock()
             const cartographer = await getCartographer()
 
@@ -242,7 +241,7 @@ describe("TIMELOCK", async function() {
         })
         
         it(`TIMELOCK CANCEL QUEUED: CancelQueuedTransaction should succeed`, async function () {
-            const { dev } = await getNamedSigners(hre)
+            const { dev } = await ethers.getNamedSigners()
             const timelock = await getTimelock()
             const cartographer = await getCartographer()
 
@@ -287,7 +286,7 @@ describe("TIMELOCK", async function() {
         })
         
         it(`TIMELOCK EXECUTE QUEUED: ExecuteQueuedTransactions should succeed`, async function () {
-            const { user1, exped } = await getNamedSigners(hre)
+            const { user1, exped } = await ethers.getNamedSigners()
             const timelock = await getTimelock()
             const cartographer = await getCartographer()
             
@@ -324,7 +323,7 @@ describe("TIMELOCK", async function() {
         })
 
         it(`TIMELOCK SYNC POOLS: The syncing pool flow should succeed`, async function () {
-            const { user1, exped } = await getNamedSigners(hre)
+            const { user1, exped } = await ethers.getNamedSigners()
             const timelock = await getTimelock()
             const cartographer = await getCartographer()
             const SummitToken = await getSummitToken()

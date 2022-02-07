@@ -20,7 +20,7 @@ const deployEverestToken: DeployFunction = async function ({
   })
 
   if (chainIdAllowsVerification(chainId)) {
-    await delay(3)
+    
     await failableVerify({
       address: EverestToken.address,
       constructorArguments: [SummitToken.address],

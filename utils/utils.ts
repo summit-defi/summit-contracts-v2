@@ -22,6 +22,7 @@ export const flatten = <T>(arr: T[][]): T[] => {
 
 // Failable verify
 export const failableVerify = async (args: Object) => {
+    await delay(10)
     try {
         await hre.run("verify:verify", args)
     } catch (err: any) {

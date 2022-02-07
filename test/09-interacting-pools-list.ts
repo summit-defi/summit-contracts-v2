@@ -1,6 +1,5 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
-import hre from "hardhat";
+import hre, { ethers } from "hardhat";
 import { e18, ERR, toDecimal, getTimestamp, deltaBN, mineBlockWithTimestamp, promiseSequenceMap, getSummitToken, everestGet, everestMethod, days, getSummitBalance, getEverestBalance, userPromiseSequenceMap, allElevationPromiseSequenceMap, cartographerMethod, rolloverRoundUntilWinningTotem, getUserTotems, OASIS, getCakeToken, getBifiToken, epochDuration, getSummitGlacier, rolloverIfAvailable, rolloverRound, sumBigNumbers, tokenPromiseSequenceMap, cartographerGet, expect6FigBigNumberEquals, BURNADD, expectAllEqual, usersInteractingPoolsLists, subCartGet, onlyElevationPromiseSequenceMap, getInvUserTotems } from "../utils";
 import { summitGlacierGet, summitGlacierMethod } from "../utils/summitGlacierUtils";
 import { oasisUnlockedFixture, summitUnlockedFixture } from "./fixtures";
@@ -38,7 +37,7 @@ describe("INTERACTING POOLS LIST", async function() {
     })
 
     it(`INTERACTING POOLS: Oasis deposits updates interacting pools correctly`, async function() {
-        const { user1, user2, user3 } = await getNamedSigners(hre)
+        const { user1, user2, user3 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
         const cakeToken = await getCakeToken()
         const bifiToken = await getBifiToken()
@@ -73,7 +72,7 @@ describe("INTERACTING POOLS LIST", async function() {
     })
 
     it(`INTERACTING POOLS: Oasis withdrawals updates interacting pools correctly`, async function() {
-        const { user1, user2, user3 } = await getNamedSigners(hre)
+        const { user1, user2, user3 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
         const cakeToken = await getCakeToken()
         const bifiToken = await getBifiToken()
@@ -118,7 +117,7 @@ describe("INTERACTING POOLS LIST", async function() {
     })
 
     it('ELEVATION INTERACTING POOLS: Deposit should guarantee interaction', async function() {
-        const { user1, user2, user3 } = await getNamedSigners(hre)
+        const { user1, user2, user3 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
         const cakeToken = await getCakeToken()
         const bifiToken = await getBifiToken()
@@ -156,7 +155,7 @@ describe("INTERACTING POOLS LIST", async function() {
         )
     })
     it('ELEVATION INTERACTING POOLS: Emergency Withdraw should guarantee no interaction', async function() {
-        const { user1, user2, user3 } = await getNamedSigners(hre)
+        const { user1, user2, user3 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
         const cakeToken = await getCakeToken()
         const bifiToken = await getBifiToken()
@@ -193,7 +192,7 @@ describe("INTERACTING POOLS LIST", async function() {
         )
     })
     it('ELEVATION INTERACTING POOLS: Withdraw should not exit immediately, only after following round claim', async function() {
-        const { user1, user2, user3 } = await getNamedSigners(hre)
+        const { user1, user2, user3 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
         const cakeToken = await getCakeToken()
         const bifiToken = await getBifiToken()
@@ -286,7 +285,7 @@ describe("INTERACTING POOLS LIST", async function() {
         )
     })
     it('ELEVATION INTERACTING POOLS: Claim Elevation should exit all farms with nothing staked', async function() {
-        const { user1, user2, user3 } = await getNamedSigners(hre)
+        const { user1, user2, user3 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
         const cakeToken = await getCakeToken()
         const bifiToken = await getBifiToken()
@@ -394,7 +393,7 @@ describe("INTERACTING POOLS LIST", async function() {
         )
     })
     it('ELEVATION INTERACTING POOLS: Switch Totem should exit all farms with nothing staked', async function() {
-        const { user1, user2, user3 } = await getNamedSigners(hre)
+        const { user1, user2, user3 } = await ethers.getNamedSigners()
         const summitToken = await getSummitToken()
         const cakeToken = await getCakeToken()
         const bifiToken = await getBifiToken()

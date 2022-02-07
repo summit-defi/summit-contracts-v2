@@ -1,4 +1,3 @@
-import { getNamedSigners } from "@nomiclabs/hardhat-ethers/dist/src/helpers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
 import { e18, ERR, EVENT, mineBlock, oasisTests, toDecimal, passthroughTests, consoleLog, Contracts, OASIS, cartographerMethod, cartographerGet, subCartGet, mineBlocks, elevationTests } from "../utils";
@@ -13,7 +12,7 @@ describe("OASIS Pools", function() {
     })
 
     it(`DEPOSIT: Deposit before summit enabled should succeed`, async function() {
-      const { user1 } = await getNamedSigners(hre)
+      const { user1 } = await ethers.getNamedSigners()
       const summitToken = await getSummitToken()
 
       await cartographerMethod.deposit({
@@ -33,7 +32,7 @@ describe("OASIS Pools", function() {
   
     // DEPOSIT
     it(`DEPOSIT: Incorrect token deposit should fail with error "${ERR.POOL_DOESNT_EXIST}"`, async function() {
-      const { user1 } = await getNamedSigners(hre)
+      const { user1 } = await ethers.getNamedSigners()
 
       await cartographerMethod.deposit({
         user: user1,
@@ -56,7 +55,7 @@ describe("OASIS Pools", function() {
 
     // WITHDRAW
     it(`WITHDRAW: Withdrawing 0 should fail with error ${ERR.BAD_WITHDRAWAL}`, async function() {
-      const { user1 } = await getNamedSigners(hre)
+      const { user1 } = await ethers.getNamedSigners()
       await cartographerMethod.withdraw({
         user: user1,
         tokenAddress: (await getSummitToken()).address,
@@ -66,7 +65,7 @@ describe("OASIS Pools", function() {
       })
     })
     it(`WITHDRAW: Withdrawing with nothing deposited should fail with error ${ERR.BAD_WITHDRAWAL}`, async function() {
-      const { user2 } = await getNamedSigners(hre)
+      const { user2 } = await ethers.getNamedSigners()
       await cartographerMethod.withdraw({
         user: user2,
         tokenAddress: (await getSummitToken()).address,
@@ -76,7 +75,7 @@ describe("OASIS Pools", function() {
       })
     })
     it(`WITHDRAW: Withdrawing amount higher than staked should fail with error ${ERR.BAD_WITHDRAWAL}`, async function() {
-      const { user1 } = await getNamedSigners(hre)
+      const { user1 } = await ethers.getNamedSigners()
       await cartographerMethod.withdraw({
         user: user1,
         tokenAddress: (await getSummitToken()).address,
@@ -86,7 +85,7 @@ describe("OASIS Pools", function() {
       })
     })
     it(`WITHDRAW: Withdrawing from a pool that doesnt exist should fail with error ${ERR.POOL_DOESNT_EXIST}`, async function() {
-      const { user1 } = await getNamedSigners(hre)
+      const { user1 } = await ethers.getNamedSigners()
       await cartographerMethod.withdraw({
         user: user1,
         tokenAddress: (await getCartographer()).address,
@@ -109,7 +108,7 @@ describe("OASIS Pools", function() {
 
     // ALLOCPOINT
     it('ALLOCPOINT: Only owner can update alloc points', async function () {
-      const { dev, user1 } = await getNamedSigners(hre)
+      const { dev, user1 } = await ethers.getNamedSigners()
       const summitToken = await getSummitToken()
 
       await cartographerMethod.setTokenAllocation({
@@ -126,7 +125,7 @@ describe("OASIS Pools", function() {
       })
     })
     it('ALLOCPOINT: Updated alloc points is reflected in cartographer', async function () {
-      const { dev } = await getNamedSigners(hre)
+      const { dev } = await ethers.getNamedSigners()
       const summitToken = await getSummitToken()
       
       const tokenAllocInit = await cartographerGet.tokenAlloc(summitToken.address)
@@ -145,7 +144,7 @@ describe("OASIS Pools", function() {
       expect(oasisAllocInit - oasisAllocFinal).to.equal(1000)
     })
     it('ALLOCPOINT: No rewards are earned on 0 alloc point', async function () {
-      const { dev, user1 } = await getNamedSigners(hre)
+      const { dev, user1 } = await ethers.getNamedSigners()
       const summitToken = await getSummitToken()
       
       await cartographerMethod.setTokenAllocation({
