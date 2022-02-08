@@ -4,6 +4,9 @@ import { expect } from "chai"
 import { e18, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getContract, getEverestToken } from "."
 
 export const pausableGet = {
+    paused: async (contractName: string) => {
+        return await (await getContract(contractName)).paused()
+    },
     pauserRole: async (contractName: string) => {
         return await (await getContract(contractName)).PAUSER_ROLE()
     }

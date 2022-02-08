@@ -1,6 +1,6 @@
 import hre, { ethers, getChainId } from 'hardhat'
 import { getPoolConfigs } from '../data';
-import { allElevationPromiseSequenceMap, Contracts, everestMethod, getCartographer, pausableMethod } from '../utils';
+import { allElevationPromiseSequenceMap, Contracts, everestMethod, getCartographer, pausableGet, pausableMethod } from '../utils';
 import { syncPools, syncTimelockFunctionSpecificDelays, transferContractOwnershipToTimelock } from './scriptUtils';
 
 const DeployStep = {
@@ -15,7 +15,7 @@ const DeployStep = {
 
 
 async function main() {
-  const completedDeployStep = DeployStep.CreatePools
+  const completedDeployStep = DeployStep.None
   console.log(' == Deploying Summit Ecosystem to FTM Mainnet ==\n')
 
 
@@ -36,12 +36,17 @@ async function main() {
 
   console.log(' -- Pause SUMMIT V2 Token --')
   if (completedDeployStep < DeployStep.PauseSummitTokenV2) {
-    await pausableMethod.pause({
-      admin: dev,
-      contractName: Contracts.SummitToken
-    })
+    const paused = await pausableGet.paused(Contracts.SummitToken)
+    if (paused) {
+      console.log('\tpassed.\n')
+    } else {
+      await pausableMethod.pause({
+        admin: dev,
+        contractName: Contracts.SummitToken
+      })
+      console.log('\tdone.\n')
+    } 
   }
-  console.log('\tdone.\n')
 
 
 
