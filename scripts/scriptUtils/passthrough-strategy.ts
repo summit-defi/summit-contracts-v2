@@ -1,6 +1,6 @@
 import { ContractFactory } from '@ethersproject/contracts'
 import hre, { ethers, getChainId, run } from 'hardhat'
-import { delay, getCartographer, PassthroughType, PoolConfig, replaceSummitAddresses, writePassthroughStrategy, ZEROADD } from '../../utils'
+import { delay, failableVerify, getCartographer, PassthroughType, PoolConfig, replaceSummitAddresses, writePassthroughStrategy, ZEROADD } from '../../utils'
 
 export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress: string, everestAddress: string): Promise<string | undefined> => {
     const chainId = await getChainId()
@@ -45,7 +45,7 @@ export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress:
             ]
         break
         case PassthroughType.BeefyVaultV6:
-            passthroughFactory = await ethers.getContractFactory('beefyVaultPassthrough')
+            passthroughFactory = await ethers.getContractFactory('BeefyVaultV6Passthrough')
             constructorArguments = [
                 Cartographer.address,
                 target,
@@ -68,25 +68,22 @@ export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress:
         await run("compile")
         passthroughContract = await passthroughFactory.connect(dev).deploy(
             ...constructorArguments, {
-                gasLimit: 1200000,
+                gasLimit: 2400000,
             }
         )
-        console.log({
-            passthroughContract
-        })
-        await delay(30)
         await passthroughContract.deployed()
+        await delay(30000)
     }
 
     console.log(`\t\tPassthrough contract created`)
 
     // // Verify passthrough contract
-    // if (passthroughContract) {
-    //     await run("verify:verify", {
-    //         address: passthroughContract.address,
-    //         constructorArguments: constructorArguments,
-    //     })
-    // }
+    if (passthroughContract != null) {
+        await failableVerify({
+            address: passthroughContract.address,
+            constructorArguments: constructorArguments,
+        })
+    }
 
     console.log(`\t\tPassthrough contract verified`)
 
@@ -104,17 +101,14 @@ export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress:
 
     // Write passthrough strategy to json
     if (passthroughContract) {
-        const tokenPassthroughStrategy = await Cartographer.tokenPassthroughStrategy(tokenAddress)
         writePassthroughStrategy(
             chainId,
             pool.name,
             tokenAddress,
-            tokenPassthroughStrategy,
+            passthroughContract.address,
             target,
         )
     }
-
-    await delay(30)
 
 
     console.log(`\t\tdone.\n`)

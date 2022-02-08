@@ -1,1 +1,47 @@
-{}
+{
+  "TOMB-FTM": {
+    "token": "0x2a651563c9d3af67ae0388a5c8f89b867038089e",
+    "passthroughContract": "0x077f4dA51d6011c5167bFb14516566BD2dC37860",
+    "targetVaultContract": "0x27c77411074ba90cA35e6f92A79dAd577c05A746"
+  },
+  "TSHARE-FTM": {
+    "token": "0x4733bc45ef91cf7ccecaeedb794727075fb209f2",
+    "passthroughContract": "0x78B15dD112433a0b3360E16ff4Df204b371A8D82",
+    "targetVaultContract": "0xae94e96bF81b3a43027918b138B71a771D381150"
+  },
+  "FTM-BOO": {
+    "token": "0xEc7178F4C41f346b2721907F5cF7628E388A7a58",
+    "passthroughContract": "0xdCF8eFfAe8C943D5B5B4C9438F3c4EaaA8b98602",
+    "targetVaultContract": "0xEe3a7c885Fd3cc5358FF583F2DAB3b8bC473316f"
+  },
+  "Fidelio Duetto": {
+    "token": "0xcde5a11a4acb4ee4c805352cec57e236bdbc3837",
+    "passthroughContract": "0xCa990babF3fFD04eC7A2dfD5D775B1A3Fdc788F2",
+    "targetVaultContract": "0xAe0AB718971bb2BAd88AE6Bdc4D0eA63F3CD53Ee"
+  },
+  "Fantom of the Opera": {
+    "token": "0xcdF68a4d525Ba2E90Fe959c74330430A5a6b8226",
+    "passthroughContract": "0x5D8b9d8a3e7AdC05C01D2cd900B1cFdeA81BDd7C",
+    "targetVaultContract": "0xB40c339e2b0a8513152F68082D3c87314E03776D"
+  },
+  "BOO": {
+    "token": "0x841fad6eae12c286d1fd18d1d525dffa75c7effe",
+    "passthroughContract": "0xec3D029bbEF2C2Cc6288C847823bFCB5ad731D1f",
+    "targetVaultContract": "0x15DD4398721733D8273FD4Ed9ac5eadC6c018866"
+  },
+  "Battle of the Bands": {
+    "token": "0x9af1f0e9ac9c844a4a4439d446c1437807183075",
+    "passthroughContract": "0x8987F55F4C0fd393A8A4a30Ee89A320eB67413B5",
+    "targetVaultContract": "0x0139C853539bF1EDf221cf9d665F282C2701335a"
+  },
+  "2SHARES-FTM": {
+    "token": "0x6398ACBBAB2561553a9e458Ab67dCFbD58944e52",
+    "passthroughContract": "0xA18b38b925dd6db8669ff239A84efe8111268811",
+    "targetVaultContract": "0x03668Bd5dc63B1e15c39619b599091A4f68cAFB3"
+  },
+  "2OMB-FTM": {
+    "token": "0xbdC7DFb7B88183e87f003ca6B5a2F81202343478",
+    "passthroughContract": "0x5ac847D7421eBe0e85386af7D8b5DB2fC11F5F4E",
+    "targetVaultContract": "0xf3A72885cB383543AEE60f44Ca51C760f0bC3b9b"
+  }
+}

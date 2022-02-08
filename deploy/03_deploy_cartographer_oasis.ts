@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, delay, failableVerify, getElevationName, OASIS } from '../utils';
+import { chainIdAllowsVerification, delay, failableVerify, FORCE_VERIFY, getElevationName, OASIS } from '../utils';
 
 const deployCartographerOasis: DeployFunction = async function ({
   getNamedAccounts,
@@ -20,8 +20,7 @@ const deployCartographerOasis: DeployFunction = async function ({
     log: true,
   });
 
-  if (chainIdAllowsVerification(chainId)) {
-    
+  if (chainIdAllowsVerification(chainId) && (CartographerOasis.newlyDeployed || FORCE_VERIFY)) {
     await failableVerify({
       address: CartographerOasis.address,
       constructorArguments: [Cartographer.address],

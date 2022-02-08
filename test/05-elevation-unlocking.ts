@@ -1,4 +1,4 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
 import hre, { ethers } from "hardhat";
 import { e18, ERR, EVENT, PLAINS, MESA, SUMMIT, mineBlockWithTimestamp, cartographerMethod, getSummitToken, OASIS, getCartographer, elevationHelperGet, cartographerSynth, cartographerGet, expect6FigBigNumberAllEqual, expectAllEqual, subCartGet, allElevationPromiseSequenceMap, getBifiToken, getCakeToken, promiseSequenceMap, consoleLog, userPromiseSequenceMap, getTimestamp } from "../utils";

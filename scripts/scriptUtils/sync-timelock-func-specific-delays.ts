@@ -1,4 +1,4 @@
-import { getTimelock, promiseSequenceMap, queueTimelockTransaction } from "../../utils"
+import { getMatchingTimelockedTransaction, getTimelock, getTimestamp, promiseSequenceMap, queueTimelockTransaction } from "../../utils"
 import { TimelockTxSig, TimelockTxSigSpecificDelay } from "../../utils/timelockConstants"
 
 
@@ -27,13 +27,10 @@ export const syncTimelockFunctionSpecificDelays = async () => {
     await promiseSequenceMap(
         sigSpecificDelays,
         async ({ sigSpecificContract, sig, delaySeconds }) => {
-            console.log({
-                sigSpecificContract,
-                sig,
-                delaySeconds: `${delaySeconds / (3600 * 24)} DAYS`
-            })
+            const txNote = `Set Function Specific Delay: ${sigSpecificContract}:${sig} - ${delaySeconds / (3600 * 24)}D`
+            console.log(`\n\t- ${txNote} -`)
 
-            await queueTimelockTransaction({
+            const params = {
                 dryRun: false,
                 note: `Set Function Specific Delay: ${sigSpecificContract}:${sig} - ${delaySeconds / (3600 * 24)}D`,
 
@@ -41,7 +38,24 @@ export const syncTimelockFunctionSpecificDelays = async () => {
                 targetContract: timelock,
                 txName: TimelockTxSig.Timelock.SetFunctionSpecificDelay,
                 txParams: [sig, delaySeconds]
-            })
+            }
+
+            const matchingTx = await getMatchingTimelockedTransaction(params)
+
+            if (matchingTx == null) {
+                await queueTimelockTransaction(params)
+                console.log('\t\tqueued.')
+            } else {
+                const currentTimestamp = await getTimestamp()
+                const matchingTxEta = matchingTx.eta
+                const matured = currentTimestamp >= matchingTxEta
+                if (matured) {
+                    console.log(`\t\tAlready queued and MATURED`)
+                } else {
+                    const matureDateTime = new Date(matchingTxEta * 1000)
+                    console.log(`\t\tAlready queued, matures in ${((matchingTxEta - currentTimestamp) / 3600).toFixed(1)}hr on ${matureDateTime.toString()}`)
+                }
+            }
         }
     )
 }

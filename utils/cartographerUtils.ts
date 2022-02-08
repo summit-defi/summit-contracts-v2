@@ -1,5 +1,5 @@
 import { BigNumber } from "@ethersproject/bignumber"
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { claimAmountBonus, claimAmountWithBonusAdded, days, e18, e12, e6, elevationPromiseSequenceReduce, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getBifiToken, getCakeToken, getTimestamp, OASIS, subCartGet, sumBigNumbers, toDecimal, tokenAmountAfterDepositFee, tokenAmountAfterWithdrawTax, tokenPromiseSequenceMap } from "."
 import { getCartographer, getSummitToken } from "./contracts"
 
@@ -34,7 +34,7 @@ const getTokenDepositFee = async (tokenAddress: string): Promise<number> => {
     return await (await getCartographer()).tokenDepositFee(tokenAddress)
 }
 const tokensWithAllocation = async (): Promise<string[]> => {
-    return await (await getCartographer()).tokensWithAllocation()
+    return (await (await getCartographer()).tokensWithAllocation()).map((addr: string) => addr.toLowerCase())
 }
 const calcBonusBPNextSecond = async (userAddress: string, tokenAddress: string) => {
     const lastWithdrawTimestampForBonus = await (await getCartographer()).tokenLastWithdrawTimestampForBonus(userAddress, tokenAddress)
@@ -85,7 +85,8 @@ export const cartographerGet = {
     tokenAlloc,
     tokensWithAllocation,
     tokenAllocExistence: async (tokenAddress: string): Promise<boolean> => {
-        return (await tokensWithAllocation()).includes(tokenAddress)
+        const tokensWithAlloc = await tokensWithAllocation()
+        return tokensWithAlloc.includes(tokenAddress.toLowerCase())
     },
     elevAlloc,
     elevationModulatedAllocation,
@@ -182,6 +183,48 @@ export const cartographerSynth = {
 // CARTOGRAPHER METHODS
 
 export const cartographerMethod = {
+    initialize: async ({
+        dev,
+        summitTokenAddress,
+        elevationHelperAddress,
+        oasisAddress,
+        plainsAddress,
+        mesaAddress,
+        summitAddress,
+        everestTokenAddress,
+        summitGlacierAddress,
+        revertErr,
+    }: {
+        dev: SignerWithAddress,
+        summitTokenAddress: string,
+        elevationHelperAddress: string,
+        oasisAddress: string,
+        plainsAddress: string,
+        mesaAddress: string,
+        summitAddress: string,
+        everestTokenAddress: string,
+        summitGlacierAddress: string,
+        revertErr?: string,
+    }) => {
+        const cartographer = await getCartographer()
+        const tx = cartographer.connect(dev).initialize
+        const txArgs = [
+            summitTokenAddress,
+            elevationHelperAddress,
+            oasisAddress,
+            plainsAddress,
+            mesaAddress,
+            summitAddress,
+            everestTokenAddress,
+            summitGlacierAddress,
+        ]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            await executeTx(tx, txArgs)
+        }
+    },
     add: async ({
         dev,
         tokenAddress,
@@ -197,6 +240,13 @@ export const cartographerMethod = {
         withUpdate: boolean,
         revertErr?: string,
     }) => {
+
+        const nonce = await dev.provider?.getTransactionCount(dev.address);
+        const noncePending = await dev.provider?.getTransactionCount(dev.address, 'pending');
+        console.log({
+            nonce,
+            noncePending
+        })
         const cartographer = await getCartographer()
         const tx = cartographer.connect(dev).add
         const txArgs = [tokenAddress, elevation, live, withUpdate]

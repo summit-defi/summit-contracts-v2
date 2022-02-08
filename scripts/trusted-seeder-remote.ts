@@ -1,6 +1,6 @@
 import { getElevationHelper, getSeeds, getTimestamp } from '../utils';
 import hre, { ethers } from 'hardhat';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signers';
 import cron from 'node-cron'
 
 const delay = async (n: number) => await new Promise(resolve => setTimeout(resolve, n * 1000));

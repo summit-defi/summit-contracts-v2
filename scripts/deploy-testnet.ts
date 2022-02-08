@@ -115,11 +115,7 @@ async function main() {
 
   console.log(' -- Create Pools -- ')
   if (completedDeployStep < DeployStep.CreatePools) {
-    await allElevationPromiseSequenceMap(
-      async (elevation) => {
-        await syncPools(elevation, testnetPools)
-      }
-    )
+    await syncPools(testnetPools)
 
     const massUpdateTx = await Cartographer.massUpdatePools()
     await massUpdateTx.wait(10)

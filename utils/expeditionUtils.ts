@@ -1,5 +1,5 @@
 import { BigNumber } from "@ethersproject/bignumber"
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { expect } from "chai"
 import { string } from "hardhat/internal/core/params/argumentTypes"
 import { consoleLog, e0, e18, elevationHelperGet, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, EXPEDITION, getElevationHelper, getExpedition, getSummitBalance, getUsdcBalance, mineBlockWithTimestamp, toDecimal, usersExpeditionInfos } from "."
@@ -155,6 +155,30 @@ export const expeditionGet = {
 }
 
 export const expeditionMethod = {
+    initialize: async ({
+        dev,
+        usdcAddress,
+        elevationHelperAddress,
+        revertErr,
+    }: {
+        dev: SignerWithAddress,
+        usdcAddress: string,
+        elevationHelperAddress: string,
+        revertErr?: string,
+    }) => {
+        const expedition = await getExpedition()
+        const tx = expedition.connect(dev).initialize
+        const txArgs = [
+            usdcAddress,
+            elevationHelperAddress,
+        ]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            await executeTx(tx, txArgs)
+        }
+    },
     addExpeditionFunds: async ({
         user,
         tokenAddress,

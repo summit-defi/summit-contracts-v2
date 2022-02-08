@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, delay, emptyHardhatTimelockTransactions, failableVerify, getTimestamp } from '../utils';
+import { chainIdAllowsVerification, delay, emptyHardhatTimelockTransactions, failableVerify, FORCE_VERIFY, getTimestamp } from '../utils';
 import { ethers } from 'ethers';
 
 const deployTimelock: DeployFunction = async function ({
@@ -27,69 +27,68 @@ const deployTimelock: DeployFunction = async function ({
 
   console.log('Deployed Timelock')
 
-  if (chainIdAllowsVerification(chainId)) {
-    
+  if (chainIdAllowsVerification(chainId) && (Timelock.newlyDeployed || FORCE_VERIFY)) {
     await failableVerify({
       address: Timelock.address,
       constructorArguments: [dev, 6 * 3600],
     })
   }
 
-  if (Timelock.newlyDeployed) {
+  // if (Timelock.newlyDeployed) {
 
-    const setFunctionSpecificDelaySignature = 'setFunctionSpecificDelay(string,uint)'
+  //   const setFunctionSpecificDelaySignature = 'setFunctionSpecificDelay(string,uint)'
 
-    // Set Expedition Treasury Address
-    const setExpeditionTreasuryAddSignature = 'setExpeditionTreasuryAdd(address)'
-    const setExpeditionTreasuryAddData = abiCoder.encode(
-      ['string', 'uint'],
-      [setExpeditionTreasuryAddSignature, 72 * 3600],
-    )
-    await execute(
-      'Timelock',
-      { from: dev },
-      'queueTransaction',
-      Timelock.address,
-      0,
-      setFunctionSpecificDelaySignature,
-      setExpeditionTreasuryAddData,
-      timestampWithDelay,
-    )
+  //   // Set Expedition Treasury Address
+  //   const setExpeditionTreasuryAddSignature = 'setExpeditionTreasuryAdd(address)'
+  //   const setExpeditionTreasuryAddData = abiCoder.encode(
+  //     ['string', 'uint'],
+  //     [setExpeditionTreasuryAddSignature, 72 * 3600],
+  //   )
+  //   await execute(
+  //     'Timelock',
+  //     { from: dev },
+  //     'queueTransaction',
+  //     Timelock.address,
+  //     0,
+  //     setFunctionSpecificDelaySignature,
+  //     setExpeditionTreasuryAddData,
+  //     timestampWithDelay,
+  //   )
 
-    // Set Token Passthrough Strategy
-    const setTokenPassthroughStrategySignature = 'setTokenPassthroughStrategy(address,address)'
-    const setTokenPassthroughStrategyData = abiCoder.encode(
-      ['string', 'uint'],
-      [setTokenPassthroughStrategySignature, 72 * 3600],
-    )
-    await execute(
-      'Timelock',
-      { from: dev },
-      'queueTransaction',
-      Timelock.address,
-      0,
-      setFunctionSpecificDelaySignature,
-      setTokenPassthroughStrategyData,
-      timestampWithDelay,
-    )
+  //   // Set Token Passthrough Strategy
+  //   const setTokenPassthroughStrategySignature = 'setTokenPassthroughStrategy(address,address)'
+  //   const setTokenPassthroughStrategyData = abiCoder.encode(
+  //     ['string', 'uint'],
+  //     [setTokenPassthroughStrategySignature, 72 * 3600],
+  //   )
+  //   await execute(
+  //     'Timelock',
+  //     { from: dev },
+  //     'queueTransaction',
+  //     Timelock.address,
+  //     0,
+  //     setFunctionSpecificDelaySignature,
+  //     setTokenPassthroughStrategyData,
+  //     timestampWithDelay,
+  //   )
 
-    // Retire Token Passthrough Strategy
-    const retireTokenPassthroughStrategySignature = 'retireTokenPassthroughStrategy(address)'
-    const retireTokenPassthroughStrategyData = abiCoder.encode(
-      ['string', 'uint'],
-      [retireTokenPassthroughStrategySignature, 72 * 3600],
-    )
-    await execute(
-      'Timelock',
-      { from: dev },
-      'queueTransaction',
-      Timelock.address,
-      0,
-      setFunctionSpecificDelaySignature,
-      retireTokenPassthroughStrategyData,
-      timestampWithDelay,
-    )
-  }
+  //   // Retire Token Passthrough Strategy
+  //   const retireTokenPassthroughStrategySignature = 'retireTokenPassthroughStrategy(address)'
+  //   const retireTokenPassthroughStrategyData = abiCoder.encode(
+  //     ['string', 'uint'],
+  //     [retireTokenPassthroughStrategySignature, 72 * 3600],
+  //   )
+  //   await execute(
+  //     'Timelock',
+  //     { from: dev },
+  //     'queueTransaction',
+  //     Timelock.address,
+  //     0,
+  //     setFunctionSpecificDelaySignature,
+  //     retireTokenPassthroughStrategyData,
+  //     timestampWithDelay,
+  //   )
+  // }
 
 };
 export default deployTimelock;

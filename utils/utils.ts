@@ -22,7 +22,7 @@ export const flatten = <T>(arr: T[][]): T[] => {
 
 // Failable verify
 export const failableVerify = async (args: Object) => {
-    await delay(10)
+    await delay(10000)
     try {
         await hre.run("verify:verify", args)
     } catch (err: any) {
@@ -428,7 +428,12 @@ export const getQueuedTimelockTransactionByHash = (chainId: string, txHash: stri
     return timelockTxns[TimelockTxTypeName[TimelockTransactionType.Queue]][txHash]
 }
 
-export const checkForAlreadyQueuedMatchingTimelockTx = (chainId: string, targetContract: string, txSignature: string, txParams: any[]): string | null => {
+export const checkForAlreadyQueuedMatchingTimelockTx = (chainId: string, targetContract: string, txSignature: string, txParams: any[]): JSONQueuedTransaction | null => {
+    console.log({
+        checkFor: targetContract,
+        sig: txSignature,
+        params: txParams,
+    })
     const chainName = getChainName(chainId)
     const filename = `./data/${chainName}/timelockTxns.json`
     const timelockTxnsJSON = fs.readFileSync(filename)
@@ -440,15 +445,11 @@ export const checkForAlreadyQueuedMatchingTimelockTx = (chainId: string, targetC
     for (let txIndex = 0; txIndex < alreadyQueuedTransactions.length; txIndex++) {
         alreadyQueuedTransaction = alreadyQueuedTransactions[txIndex]
         if (
-            alreadyQueuedTransaction.targetContract === targetContract &&
+            alreadyQueuedTransaction.targetContract.toLowerCase() === targetContract.toLowerCase() &&
             alreadyQueuedTransaction.signature === txSignature &&
             alreadyQueuedTransaction.rawParams.every((rawParam: any, paramIndex: number) => rawParam === txParams[paramIndex])
         ) {
-
-            console.log({
-                alreadyQueuedTransaction
-            })
-            return alreadyQueuedTransaction.txHash
+            return alreadyQueuedTransaction
         }
     }
     

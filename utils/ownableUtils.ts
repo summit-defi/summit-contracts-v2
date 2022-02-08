@@ -1,4 +1,4 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { getContract, executeTxExpectEvent, executeTxExpectReversion, ZEROADD } from "."
 
 export const ownableMethod = {
@@ -16,7 +16,9 @@ export const ownableMethod = {
         const contract = await getContract(contractName)
         const currentOwnerAddress = await contract.owner()
         const tx = contract.connect(dev).transferOwnership
-        const txArgs = [newOwnerAddress]
+        const txArgs = [newOwnerAddress, {
+            gasLimit: 1000000
+        }]
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)

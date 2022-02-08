@@ -1,4 +1,4 @@
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signers';
 import { expect } from 'chai'
 import hre, { ethers } from 'hardhat';
 import { cartographerGet, cartographerMethod, cartographerSetParam, consoleLog, deltaBN, depositedAfterFee, e18, getBifiToken, getBifiVault, getBifiVaultPassthrough, getCakeToken, getCartographer, getMasterChef, getMasterChefPassthrough, rolloverIfAvailable, subCartGet, toDecimal, tokenAmountAfterWithdrawTax } from '.';

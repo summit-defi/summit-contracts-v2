@@ -1,5 +1,5 @@
 import { BigNumber } from "@ethersproject/bignumber"
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { ethers } from "hardhat"
 import { e18, executeTx, getElevationHelper, getElevationName, MESA, OASIS, PLAINS, promiseSequenceMap, SUMMIT } from "."
 

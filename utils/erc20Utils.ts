@@ -1,4 +1,4 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { BigNumber, Contract } from "ethers"
 import { getSummitToken, getEverestToken, getCakeToken, getBifiToken, promiseSequenceMap, getContract, EVENT, executeTxExpectEvent, executeTxExpectReversion, executeTx, getUSDCToken, INF_APPROVE } from "."
 

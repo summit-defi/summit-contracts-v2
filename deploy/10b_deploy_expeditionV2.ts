@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, Contracts, delay, failableVerify } from '../utils';
+import { chainIdAllowsVerification, Contracts, delay, failableVerify, FORCE_VERIFY } from '../utils';
 
 const deployExpeditionV2: DeployFunction = async function ({
   getNamedAccounts,
@@ -21,8 +21,7 @@ const deployExpeditionV2: DeployFunction = async function ({
     log: true,
   });
 
-  if (chainIdAllowsVerification(chainId)) {
-    
+  if (chainIdAllowsVerification(chainId) && (ExpeditionV2.newlyDeployed || FORCE_VERIFY)) {
     await failableVerify({
       address: ExpeditionV2.address,
       constructorArguments: [SummitToken.address, EverestToken.address, SummitGlacier.address],

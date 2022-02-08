@@ -15,7 +15,7 @@ const DeployStep = {
 
 
 async function main() {
-  const completedDeployStep = DeployStep.None
+  const completedDeployStep = DeployStep.CreatePools
   console.log(' == Deploying Summit Ecosystem to FTM Mainnet ==\n')
 
 
@@ -59,11 +59,7 @@ async function main() {
 
   console.log(' -- Create Pools -- ')
   if (completedDeployStep < DeployStep.CreatePools) {
-    await allElevationPromiseSequenceMap(
-      async (elevation) => {
-        await syncPools(elevation, mainnetPools)
-      }
-    )
+    await syncPools(mainnetPools)
 
     const massUpdateTx = await Cartographer.massUpdatePools()
     await massUpdateTx.wait(10)

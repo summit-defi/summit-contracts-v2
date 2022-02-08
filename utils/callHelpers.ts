@@ -1,9 +1,12 @@
 import { expect } from "chai"
 import { BigNumber, Contract } from "ethers"
-import { EVENT, expect6FigBigNumberEquals, sixFigBigNumberEquals, toDecimal } from "."
+import { getChainId } from "hardhat"
+import { chainIdIsMainnet, delay, EVENT, expect6FigBigNumberEquals, hardhatChainId, sixFigBigNumberEquals, toDecimal } from "."
 
 export const executeTx = async (tx: any, txArgs: any[]) => {
-    await tx(...txArgs)
+    const transaction = await tx(...txArgs)
+    await transaction.wait()
+    if ((await getChainId()) !== hardhatChainId) await delay(5000)
 }
 
 export const executeTxExpectReversion = async (tx: any, txArgs: any[], revertErr: string) => {
@@ -20,6 +23,7 @@ export const executeTxExpectEvent = async (tx: any, txArgs: any[], contract: Con
         transaction = await tx()
     }
     const receipt = await transaction.wait()
+    if ((await getChainId()) !== hardhatChainId) await delay(5000)
 
     let emitted = false
     let emittedArgs = []
@@ -57,8 +61,13 @@ export const executeTxExpectEvent = async (tx: any, txArgs: any[], contract: Con
                 }
 
             // Test all other matches
+            } else if (typeof eventArgs[argIndex] === 'string') {
+                if (eventArgs[argIndex].toLowerCase() !== emittedArgs[argIndex].toLowerCase()) {
+                    console.log(`EVENT ARG MISMATCH, arg${argIndex}, ${eventArgs[argIndex]} ==? ${emittedArgs[argIndex]}`)
+                }
+                expect(eventArgs[argIndex].toLowerCase()).to.equal(emittedArgs[argIndex].toLowerCase())
             } else {
-                if (eventArgs[argIndex] != emittedArgs[argIndex]) {
+                if (eventArgs[argIndex] !== emittedArgs[argIndex]) {
                     console.log(`EVENT ARG MISMATCH, arg${argIndex}, ${eventArgs[argIndex]} ==? ${emittedArgs[argIndex]}`)
                 }
                 expect(eventArgs[argIndex]).to.equal(emittedArgs[argIndex])

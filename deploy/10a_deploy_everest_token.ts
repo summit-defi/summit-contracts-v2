@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, chainIdRequiresDummies, Contracts, delay, failableVerify } from '../utils';
+import { chainIdAllowsVerification, chainIdRequiresDummies, Contracts, delay, failableVerify, FORCE_VERIFY } from '../utils';
 
 const deployEverestToken: DeployFunction = async function ({
   getNamedAccounts,
@@ -19,8 +19,7 @@ const deployEverestToken: DeployFunction = async function ({
       log: true
   })
 
-  if (chainIdAllowsVerification(chainId)) {
-    
+  if (chainIdAllowsVerification(chainId) && (EverestToken.newlyDeployed || FORCE_VERIFY)) {
     await failableVerify({
       address: EverestToken.address,
       constructorArguments: [SummitToken.address],

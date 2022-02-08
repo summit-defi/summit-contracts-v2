@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, Contracts, delay, failableVerify } from '../utils';
+import { chainIdAllowsVerification, Contracts, delay, failableVerify, FORCE_VERIFY } from '../utils';
 
 const deployElevationHelper: DeployFunction = async function ({
   getNamedAccounts,
@@ -29,28 +29,30 @@ const deployElevationHelper: DeployFunction = async function ({
     log: true,
   });
 
-  await execute(
-    Contracts.SummitTrustedSeederRNGModule,
-    { from: dev },
-    'setElevationHelper',
-    ElevationHelper.address,
-  )
+  if (SummitTrustedSeederRNGModule.newlyDeployed && ElevationHelper.newlyDeployed) {
+    await execute(
+      Contracts.SummitTrustedSeederRNGModule,
+      { from: dev },
+      'setElevationHelper',
+      ElevationHelper.address,
+    )
 
-  await execute(
-    Contracts.SummitTrustedSeederRNGModule,
-    { from: dev },
-    'setTrustedSeederAdd',
-    trustedSeeder,
-  )
+    await execute(
+      Contracts.SummitTrustedSeederRNGModule,
+      { from: dev },
+      'setTrustedSeederAdd',
+      trustedSeeder,
+    )
 
-  await execute(
-    Contracts.ElevationHelper,
-    { from: dev },
-    'upgradeSummitRNGModule',
-    SummitTrustedSeederRNGModule.address,
-  )
+    await execute(
+      Contracts.ElevationHelper,
+      { from: dev },
+      'upgradeSummitRNGModule',
+      SummitTrustedSeederRNGModule.address,
+    )
+  }
 
-  if (chainIdAllowsVerification(chainId)) {
+  if (chainIdAllowsVerification(chainId) && (SummitTrustedSeederRNGModule.newlyDeployed || ElevationHelper.newlyDeployed || FORCE_VERIFY)) {
     
     await failableVerify({
       address: SummitTrustedSeederRNGModule.address,

@@ -1,6 +1,6 @@
 import hre, { ethers } from "hardhat";
 import { BigNumber } from "@ethersproject/bignumber";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { expect } from "chai"
 import { e18, ERR, toDecimal, INF_APPROVE, deltaBN, expect6FigBigNumberAllEqual, mineBlockWithTimestamp, EXPEDITION, promiseSequenceMap, expect6FigBigNumberEquals, consoleLog, expectAllEqual, getBifiToken, getUSDCToken, getExpedition, getSummitToken, everestGet, everestMethod, expeditionMethod, expeditionGet, elevationHelperGet, expeditionSynth, days, rolloverRound } from "../utils";
 import { userPromiseSequenceMap, userPromiseSequenceReduce, usersLockedSummitBalances, usersExpeditionPotentialWinnings, usersExpeditionRewards, usersUsdcBalances } from "../utils/users";

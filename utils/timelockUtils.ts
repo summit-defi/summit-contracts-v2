@@ -1,10 +1,10 @@
 import { Contract } from "@ethersproject/contracts";
 import { keccak256 } from "@ethersproject/keccak256";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers";
 import { providers } from "ethers";
 import hre, { getChainId, ethers } from "hardhat";
 import Web3 from "web3";
-import { bytesify, Contracts, ethersKeccak256, extractRevertMsg, getQueuedTimelockTransactionByHash, getTimelock, getTimestamp, hardhatChainId, mineBlockWithTimestamp, writeTimelockTransaction } from ".";
+import { bytesify, checkForAlreadyQueuedMatchingTimelockTx, Contracts, delay, ethersKeccak256, extractRevertMsg, getQueuedTimelockTransactionByHash, getTimelock, getTimestamp, hardhatChainId, mineBlockWithTimestamp, writeTimelockTransaction } from ".";
 
 
 
@@ -114,6 +114,19 @@ export interface QueueTxConfig {
     )
 
 */
+
+
+export const getMatchingTimelockedTransaction = async ({ targetContract, txName, txParams }: TimelockTxFunctionParams): Promise<JSONQueuedTransaction | null> => {
+    const chainId = await getChainId()
+    const txSignature = getTxSignatureBase({ targetContract, txName })
+    return checkForAlreadyQueuedMatchingTimelockTx(
+        chainId,
+        targetContract.address,
+        txSignature,
+        txParams,
+    )
+}
+
 
 export const getTxSignature = (params: TimelockTxFunctionParams): string => getTxSignatureBase({ targetContract: params.targetContract, txName: params.txName })
 export const getTxSignatureBase = ({ targetContract, txName }: { targetContract: Contract, txName: string }): string => {
@@ -225,6 +238,7 @@ const timelockTransaction = async (params: TimelockTxFunctionParams) => {
         const chainId = await getChainId()
         if (chainId !== hardhatChainId) {
             await timelockTx.wait(10)    
+            await delay(5000)
         }
     }
 

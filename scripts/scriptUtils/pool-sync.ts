@@ -1,10 +1,11 @@
 import hre, { ethers, getChainId } from "hardhat"
-import { PoolConfig, getElevationName, promiseSequenceMap, replaceSummitAddresses, subCartGet, cartographerGet, getSummitToken, cartographerMethod, cartographerSetParam, getEverestToken, ZEROADD, getPassthroughStrategy, getCartographer } from "../../utils"
+import { PoolConfig, getElevationName, promiseSequenceMap, replaceSummitAddresses, subCartGet, cartographerGet, getSummitToken, cartographerMethod, cartographerSetParam, getEverestToken, ZEROADD, getPassthroughStrategy, getCartographer, allElevationPromiseSequenceMap, Contracts } from "../../utils"
 import { createPassthroughStrategy } from "./passthrough-strategy"
+import { NonceManager } from "@ethersproject/experimental"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 
-export const syncPools = async (elevation: number, poolConfigs: PoolConfig[]) => {
+export const syncPools = async (poolConfigs: PoolConfig[]) => {
     const { dev } = await ethers.getNamedSigners()
-    const elevationName = getElevationName(elevation)
     const summitToken = await getSummitToken()
     const everestToken = await getEverestToken()
     const chainId = await getChainId()
@@ -22,13 +23,12 @@ export const syncPools = async (elevation: number, poolConfigs: PoolConfig[]) =>
                 native: configNative,
                 passthroughStrategy: configPassthroughStrategy,
             } = poolConfig
-            const configElevation = configElevations[elevationName]
 
 
             
             // Pool Token / LP Address
             const tokenAddress = replaceSummitAddresses(configToken, summitToken.address, everestToken.address)
-            console.log(`\n\n\n== POOL: ${configName} at The ${elevationName} ==`)
+            console.log(`\n\n\n== POOL: ${configName} - ${tokenAddress} ==`)
 
 
 
@@ -56,7 +56,7 @@ export const syncPools = async (elevation: number, poolConfigs: PoolConfig[]) =>
             // Token Allocation Existence & Correct, if not queue to add/update it
             const allocationExists = await cartographerGet.tokenAllocExistence(tokenAddress)
             const existingAllocation = await cartographerGet.tokenAlloc(tokenAddress)
-            
+
             console.log('\n-- Allocation --')
             if (!allocationExists || existingAllocation !== configAllocation) {
                 console.log(`\tAllocation doesnt exist our out of sync, syncing ${existingAllocation} => ${configAllocation}`)
@@ -128,9 +128,17 @@ export const syncPools = async (elevation: number, poolConfigs: PoolConfig[]) =>
             } = configPassthroughStrategy || {
                 target: ZEROADD
             }
+
+            const cartPassthroughStrategy = await cartographerGet.tokenPassthroughStrategy(tokenAddress)
+            const cartPassthroughStrategyVault = cartPassthroughStrategy === ZEROADD ?
+                ZEROADD :
+                await (await ethers.getContractAt(Contracts.BeefyVaultPassthrough, cartPassthroughStrategy)).vault()
+                
             console.log({
                 configTargetVaultContract,
                 existingTargetVaultContract,
+                cartPassthroughStrategy,
+                cartPassthroughStrategyVault,
             })
             if (existingTargetVaultContract !== configTargetVaultContract) {
             // if ((tokenPassthroughStrategy === ZEROADD) !== (configPassthroughStrategy === ZEROADD) && configPassthroughStrategy !== ZEROADD) {
@@ -143,6 +151,10 @@ export const syncPools = async (elevation: number, poolConfigs: PoolConfig[]) =>
                 // }
 
                 // const setPassthroughStrategyNote = `Set ${configName} Passthrough Strategy: ${newPassthroughStrategyContract}`
+
+                console.log({
+                    newPassthroughStrategyContract
+                })
 
                 // QUEUE TX
                 if (newPassthroughStrategyContract != null) {
@@ -169,42 +181,47 @@ export const syncPools = async (elevation: number, poolConfigs: PoolConfig[]) =>
 
 
 
+            await allElevationPromiseSequenceMap(
+                async (elevation) => {
+                    const elevationName = getElevationName(elevation)
+                    const configElevation = configElevations[elevationName]
 
-
-            // Pool Existence, if not create it
-            console.log('\n-- Pool --')
-            const poolExists = await cartographerGet.poolExists(tokenAddress, elevation)
-            if (!poolExists) {
-                console.log(`\tPool doesnt exist, creating: add(${tokenAddress}, ${elevation}, ${configElevation.live}, false)`)
-                // ADD POOL
-                await cartographerMethod.add({
-                    dev,
-                    tokenAddress,
-                    elevation,
-                    live: configElevation.live,
-                    withUpdate: false
-                })
-                console.log(`\t\tdone.`)
-            } else {
-                console.log(`\tPool exists, checking in sync`)
-                // Validate that pool LIVE matches config, if not queue to update it
-                const existingLive = (await subCartGet.poolInfo(tokenAddress, elevation)).live
-                if (existingLive !== configElevation.live) {
-                    console.log(`\t\tPool live out of sync: ${existingLive} --> ${configElevation.live}`)
-                    console.log(`\t\tUpdating pool: set(${tokenAddress}, ${elevation}, ${configElevation.live}, ${configDepositFeeBP}, false)`)
-                    // UPDATE POOL LIVE VALUE
-                    await cartographerMethod.set({
-                        dev,
-                        tokenAddress,
-                        elevation,
-                        live: configElevation.live,
-                        withUpdate: false,
-                    })
-                    console.log(`\t\t\tdone.`)
-                } else {
-                    console.log(`\t\tpassed.`)
+                    // Pool Existence, if not create it
+                    console.log(`\n-- Pool at ${elevationName} --`)
+                    const poolExists = await cartographerGet.poolExists(tokenAddress, elevation)
+                    if (!poolExists) {
+                        console.log(`\tPool doesnt exist, creating: add(${tokenAddress}, ${elevation}, ${configElevation.live}, false)`)
+                        // ADD POOL
+                        await cartographerMethod.add({
+                            dev,
+                            tokenAddress,
+                            elevation,
+                            live: configElevation.live,
+                            withUpdate: false
+                        })
+                        console.log(`\t\tdone.`)
+                    } else {
+                        console.log(`\tPool exists, checking in sync`)
+                        // Validate that pool LIVE matches config, if not queue to update it
+                        const existingLive = (await subCartGet.poolInfo(tokenAddress, elevation)).live
+                        if (existingLive !== configElevation.live) {
+                            console.log(`\t\tPool live out of sync: ${existingLive} --> ${configElevation.live}`)
+                            console.log(`\t\tUpdating pool: set(${tokenAddress}, ${elevation}, ${configElevation.live}, ${configDepositFeeBP}, false)`)
+                            // UPDATE POOL LIVE VALUE
+                            await cartographerMethod.set({
+                                dev,
+                                tokenAddress,
+                                elevation,
+                                live: configElevation.live,
+                                withUpdate: false,
+                            })
+                            console.log(`\t\t\tdone.`)
+                        } else {
+                            console.log(`\t\tpassed.`)
+                        }
+                    }
                 }
-            }
+            )
         }
     )
 }

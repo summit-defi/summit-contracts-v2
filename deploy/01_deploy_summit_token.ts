@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, chainIdExpectsUserToHaveSummit, consoleLog, delay, e18, failableVerify } from '../utils';
+import { chainIdAllowsVerification, chainIdExpectsUserToHaveSummit, consoleLog, delay, e18, erc20Method, failableVerify, FORCE_VERIFY } from '../utils';
 
 const deploySummitToken: DeployFunction = async function ({
   getNamedAccounts,
@@ -31,8 +31,9 @@ const deploySummitToken: DeployFunction = async function ({
 
   
 
-  if (chainIdAllowsVerification(chainId)) {
-    
+  if (chainIdAllowsVerification(chainId) && (SummitToken.newlyDeployed || FORCE_VERIFY)) {
+    await execute('SummitToken', { from: dev }, 'mint', dev, e18(15000))
+
     await failableVerify({
       address: SummitToken.address,
     })

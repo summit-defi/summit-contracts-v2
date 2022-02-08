@@ -1,5 +1,7 @@
 export const FULL_TESTS = false
 
+export const FORCE_VERIFY = false
+
 
 export const Contracts = {
     Cartographer: 'Cartographer',
@@ -356,13 +358,13 @@ export const networkWrappedNativeTokens: { [key: string]: string } = {
 }
 
 export const chainTreasuryAddress: { [key: string]: string } = {
-    250: '0x76aB12ef8fC166559a9CF2AB763be83C0fca71E2'
+    250: '0x474332025Dd20D5F09FFd766b317F98A872D71e0'
 }
 
 export const chainExpedTreasuryAddress: { [key: string]: string } = {
-    250: '0xF3265e6b1e9683E719d88a658D25b61888713188'
+    250: '0x00676eF184C36EBf73d0F3059D2a6909F02AA893'
 }
 
 export const chainLpGeneratorAddress: { [key: string]: string } = {
-    250: '0x85d6F6A0E2632e2c6E9E2b2f753A4c2a38D07031'
+    250: '0x50963e3c0899584a3EBD3226d976210aF0e42349'
 }

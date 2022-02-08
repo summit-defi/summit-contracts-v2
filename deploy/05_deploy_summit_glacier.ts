@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, delay, failableVerify } from '../utils';
+import { chainIdAllowsVerification, delay, failableVerify, FORCE_VERIFY } from '../utils';
 
 const deploySummitGlacier: DeployFunction = async function ({
   getNamedAccounts,
@@ -16,8 +16,7 @@ const deploySummitGlacier: DeployFunction = async function ({
     log: true,
   });
 
-  if (chainIdAllowsVerification(chainId)) {
-    
+  if (chainIdAllowsVerification(chainId) && (SummitGlacier.newlyDeployed || FORCE_VERIFY)) {
     await failableVerify({
       address: SummitGlacier.address,
     })

@@ -1,8 +1,8 @@
 // BASE GETTERS
 
 import { BigNumber } from "@ethersproject/bignumber"
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
-import { EVENT, executeTxExpectEvent, executeTxExpectReversion, getSummitGlacier } from "."
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
+import { EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getSummitGlacier } from "."
 
 export interface UserLockedWinnings {
     winnings: BigNumber
@@ -73,6 +73,36 @@ export const summitGlacierGet = {
 }
 
 export const summitGlacierMethod = {
+    initialize: async ({
+        dev,
+        summitTokenAddress,
+        everestTokenAddress,
+        cartographerAddress,
+        expeditionAddress,
+        revertErr,
+    }: {
+        dev: SignerWithAddress,
+        summitTokenAddress: string,
+        everestTokenAddress: string,
+        cartographerAddress: string,
+        expeditionAddress: string,
+        revertErr?: string,
+    }) => {
+        const summitGlacier = await getSummitGlacier()
+        const tx = summitGlacier.connect(dev).initialize
+        const txArgs = [
+            summitTokenAddress,
+            everestTokenAddress,
+            cartographerAddress,
+            expeditionAddress,
+        ]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            await executeTx(tx, txArgs)
+        }
+    },
     harvestWinnings: async ({
         user,
         epoch,

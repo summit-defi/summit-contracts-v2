@@ -29,7 +29,7 @@ export const ftmPools: PoolConfig[] = [
     },
     {
         name: 'EVEREST',
-        token: 'OxEVEREST',
+        token: '0xEVEREST',
         allocation: 900,
         elevations: {
             OASIS: {

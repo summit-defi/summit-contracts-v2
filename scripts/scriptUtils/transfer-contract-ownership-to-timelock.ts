@@ -1,5 +1,5 @@
 import hre, { ethers } from 'hardhat'
-import { Contracts, getTimelock, ownableMethod, promiseSequenceMap } from "../../utils"
+import { Contracts, getTimelock, ownableGet, ownableMethod, promiseSequenceMap } from "../../utils"
 
 export const transferContractOwnershipToTimelock = async () => {
     const { dev } = await ethers.getNamedSigners()
@@ -8,12 +8,19 @@ export const transferContractOwnershipToTimelock = async () => {
     await promiseSequenceMap(
         [Contracts.Cartographer, Contracts.ElevationHelper, Contracts.EverestToken, Contracts.SummitGlacier, Contracts.ExpeditionV2, Contracts.SummitTrustedSeederRNGModule],
         async (contractName) => {
-            console.log(`Transfer ${contractName} ownership to Timelock: ${timelock.address}`)
-            await ownableMethod.transferOwnership({
-                dev,
-                contractName,
-                newOwnerAddress: timelock.address
-            })
+            console.log(`\n\t- Transfer ${contractName} ownership to Timelock: ${timelock.address} -`)
+            const owner = await ownableGet.owner(contractName)
+
+            if (owner !== timelock.address) {
+                await ownableMethod.transferOwnership({
+                    dev,
+                    contractName,
+                    newOwnerAddress: timelock.address
+                })
+                console.log('\t\tdone.')
+            } else {
+                console.log('\t\tpassed.')
+            }
         }
     )
 }
