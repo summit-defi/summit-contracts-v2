@@ -832,13 +832,12 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
         
         if (user.entered) {
             // Transfer deitied everest from previous deity to new deity
-            expeditionInfo.supplies.deity[prevDeity] -= user.deitiedSupply;
+            expeditionInfo.supplies.deity[prevDeity] -= existingDeitiedSupply;
             expeditionInfo.supplies.deity[_newDeity] += user.deitiedSupply;
             
             // Remove safe and deitied everest from existing supply states
             expeditionInfo.supplies.safe = expeditionInfo.supplies.safe - existingSafeSupply + user.safeSupply;
             expeditionInfo.supplies.deitied = expeditionInfo.supplies.deitied - existingDeitiedSupply + user.deitiedSupply;
-            expeditionInfo.supplies.deity[user.deity] = expeditionInfo.supplies.deity[user.deity] - existingDeitiedSupply + user.deitiedSupply;
         }
 
         emit DeitySelected(msg.sender, _newDeity, user.deitySelectionRound);
