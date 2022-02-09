@@ -327,6 +327,28 @@ export const expeditionMethod = {
             await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.SafetyFactorSelected, eventArgs, true)
         }
     },
+    selectDeityAndSafetyFactor: async ({
+        user,
+        deity,
+        safetyFactor,
+        revertErr,
+    }: {
+        user: SignerWithAddress,
+        deity: number,
+        safetyFactor: number,
+        revertErr?: string
+    }) => {
+        const expedition = await getExpedition()
+        const tx = expedition.connect(user).selectDeityAndSafetyFactor
+        const txArgs = [deity, safetyFactor]
+        
+        if (revertErr != null) {
+            await executeTxExpectReversion(tx, txArgs, revertErr)
+        } else {
+            const eventArgs = [user.address, safetyFactor]
+            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.SafetyFactorSelected, eventArgs, true)
+        }
+    },
     joinExpedition: async ({
         user,
         revertErr,

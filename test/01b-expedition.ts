@@ -520,6 +520,86 @@ describe("EXPEDITION V2", async function() {
         expect6FigBigNumberAllEqual([expedInfoInit.everestOwned, expedInfoMid.everestOwned, expedInfoMid2.everestOwned, expedInfoFinal.everestOwned])
     })
 
+    it('SAFETY FACTOR: Users should be able to switch to both safety factor and deity', async function() {
+        const { user1 } = await ethers.getNamedSigners()
+
+        await expeditionSynth.rolloverExpedition()
+        
+        await expeditionSynth.expectUserAndExpedSuppliesToMatch()
+
+        const expedInfoInit = await expeditionGet.userExpeditionInfo(user1.address)
+        const { safe: safeInit, deitied: deitiedInit } = await expeditionSynth.calcUserSafeAndDeitiedEverest(user1.address)
+
+        expect(safeInit).to.equal(expedInfoInit.safeSupply)
+        expect(deitiedInit).to.equal(expedInfoInit.deitiedSupply)
+
+        // Switch safety factor to 0
+        await expeditionMethod.selectDeityAndSafetyFactor({
+            user: user1,
+            deity: 1,
+            safetyFactor: 0
+        })
+
+        await expeditionSynth.expectUserAndExpedSuppliesToMatch()
+
+        const expedInfoMid = await expeditionGet.userExpeditionInfo(user1.address)
+        const { safe: safeMid, deitied: deitiedMid } = await expeditionSynth.calcUserSafeAndDeitiedEverest(user1.address)
+
+        expect(safeMid).to.equal(expedInfoMid.safeSupply)
+        expect(deitiedMid).to.equal(expedInfoMid.deitiedSupply)
+        
+        // Switch safety factor to 100
+        await expeditionMethod.selectDeityAndSafetyFactor({
+            user: user1,
+            deity: 0,
+            safetyFactor: 100
+        })
+
+        await expeditionSynth.expectUserAndExpedSuppliesToMatch()
+
+        const expedInfoMid2 = await expeditionGet.userExpeditionInfo(user1.address)
+        const { safe: safeMid2, deitied: deitiedMid2 } = await expeditionSynth.calcUserSafeAndDeitiedEverest(user1.address)
+
+        expect(safeMid2).to.equal(expedInfoMid2.safeSupply)
+        expect(deitiedMid2).to.equal(expedInfoMid2.deitiedSupply)
+        
+        
+        // Switch safety factor back to 50
+        await expeditionMethod.selectDeityAndSafetyFactor({
+            user: user1,
+            deity: 1,
+            safetyFactor: 50
+        })
+        
+        await expeditionSynth.expectUserAndExpedSuppliesToMatch()
+
+        const expedInfoFinal = await expeditionGet.userExpeditionInfo(user1.address)
+        const { safe: safeFinal, deitied: deitiedFinal } = await expeditionSynth.calcUserSafeAndDeitiedEverest(user1.address)
+
+        expect(safeFinal).to.equal(expedInfoFinal.safeSupply)
+        expect(deitiedFinal).to.equal(expedInfoFinal.deitiedSupply)
+
+
+        // Safety factor changes
+        expectAllEqual([50, expedInfoInit.safetyFactor, expedInfoFinal.safetyFactor])
+        expectAllEqual([0, expedInfoMid.safetyFactor])
+        expectAllEqual([100, expedInfoMid2.safetyFactor])
+
+
+        // DEITY changes
+        expectAllEqual([0, expedInfoInit.deity, expedInfoMid2.deity])
+        expectAllEqual([1, expedInfoMid.deity, expedInfoFinal.deity])
+
+
+        // User Exped Info doesnt change
+        expect6FigBigNumberAllEqual([expedInfoInit.everestOwned, expedInfoMid.everestOwned, expedInfoMid2.everestOwned, expedInfoFinal.everestOwned])
+
+        await expeditionMethod.selectDeity({
+            user: user1,
+            deity: 0,
+        })
+    })
+
     it('EVEREST CHANGE: Users should be able to increase or remove locked everest and update expeditions', async function() {
         const { user1 } = await ethers.getNamedSigners()
 

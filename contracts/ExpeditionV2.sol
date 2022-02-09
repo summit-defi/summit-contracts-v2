@@ -826,7 +826,7 @@ contract ExpeditionV2 is Ownable, Initializable, ReentrancyGuard, BaseEverestExt
         uint256 existingDeitiedSupply = user.deitiedSupply;
         user.safetyFactor = _newSafetyFactor;
         user.safetyFactorSelected = true;
-        
+
         // Update user's interaction in this expedition
         _updateUserRoundInteraction(user);
         
