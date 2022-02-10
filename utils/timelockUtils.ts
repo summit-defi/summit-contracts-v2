@@ -53,6 +53,7 @@ export interface JSONQueuedTransaction extends TimelockTxParams {
     rawParams: any[]
     queueTimestamp: number
     txHash: string
+    note: string
 }
 
 export type TimelockTxParamsArray = [

@@ -33,6 +33,7 @@ const deploySummitToken: DeployFunction = async function ({
 
   if (chainIdAllowsVerification(chainId) && (SummitToken.newlyDeployed || FORCE_VERIFY)) {
     await execute('SummitToken', { from: dev }, 'mint', dev, e18(15000))
+    consoleLog('Initial SUMMIT treasury mint')
 
     await failableVerify({
       address: SummitToken.address,

@@ -38,7 +38,7 @@ Funds are staked in elevation farms, and the resulting yield is risked to earn a
 The staked funds are safe from risk, and cannot ever be lost
 
 STAKING:
-    . 3 tiers exist: 2K - plains / 5K - mesa / 10K - summit
+    . 3 tiers exist: PLAINS / MESA / SUMMIT
     . Each tier has a set of TOTEMs
     . Users select a totem to represent them at the 'multiplying table', shared by all pools at that elevation
     . Funds are staked / withdrawn in the same way as traditional pools / farms, represented by their selected totem
@@ -48,7 +48,6 @@ STAKING:
     . The summed BETs of all users is considered the POT for that round
 
 ROUNDS:
-    . Each tier has a different round duration: 2 hours - plains / 4 hours - mesa / 10 hours - summit
     . At the end of each round, the round is ROLLED OVER
     . The ROLLOVER selects a TOTEM as the winner for that round
     . All users represented by that TOTEM are considered winners of that round

@@ -1,6 +1,6 @@
 import hre, { ethers, getChainId } from 'hardhat'
 import { getPoolConfigs } from '../data';
-import { allElevationPromiseSequenceMap, Contracts, everestMethod, getCartographer, pausableGet, pausableMethod } from '../utils';
+import { Contracts, everestMethod, getCartographer, pausableGet, pausableMethod } from '../utils';
 import { syncPools, syncTimelockFunctionSpecificDelays, transferContractOwnershipToTimelock } from './scriptUtils';
 
 const DeployStep = {
@@ -15,7 +15,7 @@ const DeployStep = {
 
 
 async function main() {
-  const completedDeployStep = DeployStep.None
+  const completedDeployStep = DeployStep.CreatePools
   console.log(' == Deploying Summit Ecosystem to FTM Mainnet ==\n')
 
 

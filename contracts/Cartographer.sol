@@ -50,20 +50,21 @@ The Cartographer is also the owner of the SUMMIT token
 
 
 Features of the Summit Ecosystem
-    - Cross pool compounding (Compound your winnings, even if they're not from the SUMMIT pool. Cross pool compounding vesting winnings locks them from withdrawl for the remainder of the round)
     - Standard Yield Farming (oasis farms mirror standard farms)
 
     - Yield Multiplying (yield is put into a pot, which allows winning of other user's yield reward)
-    - Multiple elevations (2X elevation, 5X elevation, 10X elevation)
     - Shared token allocation (reward allocation is split by elevation multiplier and amount staked at elevation, to guarantee more rewards at higher elevation)
-    - Reward vesting (No large dumps of SUMMIT token on wins)
     - Elevating (Deposit once, update strategy without paying tax)
+    - Decaying Fairness Tax promoting long term staking
+    - Accruing Loyalty Bonus to earn bonus Summit
+    - Yield locking for 4 epochs (weeks) in the Glacier
 
     - Passthrough Strategy (to fund expeditions, on oasis and elevation farms)
-    - Expedition (weekly drawings for summit holders to earn stablecoins and other high value tokens)
+
+    - Everest to lock SUMMIT and earn ecosystem rewards
+    - Expedition (daily drawings for Everest holders to earn USDC)
 
     - Random number generation immune to Block Withholding Attack through open source webserver
-    - Stopwatch functionality through open source webserver
 */
 
 contract Cartographer is Ownable, Initializable, ReentrancyGuard, PresetPausable {

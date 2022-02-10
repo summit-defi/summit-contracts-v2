@@ -429,11 +429,6 @@ export const getQueuedTimelockTransactionByHash = (chainId: string, txHash: stri
 }
 
 export const checkForAlreadyQueuedMatchingTimelockTx = (chainId: string, targetContract: string, txSignature: string, txParams: any[]): JSONQueuedTransaction | null => {
-    console.log({
-        checkFor: targetContract,
-        sig: txSignature,
-        params: txParams,
-    })
     const chainName = getChainName(chainId)
     const filename = `./data/${chainName}/timelockTxns.json`
     const timelockTxnsJSON = fs.readFileSync(filename)
@@ -454,4 +449,19 @@ export const checkForAlreadyQueuedMatchingTimelockTx = (chainId: string, targetC
     }
     
     return null
+}
+
+export const getQueuedTimelockTxs = (chainId: string): JSONQueuedTransaction[] => {
+    const chainName = getChainName(chainId)
+    const filename = `./data/${chainName}/timelockTxns.json`
+    const timelockTxnsJSON = fs.readFileSync(filename)
+    const timelockTxns = JSON.parse(timelockTxnsJSON.toString())
+
+    return timelockTxns.queued
+}
+
+export const timestampToDate = (timestamp: number): string => {
+    if (timestamp < 10000000) return '---'
+    const date = new Date(timestamp * 1000)
+    return date.toLocaleDateString('en', { month: 'short', day: 'numeric' }).toUpperCase()
 }

@@ -68,7 +68,7 @@ export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress:
         await run("compile")
         passthroughContract = await passthroughFactory.connect(dev).deploy(
             ...constructorArguments, {
-                gasLimit: 2400000,
+                gasLimit: 5000000,
             }
         )
         await passthroughContract.deployed()

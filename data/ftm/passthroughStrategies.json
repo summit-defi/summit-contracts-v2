@@ -1,47 +1,47 @@
 {
   "TOMB-FTM": {
     "token": "0x2a651563c9d3af67ae0388a5c8f89b867038089e",
-    "passthroughContract": "0x571b6934Bda2F6FF634c469Ac2Ab0ff9a287AeD7",
+    "passthroughContract": "0xe8321bD582D085Eabd8207B4A220F6ecd68B8EE9",
     "targetVaultContract": "0x27c77411074ba90cA35e6f92A79dAd577c05A746"
   },
   "TSHARE-FTM": {
     "token": "0x4733bc45ef91cf7ccecaeedb794727075fb209f2",
-    "passthroughContract": "0xD6D3eD20958F16C1bCf5a046d3B3Ad69f00dD789",
+    "passthroughContract": "0x2E3887E6ed26887f7bf452Fe57a41739C4F8eb73",
     "targetVaultContract": "0xae94e96bF81b3a43027918b138B71a771D381150"
   },
   "FTM-BOO": {
     "token": "0xEc7178F4C41f346b2721907F5cF7628E388A7a58",
-    "passthroughContract": "0x43f7769bbFF5E6170d68db4c9bAc949eDd9910D8",
+    "passthroughContract": "0xB33Fe6908F619dF4c10cB49cbF793e92c54D0805",
     "targetVaultContract": "0xEe3a7c885Fd3cc5358FF583F2DAB3b8bC473316f"
   },
   "Fidelio Duetto": {
     "token": "0xcde5a11a4acb4ee4c805352cec57e236bdbc3837",
-    "passthroughContract": "0xdFCde55FE6DfffE7E6d29Ed69aA296B1A5195402",
+    "passthroughContract": "0xd336c181D9f3B2C4f337A90C66A50fBa34fE49E2",
     "targetVaultContract": "0xAe0AB718971bb2BAd88AE6Bdc4D0eA63F3CD53Ee"
   },
   "Fantom of the Opera": {
     "token": "0xcdF68a4d525Ba2E90Fe959c74330430A5a6b8226",
-    "passthroughContract": "0x90724bD6D07b2937Ac1fcDaad6A8a74D82db91ce",
+    "passthroughContract": "0xdfDe72186d0836b815A8624B180C4820b708C9b4",
     "targetVaultContract": "0xB40c339e2b0a8513152F68082D3c87314E03776D"
   },
   "BOO": {
     "token": "0x841fad6eae12c286d1fd18d1d525dffa75c7effe",
-    "passthroughContract": "0xcab2F927A2fEf23f40515bC70E81Be134Ef3c2fB",
+    "passthroughContract": "0x85Db8b12E4d63894FDdE268AB6a3eab36b7A595d",
     "targetVaultContract": "0x15DD4398721733D8273FD4Ed9ac5eadC6c018866"
   },
   "Battle of the Bands": {
     "token": "0x9af1f0e9ac9c844a4a4439d446c1437807183075",
-    "passthroughContract": "0x6a89f26bb06BD5dA55b7E9F5530c6185Fc2eB1ad",
+    "passthroughContract": "0xbf12098BB0d9A16e3ff047b8B9F77B1b770EA513",
     "targetVaultContract": "0x0139C853539bF1EDf221cf9d665F282C2701335a"
   },
   "2SHARES-FTM": {
     "token": "0x6398ACBBAB2561553a9e458Ab67dCFbD58944e52",
-    "passthroughContract": "0x3218A01991858c2dA22210b07675394Fc153adbC",
+    "passthroughContract": "0x2A38930c03c7e6aD0CC6073556d6A7e6797c704a",
     "targetVaultContract": "0x03668Bd5dc63B1e15c39619b599091A4f68cAFB3"
   },
   "2OMB-FTM": {
     "token": "0xbdC7DFb7B88183e87f003ca6B5a2F81202343478",
-    "passthroughContract": "0xd5924BeEDe1B91F25AA7bfF068a71f0BD870FbD9",
+    "passthroughContract": "0xFEDed159277B85E7cF6660E12848C6cf9D69045a",
     "targetVaultContract": "0xf3A72885cB383543AEE60f44Ca51C760f0bC3b9b"
   }
 }
