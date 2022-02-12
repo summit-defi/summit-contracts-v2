@@ -1,6 +1,7 @@
 import hre, { ethers, getChainId } from 'hardhat'
 import { getPoolConfigs } from '../data';
-import { Contracts, everestMethod, getCartographer, pausableGet, pausableMethod } from '../utils';
+import { Contracts, everestMethod, expeditionMethod, getCartographer, getElevationHelper, getExpedition, pausableGet, pausableMethod } from '../utils';
+import { ElevationHelperSigs } from '../utils/timelockConstants';
 import { syncPools, syncTimelockFunctionSpecificDelays, transferContractOwnershipToTimelock } from './scriptUtils';
 
 const DeployStep = {
@@ -9,13 +10,16 @@ const DeployStep = {
   PauseSummitTokenV2: 2,
   EverestWhitelistCartographer: 3,
   CreatePools: 4,
-  InitializeTimelock: 5,
-  TransferContractOwnershipToTimelock: 6,
+  InitializeExpedition: 5,
+  InitializeTimelock: 6,
+  TransferContractOwnershipToTimelock: 7,
 }
+
+const ftmUsdcAddress = '0x04068da6c83afcfa0e13ba15a6696662335d5b75'
 
 
 async function main() {
-  const completedDeployStep = DeployStep.CreatePools
+  const completedDeployStep = DeployStep.EverestWhitelistCartographer
   console.log(' == Deploying Summit Ecosystem to FTM Mainnet ==\n')
 
 
@@ -74,20 +78,44 @@ async function main() {
 
 
 
-  console.log(' -- Initialize Timelock -- ')
-  if (completedDeployStep < DeployStep.InitializeTimelock) {
-    await syncTimelockFunctionSpecificDelays()
-  }
-  console.log('\tdone.\n')
+  // console.log(' -- Initialize Expedition -- ')
+  // if (completedDeployStep < DeployStep.InitializeExpedition) {
+  //   const elevationHelper = await getElevationHelper()
+  //   const expedition = await getExpedition()
+
+  //   await expeditionMethod.initialize({
+  //     dev,
+  //     usdcAddress: ftmUsdcAddress,
+  //     elevationHelperAddress: elevationHelper.address
+  //   })
+  //   console.log('Expedition V2 Initialized')
+
+  //   // Add ExpeditionV2 as an EverestExtension
+  //   await everestMethod.addEverestExtension({
+  //     dev,
+  //     extension: expedition.address
+  //   })
+  //   console.log('ExpeditionV2 Added as everest Extension')
+  // }
+  // console.log('\tdone.\n')
+
+  
+
+
+  // console.log(' -- Initialize Timelock -- ')
+  // if (completedDeployStep < DeployStep.InitializeTimelock) {
+  //   await syncTimelockFunctionSpecificDelays()
+  // }
+  // console.log('\tdone.\n')
 
 
 
 
-  console.log(' -- Transfer Contract Ownership to Timelock -- ')
-  if (completedDeployStep < DeployStep.TransferContractOwnershipToTimelock) {
-    await transferContractOwnershipToTimelock()
-  }
-  console.log('\tdone.\n')
+  // console.log(' -- Transfer Contract Ownership to Timelock -- ')
+  // if (completedDeployStep < DeployStep.TransferContractOwnershipToTimelock) {
+  //   await transferContractOwnershipToTimelock()
+  // }
+  // console.log('\tdone.\n')
 
 
 

@@ -12,15 +12,15 @@ export const ftmPools: PoolConfig[] = [
             },
             PLAINS: {
                 exists: true,
-                live: false,
+                live: true,
             },
             MESA: {
                 exists: true,
-                live: false,
+                live: true,
             },
             SUMMIT: {
                 exists: true,
-                live: false,
+                live: true,
             },
         },
         taxBP: 700,
@@ -38,15 +38,15 @@ export const ftmPools: PoolConfig[] = [
             },
             PLAINS: {
                 exists: true,
-                live: false,
+                live: true,
             },
             MESA: {
                 exists: true,
-                live: false,
+                live: true,
             },
             SUMMIT: {
                 exists: true,
-                live: false,
+                live: true,
             },
         },
         taxBP: 0,
@@ -65,15 +65,15 @@ export const ftmPools: PoolConfig[] = [
             },
             PLAINS: {
                 exists: true,
-                live: false,
+                live: true,
             },
             MESA: {
                 exists: true,
-                live: false,
+                live: true,
             },
             SUMMIT: {
                 exists: true,
-                live: false,
+                live: true,
             },
         },
         taxBP: 700,
@@ -95,15 +95,15 @@ export const ftmPools: PoolConfig[] = [
             },
             PLAINS: {
                 exists: true,
-                live: false,
+                live: true,
             },
             MESA: {
                 exists: true,
-                live: false,
+                live: true,
             },
             SUMMIT: {
                 exists: true,
-                live: false,
+                live: true,
             },
         },
         taxBP: 700,
@@ -125,15 +125,15 @@ export const ftmPools: PoolConfig[] = [
             },
             PLAINS: {
                 exists: true,
-                live: false,
+                live: true,
             },
             MESA: {
                 exists: true,
-                live: false,
+                live: true,
             },
             SUMMIT: {
                 exists: true,
-                live: false,
+                live: true,
             },
         },
         taxBP: 700,
@@ -155,15 +155,15 @@ export const ftmPools: PoolConfig[] = [
             },
             PLAINS: {
                 exists: true,
-                live: false,
+                live: true,
             },
             MESA: {
                 exists: true,
-                live: false,
+                live: true,
             },
             SUMMIT: {
                 exists: true,
-                live: false,
+                live: true,
             },
         },
         taxBP: 700,
@@ -172,6 +172,36 @@ export const ftmPools: PoolConfig[] = [
         passthroughStrategy: {
             type: PassthroughType.BeefyVaultV6,
             target: '0xAe0AB718971bb2BAd88AE6Bdc4D0eA63F3CD53Ee',
+        },
+    },
+    {
+        name: 'The Grand Orchestra',
+        token: '0xd47d2791d3b46f9452709fa41855a045304d6f9d',
+        allocation: 200,
+        elevations: {
+            OASIS: {
+                exists: true,
+                live: true,
+            },
+            PLAINS: {
+                exists: true,
+                live: true,
+            },
+            MESA: {
+                exists: true,
+                live: true,
+            },
+            SUMMIT: {
+                exists: true,
+                live: true,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.BeefyVaultV6,
+            target: '0x0ab24Bfc2503bB536ad667c00685BBB70fA90433',
         },
     },
     {
@@ -185,15 +215,15 @@ export const ftmPools: PoolConfig[] = [
             },
             PLAINS: {
                 exists: true,
-                live: false,
+                live: true,
             },
             MESA: {
                 exists: true,
-                live: false,
+                live: true,
             },
             SUMMIT: {
                 exists: true,
-                live: false,
+                live: true,
             },
         },
         taxBP: 700,
@@ -215,15 +245,15 @@ export const ftmPools: PoolConfig[] = [
             },
             PLAINS: {
                 exists: true,
-                live: false,
+                live: true,
             },
             MESA: {
                 exists: true,
-                live: false,
+                live: true,
             },
             SUMMIT: {
                 exists: true,
-                live: false,
+                live: true,
             },
         },
         taxBP: 700,
@@ -245,15 +275,15 @@ export const ftmPools: PoolConfig[] = [
             },
             PLAINS: {
                 exists: true,
-                live: false,
+                live: true,
             },
             MESA: {
                 exists: true,
-                live: false,
+                live: true,
             },
             SUMMIT: {
                 exists: true,
-                live: false,
+                live: true,
             },
         },
         taxBP: 700,
@@ -267,7 +297,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: '2SHARES-FTM',
         token: '0x6398ACBBAB2561553a9e458Ab67dCFbD58944e52',
-        allocation: 1000,
+        allocation: 800,
         elevations: {
             OASIS: {
                 exists: true,
@@ -275,15 +305,15 @@ export const ftmPools: PoolConfig[] = [
             },
             PLAINS: {
                 exists: true,
-                live: false,
+                live: true,
             },
             MESA: {
                 exists: true,
-                live: false,
+                live: true,
             },
             SUMMIT: {
                 exists: true,
-                live: false,
+                live: true,
             },
         },
         taxBP: 700,
@@ -297,7 +327,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: '2OMB-FTM',
         token: '0xbdC7DFb7B88183e87f003ca6B5a2F81202343478',
-        allocation: 1000,
+        allocation: 800,
         elevations: {
             OASIS: {
                 exists: true,
@@ -305,15 +335,15 @@ export const ftmPools: PoolConfig[] = [
             },
             PLAINS: {
                 exists: true,
-                live: false,
+                live: true,
             },
             MESA: {
                 exists: true,
-                live: false,
+                live: true,
             },
             SUMMIT: {
                 exists: true,
-                live: false,
+                live: true,
             },
         },
         taxBP: 700,

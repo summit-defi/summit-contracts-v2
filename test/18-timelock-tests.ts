@@ -8,11 +8,11 @@ import { poolsFixture, timelockedFixture } from "./fixtures";
 import { transferContractOwnershipToTimelock } from "../scripts/scriptUtils";
 
 describe("TIMELOCK", async function() {
-    it.only('Timelock sync function specific sigs, transfer contracts ownership to Timelock', async function() {
-        await poolsFixture()
-        await syncTimelockFunctionSpecificDelays()
-        await transferContractOwnershipToTimelock()
-    })
+    // it.only('Timelock sync function specific sigs, transfer contracts ownership to Timelock', async function() {
+    //     await poolsFixture()
+    //     await syncTimelockFunctionSpecificDelays()
+    //     await transferContractOwnershipToTimelock()
+    // })
 
     describe("TIMELOCK TEST ENABLE SUMMIT", async function() {
         it(`TIMELOCK: Enable function succeeds`, async function () {

@@ -12,7 +12,8 @@
     "deploy-bsc-testnet": "npx hardhat run scripts/deploy-testnet.ts --network bsc_testnet && yarn beep || yarn beep",
     "export-bsc-testnet-addresses": "npx hardhat run scripts/export-addresses.ts --network bsc_testnet && yarn beep || yarn beep",
     "deploy-fantom-v2": "npx hardhat run scripts/deploy-ftm-v2.ts --network ftm_mainnet && yarn beep || yarn beep",
-    "manage-queued-timelock-txs": "npx hardhat run scripts/manage-queued-timelock-transactions.ts --network ftm_mainnet"
+    "manage-queued-timelock-txs": "npx hardhat run scripts/manage-queued-timelock-transactions.ts --network ftm_mainnet",
+    "verify-elev-helper": "npx hardhat run scripts/verify-elev-helper.ts --network ftm_mainnet"
   },
   "devDependencies": {
     "@ethersproject/experimental": "^5.5.0",

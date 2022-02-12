@@ -1,7 +1,7 @@
 import { expect } from "chai"
 import { BigNumber, ethers } from "ethers"
-import hre, { network, ethers as hardhatEthers } from "hardhat"
-import { chainTreasuryAddress, EVM, getElevationName } from "."
+import hre, { network, ethers as hardhatEthers, getChainId } from "hardhat"
+import { chainTreasuryAddress, EVM, getElevationName, hardhatChainId } from "."
 import { getCreate2Address } from '@ethersproject/address';
 import { pack, keccak256 } from '@ethersproject/solidity';
 import fs from 'fs'
@@ -201,6 +201,12 @@ export const getChainExpedTreasuryAddress = (chainId: string) => {
 }
 export const getChainLpGeneratorAddress = (chainId: string) => {
     return chainLpGeneratorAddress[chainId]
+}
+export const notHardhat = async () => {
+    return (await getChainId()) !== hardhatChainId
+}
+export const txWaitCount = async () => {
+    return (await notHardhat()) ? 5 : 0
 }
 
 

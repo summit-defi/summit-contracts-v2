@@ -1,6 +1,6 @@
 import { ContractFactory } from '@ethersproject/contracts'
 import hre, { ethers, getChainId, run } from 'hardhat'
-import { delay, failableVerify, getCartographer, PassthroughType, PoolConfig, replaceSummitAddresses, writePassthroughStrategy, ZEROADD } from '../../utils'
+import { delay, failableVerify, getCartographer, notHardhat, PassthroughType, PoolConfig, replaceSummitAddresses, writePassthroughStrategy, ZEROADD } from '../../utils'
 
 export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress: string, everestAddress: string): Promise<string | undefined> => {
     const chainId = await getChainId()
@@ -69,10 +69,11 @@ export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress:
         passthroughContract = await passthroughFactory.connect(dev).deploy(
             ...constructorArguments, {
                 gasLimit: 5000000,
-            }
+            },
         )
-        await passthroughContract.deployed()
-        await delay(30000)
+        if (await notHardhat()) {
+            await passthroughContract.deployTransaction.wait(5)
+        }
     }
 
     console.log(`\t\tPassthrough contract created`)

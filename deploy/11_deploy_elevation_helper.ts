@@ -1,5 +1,5 @@
 import {DeployFunction} from 'hardhat-deploy/types'
-import { chainIdAllowsVerification, Contracts, delay, failableVerify, FORCE_VERIFY } from '../utils';
+import { chainIdAllowsVerification, Contracts, delay, failableVerify, FORCE_VERIFY, hardhatChainId } from '../utils';
 
 const deployElevationHelper: DeployFunction = async function ({
   getNamedAccounts,
@@ -23,6 +23,11 @@ const deployElevationHelper: DeployFunction = async function ({
   })
 
 
+  if (chainId !== hardhatChainId) {
+    await delay(10000)
+  }
+
+
   const ElevationHelper = await deploy('ElevationHelper', {
     from: dev,
     args: [Cartographer.address, ExpeditionV2.address],
@@ -30,6 +35,10 @@ const deployElevationHelper: DeployFunction = async function ({
   });
 
   if (SummitTrustedSeederRNGModule.newlyDeployed && ElevationHelper.newlyDeployed) {
+    if (chainId !== hardhatChainId) {
+      await delay(10000)
+    }
+
     await execute(
       Contracts.SummitTrustedSeederRNGModule,
       { from: dev },
@@ -37,12 +46,21 @@ const deployElevationHelper: DeployFunction = async function ({
       ElevationHelper.address,
     )
 
+    if (chainId !== hardhatChainId) {
+      await delay(10000)
+    }
+
     await execute(
       Contracts.SummitTrustedSeederRNGModule,
       { from: dev },
       'setTrustedSeederAdd',
       trustedSeeder,
     )
+
+
+    if (chainId !== hardhatChainId) {
+      await delay(10000)
+    }
 
     await execute(
       Contracts.ElevationHelper,
