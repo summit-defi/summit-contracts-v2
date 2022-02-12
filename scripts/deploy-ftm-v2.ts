@@ -1,6 +1,6 @@
 import hre, { ethers, getChainId } from 'hardhat'
 import { getPoolConfigs } from '../data';
-import { Contracts, everestMethod, expeditionMethod, getCartographer, getElevationHelper, getExpedition, pausableGet, pausableMethod } from '../utils';
+import { Contracts, everestMethod, expeditionMethod, getCartographer, getElevationHelper, getExpedition, getTimelock, pausableGet, pausableMethod } from '../utils';
 import { ElevationHelperSigs } from '../utils/timelockConstants';
 import { syncPools, syncTimelockFunctionSpecificDelays, transferContractOwnershipToTimelock } from './scriptUtils';
 
@@ -104,6 +104,9 @@ async function main() {
 
   // console.log(' -- Initialize Timelock -- ')
   // if (completedDeployStep < DeployStep.InitializeTimelock) {
+  //  const timelock = await getTimelock()
+  //  await timelock.connect(dev).setPendingAdmin(dev.address)
+  //  await timelock.connect(dev).acceptAdmin()
   //   await syncTimelockFunctionSpecificDelays()
   // }
   // console.log('\tdone.\n')
