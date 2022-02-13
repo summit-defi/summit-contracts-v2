@@ -19,7 +19,7 @@ const ftmUsdcAddress = '0x04068da6c83afcfa0e13ba15a6696662335d5b75'
 
 
 async function main() {
-  const completedDeployStep = DeployStep.EverestWhitelistCartographer
+  const completedDeployStep = DeployStep.InitializeExpedition
   console.log(' == Deploying Summit Ecosystem to FTM Mainnet ==\n')
 
 
@@ -66,14 +66,14 @@ async function main() {
 
 
 
-  console.log(' -- Create Pools -- ')
-  if (completedDeployStep < DeployStep.CreatePools) {
-    await syncPools(mainnetPools)
+  // console.log(' -- Create Pools -- ')
+  // if (completedDeployStep < DeployStep.CreatePools) {
+  //   await syncPools(mainnetPools)
 
-    const massUpdateTx = await Cartographer.massUpdatePools()
-    await massUpdateTx.wait(10)
-  }
-  console.log('\tdone.\n')
+  //   const massUpdateTx = await Cartographer.massUpdatePools()
+  //   await massUpdateTx.wait(10)
+  // }
+  // console.log('\tdone.\n')
 
 
 
@@ -102,14 +102,14 @@ async function main() {
   
 
 
-  // console.log(' -- Initialize Timelock -- ')
-  // if (completedDeployStep < DeployStep.InitializeTimelock) {
-  //  const timelock = await getTimelock()
-  //  await timelock.connect(dev).setPendingAdmin(dev.address)
-  //  await timelock.connect(dev).acceptAdmin()
-  //   await syncTimelockFunctionSpecificDelays()
-  // }
-  // console.log('\tdone.\n')
+  console.log(' -- Initialize Timelock -- ')
+  if (completedDeployStep < DeployStep.InitializeTimelock) {
+    // const timelock = await getTimelock()
+    // await timelock.connect(dev).setPendingAdmin(dev.address)
+    // await timelock.connect(dev).acceptAdmin()
+    await syncTimelockFunctionSpecificDelays()
+  }
+  console.log('\tdone.\n')
 
 
 

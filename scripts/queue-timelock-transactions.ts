@@ -1,30 +1,22 @@
 import { ethers, getChainId } from 'hardhat'
-import { checkForAlreadyQueuedMatchingTimelockTx, Contracts, delay, e18, e6, hardhatChainId, promiseSequenceMap, ZEROADD } from '../utils';
-import { TimelockedTransaction, queueTimelockTransaction, getTxSignatureBase, QueueTxConfig, TimelockTargetContract } from '../utils/timelockUtils';
-import { Contract } from 'ethers';
-
-const USDCaddress_FTM = '0x04068DA6C83AFCFA0e13ba15A6696662335D5B75'
-const USDCexpedRounds = 7
-const USDCexpedValue = 350000
+import { Contracts, delay, getTimestamp, hardhatChainId, promiseSequenceMap } from '../utils';
+import { queueTimelockTransaction, QueueTxConfig, getMatchingTimelockedTransaction } from '../utils/timelockUtils';
+import { TimelockTxSig } from '../utils/timelockConstants';
 
 const QueuedTransactions: QueueTxConfig[] = [
-    // {
-    //     targetContractName: TimelockTargetContract.Cartographer,
-    //     txName: TimelockedTransaction.Cartographer_AddExpedition,
-    //     txParams: [0, USDCaddress_FTM, e6(USDCexpedValue), 7],
-    //     note: `Add Expedition: Token ${USDCaddress_FTM}, Rounds ${USDCexpedRounds}, Per Round ${USDCexpedValue / USDCexpedRounds}, Total ${USDCexpedValue}`
-    // },
     {
-        targetContractName: TimelockTargetContract.Cartographer,
-        txName: TimelockedTransaction.Cartographer_SetTotalSummitPerSecond,
-        txParams: [0],
-        note: 'Turn off emissions',
+        targetContractName: Contracts.Cartographer,
+        txName: TimelockTxSig.Cartographer.Enable,
+        txParams: [],
+        note: 'Enable The Summit Ecosystem'
+    },
+    {
+        targetContractName: Contracts.SummitTrustedSeederRNGModule,
+        txName: TimelockTxSig.SummitTrustedSeederRNGModule.SetTrustedSeederAdd,
+        txParams: ['0xC2a1c87162acC85Dd25bE1bCbF0b9d45E891229f'],
+        note: `Set Trusted Seeder Address to '0xC2a1c87162acC85Dd25bE1bCbF0b9d45E891229f'`,
     }
 ]
-
-const getContractFromName = async (queuedTxTargetName: TimelockTargetContract): Promise<Contract> => {
-    return await ethers.getContract(queuedTxTargetName)
-}
 
 const DRY_RUN = false
 
@@ -38,22 +30,39 @@ async function main() {
     const txHashes = await promiseSequenceMap(
         QueuedTransactions,
         async ({ targetContractName, txName, txParams, note }) => {
-            const targetContract = await getContractFromName(targetContractName)
-            const txSignature = getTxSignatureBase({ targetContract, txName })
-            console.log(`\tQueue Transaction: ${txSignature}, params: (${txParams.join(',')})`)
+            const targetContract = await ethers.getContract(targetContractName)
 
-            const alreadyQueuedMatchingTxHash = checkForAlreadyQueuedMatchingTimelockTx(chainId, targetContract.address, txSignature, txParams)
-            if (alreadyQueuedMatchingTxHash != null) {
-                console.log(`\t\tMatching Existing Queued Tx Found: ${alreadyQueuedMatchingTxHash}, skipping (use force to push it through)\n`)
-                return
+            console.log(`QUEUE: ${note}`)
+
+            const params = {
+                dryRun: DRY_RUN,
+
+                targetContract,
+                txName,
+                txParams,
+                note
+            }
+            const matchingTx = await getMatchingTimelockedTransaction(params)
+            let txHash
+
+            if (matchingTx == null) {
+                const { txHash: hash } = await queueTimelockTransaction(params)
+                txHash = hash
+                console.log('\t\tqueued.')
             } else {
-                console.log('\t\tFresh Transaction.\n')
+                const currentTimestamp = await getTimestamp()
+                const matchingTxEta = matchingTx.eta
+                const matured = currentTimestamp >= matchingTxEta
+                if (matured) {
+                    console.log(`\t\tAlready queued and MATURED`)
+                } else {
+                    const matureDateTime = new Date(matchingTxEta * 1000)
+                    console.log(`\t\tAlready queued, matures in ${((matchingTxEta - currentTimestamp) / 3600).toFixed(1)}hr on ${matureDateTime.toString()}`)
+                }
             }
 
-            const { txHash } = await queueTimelockTransaction({ dryRun: DRY_RUN, targetContract, txName, txParams, note })
-
             if (!DRY_RUN && chainId !== hardhatChainId) {
-                await delay(20000)
+                await delay(5000)
             }
 
             return txHash

@@ -91,8 +91,8 @@ export const TimelockTxSigSpecificDelay: { [key: string]: { [key: string]: numbe
     Cartographer: {
         [CartographerSigs.MigrateSummitOwnership]: week,
         [CartographerSigs.SetTreasuryAdd]: null,
-        [CartographerSigs.SetExpeditionTreasuryAdd]: null,
-        [CartographerSigs.SetLpGeneratorAdd]: null,
+        [CartographerSigs.SetExpeditionTreasuryAdd]: three_days,
+        [CartographerSigs.SetLpGeneratorAdd]: three_days,
         [CartographerSigs.SetRolloverReward]: null,
         [CartographerSigs.SetTotalSummitPerSecond]: three_days,
         [CartographerSigs.SetSummitDistributionProfile]: null,
@@ -137,7 +137,7 @@ export const TimelockTxSigSpecificDelay: { [key: string]: { [key: string]: numbe
         [ExpeditionSigs.EnableExpedition]: null,
     },
     SummitTrustedSeederRNGModule: {
-        [SummitTrustedSeederRNGModuleSigs.SetElevationHelper]: null,
+        [SummitTrustedSeederRNGModuleSigs.SetElevationHelper]: three_days,
         [SummitTrustedSeederRNGModuleSigs.SetTrustedSeederAdd]: null,
     },
 }
