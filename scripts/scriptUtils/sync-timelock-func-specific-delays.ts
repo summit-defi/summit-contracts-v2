@@ -1,4 +1,4 @@
-import { getMatchingTimelockedTransaction, getTimelock, getTimestamp, promiseSequenceMap, queueTimelockTransaction } from "../../utils"
+import { getContract, getDelay, getMatchingTimelockedTransaction, getTimelock, getTimestamp, getTxSignatureBase, promiseSequenceMap, queueTimelockTransaction } from "../../utils"
 import { TimelockTxSig, TimelockTxSigSpecificDelay } from "../../utils/timelockConstants"
 
 
@@ -9,16 +9,16 @@ import { TimelockTxSig, TimelockTxSigSpecificDelay } from "../../utils/timelockC
 export const syncTimelockFunctionSpecificDelays = async () => {
     const timelock = await getTimelock()
 
-    let sigSpecificDelays: Array<{ sigSpecificContract: string, sig: string, delaySeconds: number }> = []
+    let sigSpecificDelays: Array<{ sigSpecificContractName: string, txName: string, delaySeconds: number }> = []
 
-    Object.keys(TimelockTxSigSpecificDelay).forEach(async (sigSpecificContract) => {
-        Object.keys(TimelockTxSigSpecificDelay[sigSpecificContract]).forEach(async (sig) => {
-            const delay = TimelockTxSigSpecificDelay[sigSpecificContract][sig]
+    Object.keys(TimelockTxSigSpecificDelay).forEach(async (sigSpecificContractName) => {
+        Object.keys(TimelockTxSigSpecificDelay[sigSpecificContractName]).forEach(async (sig) => {
+            const delay = TimelockTxSigSpecificDelay[sigSpecificContractName][sig]
             if (delay == null) return
             const delaySeconds = delay * 3600
             sigSpecificDelays.push({
-                sigSpecificContract,
-                sig,
+                sigSpecificContractName,
+                txName: sig,
                 delaySeconds
             })
         })
@@ -26,26 +26,42 @@ export const syncTimelockFunctionSpecificDelays = async () => {
 
     await promiseSequenceMap(
         sigSpecificDelays,
-        async ({ sigSpecificContract, sig, delaySeconds }) => {
-            const txNote = `Set Function Specific Delay: ${sigSpecificContract}:${sig} - ${delaySeconds / (3600 * 24)}D`
+        async ({ sigSpecificContractName, txName, delaySeconds }) => {
+            const txNote = `Set Function Specific Delay: ${sigSpecificContractName}:${txName} - ${delaySeconds / (3600 * 24)}D`
             console.log(`\n\t- ${txNote} -`)
+
+            const targetContract = await getContract(sigSpecificContractName)
+
+            const txSignature = getTxSignatureBase({
+                targetContract,
+                txName: txName,
+            })
+
+            const existingDelay = await getDelay(
+                timelock,
+                txSignature,
+            )
+
+            // Early exit if delay is already in sync
+            if (existingDelay === delaySeconds) {
+                console.log(`\t\tDelay already synced: ${sigSpecificContractName}:${txName}, Delay: ${delaySeconds / (3600 * 24)}D`)
+                return
+            }
 
             const params = {
                 dryRun: false,
-                note: `Set Function Specific Delay: ${sigSpecificContract}:${sig} - ${delaySeconds / (3600 * 24)}D`,
+                note: `Set Function Specific Delay: ${sigSpecificContractName}:${txName} - ${delaySeconds / (3600 * 24)}D`,
 
                 timelock,
                 targetContract: timelock,
                 txName: TimelockTxSig.Timelock.SetFunctionSpecificDelay,
-                txParams: [sig, delaySeconds]
+                txParams: [txSignature, delaySeconds]
             }
 
             const matchingTx = await getMatchingTimelockedTransaction(params)
 
-            if (matchingTx == null) {
-                await queueTimelockTransaction(params)
-                console.log('\t\tqueued.')
-            } else {
+            // If a matching transaction already exists, check and log if it has matured, early exit
+            if (matchingTx != null) {
                 const currentTimestamp = await getTimestamp()
                 const matchingTxEta = matchingTx.eta
                 const matured = currentTimestamp >= matchingTxEta
@@ -56,6 +72,10 @@ export const syncTimelockFunctionSpecificDelays = async () => {
                     console.log(`\t\tAlready queued, matures in ${((matchingTxEta - currentTimestamp) / 3600).toFixed(1)}hr on ${matureDateTime.toString()}`)
                 }
             }
+
+            // Queue the function specific delay
+            await queueTimelockTransaction(params)
+            console.log('\t\tqueued.')
         }
     )
 }

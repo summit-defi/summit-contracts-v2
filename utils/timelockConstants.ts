@@ -79,16 +79,14 @@ const week = 24 * 7
 const three_days = 24 * 3
 
 export const TimelockTxSigSpecificDelay: { [key: string]: { [key: string]: number | null }} = {
-    Global: {
-        [OwnedContractSigs.TransferOwnership]: week,
-        [OwnedContractSigs.RenounceOwnership]: week,
-    },
     Timelock: {
         [TimelockSigs.SetFunctionSpecificDelay]: null,
         [TimelockSigs.SetDelay]: null,
         [TimelockSigs.SetPendingAdmin]: week,
     },
     Cartographer: {
+        [OwnedContractSigs.TransferOwnership]: week, // This covers all owned contracts
+        [OwnedContractSigs.RenounceOwnership]: week, // This covers all owned contracts
         [CartographerSigs.MigrateSummitOwnership]: week,
         [CartographerSigs.SetTreasuryAdd]: null,
         [CartographerSigs.SetExpeditionTreasuryAdd]: three_days,

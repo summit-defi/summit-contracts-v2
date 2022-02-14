@@ -1,9 +1,7 @@
-import { getElevationHelper, getSeeds, getTimestamp } from '../utils';
+import { getElevationHelper, getSeeds, getTimestamp, summitTrustedSeederMethod, delay } from '../utils';
 import hre, { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signers';
 import cron from 'node-cron'
-
-const delay = async (n: number) => await new Promise(resolve => setTimeout(resolve, n * 1000));
 
 const getRandomSeeds = (signer: SignerWithAddress): { sealedSeed: string, unsealedSeed: string } => {
     const seed = Math.random().toString(36).replace(/[^a-z]+/g, '')
@@ -35,28 +33,39 @@ const getSeedRoundTimeRemaining = async (nextTopOfSeedRound: number) => {
 
 async function main() {
     const { trustedSeeder } = await ethers.getNamedSigners()
-    const elevationHelper = await getElevationHelper()
 
 
     const timestamp = await getTimestamp()
     const nextTopOfHour = timestamp + (3600 - Math.max(timestamp % 3600))
+    let seedRoundTimeRemaining = await getSeedRoundTimeRemaining(nextTopOfHour)
+
+    console.log({
+        timestamp,
+        nextTopOfHour,
+        remaining: (nextTopOfHour - timestamp) / 60,
+        seedRoundTimeRemaining,
+    })
 
     const hour = nextTopOfHour / 3600
 
-    if ((hour % 2) === 0) {
-        console.log('Incorrect hour, exiting.')
-        return;
-    }
+    // if ((hour % 2) === 0) {
+    //     console.log('Incorrect hour, exiting.')
+    //     return;
+    // }
 
 
-    console.log('Send seed to Elevation Helper')
+    // console.log('Send seed to Elevation Helper')
     const { sealedSeed, unsealedSeed } = getRandomSeeds(trustedSeeder)
+    console.log({
+        sealedSeed,
+        unsealedSeed
+    })
 
 
-    // SEALED SEED
+    // // SEALED SEED
 
     console.log("== COUNTDOWN TO ROUND END ==")
-    let seedRoundTimeRemaining = await getSeedRoundTimeRemaining(nextTopOfHour)
+    seedRoundTimeRemaining = await getSeedRoundTimeRemaining(nextTopOfHour)
     console.log({seedRoundTimeRemaining})
     while (seedRoundTimeRemaining > 120) {
         await delay(3)
@@ -69,19 +78,16 @@ async function main() {
     let seedingFailed = true
     while (seedingFailed) {
         try {
-            const sendSeedTx = await elevationHelper.connect(trustedSeeder).receiveSealedSeed(
-                sealedSeed, {
-                    gasPrice: ethers.utils.parseUnits('5000', 'gwei').toNumber(),
-                    gasLimit: 600000,
-                }
-            )
-            await sendSeedTx.wait(10)
+            await summitTrustedSeederMethod.receiveSealedSeed({
+                trustedSeeder,
+                sealedSeed,
+            })
             seedingFailed = false;
         } catch (err) {
             console.log("Seeding Failed", err)
             seedingFailed = true;
 
-            await delay(1)
+            await delay(1000)
 
             const timestampCheck = await getTimestamp()
             if (timestampCheck == null || timestampCheck > nextTopOfHour) {
@@ -92,11 +98,11 @@ async function main() {
     console.log('done.')
 
 
-    // UNSEALED SED
+    // // UNSEALED SED
 
     seedRoundTimeRemaining = await getSeedRoundTimeRemaining(nextTopOfHour)
-    while (seedRoundTimeRemaining >= 60) {
-        await delay(3)
+    while (seedRoundTimeRemaining >= 120) {
+        await delay(3000)
         console.log("Time Remaining", seedRoundTimeRemaining)
         seedRoundTimeRemaining = await getSeedRoundTimeRemaining(nextTopOfHour)
     }
@@ -105,19 +111,17 @@ async function main() {
     let unsealedSeedingFailed = true
     while (unsealedSeedingFailed) {
         try {
-            const sendUnsealedTx = await elevationHelper.connect(trustedSeeder).receiveUnsealedSeed(
-                unsealedSeed, {
-                    gasPrice: ethers.utils.parseUnits('5000', 'gwei').toNumber(),
-                    gasLimit: 600000,
-                }
-            )
-            await sendUnsealedTx.wait(10)
+            await delay(10000)
+            await summitTrustedSeederMethod.receiveUnsealedSeed({
+                trustedSeeder,
+                unsealedSeed,
+            })
             unsealedSeedingFailed = false
         } catch (err) {
             console.log("Unsealed Seeding Failed", err)
             unsealedSeedingFailed = true;
             
-            await delay(1)
+            await delay(1000)
 
             const timestampCheck = await getTimestamp()
             if (timestampCheck == null || timestampCheck > nextTopOfHour) {
@@ -150,6 +154,11 @@ cron.schedule('57 * * * *', () => {
          console.error(error);
      });
 }).start();
+
+main()
+    .catch(err => {
+        console.error(err);
+    })
 
 // main()
 
