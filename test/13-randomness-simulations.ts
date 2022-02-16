@@ -6,7 +6,7 @@ describe('RANDOMNESS SIMULATIONS', async function() {
         it('PLAINS RANDOMNESS: Verify plains randomness', async function () {
             const { trustedSeeder } = await plainsUnlockedFixture()
 
-            for (let i = 0; i < 1000; i++) {
+            for (let i = 0; i < 10000; i++) {
                 if (i % 50 == 0) console.log("Rollovers Complete:", i, Math.random().toString())
                 const { unsealedSeed, sealedSeed } = getSeeds(Math.random().toString(), trustedSeeder.address)
                 await rolloverRound(PLAINS)
@@ -30,7 +30,7 @@ describe('RANDOMNESS SIMULATIONS', async function() {
         it('MESA RANDOMNESS: Verify mesa randomness', async function () {
             const { trustedSeeder } = await mesaUnlockedFixture()
 
-            for (let i = 0; i < 1000; i++) {
+            for (let i = 0; i < 10000; i++) {
                 if (i % 50 == 0) console.log("Rollovers Complete:", i, Math.random().toString())
                 const { unsealedSeed, sealedSeed } = getSeeds(Math.random().toString(), trustedSeeder.address)
                 await rolloverRound(MESA)
@@ -54,7 +54,7 @@ describe('RANDOMNESS SIMULATIONS', async function() {
         it('SUMMIT RANDOMNESS: Verify summit randomness', async function () {
             const { trustedSeeder } = await summitUnlockedFixture()
 
-            for (let i = 0; i < 1000; i++) {
+            for (let i = 0; i < 10000; i++) {
                 if (i % 50 == 0) console.log("Rollovers Complete:", i, Math.random().toString())
                 const { unsealedSeed, sealedSeed } = getSeeds(Math.random().toString(), trustedSeeder.address)
                 await rolloverRound(SUMMIT)

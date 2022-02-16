@@ -354,4 +354,64 @@ export const ftmPools: PoolConfig[] = [
             target: '0xf3A72885cB383543AEE60f44Ca51C760f0bC3b9b',
         },
     },
+    {
+        name: 'PAE-FTM',
+        token: '0x8a41f13a4FaE75ca88B1ee726ee9D52B148b0498',
+        allocation: 800,
+        elevations: {
+            OASIS: {
+                exists: false,
+                live: true,
+            },
+            PLAINS: {
+                exists: false,
+                live: true,
+            },
+            MESA: {
+                exists: false,
+                live: true,
+            },
+            SUMMIT: {
+                exists: false,
+                live: true,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.BeefyVaultV6,
+            target: '0x1f01078af0b8a4e7E2BA6211Bda7e92F89393284',
+        },
+    },
+    {
+        name: 'pFTM-FTM',
+        token: '0x112dF7E3b4B7Ab424F07319D4E92F41e6608c48B',
+        allocation: 800,
+        elevations: {
+            OASIS: {
+                exists: false,
+                live: true,
+            },
+            PLAINS: {
+                exists: false,
+                live: true,
+            },
+            MESA: {
+                exists: false,
+                live: true,
+            },
+            SUMMIT: {
+                exists: false,
+                live: true,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.BeefyVaultV6,
+            target: '0xb97C963834319e1E07d4F241F1F42f6a41CAEB85',
+        },
+    },
 ]

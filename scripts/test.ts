@@ -1,9 +1,14 @@
-import { ethers } from "hardhat";
+import { ethers, getChainId } from "hardhat";
+import { getPoolConfigs } from "../data";
 import { Contracts } from "../utils";
-import { syncTimelockFunctionSpecificDelays } from "./scriptUtils";
+import { syncPools, syncTimelockFunctionSpecificDelays } from "./scriptUtils";
 
 async function main() {
-    await syncTimelockFunctionSpecificDelays()   
+    // await syncTimelockFunctionSpecificDelays() 
+
+    const chainId = await getChainId()
+    const mainnetPools = getPoolConfigs(chainId)
+    await syncPools(mainnetPools, true)  
 };
 
 main()

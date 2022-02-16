@@ -1,7 +1,9 @@
 import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
-import { claimAmountBonus, claimAmountWithBonusAdded, days, e18, e12, e6, elevationPromiseSequenceReduce, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getBifiToken, getCakeToken, getTimestamp, OASIS, subCartGet, sumBigNumbers, toDecimal, tokenAmountAfterDepositFee, tokenAmountAfterWithdrawTax, tokenPromiseSequenceMap } from "."
+import { claimAmountBonus, claimAmountWithBonusAdded, days, e18, e12, e6, elevationPromiseSequenceReduce, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getBifiToken, getCakeToken, getTimestamp, OASIS, subCartGet, sumBigNumbers, toDecimal, tokenAmountAfterDepositFee, tokenAmountAfterWithdrawTax, tokenPromiseSequenceMap, Contracts, NamedElevations, getElevationName } from "."
 import { getCartographer, getSummitToken } from "./contracts"
+import { TimelockTxSig } from "./timelockConstants"
+import { timelockMethod } from "./timelockUtilsV2"
 
 
 // BASE GETTERS
@@ -232,6 +234,9 @@ export const cartographerMethod = {
         live,
         withUpdate,
         revertErr,
+        callAsTimelock = false,
+        dryRun = false,
+        tokenSymbol = '',
     }: {
         dev: SignerWithAddress,
         tokenAddress: string,
@@ -239,17 +244,26 @@ export const cartographerMethod = {
         live: boolean,
         withUpdate: boolean,
         revertErr?: string,
+        callAsTimelock?: boolean,
+        dryRun?: boolean,
+        tokenSymbol?: string,
     }) => {
 
-        const nonce = await dev.provider?.getTransactionCount(dev.address);
-        const noncePending = await dev.provider?.getTransactionCount(dev.address, 'pending');
-        console.log({
-            nonce,
-            noncePending
-        })
         const cartographer = await getCartographer()
         const tx = cartographer.connect(dev).add
         const txArgs = [tokenAddress, elevation, live, withUpdate]
+
+        if (callAsTimelock) {
+            const note = `Add Farm at Elevation: ${tokenSymbol} - ${getElevationName}elevation)} - live<${live}>`
+            return await timelockMethod.queue({
+                dev,
+                targetContractName: Contracts.Cartographer,
+                txName: TimelockTxSig.Cartographer.AddFarm,
+                txParams: txArgs,
+                note,
+                dryRun,
+            })
+        }
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
@@ -265,6 +279,9 @@ export const cartographerMethod = {
         live,
         withUpdate,
         revertErr,
+        callAsTimelock = false,
+        dryRun = false,
+        tokenSymbol = '',
     }: {
         dev: SignerWithAddress,
         tokenAddress: string,
@@ -272,10 +289,25 @@ export const cartographerMethod = {
         live: boolean,
         withUpdate: boolean,
         revertErr?: string,
+        callAsTimelock?: boolean,
+        dryRun?: boolean,
+        tokenSymbol?: string,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(dev).set
         const txArgs = [tokenAddress, elevation, live, withUpdate]
+
+        if (callAsTimelock) {
+            const note = `Set Farm at Elevation: ${tokenSymbol} - ${getElevationName}elevation)} - live<${live}>`
+            return await timelockMethod.queue({
+                dev,
+                targetContractName: Contracts.Cartographer,
+                txName: TimelockTxSig.Cartographer.SetFarm,
+                txParams: txArgs,
+                note,
+                dryRun,
+            })
+        }
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
@@ -289,15 +321,33 @@ export const cartographerMethod = {
         tokenAddress,
         allocation,
         revertErr,
+        callAsTimelock = false,
+        dryRun = false,
+        tokenSymbol = '',
     }: {
         dev: SignerWithAddress,
         tokenAddress: string,
         allocation: number,
         revertErr?: string,
+        callAsTimelock?: boolean,
+        dryRun?: boolean,
+        tokenSymbol?: string,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(dev).setTokenAllocation
         const txArgs = [tokenAddress, allocation]
+
+        if (callAsTimelock) {
+            const note = `Set Token Allocation: ${tokenSymbol} - ${allocation}`
+            return await timelockMethod.queue({
+                dev,
+                targetContractName: Contracts.Cartographer,
+                txName: TimelockTxSig.Cartographer.SetTokenAllocation,
+                txParams: txArgs,
+                note,
+                dryRun,
+            })
+        }
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
@@ -541,15 +591,33 @@ export const cartographerMethod = {
         tokenAddress,
         passthroughTargetAddress,
         revertErr,
+        callAsTimelock = false,
+        dryRun = false,
+        tokenSymbol = '',
     }: {
         dev: SignerWithAddress
         tokenAddress: string,
         passthroughTargetAddress: string,
         revertErr?: string,
+        callAsTimelock?: boolean,
+        dryRun?: boolean,
+        tokenSymbol?: string,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(dev).setTokenPassthroughStrategy
         const txArgs = [tokenAddress, passthroughTargetAddress]
+
+        if (callAsTimelock) {
+            const note = `Set Token Passthrough Strategy: ${tokenSymbol} - ${passthroughTargetAddress}`
+            return await timelockMethod.queue({
+                dev,
+                targetContractName: Contracts.Cartographer,
+                txName: TimelockTxSig.Cartographer.SetTokenPassthroughStrategy,
+                txParams: txArgs,
+                note,
+                dryRun,
+            })
+        }
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
@@ -605,15 +673,33 @@ export const cartographerSetParam = {
         tokenAddress,
         feeBP,
         revertErr,
+        callAsTimelock = false,
+        dryRun = false,
+        tokenSymbol = '',
     }: {
         dev: SignerWithAddress
         tokenAddress: string,
         feeBP: number,
         revertErr?: string,
+        callAsTimelock?: boolean,
+        dryRun?: boolean,
+        tokenSymbol?: string,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(dev).setTokenDepositFee
         const txArgs = [tokenAddress, feeBP]
+
+        if (callAsTimelock) {
+            const note = `Set Token Deposit Fee: ${tokenSymbol} - ${feeBP}`
+            return await timelockMethod.queue({
+                dev,
+                targetContractName: Contracts.Cartographer,
+                txName: TimelockTxSig.Cartographer.SetTokenDepositFee,
+                txParams: txArgs,
+                note,
+                dryRun,
+            })
+        }
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
@@ -627,15 +713,33 @@ export const cartographerSetParam = {
         tokenAddress,
         taxBP,
         revertErr,
+        callAsTimelock = false,
+        dryRun = false,
+        tokenSymbol = '',
     }: {
         dev: SignerWithAddress
         tokenAddress: string,
         taxBP: number,
         revertErr?: string,
+        callAsTimelock?: boolean,
+        dryRun?: boolean,
+        tokenSymbol?: string,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(dev).setTokenWithdrawTax
         const txArgs = [tokenAddress, taxBP]
+
+        if (callAsTimelock) {
+            const note = `Set Token Withdrawal Tax: ${tokenSymbol} - ${taxBP}`
+            return await timelockMethod.queue({
+                dev,
+                targetContractName: Contracts.Cartographer,
+                txName: TimelockTxSig.Cartographer.SetTokenWithdrawTax,
+                txParams: txArgs,
+                note,
+                dryRun,
+            })
+        }
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
@@ -689,15 +793,33 @@ export const cartographerSetParam = {
         tokenAddress,
         tokenIsNativeFarm,
         revertErr,
+        callAsTimelock = false,
+        dryRun = false,
+        tokenSymbol = '',
     }: {
         dev: SignerWithAddress
         tokenAddress: string,
         tokenIsNativeFarm: boolean,
         revertErr?: string,
+        callAsTimelock?: boolean,
+        dryRun?: boolean,
+        tokenSymbol?: string,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(dev).setTokenIsNativeFarm
         const txArgs = [tokenAddress, tokenIsNativeFarm]
+
+        if (callAsTimelock) {
+            const note = `Set Token Is Native: ${tokenSymbol} - ${tokenIsNativeFarm}`
+            return await timelockMethod.queue({
+                dev,
+                targetContractName: Contracts.Cartographer,
+                txName: TimelockTxSig.Cartographer.SetTokenIsNativeFarm,
+                txParams: txArgs,
+                note,
+                dryRun,
+            })
+        }
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)

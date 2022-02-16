@@ -1,5 +1,5 @@
 import { DeployFunction } from 'hardhat-deploy/types'
-import { chainIdExportsAddresses, chainIdRequiresDummies, getBifiToken, getCakeToken, getCartographer, getContract, getElevationHelper, getEverestToken, getExpedition, getSubCartographers, getSummitGlacier, getSummitToken, getTimelock, getUSDCToken, writeContractAddresses } from '../utils'
+import { chainIdExportsAddresses, chainIdRequiresDummies, getBifiToken, getCakeToken, getCartographer, getContract, getElevationHelper, getEverestToken, getExpedition, getSubCartographers, getSummitGlacier, getSummitToken, getSummitTrustedSeeder, getTimelock, getUSDCToken, writeContractAddresses } from '../utils'
 
 const exportAddresses: DeployFunction = async function ({
     getChainId,
@@ -13,6 +13,7 @@ const exportAddresses: DeployFunction = async function ({
     const EverestToken = await getEverestToken()
     const subCartographers = await getSubCartographers()
     const elevationHelper = await getElevationHelper()
+    const summitTrustedSeederModule = await getSummitTrustedSeeder()
     const ExpeditionV2 = await getExpedition()
     const SummitGlacier = await getSummitGlacier()
     const timelock = await getTimelock()
@@ -46,6 +47,7 @@ const exportAddresses: DeployFunction = async function ({
         ['expedition', ExpeditionV2.address],
         ['summitGlacier', SummitGlacier.address],
         ['elevationHelper', elevationHelper.address],
+        ['summitTrustedSeederModule', summitTrustedSeederModule.address],
         ['timelock', timelock.address],
         ...additionalAddresses,
     ])

@@ -8,6 +8,7 @@ export const executeTx = async (tx: any, txArgs: any[]) => {
     const waitCount = await txWaitCount()
     await transaction.wait(waitCount)
     if ((await getChainId()) !== hardhatChainId) await delay(5000)
+    return transaction
 }
 
 export const executeTxExpectReversion = async (tx: any, txArgs: any[], revertErr: string) => {

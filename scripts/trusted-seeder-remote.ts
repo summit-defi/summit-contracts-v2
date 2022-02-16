@@ -32,6 +32,7 @@ const getSeedRoundTimeRemaining = async (nextTopOfSeedRound: number) => {
 }
 
 async function main() {
+    console.log("DATE TIME", new Date().toLocaleString('en-US', { timeZone: 'UTC' }))
     const { trustedSeeder } = await ethers.getNamedSigners()
 
 
@@ -147,7 +148,7 @@ async function main() {
 
 */
 
-cron.schedule('57 * * * *', () => {
+cron.schedule('2 58 1-23/2 * * *', () => {
   console.log('starting seeder');
   main()
      .catch(error => {
@@ -155,10 +156,10 @@ cron.schedule('57 * * * *', () => {
      });
 }).start();
 
-main()
-    .catch(err => {
-        console.error(err);
-    })
+// main()
+//     .catch(err => {
+//         console.error(err);
+//     })
 
 // main()
 

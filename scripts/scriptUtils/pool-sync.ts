@@ -4,7 +4,9 @@ import { createPassthroughStrategy } from "./passthrough-strategy"
 import { NonceManager } from "@ethersproject/experimental"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 
-export const syncPools = async (poolConfigs: PoolConfig[]) => {
+const dryRun = true
+
+export const syncPools = async (poolConfigs: PoolConfig[], callAsTimelock = false) => {
     const { dev } = await ethers.getNamedSigners()
     const summitToken = await getSummitToken()
     const everestToken = await getEverestToken()
@@ -43,7 +45,10 @@ export const syncPools = async (poolConfigs: PoolConfig[]) => {
                 await cartographerSetParam.setTokenIsNativeFarm({
                     dev,
                     tokenAddress,
-                    tokenIsNativeFarm: configNative
+                    tokenIsNativeFarm: configNative,
+                    callAsTimelock,
+                    dryRun,
+                    tokenSymbol: configName,
                 })
                 console.log(`\t\t\tdone.`)
             } else {
@@ -64,7 +69,10 @@ export const syncPools = async (poolConfigs: PoolConfig[]) => {
                 await cartographerMethod.setTokenAllocation({
                     dev,
                     tokenAddress,
-                    allocation: configAllocation
+                    allocation: configAllocation,
+                    callAsTimelock,
+                    dryRun,
+                    tokenSymbol: configName,
                 })
                 console.log(`\t\tdone.`)
             } else {
@@ -85,7 +93,10 @@ export const syncPools = async (poolConfigs: PoolConfig[]) => {
                 await cartographerSetParam.setTokenWithdrawTax({
                     dev,
                     tokenAddress,
-                    taxBP: configTaxBP
+                    taxBP: configTaxBP,
+                    callAsTimelock,
+                    dryRun,
+                    tokenSymbol: configName,
                 })
                 console.log(`\t\t\tdone.`)
             } else {
@@ -107,6 +118,9 @@ export const syncPools = async (poolConfigs: PoolConfig[]) => {
                     dev,
                     tokenAddress,
                     feeBP: configDepositFeeBP,
+                    callAsTimelock,
+                    dryRun,
+                    tokenSymbol: configName,
                 })
                 console.log(`\t\t\tdone.`)
             } else {
@@ -161,7 +175,10 @@ export const syncPools = async (poolConfigs: PoolConfig[]) => {
                     await cartographerMethod.setTokenPassthroughStrategy({
                         dev,
                         tokenAddress: configToken,
-                        passthroughTargetAddress: newPassthroughStrategyContract
+                        passthroughTargetAddress: newPassthroughStrategyContract,
+                        callAsTimelock,
+                        dryRun,
+                        tokenSymbol: configName,
                     })
                     // const setPassthroughStrategyTxHash = await queueTransactionInTimelock(chainId, dryRun, setPassthroughStrategyNote, {
                     //     targetContractName: Contracts.Cartographer,
@@ -197,7 +214,10 @@ export const syncPools = async (poolConfigs: PoolConfig[]) => {
                             tokenAddress,
                             elevation,
                             live: configElevation.live,
-                            withUpdate: false
+                            withUpdate: false,
+                            callAsTimelock,
+                            dryRun,
+                            tokenSymbol: configName,
                         })
                         console.log(`\t\tdone.`)
                     } else {
@@ -214,6 +234,9 @@ export const syncPools = async (poolConfigs: PoolConfig[]) => {
                                 elevation,
                                 live: configElevation.live,
                                 withUpdate: false,
+                                callAsTimelock,
+                                dryRun,
+                                tokenSymbol: configName,
                             })
                             console.log(`\t\t\tdone.`)
                         } else {
