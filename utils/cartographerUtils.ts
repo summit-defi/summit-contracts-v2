@@ -254,7 +254,7 @@ export const cartographerMethod = {
         const txArgs = [tokenAddress, elevation, live, withUpdate]
 
         if (callAsTimelock) {
-            const note = `Add Farm at Elevation: ${tokenSymbol} - ${getElevationName}elevation)} - live<${live}>`
+            const note = `Add Farm at Elevation: ${tokenSymbol} - ${getElevationName(elevation)} - live<${live}>`
             return await timelockMethod.queue({
                 dev,
                 targetContractName: Contracts.Cartographer,

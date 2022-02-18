@@ -1,10 +1,8 @@
-import hre, { ethers, getChainId } from "hardhat"
+import { ethers, getChainId } from "hardhat"
 import { PoolConfig, getElevationName, promiseSequenceMap, replaceSummitAddresses, subCartGet, cartographerGet, getSummitToken, cartographerMethod, cartographerSetParam, getEverestToken, ZEROADD, getPassthroughStrategy, getCartographer, allElevationPromiseSequenceMap, Contracts } from "../../utils"
 import { createPassthroughStrategy } from "./passthrough-strategy"
-import { NonceManager } from "@ethersproject/experimental"
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 
-const dryRun = true
+const dryRun = false
 
 export const syncPools = async (poolConfigs: PoolConfig[], callAsTimelock = false) => {
     const { dev } = await ethers.getNamedSigners()
@@ -154,41 +152,29 @@ export const syncPools = async (poolConfigs: PoolConfig[], callAsTimelock = fals
                 cartPassthroughStrategy,
                 cartPassthroughStrategyVault,
             })
-            if (existingTargetVaultContract !== configTargetVaultContract) {
-            // if ((tokenPassthroughStrategy === ZEROADD) !== (configPassthroughStrategy === ZEROADD) && configPassthroughStrategy !== ZEROADD) {
+            if (cartPassthroughStrategyVault !== configTargetVaultContract) {
+                // Create a passthrough strategy if it doesnt exist
+                let passthroughStrategyContractAddress: string | undefined | null
+                if (existingTargetVaultContract !== configTargetVaultContract) {
+                    console.log(`\t\tCreate passthrough strategy`)
+                    passthroughStrategyContractAddress = await createPassthroughStrategy(poolConfig, summitToken.address, everestToken.address)
+                } else {
+                    console.log(`\t\tPassthrough strategy already created: ${existingTargetVaultContract}`)
+                    passthroughStrategyContractAddress = existingTargetVaultContract
+                }
+                
                 console.log(`\t\tSetting passthrough strategy: ${poolConfig.passthroughStrategy?.target}`)
 
-                // if (dryRun) {
-                //     newPassthroughStrategyContract = '0x2b4c76d0dc16be1c31d4c1dc53bf9b45987fc75c'
-                // } else {
-                const newPassthroughStrategyContract = await createPassthroughStrategy(poolConfig, summitToken.address, everestToken.address)
-                // }
-
-                // const setPassthroughStrategyNote = `Set ${configName} Passthrough Strategy: ${newPassthroughStrategyContract}`
-
-                console.log({
-                    newPassthroughStrategyContract
-                })
-
                 // QUEUE TX
-                if (newPassthroughStrategyContract != null) {
+                if (passthroughStrategyContractAddress != null) {
                     await cartographerMethod.setTokenPassthroughStrategy({
                         dev,
                         tokenAddress: configToken,
-                        passthroughTargetAddress: newPassthroughStrategyContract,
+                        passthroughTargetAddress: passthroughStrategyContractAddress,
                         callAsTimelock,
                         dryRun,
                         tokenSymbol: configName,
                     })
-                    // const setPassthroughStrategyTxHash = await queueTransactionInTimelock(chainId, dryRun, setPassthroughStrategyNote, {
-                    //     targetContractName: Contracts.Cartographer,
-                    //     txName: TimelockTxSig.Cartographer_SetTokenPassthroughStrategy,
-                    //     txParams: [tokenAddress, newPassthroughStrategyContract]
-                    // })
-                    // if (setPassthroughStrategyTxHash != null) poolQueuedTxHashes.push({
-                    //     txHash: setPassthroughStrategyTxHash,
-                    //     note: setPassthroughStrategyNote,
-                    // })
                 }
 
                 console.log('\t\tdone.')

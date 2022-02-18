@@ -87,7 +87,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'TSHARE-FTM',
         token: '0x4733bc45ef91cf7ccecaeedb794727075fb209f2',
-        allocation: 500,
+        allocation: 600,
         elevations: {
             OASIS: {
                 exists: true,
@@ -356,24 +356,24 @@ export const ftmPools: PoolConfig[] = [
     },
     {
         name: 'PAE-FTM',
-        token: '0x8a41f13a4FaE75ca88B1ee726ee9D52B148b0498',
+        token: '0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0',
         allocation: 800,
         elevations: {
             OASIS: {
                 exists: false,
-                live: true,
+                live: false,
             },
             PLAINS: {
                 exists: false,
-                live: true,
+                live: false,
             },
             MESA: {
                 exists: false,
-                live: true,
+                live: false,
             },
             SUMMIT: {
                 exists: false,
-                live: true,
+                live: false,
             },
         },
         taxBP: 700,
@@ -386,24 +386,24 @@ export const ftmPools: PoolConfig[] = [
     },
     {
         name: 'pFTM-FTM',
-        token: '0x112dF7E3b4B7Ab424F07319D4E92F41e6608c48B',
+        token: '0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE',
         allocation: 800,
         elevations: {
             OASIS: {
                 exists: false,
-                live: true,
+                live: false,
             },
             PLAINS: {
                 exists: false,
-                live: true,
+                live: false,
             },
             MESA: {
                 exists: false,
-                live: true,
+                live: false,
             },
             SUMMIT: {
                 exists: false,
-                live: true,
+                live: false,
             },
         },
         taxBP: 700,

@@ -48,5 +48,15 @@
     "token": "0xbdC7DFb7B88183e87f003ca6B5a2F81202343478",
     "passthroughContract": "0xF136B1aE80362DEd39d7cf4A6172E3F67260b276",
     "targetVaultContract": "0xf3A72885cB383543AEE60f44Ca51C760f0bC3b9b"
+  },
+  "PAE-FTM": {
+    "token": "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
+    "passthroughContract": "0xB9a66e6c299E50FF6aCeB8ee86D37fcf1A432Aa0",
+    "targetVaultContract": "0x1f01078af0b8a4e7E2BA6211Bda7e92F89393284"
+  },
+  "pFTM-FTM": {
+    "token": "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
+    "passthroughContract": "0x963441585AA3bd8120374a0086864c0181578FEa",
+    "targetVaultContract": "0xb97C963834319e1E07d4F241F1F42f6a41CAEB85"
   }
 }

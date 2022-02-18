@@ -54,7 +54,7 @@ export const timelockMethod = {
             writeTimelockTransaction(chainId, txHash, timestamp, TimelockTransactionType.Queue, txParams, timelockTxParams, note)
         }
 
-        console.log("Timelock Transaction Finished:", {
+        console.log(dryRun ? 'DRY RUN Timelock Tx:' : 'Timelock Transaction Finished:', {
             note,
             txType: TimelockTransactionType.Queue,
             target: targetContract.address,

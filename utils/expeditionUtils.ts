@@ -2,8 +2,10 @@ import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { expect } from "chai"
 import { string } from "hardhat/internal/core/params/argumentTypes"
-import { consoleLog, e0, e18, elevationHelperGet, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, EXPEDITION, getElevationHelper, getExpedition, getSummitBalance, getUsdcBalance, mineBlockWithTimestamp, toDecimal, usersExpeditionInfos } from "."
+import { consoleLog, Contracts, e0, e18, elevationHelperGet, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, EXPEDITION, getElevationHelper, getExpedition, getSummitBalance, getUsdcBalance, mineBlockWithTimestamp, toDecimal, usersExpeditionInfos } from "."
 import { everestGet } from "./everestUtils"
+import { TimelockTxSig } from "./timelockConstants"
+import { timelockMethod } from "./timelockUtilsV2"
 
 
 export interface UserExpeditionInfo {
@@ -204,13 +206,29 @@ export const expeditionMethod = {
     recalculateExpeditionEmissions: async ({
         dev,
         revertErr,
+        callAsTimelock = false,
+        dryRun = false,
     }: {
         dev: SignerWithAddress
         revertErr?: string,
+        callAsTimelock?: boolean,
+        dryRun?: boolean,
     }) => {
         const expedition = await getExpedition()
         const tx = expedition.connect(dev).recalculateExpeditionEmissions
         const txArgs = [] as any[]
+
+        if (callAsTimelock) {
+            const note = 'Recalculate Expedition Emissions'
+            return await timelockMethod.queue({
+                dev,
+                targetContractName: Contracts.ExpeditionV2,
+                txName: TimelockTxSig.Expedition.RecalculateExpeditionEmissions,
+                txParams: txArgs,
+                note,
+                dryRun,
+            })
+        }
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)
