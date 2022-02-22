@@ -58,5 +58,10 @@
     "token": "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
     "passthroughContract": "0x963441585AA3bd8120374a0086864c0181578FEa",
     "targetVaultContract": "0xb97C963834319e1E07d4F241F1F42f6a41CAEB85"
+  },
+  "DANTE-SYMPHONY": {
+    "token": "0xc042EF6cA08576BdFb57d3055A7654344fd153E4",
+    "passthroughContract": "0x3E037e22A6D0f6B66b6e98F4Ba4F91FDfa63c828",
+    "targetVaultContract": "0xDc1b4e4Ff41bC392f1BBCdcE699d5aB3E3de9E66"
   }
 }

@@ -225,29 +225,121 @@
       "queueTimestamp": 1645091355,
       "note": "Add Farm at Elevation: pFTM-FTM - SUMMIT - live<false>"
     },
-    "0xd369493c101fc47e66172ee754a466e2095ac84d4a6b976777a9f695dc98e25a": {
+    "0x6e1c1a1df1fb5551fbf9c2494abdd3363043383d84957ef82e9a8be2f1c65b24": {
       "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
       "value": 0,
       "signature": "setTokenAllocation(address,uint256)",
-      "data": "0x0000000000000000000000004733bc45ef91cf7ccecaeedb794727075fb209f20000000000000000000000000000000000000000000000000000000000000258",
-      "eta": 1645204214,
+      "data": "0x000000000000000000000000c042ef6ca08576bdfb57d3055a7654344fd153e400000000000000000000000000000000000000000000000000000000000001f4",
+      "eta": 1645338569,
       "rawParams": [
-        "0x4733bc45ef91cf7ccecaeedb794727075fb209f2",
-        600
+        "0xc042EF6cA08576BdFb57d3055A7654344fd153E4",
+        500
       ],
-      "txHash": "0xd369493c101fc47e66172ee754a466e2095ac84d4a6b976777a9f695dc98e25a",
-      "queueTimestamp": 1645182569,
-      "note": "Set Token Allocation: TSHARE-FTM - 600"
+      "txHash": "0x6e1c1a1df1fb5551fbf9c2494abdd3363043383d84957ef82e9a8be2f1c65b24",
+      "queueTimestamp": 1645316925,
+      "note": "Set Token Allocation: DANTE-SYMPHONY - 500"
     },
-    "0x8c836fd668edee2c0fab1719ec7af7c44cb1f30789c2b6de08ab13c2c6ae38ce": {
+    "0x119df56d56b7ea87ffa51c8df73cdafa4bee7da05bbeee1c80c5c45306a5d0b6": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenWithdrawTax(address,uint16)",
+      "data": "0x000000000000000000000000c042ef6ca08576bdfb57d3055a7654344fd153e400000000000000000000000000000000000000000000000000000000000002bc",
+      "eta": 1645338585,
+      "rawParams": [
+        "0xc042EF6cA08576BdFb57d3055A7654344fd153E4",
+        700
+      ],
+      "txHash": "0x119df56d56b7ea87ffa51c8df73cdafa4bee7da05bbeee1c80c5c45306a5d0b6",
+      "queueTimestamp": 1645316948,
+      "note": "Set Token Withdrawal Tax: DANTE-SYMPHONY - 700"
+    },
+    "0x5ad17c3c8ba86adcdd54f1cc5b9d9a19ddbbb22cccdfc4d846ba1452d20851ea": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenPassthroughStrategy(address,address)",
+      "data": "0x000000000000000000000000c042ef6ca08576bdfb57d3055a7654344fd153e4000000000000000000000000dc1b4e4ff41bc392f1bbcdce699d5ab3e3de9e66",
+      "eta": 1645576208,
+      "rawParams": [
+        "0xc042EF6cA08576BdFb57d3055A7654344fd153E4",
+        "0xDc1b4e4Ff41bC392f1BBCdcE699d5aB3E3de9E66"
+      ],
+      "txHash": "0x5ad17c3c8ba86adcdd54f1cc5b9d9a19ddbbb22cccdfc4d846ba1452d20851ea",
+      "queueTimestamp": 1645316962,
+      "note": "Set Token Passthrough Strategy: DANTE-SYMPHONY - 0xDc1b4e4Ff41bC392f1BBCdcE699d5aB3E3de9E66"
+    },
+    "0xc5476ea3a6e21f06e0f6b8715ce95e8c2da764ad5a564895bcf922afe5c80455": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "add(address,uint8,bool,bool)",
+      "data": "0x000000000000000000000000c042ef6ca08576bdfb57d3055a7654344fd153e4000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645338625,
+      "rawParams": [
+        "0xc042EF6cA08576BdFb57d3055A7654344fd153E4",
+        0,
+        false,
+        false
+      ],
+      "txHash": "0xc5476ea3a6e21f06e0f6b8715ce95e8c2da764ad5a564895bcf922afe5c80455",
+      "queueTimestamp": 1645316984,
+      "note": "Add Farm at Elevation: DANTE-SYMPHONY - OASIS - live<false>"
+    },
+    "0x8dc740ef7ec2a0606deacc082895422e3c64790d12da7b1840892e0582576abc": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "add(address,uint8,bool,bool)",
+      "data": "0x000000000000000000000000c042ef6ca08576bdfb57d3055a7654344fd153e4000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645338644,
+      "rawParams": [
+        "0xc042EF6cA08576BdFb57d3055A7654344fd153E4",
+        1,
+        false,
+        false
+      ],
+      "txHash": "0x8dc740ef7ec2a0606deacc082895422e3c64790d12da7b1840892e0582576abc",
+      "queueTimestamp": 1645317003,
+      "note": "Add Farm at Elevation: DANTE-SYMPHONY - PLAINS - live<false>"
+    },
+    "0x3fd70233017b23842c683cf4aa3ddad2d29df0413a917134cca4f1a5af884d41": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "add(address,uint8,bool,bool)",
+      "data": "0x000000000000000000000000c042ef6ca08576bdfb57d3055a7654344fd153e4000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645338663,
+      "rawParams": [
+        "0xc042EF6cA08576BdFb57d3055A7654344fd153E4",
+        2,
+        false,
+        false
+      ],
+      "txHash": "0x3fd70233017b23842c683cf4aa3ddad2d29df0413a917134cca4f1a5af884d41",
+      "queueTimestamp": 1645317023,
+      "note": "Add Farm at Elevation: DANTE-SYMPHONY - MESA - live<false>"
+    },
+    "0x10dddc9ccc38b9189fbc7fe31339570891c3cb3b0b7b2eaa22b6e1d9b254e477": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "add(address,uint8,bool,bool)",
+      "data": "0x000000000000000000000000c042ef6ca08576bdfb57d3055a7654344fd153e4000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645338683,
+      "rawParams": [
+        "0xc042EF6cA08576BdFb57d3055A7654344fd153E4",
+        3,
+        false,
+        false
+      ],
+      "txHash": "0x10dddc9ccc38b9189fbc7fe31339570891c3cb3b0b7b2eaa22b6e1d9b254e477",
+      "queueTimestamp": 1645317042,
+      "note": "Add Farm at Elevation: DANTE-SYMPHONY - SUMMIT - live<false>"
+    },
+    "0x7d4719e217e20968d1aeca288423e809f55af752f72ede75302e13d2a76050bb": {
       "targetContract": "0x94233b479B37FBb41E81C63E27b6C2279646C609",
       "value": 0,
       "signature": "recalculateExpeditionEmissions()",
       "data": "0x",
-      "eta": 1645204230,
+      "eta": 1645424187,
       "rawParams": [],
-      "txHash": "0x8c836fd668edee2c0fab1719ec7af7c44cb1f30789c2b6de08ab13c2c6ae38ce",
-      "queueTimestamp": 1645182582,
+      "txHash": "0x7d4719e217e20968d1aeca288423e809f55af752f72ede75302e13d2a76050bb",
+      "queueTimestamp": 1645402550,
       "note": "Recalculate Expedition Emissions"
     }
   },
@@ -647,7 +739,125 @@
       "rawParams": [],
       "queueTimestamp": 1645137002,
       "executeTimestamp": 1645177072
+    },
+    "0xd369493c101fc47e66172ee754a466e2095ac84d4a6b976777a9f695dc98e25a": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x0000000000000000000000004733bc45ef91cf7ccecaeedb794727075fb209f20000000000000000000000000000000000000000000000000000000000000258",
+      "eta": 1645204214,
+      "txHash": "0xd369493c101fc47e66172ee754a466e2095ac84d4a6b976777a9f695dc98e25a",
+      "note": "Set Token Allocation: TSHARE-FTM - 600",
+      "rawParams": [
+        "0x4733bc45ef91cf7ccecaeedb794727075fb209f2",
+        600
+      ],
+      "queueTimestamp": 1645182569,
+      "executeTimestamp": 1645316017
+    },
+    "0x8c836fd668edee2c0fab1719ec7af7c44cb1f30789c2b6de08ab13c2c6ae38ce": {
+      "targetContract": "0x94233b479B37FBb41E81C63E27b6C2279646C609",
+      "value": 0,
+      "signature": "recalculateExpeditionEmissions()",
+      "data": "0x",
+      "eta": 1645204230,
+      "txHash": "0x8c836fd668edee2c0fab1719ec7af7c44cb1f30789c2b6de08ab13c2c6ae38ce",
+      "note": "Recalculate Expedition Emissions",
+      "rawParams": [],
+      "queueTimestamp": 1645182582,
+      "executeTimestamp": 1645353339
+    },
+    "0x2baf403782941919c0dbcdc6bdc846bcb9b603331daa96eb30a0cd2df393e667": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x000000000000000000000000c687806cfd11b5330d7c3ae6f18b18dc71e1083e00000000000000000000000000000000000000000000000000000000000003e8",
+      "eta": 1645336793,
+      "txHash": "0x2baf403782941919c0dbcdc6bdc846bcb9b603331daa96eb30a0cd2df393e667",
+      "note": "Set Token Allocation: EVEREST - 1000",
+      "rawParams": [
+        "0xC687806Cfd11B5330d7c3aE6f18B18DC71e1083e",
+        1000
+      ],
+      "queueTimestamp": 1645315137,
+      "executeTimestamp": 1645402479
+    },
+    "0xe12669178b2af640af9e95d8b7099fcb47f8b0b3875b146c3c87af85b0df3431": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x0000000000000000000000000ddb88e14494546d07fcd94c3f0ef6d3296b1cd700000000000000000000000000000000000000000000000000000000000001f4",
+      "eta": 1645423961,
+      "txHash": "0xe12669178b2af640af9e95d8b7099fcb47f8b0b3875b146c3c87af85b0df3431",
+      "note": "Set Token Allocation: SUMMIT - 500",
+      "rawParams": [
+        "0x0dDB88e14494546D07fCd94c3f0ef6D3296B1cD7",
+        500
+      ],
+      "queueTimestamp": 1645402324,
+      "executeTimestamp": 1645445491
     }
   },
-  "cancelled": {}
+  "cancelled": {
+    "0x9076229f6375907d2dd0eec720078a2e61e0cbb2a87d3d3a7d2b99486049ebed": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x0000000000000000000000004733bc45ef91cf7ccecaeedb794727075fb209f20000000000000000000000000000000000000000000000000000000000000258",
+      "eta": 1645336803,
+      "txHash": "0x9076229f6375907d2dd0eec720078a2e61e0cbb2a87d3d3a7d2b99486049ebed",
+      "note": "Set Token Allocation: TSHARE-FTM - 600",
+      "rawParams": [
+        "0x4733bc45ef91cf7ccecaeedb794727075fb209f2",
+        600
+      ],
+      "queueTimestamp": 1645315182,
+      "cancelTimestamp": 1645315877
+    },
+    "0xf3539dc7a05bd81c73cfa8011761ba640640d8f52036f42e2d577bfdc1c94789": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x000000000000000000000000c687806cfd11b5330d7c3ae6f18b18dc71e1083e00000000000000000000000000000000000000000000000000000000000003e8",
+      "eta": 1645336979,
+      "txHash": "0xf3539dc7a05bd81c73cfa8011761ba640640d8f52036f42e2d577bfdc1c94789",
+      "note": "Set Token Allocation: EVEREST - 1000",
+      "rawParams": [
+        "0xC687806Cfd11B5330d7c3aE6f18B18DC71e1083e",
+        1000
+      ],
+      "queueTimestamp": 1645315339,
+      "cancelTimestamp": 1645315895
+    },
+    "0x842348ba2ef60482a386b5877d6ac20af32307909b3e48ff4595575c8b3421bb": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x0000000000000000000000004733bc45ef91cf7ccecaeedb794727075fb209f20000000000000000000000000000000000000000000000000000000000000258",
+      "eta": 1645337009,
+      "txHash": "0x842348ba2ef60482a386b5877d6ac20af32307909b3e48ff4595575c8b3421bb",
+      "note": "Set Token Allocation: TSHARE-FTM - 600",
+      "rawParams": [
+        "0x4733bc45ef91cf7ccecaeedb794727075fb209f2",
+        600
+      ],
+      "queueTimestamp": 1645315364,
+      "cancelTimestamp": 1645315914
+    },
+    "0x61f9a40e3f988f1e2d16ab5193e295579df0ba53e0e490c4c31f23701f041c3e": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x0000000000000000000000004733bc45ef91cf7ccecaeedb794727075fb209f20000000000000000000000000000000000000000000000000000000000000258",
+      "eta": 1645424153,
+      "txHash": "0x61f9a40e3f988f1e2d16ab5193e295579df0ba53e0e490c4c31f23701f041c3e",
+      "note": "Set Token Allocation: TSHARE-FTM - 600",
+      "rawParams": [
+        "0x4733bc45ef91cf7ccecaeedb794727075fb209f2",
+        600
+      ],
+      "queueTimestamp": 1645402527,
+      "cancelTimestamp": 1645402631
+    }
+  }
 }

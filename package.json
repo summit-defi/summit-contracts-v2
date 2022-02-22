@@ -4,7 +4,6 @@
     "beep": "npx ts-node scripts/beep.ts",
     "test": "npx hardhat test --show-stack-traces && yarn beep || yarn beep",
     "seed": "npx hardhat run scripts/trusted-seeder-remote.ts --network ftm_mainnet && yarn beep || yarn beep",
-    "execute-queued-timelock-txs": "npx hardhat run scripts/execute-queued-timelock-transactions.ts --network ftm_mainnet && yarn beep || yarn beep",
     "queue-sync-farms": "npx hardhat run scripts/timelocked-update-pools-from-config.ts --network ftm_mainnet && yarn beep || yarn beep",
     "run-misc-runnable": "npx hardhat run scripts/misc-runnable.ts --network ftm_mainnet && yarn beep || yarn beep",
     "coverage": "npx hardhat coverage && yarn beep || yarn beep",
@@ -12,7 +11,8 @@
     "export-bsc-testnet-addresses": "npx hardhat run scripts/export-addresses.ts --network bsc_testnet && yarn beep || yarn beep",
     "deploy-fantom-v2": "npx hardhat run scripts/deploy-ftm-v2.ts --network ftm_mainnet && yarn beep || yarn beep",
     "queue-timelock-txs": "npx hardhat run scripts/queue-timelock-transactions.ts --network ftm_mainnet && yarn beep || yarn beep",
-    "manage-queued-timelock-txs": "npx hardhat run scripts/manage-queued-timelock-transactions.ts --network ftm_mainnet",
+    "execute-queued-timelock-txs": "npx hardhat run scripts/execute-queued-timelock-transactions.ts --network ftm_mainnet",
+    "cancel-queued-timelock-txs": "npx hardhat run scripts/cancel-queued-timelock-transactions.ts --network ftm_mainnet",
     "verify-elev-helper": "npx hardhat run scripts/verify-elev-helper.ts --network ftm_mainnet"
   },
   "devDependencies": {

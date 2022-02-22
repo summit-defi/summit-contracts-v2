@@ -6,7 +6,7 @@ import { TimelockTxSig, TimelockTxSigSpecificDelay } from "../../utils/timelockC
 
 
 
-export const syncTimelockFunctionSpecificDelays = async () => {
+export const syncTimelockFunctionSpecificDelays = async (dryRun = true) => {
     const timelock = await getTimelock()
 
     let sigSpecificDelays: Array<{ sigSpecificContractName: string, txName: string, delaySeconds: number }> = []
@@ -49,7 +49,7 @@ export const syncTimelockFunctionSpecificDelays = async () => {
             }
 
             const params = {
-                dryRun: false,
+                dryRun,
                 note: `Set Function Specific Delay: ${sigSpecificContractName}:${txName} - ${delaySeconds / (3600 * 24)}D`,
 
                 timelock,

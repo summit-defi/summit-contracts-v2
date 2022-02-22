@@ -40,18 +40,10 @@ async function main() {
     if (runnable === MiscRunnable.SyncPools) {
         const chainId = await getChainId()
         const mainnetPools = getPoolConfigs(chainId)
-        await syncPools(mainnetPools, timelock)
+        await syncPools(mainnetPools, timelock, dryRun)
     }
 
     if (runnable === MiscRunnable.RecalculateExpeditionEmissions) {
-        await cartographerMethod.setTokenAllocation({
-            dev,
-            tokenAddress: '0x4733bc45ef91cf7ccecaeedb794727075fb209f2',
-            allocation: 600,
-            callAsTimelock: timelock,
-            dryRun,
-            tokenSymbol: 'TSHARE-FTM',
-        })
         await expeditionMethod.recalculateExpeditionEmissions({
             dev,
             callAsTimelock: timelock,

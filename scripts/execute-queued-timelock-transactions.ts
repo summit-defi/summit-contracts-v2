@@ -1,23 +1,33 @@
-import { promiseSequenceMap } from '../utils';
+import inquirer from 'inquirer'
+import { getChainId } from 'hardhat';
+import { getQueuedTimelockTxs, getTimestamp, promiseSequenceMap, timestampToDate, delay } from '../utils';
 import { executeQueuedTimelockTransactionByHash } from '../utils/timelockUtils';
 
-const ExecuteQueuedTransactions: string[] = [
-    '0xcdc22179d01abe5a5678d5fd2cb24c674e0d5ad4e7f0449d07f89e283e0acbbe',
-    '0x5e468e6d91fc2f301a5edec72c84ac2f6179e8194cd7930c4baa2b660795edee',
-    '0xb7a44816edb9d99102e6fac9b43ee6f8bffda149d7bcafbbc306ee9d1fd9b63a',
-    '0x5211171d5ebf971241a55dc80c26d338ae099ff921c514025c0a00dc20667dfc',
-]
-
-const delay = async () => await new Promise(resolve => setTimeout(resolve, 20000));
-
 async function main() {
-    console.log('\n\n== EXECUTE QUEUED TIMELOCK TRANSACTIONS ==')
+    console.log('\n\n== EXECUTE QUEUED TIMELOCK TRANSACTIONS ==\n\n\n')
 
-    console.log("Transaction to Execute", ExecuteQueuedTransactions)
+    const chainId = await getChainId()
+    const queuedTimelockTxs = getQueuedTimelockTxs(chainId)
+    const queuedTimelockTxsList = Object.values(queuedTimelockTxs)
+    const currentTimestamp = await getTimestamp()
+
+    const txHashesToExecute: string[] = (await inquirer.prompt([
+        {
+            type: 'checkbox',
+            message: 'Select Queued Txs to Execute',
+            name: 'txHashes',
+            pageSize: 50,
+            choices: queuedTimelockTxsList.map((tx) => ({
+                name: `${currentTimestamp < tx.eta ? 'IMMATURE - ' : ''}${tx.note}`,
+                disabled: currentTimestamp >= tx.eta ? false : `Matures in ${((tx.eta - currentTimestamp) / 3600).toFixed(1)}hr on ${timestampToDate(tx.eta)}`,
+                value: tx.txHash,
+            })),
+        },
+    ])).txHashes
 
     // Execute Queued transactions
     await promiseSequenceMap(
-        ExecuteQueuedTransactions,
+        txHashesToExecute,
         async (txHash) => {
             console.log(`\tExecute Queued Transaction: ${txHash}`)
 
@@ -27,8 +37,8 @@ async function main() {
                 console.log(`\t\tExecute Tx Failed: ${executeQueuedTxResult}\t`)
             } else {
                 console.log(`\t\tdone.\n`)
-                await delay()
             }
+            await delay(5000)
         }
     )
 

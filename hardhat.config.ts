@@ -80,9 +80,9 @@ const config: HardhatUserConfig = {
       tags: ['TESTNET'],
     },
     ftm_mainnet: {
-      url: "https://black-solitary-breeze.fantom.quiknode.pro/bb5ebd23277de2e22dbd7dcea071e074a12e382c/",
+      url: "https://rpc.ftm.tools/",
       chainId: 250,
-      gasPrice: ethers.utils.parseUnits('1000', 'gwei').toNumber(),
+      gasPrice: ethers.utils.parseUnits('1500', 'gwei').toNumber(),
       gasMultiplier: 2,
       accounts: { mnemonic: mnemonics.ftm_testnet },
       tags: ['MAINNET'],

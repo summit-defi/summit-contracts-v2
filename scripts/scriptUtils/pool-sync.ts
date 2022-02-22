@@ -2,9 +2,7 @@ import { ethers, getChainId } from "hardhat"
 import { PoolConfig, getElevationName, promiseSequenceMap, replaceSummitAddresses, subCartGet, cartographerGet, getSummitToken, cartographerMethod, cartographerSetParam, getEverestToken, ZEROADD, getPassthroughStrategy, getCartographer, allElevationPromiseSequenceMap, Contracts } from "../../utils"
 import { createPassthroughStrategy } from "./passthrough-strategy"
 
-const dryRun = false
-
-export const syncPools = async (poolConfigs: PoolConfig[], callAsTimelock = false) => {
+export const syncPools = async (poolConfigs: PoolConfig[], callAsTimelock = false, dryRun = true) => {
     const { dev } = await ethers.getNamedSigners()
     const summitToken = await getSummitToken()
     const everestToken = await getEverestToken()
