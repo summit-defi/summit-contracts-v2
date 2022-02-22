@@ -82,7 +82,7 @@ export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress:
     if (passthroughContract != null) {
         await failableVerify({
             address: passthroughContract.address,
-            constructorArguments: constructorArguments,
+            constructorArguments,
         })
     }
 

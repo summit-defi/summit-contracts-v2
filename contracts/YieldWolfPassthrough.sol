@@ -126,13 +126,16 @@ contract YieldWolfPassthrough is IPassthrough, Ownable {
 
     /// @dev Gets the value of each share in the underlying passthrough token
     function getPricePerFullShare() public view returns (uint256) {
-        return yieldWolf.poolInfo(yieldWolfPid).strategy.totalStakeTokens() * 1e18 / yieldWolf.poolInfo(yieldWolfPid).strategy.sharesTotal();
+        uint256 vaultTotalShares = yieldWolf.poolInfo(yieldWolfPid).strategy.sharesTotal();
+        return vaultTotalShares == 0 ?
+            1e18 :
+            yieldWolf.poolInfo(yieldWolfPid).strategy.totalStakeTokens() * 1e18 / vaultTotalShares;
     }
 
 
     /// @dev Getter of balance staked in yieldWolf
     function vaultBalance() public view returns (uint256) {
-        return yieldWolf.userInfo(yieldWolfPid, address(this)).shares * getPricePerFullShare();
+        return yieldWolf.userInfo(yieldWolfPid, address(this)).shares * getPricePerFullShare() / 1e18;
     }
 
 
