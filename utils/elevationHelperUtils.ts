@@ -1,6 +1,8 @@
 import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
-import { EVENT, executeTxExpectEvent, executeTxExpectReversion, getElevationHelper } from "."
+import { Contracts, EVENT, executeTxExpectEvent, executeTxExpectReversion, getElevationHelper, getElevationName, getElevationOrExpeditionName, NamedElevations } from "."
+import { TimelockTxSig } from "./timelockConstants"
+import { timelockMethod } from "./timelockUtilsV2"
 
 
 // BASE GETTERS
@@ -72,15 +74,32 @@ export const elevationHelperMethod = {
         elevation,
         roundDurationMult,
         revertErr,
+        callAsTimelock = false,
+        dryRun = false,
     }: {
         dev: SignerWithAddress,
         elevation: number,
         roundDurationMult: number,
         revertErr?: string,
+        callAsTimelock?: boolean,
+        dryRun?: boolean,
     }) => {
         const elevationHelper = await getElevationHelper()
         const tx = elevationHelper.connect(dev).setElevationRoundDurationMult
         const txArgs = [elevation, roundDurationMult]
+
+
+        if (callAsTimelock) {
+            const note = `Set Elevation Round Duration: ${getElevationOrExpeditionName(elevation)} - ${roundDurationMult}H`
+            return await timelockMethod.queue({
+                dev,
+                targetContractName: Contracts.ElevationHelper,
+                txName: TimelockTxSig.ElevationHelper.SetElevationRoundDurationMult,
+                txParams: txArgs,
+                note,
+                dryRun,
+            })
+        }
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)

@@ -130,6 +130,7 @@ export const syncPools = async (poolConfigs: PoolConfig[], callAsTimelock = fals
             console.log('\n-- Passthrough Strategy --')
             const {
                 targetVaultContract: existingTargetVaultContract,
+                passthroughContract: existingPassthroughContract,
             } = getPassthroughStrategy(chainId, configName) || {
                 targetVaultContract: ZEROADD
             }
@@ -157,11 +158,11 @@ export const syncPools = async (poolConfigs: PoolConfig[], callAsTimelock = fals
                     console.log(`\t\tCreate passthrough strategy`)
                     passthroughStrategyContractAddress = await createPassthroughStrategy(poolConfig, summitToken.address, everestToken.address)
                 } else {
-                    console.log(`\t\tPassthrough strategy already created: ${existingTargetVaultContract}`)
-                    passthroughStrategyContractAddress = existingTargetVaultContract
+                    console.log(`\t\tPassthrough strategy already created: ${existingPassthroughContract}`)
+                    passthroughStrategyContractAddress = existingPassthroughContract
                 }
                 
-                console.log(`\t\tSetting passthrough strategy: ${poolConfig.passthroughStrategy?.target}`)
+                console.log(`\t\tSetting passthrough strategy: Contract<${passthroughStrategyContractAddress}> Target<${poolConfig.passthroughStrategy?.target}>`)
 
                 // QUEUE TX
                 if (passthroughStrategyContractAddress != null) {

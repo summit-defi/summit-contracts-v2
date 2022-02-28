@@ -13,218 +13,6 @@
       "queueTimestamp": 1644668399,
       "note": "Set Trusted Seeder Address to '0xC2a1c87162acC85Dd25bE1bCbF0b9d45E891229f'"
     },
-    "0x5e9e9b1fdb79cffad39adb7a694d7d2e1288df3fc0de429883adecf602a4e8ea": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "setTokenAllocation(address,uint256)",
-      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b00000000000000000000000000000000000000000000000000000000000000320",
-      "eta": 1645112729,
-      "rawParams": [
-        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
-        800
-      ],
-      "txHash": "0x5e9e9b1fdb79cffad39adb7a694d7d2e1288df3fc0de429883adecf602a4e8ea",
-      "queueTimestamp": 1645091086,
-      "note": "Set Token Allocation: PAE-FTM - 800"
-    },
-    "0x24ed2049a716fee8e668adbaf5f2c800a63c449fd6ce61adee4d8f2865c087c6": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "setTokenWithdrawTax(address,uint16)",
-      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b000000000000000000000000000000000000000000000000000000000000002bc",
-      "eta": 1645112746,
-      "rawParams": [
-        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
-        700
-      ],
-      "txHash": "0x24ed2049a716fee8e668adbaf5f2c800a63c449fd6ce61adee4d8f2865c087c6",
-      "queueTimestamp": 1645091105,
-      "note": "Set Token Withdrawal Tax: PAE-FTM - 700"
-    },
-    "0xc2ace20b0795e4b231ea98a5ee6d3e9c51914588c0179431b61908575ea1d18e": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "setTokenPassthroughStrategy(address,address)",
-      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b00000000000000000000000001f01078af0b8a4e7e2ba6211bda7e92f89393284",
-      "eta": 1645350365,
-      "rawParams": [
-        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
-        "0x1f01078af0b8a4e7E2BA6211Bda7e92F89393284"
-      ],
-      "txHash": "0xc2ace20b0795e4b231ea98a5ee6d3e9c51914588c0179431b61908575ea1d18e",
-      "queueTimestamp": 1645091122,
-      "note": "Set Token Passthrough Strategy: PAE-FTM - 0x1f01078af0b8a4e7E2BA6211Bda7e92F89393284"
-    },
-    "0x72de54295c0612f5eef79db013a959a7d1bff50c3f8cd5d73cdcef69f7f3f486": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "add(address,uint8,bool,bool)",
-      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-      "eta": 1645112782,
-      "rawParams": [
-        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
-        0,
-        false,
-        false
-      ],
-      "txHash": "0x72de54295c0612f5eef79db013a959a7d1bff50c3f8cd5d73cdcef69f7f3f486",
-      "queueTimestamp": 1645091141,
-      "note": "Add Farm at Elevation: PAE-FTM - OASIS - live<false>"
-    },
-    "0x1836c3546452463a2e064abaa4388a4d9bc18bdee3f3d5585fda9577fa3132d0": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "add(address,uint8,bool,bool)",
-      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b0000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-      "eta": 1645112801,
-      "rawParams": [
-        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
-        1,
-        false,
-        false
-      ],
-      "txHash": "0x1836c3546452463a2e064abaa4388a4d9bc18bdee3f3d5585fda9577fa3132d0",
-      "queueTimestamp": 1645091170,
-      "note": "Add Farm at Elevation: PAE-FTM - PLAINS - live<false>"
-    },
-    "0xcfdfc13a90dc36293ba0eaa60f02a94ae4debbb3b335849907c2393a04d6b2b7": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "add(address,uint8,bool,bool)",
-      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b0000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-      "eta": 1645112830,
-      "rawParams": [
-        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
-        2,
-        false,
-        false
-      ],
-      "txHash": "0xcfdfc13a90dc36293ba0eaa60f02a94ae4debbb3b335849907c2393a04d6b2b7",
-      "queueTimestamp": 1645091195,
-      "note": "Add Farm at Elevation: PAE-FTM - MESA - live<false>"
-    },
-    "0xa0a71e566a9a63a85d222da82fc60bda5503d3258a2812c1e8dda0a94b749dda": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "add(address,uint8,bool,bool)",
-      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b0000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-      "eta": 1645112855,
-      "rawParams": [
-        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
-        3,
-        false,
-        false
-      ],
-      "txHash": "0xa0a71e566a9a63a85d222da82fc60bda5503d3258a2812c1e8dda0a94b749dda",
-      "queueTimestamp": 1645091214,
-      "note": "Add Farm at Elevation: PAE-FTM - SUMMIT - live<false>"
-    },
-    "0xf4f6ff8af2a1580a293251dc14643a22a9ddf25f888970510b398ae3c723bb73": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "setTokenAllocation(address,uint256)",
-      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece0000000000000000000000000000000000000000000000000000000000000320",
-      "eta": 1645112874,
-      "rawParams": [
-        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
-        800
-      ],
-      "txHash": "0xf4f6ff8af2a1580a293251dc14643a22a9ddf25f888970510b398ae3c723bb73",
-      "queueTimestamp": 1645091233,
-      "note": "Set Token Allocation: pFTM-FTM - 800"
-    },
-    "0x596b0fb850985ebec7c1e5d2c213d623213fb946cdc0d99df37d68df4e5c1fbd": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "setTokenWithdrawTax(address,uint16)",
-      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece00000000000000000000000000000000000000000000000000000000000002bc",
-      "eta": 1645112893,
-      "rawParams": [
-        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
-        700
-      ],
-      "txHash": "0x596b0fb850985ebec7c1e5d2c213d623213fb946cdc0d99df37d68df4e5c1fbd",
-      "queueTimestamp": 1645091257,
-      "note": "Set Token Withdrawal Tax: pFTM-FTM - 700"
-    },
-    "0xfcb70cb479128275f064dc9986e34aac7a15973c17e6f8d12ced8b7f3c9e7563": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "setTokenPassthroughStrategy(address,address)",
-      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000b97c963834319e1e07d4f241f1f42f6a41caeb85",
-      "eta": 1645350517,
-      "rawParams": [
-        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
-        "0xb97C963834319e1E07d4F241F1F42f6a41CAEB85"
-      ],
-      "txHash": "0xfcb70cb479128275f064dc9986e34aac7a15973c17e6f8d12ced8b7f3c9e7563",
-      "queueTimestamp": 1645091243,
-      "note": "Set Token Passthrough Strategy: pFTM-FTM - 0xb97C963834319e1E07d4F241F1F42f6a41CAEB85"
-    },
-    "0xb2802ffe507618b16d737b946edf98f50812ad16965246b9a1109ef32668b1c7": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "add(address,uint8,bool,bool)",
-      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-      "eta": 1645112903,
-      "rawParams": [
-        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
-        0,
-        false,
-        false
-      ],
-      "txHash": "0xb2802ffe507618b16d737b946edf98f50812ad16965246b9a1109ef32668b1c7",
-      "queueTimestamp": 1645091297,
-      "note": "Add Farm at Elevation: pFTM-FTM - OASIS - live<false>"
-    },
-    "0x31406f573cd41d2ba2d9f9a583b594e6e9dbc166af10c2cb79862312ff7e42aa": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "add(address,uint8,bool,bool)",
-      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-      "eta": 1645112957,
-      "rawParams": [
-        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
-        1,
-        false,
-        false
-      ],
-      "txHash": "0x31406f573cd41d2ba2d9f9a583b594e6e9dbc166af10c2cb79862312ff7e42aa",
-      "queueTimestamp": 1645091312,
-      "note": "Add Farm at Elevation: pFTM-FTM - PLAINS - live<false>"
-    },
-    "0x86e9ca8e7679a85534a331ab752bd086a1d2e5e5ad8d22829efe89f9bfeb95fc": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "add(address,uint8,bool,bool)",
-      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-      "eta": 1645112972,
-      "rawParams": [
-        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
-        2,
-        false,
-        false
-      ],
-      "txHash": "0x86e9ca8e7679a85534a331ab752bd086a1d2e5e5ad8d22829efe89f9bfeb95fc",
-      "queueTimestamp": 1645091335,
-      "note": "Add Farm at Elevation: pFTM-FTM - MESA - live<false>"
-    },
-    "0x71c9a009570be526fc7d69a2e4d32cb977b1ccf87f693cc2a1f98b48f02827c9": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "add(address,uint8,bool,bool)",
-      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-      "eta": 1645112995,
-      "rawParams": [
-        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
-        3,
-        false,
-        false
-      ],
-      "txHash": "0x71c9a009570be526fc7d69a2e4d32cb977b1ccf87f693cc2a1f98b48f02827c9",
-      "queueTimestamp": 1645091355,
-      "note": "Add Farm at Elevation: pFTM-FTM - SUMMIT - live<false>"
-    },
     "0x6e1c1a1df1fb5551fbf9c2494abdd3363043383d84957ef82e9a8be2f1c65b24": {
       "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
       "value": 0,
@@ -252,20 +40,6 @@
       "txHash": "0x119df56d56b7ea87ffa51c8df73cdafa4bee7da05bbeee1c80c5c45306a5d0b6",
       "queueTimestamp": 1645316948,
       "note": "Set Token Withdrawal Tax: DANTE-SYMPHONY - 700"
-    },
-    "0x5ad17c3c8ba86adcdd54f1cc5b9d9a19ddbbb22cccdfc4d846ba1452d20851ea": {
-      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
-      "value": 0,
-      "signature": "setTokenPassthroughStrategy(address,address)",
-      "data": "0x000000000000000000000000c042ef6ca08576bdfb57d3055a7654344fd153e4000000000000000000000000dc1b4e4ff41bc392f1bbcdce699d5ab3e3de9e66",
-      "eta": 1645576208,
-      "rawParams": [
-        "0xc042EF6cA08576BdFb57d3055A7654344fd153E4",
-        "0xDc1b4e4Ff41bC392f1BBCdcE699d5aB3E3de9E66"
-      ],
-      "txHash": "0x5ad17c3c8ba86adcdd54f1cc5b9d9a19ddbbb22cccdfc4d846ba1452d20851ea",
-      "queueTimestamp": 1645316962,
-      "note": "Set Token Passthrough Strategy: DANTE-SYMPHONY - 0xDc1b4e4Ff41bC392f1BBCdcE699d5aB3E3de9E66"
     },
     "0xc5476ea3a6e21f06e0f6b8715ce95e8c2da764ad5a564895bcf922afe5c80455": {
       "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
@@ -331,16 +105,163 @@
       "queueTimestamp": 1645317042,
       "note": "Add Farm at Elevation: DANTE-SYMPHONY - SUMMIT - live<false>"
     },
-    "0x7d4719e217e20968d1aeca288423e809f55af752f72ede75302e13d2a76050bb": {
-      "targetContract": "0x94233b479B37FBb41E81C63E27b6C2279646C609",
+    "0x57fc2243f9783ce79d03e96be4c921c03ec23339ad5eed3513fe31efec72746f": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
       "value": 0,
-      "signature": "recalculateExpeditionEmissions()",
-      "data": "0x",
-      "eta": 1645424187,
-      "rawParams": [],
-      "txHash": "0x7d4719e217e20968d1aeca288423e809f55af752f72ede75302e13d2a76050bb",
-      "queueTimestamp": 1645402550,
-      "note": "Recalculate Expedition Emissions"
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x0000000000000000000000006398acbbab2561553a9e458ab67dcfbd58944e52000000000000000000000000000000000000000000000000000000000000012c",
+      "eta": 1645649717,
+      "rawParams": [
+        "0x6398ACBBAB2561553a9e458Ab67dCFbD58944e52",
+        300
+      ],
+      "txHash": "0x57fc2243f9783ce79d03e96be4c921c03ec23339ad5eed3513fe31efec72746f",
+      "queueTimestamp": 1645628099,
+      "note": "Set Token Allocation: 2SHARES-FTM - 300"
+    },
+    "0x2dfdde577fd84b72e72c400fbf069640e269cea7bd3fbd8550b1e7a5e5512b13": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x000000000000000000000000bdc7dfb7b88183e87f003ca6b5a2f812023434780000000000000000000000000000000000000000000000000000000000000190",
+      "eta": 1645649765,
+      "rawParams": [
+        "0xbdC7DFb7B88183e87f003ca6B5a2F81202343478",
+        400
+      ],
+      "txHash": "0x2dfdde577fd84b72e72c400fbf069640e269cea7bd3fbd8550b1e7a5e5512b13",
+      "queueTimestamp": 1645628138,
+      "note": "Set Token Allocation: 2OMB-FTM - 400"
+    },
+    "0x16f4dc1b59778062c43a87e15e19f95c79f379a2206d42d795fabc1e6c7ee976": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenPassthroughStrategy(address,address)",
+      "data": "0x000000000000000000000000c042ef6ca08576bdfb57d3055a7654344fd153e40000000000000000000000003e037e22a6d0f6b66b6e98f4ba4f91fdfa63c828",
+      "eta": 1645909444,
+      "rawParams": [
+        "0xc042EF6cA08576BdFb57d3055A7654344fd153E4",
+        "0x3E037e22A6D0f6B66b6e98F4Ba4F91FDfa63c828"
+      ],
+      "txHash": "0x16f4dc1b59778062c43a87e15e19f95c79f379a2206d42d795fabc1e6c7ee976",
+      "queueTimestamp": 1645650177,
+      "note": "Set Token Passthrough Strategy: DANTE-SYMPHONY - 0x3E037e22A6D0f6B66b6e98F4Ba4F91FDfa63c828"
+    },
+    "0xfcd9d49ec4e600245233b181b74e362dcaae2abdfa48471f679a7060db959a07": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "set(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b0000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645821071,
+      "rawParams": [
+        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
+        2,
+        true,
+        false
+      ],
+      "txHash": "0xfcd9d49ec4e600245233b181b74e362dcaae2abdfa48471f679a7060db959a07",
+      "queueTimestamp": 1645799198,
+      "note": "Set Farm at Elevation: PAE-FTM - MESA - live<true>"
+    },
+    "0x25228faf8c443c6d9d9173874f396b6325836b1365d6af3fd0cfabcd03c838e4": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "set(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645821131,
+      "rawParams": [
+        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
+        0,
+        true,
+        false
+      ],
+      "txHash": "0x25228faf8c443c6d9d9173874f396b6325836b1365d6af3fd0cfabcd03c838e4",
+      "queueTimestamp": 1645799245,
+      "note": "Set Farm at Elevation: pFTM-FTM - OASIS - live<true>"
+    },
+    "0x595d5029b0bec69589b064b947a8df1d22883e6b5ffb1d91f218ed30f94f3e0f": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x000000000000000000000000ec7178f4c41f346b2721907f5cf7628e388a7a580000000000000000000000000000000000000000000000000000000000000032",
+      "eta": 1645997725,
+      "rawParams": [
+        "0xEc7178F4C41f346b2721907F5cF7628E388A7a58",
+        50
+      ],
+      "txHash": "0x595d5029b0bec69589b064b947a8df1d22883e6b5ffb1d91f218ed30f94f3e0f",
+      "queueTimestamp": 1645975852,
+      "note": "Set Token Allocation: FTM-BOO - 50"
+    },
+    "0x2df4c4e95b1872274b185d861c9ae1f5b47f8e181972b5daa3bab91ac997e131": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenWithdrawTax(address,uint16)",
+      "data": "0x000000000000000000000000ec7178f4c41f346b2721907f5cf7628e388a7a580000000000000000000000000000000000000000000000000000000000000032",
+      "eta": 1645999926,
+      "rawParams": [
+        "0xEc7178F4C41f346b2721907F5cF7628E388A7a58",
+        50
+      ],
+      "txHash": "0x2df4c4e95b1872274b185d861c9ae1f5b47f8e181972b5daa3bab91ac997e131",
+      "queueTimestamp": 1645978110,
+      "note": "Set Token Withdrawal Tax: FTM-BOO - 50"
+    },
+    "0x9dc1e75280db643339488d831570b61b9906d5ecd9b3aff6b55b994688851915": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x000000000000000000000000841fad6eae12c286d1fd18d1d525dffa75c7effe0000000000000000000000000000000000000000000000000000000000000032",
+      "eta": 1646000059,
+      "rawParams": [
+        "0x841fad6eae12c286d1fd18d1d525dffa75c7effe",
+        50
+      ],
+      "txHash": "0x9dc1e75280db643339488d831570b61b9906d5ecd9b3aff6b55b994688851915",
+      "queueTimestamp": 1645978185,
+      "note": "Set Token Allocation: BOO - 50"
+    },
+    "0xeeada90ab1792cf680e1349617ad583f87880df48d1de844b8bc9579de45b965": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenWithdrawTax(address,uint16)",
+      "data": "0x000000000000000000000000841fad6eae12c286d1fd18d1d525dffa75c7effe0000000000000000000000000000000000000000000000000000000000000032",
+      "eta": 1646000085,
+      "rawParams": [
+        "0x841fad6eae12c286d1fd18d1d525dffa75c7effe",
+        50
+      ],
+      "txHash": "0xeeada90ab1792cf680e1349617ad583f87880df48d1de844b8bc9579de45b965",
+      "queueTimestamp": 1645978206,
+      "note": "Set Token Withdrawal Tax: BOO - 50"
+    },
+    "0xe4f085a7a060b2917e44c52ebcc2d7efd1127334295bb798e83081fa28ae896b": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b00000000000000000000000000000000000000000000000000000000000000258",
+      "eta": 1646000138,
+      "rawParams": [
+        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
+        600
+      ],
+      "txHash": "0xe4f085a7a060b2917e44c52ebcc2d7efd1127334295bb798e83081fa28ae896b",
+      "queueTimestamp": 1645978255,
+      "note": "Set Token Allocation: PAE-FTM - 600"
+    },
+    "0x6d382519259db981347b9db5c4a9bc504709949ca8d8983633c1219e2c84d71a": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece0000000000000000000000000000000000000000000000000000000000000258",
+      "eta": 1646002434,
+      "rawParams": [
+        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
+        600
+      ],
+      "txHash": "0x6d382519259db981347b9db5c4a9bc504709949ca8d8983633c1219e2c84d71a",
+      "queueTimestamp": 1645980555,
+      "note": "Set Token Allocation: pFTM-FTM - 600"
     }
   },
   "executed": {
@@ -796,6 +717,388 @@
       ],
       "queueTimestamp": 1645402324,
       "executeTimestamp": 1645445491
+    },
+    "0x7d4719e217e20968d1aeca288423e809f55af752f72ede75302e13d2a76050bb": {
+      "targetContract": "0x94233b479B37FBb41E81C63E27b6C2279646C609",
+      "value": 0,
+      "signature": "recalculateExpeditionEmissions()",
+      "data": "0x",
+      "eta": 1645424187,
+      "txHash": "0x7d4719e217e20968d1aeca288423e809f55af752f72ede75302e13d2a76050bb",
+      "note": "Recalculate Expedition Emissions",
+      "rawParams": [],
+      "queueTimestamp": 1645402550,
+      "executeTimestamp": 1645615911
+    },
+    "0x5e9e9b1fdb79cffad39adb7a694d7d2e1288df3fc0de429883adecf602a4e8ea": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b00000000000000000000000000000000000000000000000000000000000000320",
+      "eta": 1645112729,
+      "txHash": "0x5e9e9b1fdb79cffad39adb7a694d7d2e1288df3fc0de429883adecf602a4e8ea",
+      "note": "Set Token Allocation: PAE-FTM - 800",
+      "rawParams": [
+        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
+        800
+      ],
+      "queueTimestamp": 1645091086,
+      "executeTimestamp": 1645637803
+    },
+    "0x72de54295c0612f5eef79db013a959a7d1bff50c3f8cd5d73cdcef69f7f3f486": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "add(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645112782,
+      "txHash": "0x72de54295c0612f5eef79db013a959a7d1bff50c3f8cd5d73cdcef69f7f3f486",
+      "note": "Add Farm at Elevation: PAE-FTM - OASIS - live<false>",
+      "rawParams": [
+        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
+        0,
+        false,
+        false
+      ],
+      "queueTimestamp": 1645091141,
+      "executeTimestamp": 1645644983
+    },
+    "0x1836c3546452463a2e064abaa4388a4d9bc18bdee3f3d5585fda9577fa3132d0": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "add(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b0000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645112801,
+      "txHash": "0x1836c3546452463a2e064abaa4388a4d9bc18bdee3f3d5585fda9577fa3132d0",
+      "note": "Add Farm at Elevation: PAE-FTM - PLAINS - live<false>",
+      "rawParams": [
+        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
+        1,
+        false,
+        false
+      ],
+      "queueTimestamp": 1645091170,
+      "executeTimestamp": 1645646318
+    },
+    "0xcfdfc13a90dc36293ba0eaa60f02a94ae4debbb3b335849907c2393a04d6b2b7": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "add(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b0000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645112830,
+      "txHash": "0xcfdfc13a90dc36293ba0eaa60f02a94ae4debbb3b335849907c2393a04d6b2b7",
+      "note": "Add Farm at Elevation: PAE-FTM - MESA - live<false>",
+      "rawParams": [
+        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
+        2,
+        false,
+        false
+      ],
+      "queueTimestamp": 1645091195,
+      "executeTimestamp": 1645646377
+    },
+    "0xa0a71e566a9a63a85d222da82fc60bda5503d3258a2812c1e8dda0a94b749dda": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "add(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b0000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645112855,
+      "txHash": "0xa0a71e566a9a63a85d222da82fc60bda5503d3258a2812c1e8dda0a94b749dda",
+      "note": "Add Farm at Elevation: PAE-FTM - SUMMIT - live<false>",
+      "rawParams": [
+        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
+        3,
+        false,
+        false
+      ],
+      "queueTimestamp": 1645091214,
+      "executeTimestamp": 1645646405
+    },
+    "0x596b0fb850985ebec7c1e5d2c213d623213fb946cdc0d99df37d68df4e5c1fbd": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenWithdrawTax(address,uint16)",
+      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece00000000000000000000000000000000000000000000000000000000000002bc",
+      "eta": 1645112893,
+      "txHash": "0x596b0fb850985ebec7c1e5d2c213d623213fb946cdc0d99df37d68df4e5c1fbd",
+      "note": "Set Token Withdrawal Tax: pFTM-FTM - 700",
+      "rawParams": [
+        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
+        700
+      ],
+      "queueTimestamp": 1645091257,
+      "executeTimestamp": 1645646932
+    },
+    "0xb2802ffe507618b16d737b946edf98f50812ad16965246b9a1109ef32668b1c7": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "add(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645112903,
+      "txHash": "0xb2802ffe507618b16d737b946edf98f50812ad16965246b9a1109ef32668b1c7",
+      "note": "Add Farm at Elevation: pFTM-FTM - OASIS - live<false>",
+      "rawParams": [
+        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
+        0,
+        false,
+        false
+      ],
+      "queueTimestamp": 1645091297,
+      "executeTimestamp": 1645646967
+    },
+    "0x31406f573cd41d2ba2d9f9a583b594e6e9dbc166af10c2cb79862312ff7e42aa": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "add(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645112957,
+      "txHash": "0x31406f573cd41d2ba2d9f9a583b594e6e9dbc166af10c2cb79862312ff7e42aa",
+      "note": "Add Farm at Elevation: pFTM-FTM - PLAINS - live<false>",
+      "rawParams": [
+        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
+        1,
+        false,
+        false
+      ],
+      "queueTimestamp": 1645091312,
+      "executeTimestamp": 1645647023
+    },
+    "0x86e9ca8e7679a85534a331ab752bd086a1d2e5e5ad8d22829efe89f9bfeb95fc": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "add(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645112972,
+      "txHash": "0x86e9ca8e7679a85534a331ab752bd086a1d2e5e5ad8d22829efe89f9bfeb95fc",
+      "note": "Add Farm at Elevation: pFTM-FTM - MESA - live<false>",
+      "rawParams": [
+        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
+        2,
+        false,
+        false
+      ],
+      "queueTimestamp": 1645091335,
+      "executeTimestamp": 1645647123
+    },
+    "0x71c9a009570be526fc7d69a2e4d32cb977b1ccf87f693cc2a1f98b48f02827c9": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "add(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645112995,
+      "txHash": "0x71c9a009570be526fc7d69a2e4d32cb977b1ccf87f693cc2a1f98b48f02827c9",
+      "note": "Add Farm at Elevation: pFTM-FTM - SUMMIT - live<false>",
+      "rawParams": [
+        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
+        3,
+        false,
+        false
+      ],
+      "queueTimestamp": 1645091355,
+      "executeTimestamp": 1645647170
+    },
+    "0xf4f6ff8af2a1580a293251dc14643a22a9ddf25f888970510b398ae3c723bb73": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece0000000000000000000000000000000000000000000000000000000000000320",
+      "eta": 1645112874,
+      "rawParams": [
+        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
+        800
+      ],
+      "txHash": "0xf4f6ff8af2a1580a293251dc14643a22a9ddf25f888970510b398ae3c723bb73",
+      "queueTimestamp": 1645091233,
+      "note": "Set Token Allocation: pFTM-FTM - 800"
+    },
+    "0x24ed2049a716fee8e668adbaf5f2c800a63c449fd6ce61adee4d8f2865c087c6": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenWithdrawTax(address,uint16)",
+      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b000000000000000000000000000000000000000000000000000000000000002bc",
+      "eta": 1645112746,
+      "rawParams": [
+        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
+        700
+      ],
+      "txHash": "0x24ed2049a716fee8e668adbaf5f2c800a63c449fd6ce61adee4d8f2865c087c6",
+      "queueTimestamp": 1645091105,
+      "note": "Set Token Withdrawal Tax: PAE-FTM - 700"
+    },
+    "0x563ed2c322d3e55bd1bacec2870a540ca7b773bc8300958a6d176b7ba35a0826": {
+      "targetContract": "0xDfBb673787DfC1477b0ca7890887136a13296811",
+      "value": 0,
+      "signature": "setElevationRoundDurationMult(uint8,uint8)",
+      "data": "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000004",
+      "eta": 1645764910,
+      "txHash": "0x563ed2c322d3e55bd1bacec2870a540ca7b773bc8300958a6d176b7ba35a0826",
+      "note": "Set Elevation Round Duration: PLAINS - 4H",
+      "rawParams": [
+        1,
+        4
+      ],
+      "queueTimestamp": 1645743274,
+      "executeTimestamp": 1645785192
+    },
+    "0x017ff0ad5e748e9f9f400bdc58f90a12d0c1e9964f4df23b518f6e0802ff2799": {
+      "targetContract": "0xDfBb673787DfC1477b0ca7890887136a13296811",
+      "value": 0,
+      "signature": "setElevationRoundDurationMult(uint8,uint8)",
+      "data": "0x00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000008",
+      "eta": 1645764934,
+      "txHash": "0x017ff0ad5e748e9f9f400bdc58f90a12d0c1e9964f4df23b518f6e0802ff2799",
+      "note": "Set Elevation Round Duration: MESA - 8H",
+      "rawParams": [
+        2,
+        8
+      ],
+      "queueTimestamp": 1645743302,
+      "executeTimestamp": 1645785247
+    },
+    "0xe1d96c04ac3b903e04ddfdd34ec272d0015983cc5ac1b9ea7fe980a0ba1402f4": {
+      "targetContract": "0xDfBb673787DfC1477b0ca7890887136a13296811",
+      "value": 0,
+      "signature": "setElevationRoundDurationMult(uint8,uint8)",
+      "data": "0x00000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000008",
+      "eta": 1645764962,
+      "rawParams": [
+        3,
+        8
+      ],
+      "txHash": "0xe1d96c04ac3b903e04ddfdd34ec272d0015983cc5ac1b9ea7fe980a0ba1402f4",
+      "queueTimestamp": 1645743338,
+      "note": "Set Elevation Round Duration: SUMMIT - 8H"
+    },
+    "0xe003ded2b058b3113a5e60b91028f3ca245bdcad74777b2458dc5ed32511c23e": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "set(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645820331,
+      "txHash": "0xe003ded2b058b3113a5e60b91028f3ca245bdcad74777b2458dc5ed32511c23e",
+      "note": "Set Farm at Elevation: PAE-FTM - OASIS - live<true>",
+      "rawParams": [
+        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
+        0,
+        true,
+        false
+      ],
+      "queueTimestamp": 1645798652,
+      "executeTimestamp": 1645894825
+    },
+    "0x2694760c715a25a20eef4ba4e41d352b07905ffca5325ac00549d3f2cb9ed051": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "set(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b0000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645820397,
+      "txHash": "0x2694760c715a25a20eef4ba4e41d352b07905ffca5325ac00549d3f2cb9ed051",
+      "note": "Set Farm at Elevation: PAE-FTM - PLAINS - live<true>",
+      "rawParams": [
+        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
+        1,
+        true,
+        false
+      ],
+      "queueTimestamp": 1645798768,
+      "executeTimestamp": 1645895231
+    },
+    "0x95662b7cdfa8502e73f482cb943161f3c0d4c1a5002863bd4e2f1c76a9398268": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "set(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645821146,
+      "txHash": "0x95662b7cdfa8502e73f482cb943161f3c0d4c1a5002863bd4e2f1c76a9398268",
+      "note": "Set Farm at Elevation: pFTM-FTM - PLAINS - live<true>",
+      "rawParams": [
+        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
+        1,
+        true,
+        false
+      ],
+      "queueTimestamp": 1645799251,
+      "executeTimestamp": 1645896857
+    },
+    "0x4193ef0056780348408f84e2953a43a8647e835e00a4ad099ab5850fd7775237": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "set(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645821151,
+      "txHash": "0x4193ef0056780348408f84e2953a43a8647e835e00a4ad099ab5850fd7775237",
+      "note": "Set Farm at Elevation: pFTM-FTM - MESA - live<true>",
+      "rawParams": [
+        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
+        2,
+        true,
+        false
+      ],
+      "queueTimestamp": 1645799251,
+      "executeTimestamp": 1645896925
+    },
+    "0x1008963dd7d56dc73faddb3f76a7e9c6c1646f4efb13788bb7833dba9d84d8fd": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "set(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645821151,
+      "txHash": "0x1008963dd7d56dc73faddb3f76a7e9c6c1646f4efb13788bb7833dba9d84d8fd",
+      "note": "Set Farm at Elevation: pFTM-FTM - SUMMIT - live<true>",
+      "rawParams": [
+        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
+        3,
+        true,
+        false
+      ],
+      "queueTimestamp": 1645799390,
+      "executeTimestamp": 1645896999
+    },
+    "0x721eeb81f48d4bd9fe3ef8a0d011cb781363bb0f09a1e2832376ae47121b7585": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "set(address,uint8,bool,bool)",
+      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b0000000000000000000000000000000000000000000000000000000000000000300000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000",
+      "eta": 1645821098,
+      "txHash": "0x721eeb81f48d4bd9fe3ef8a0d011cb781363bb0f09a1e2832376ae47121b7585",
+      "note": "Set Farm at Elevation: PAE-FTM - SUMMIT - live<true>",
+      "rawParams": [
+        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
+        3,
+        true,
+        false
+      ],
+      "queueTimestamp": 1645799234,
+      "executeTimestamp": 1645897161
+    },
+    "0x51f044b2fa42969a5a5d7751e2f73a6fa1d316e7049211f5fb0c0f573bcad4a6": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenPassthroughStrategy(address,address)",
+      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b0000000000000000000000000b9a66e6c299e50ff6aceb8ee86d37fcf1a432aa0",
+      "eta": 1645909396,
+      "txHash": "0x51f044b2fa42969a5a5d7751e2f73a6fa1d316e7049211f5fb0c0f573bcad4a6",
+      "note": "Set Token Passthrough Strategy: PAE-FTM - 0xB9a66e6c299E50FF6aCeB8ee86D37fcf1A432Aa0",
+      "rawParams": [
+        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
+        "0xB9a66e6c299E50FF6aCeB8ee86D37fcf1A432Aa0"
+      ],
+      "queueTimestamp": 1645650156,
+      "executeTimestamp": 1645969828
+    },
+    "0x2075cff0b14f7adeb28b879bc92650cf29f1d581c035729adcc7c93507370372": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenPassthroughStrategy(address,address)",
+      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000963441585aa3bd8120374a0086864c0181578fea",
+      "eta": 1645909422,
+      "txHash": "0x2075cff0b14f7adeb28b879bc92650cf29f1d581c035729adcc7c93507370372",
+      "note": "Set Token Passthrough Strategy: pFTM-FTM - 0x963441585AA3bd8120374a0086864c0181578FEa",
+      "rawParams": [
+        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
+        "0x963441585AA3bd8120374a0086864c0181578FEa"
+      ],
+      "queueTimestamp": 1645650178,
+      "executeTimestamp": 1645969876
     }
   },
   "cancelled": {
@@ -858,6 +1161,51 @@
       ],
       "queueTimestamp": 1645402527,
       "cancelTimestamp": 1645402631
+    },
+    "0xc2ace20b0795e4b231ea98a5ee6d3e9c51914588c0179431b61908575ea1d18e": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenPassthroughStrategy(address,address)",
+      "data": "0x0000000000000000000000002dc234dbfc085ddbc36a6eacc061d7333cd397b00000000000000000000000001f01078af0b8a4e7e2ba6211bda7e92f89393284",
+      "eta": 1645350365,
+      "txHash": "0xc2ace20b0795e4b231ea98a5ee6d3e9c51914588c0179431b61908575ea1d18e",
+      "note": "Set Token Passthrough Strategy: PAE-FTM - 0x1f01078af0b8a4e7E2BA6211Bda7e92F89393284",
+      "rawParams": [
+        "0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0",
+        "0x1f01078af0b8a4e7E2BA6211Bda7e92F89393284"
+      ],
+      "queueTimestamp": 1645091122,
+      "cancelTimestamp": 1645648313
+    },
+    "0xfcb70cb479128275f064dc9986e34aac7a15973c17e6f8d12ced8b7f3c9e7563": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenPassthroughStrategy(address,address)",
+      "data": "0x0000000000000000000000009ce8e9b090e8af873e793e0b78c484076f8ceece000000000000000000000000b97c963834319e1e07d4f241f1f42f6a41caeb85",
+      "eta": 1645350517,
+      "txHash": "0xfcb70cb479128275f064dc9986e34aac7a15973c17e6f8d12ced8b7f3c9e7563",
+      "note": "Set Token Passthrough Strategy: pFTM-FTM - 0xb97C963834319e1E07d4F241F1F42f6a41CAEB85",
+      "rawParams": [
+        "0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE",
+        "0xb97C963834319e1E07d4F241F1F42f6a41CAEB85"
+      ],
+      "queueTimestamp": 1645091243,
+      "cancelTimestamp": 1645648338
+    },
+    "0x5ad17c3c8ba86adcdd54f1cc5b9d9a19ddbbb22cccdfc4d846ba1452d20851ea": {
+      "targetContract": "0x71210E72D065C19406913cD706e964A9f21856D4",
+      "value": 0,
+      "signature": "setTokenPassthroughStrategy(address,address)",
+      "data": "0x000000000000000000000000c042ef6ca08576bdfb57d3055a7654344fd153e4000000000000000000000000dc1b4e4ff41bc392f1bbcdce699d5ab3e3de9e66",
+      "eta": 1645576208,
+      "txHash": "0x5ad17c3c8ba86adcdd54f1cc5b9d9a19ddbbb22cccdfc4d846ba1452d20851ea",
+      "note": "Set Token Passthrough Strategy: DANTE-SYMPHONY - 0xDc1b4e4Ff41bC392f1BBCdcE699d5aB3E3de9E66",
+      "rawParams": [
+        "0xc042EF6cA08576BdFb57d3055A7654344fd153E4",
+        "0xDc1b4e4Ff41bC392f1BBCdcE699d5aB3E3de9E66"
+      ],
+      "queueTimestamp": 1645316962,
+      "cancelTimestamp": 1645648376
     }
   }
 }

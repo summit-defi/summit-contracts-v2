@@ -1,17 +1,18 @@
 import inquirer from 'inquirer'
 import { ethers, getChainId } from "hardhat";
 import { getPoolConfigs } from "../data";
-import { cartographerMethod, expeditionMethod } from "../utils";
+import { elevationHelperMethod, expeditionMethod, MESA, PLAINS, SUMMIT } from "../utils";
 import { syncPools, syncTimelockFunctionSpecificDelays } from "./scriptUtils";
 
 enum MiscRunnable {
     SyncTimelockFunctionSpecificDelays = 'SyncTimelockFunctionSpecificDelays',
     SyncPools = 'SyncPools',
     RecalculateExpeditionEmissions = 'RecalculateExpeditionEmissions',
+    UpdateElevationRoundDurations = 'UpdateElevationRoundDurations',
 }
 
 // CONFIGS
-const runnable: MiscRunnable = MiscRunnable.RecalculateExpeditionEmissions
+const runnable: MiscRunnable = MiscRunnable.SyncPools
 const timelock = true
 const dryRun = false
 
@@ -46,6 +47,30 @@ async function main() {
     if (runnable === MiscRunnable.RecalculateExpeditionEmissions) {
         await expeditionMethod.recalculateExpeditionEmissions({
             dev,
+            callAsTimelock: timelock,
+            dryRun,
+        })
+    }
+
+    if (runnable === MiscRunnable.UpdateElevationRoundDurations) {
+        await elevationHelperMethod.setElevationRoundDurationMult({
+            dev,
+            elevation: PLAINS,
+            roundDurationMult: 4,
+            callAsTimelock: timelock,
+            dryRun,
+        })
+        await elevationHelperMethod.setElevationRoundDurationMult({
+            dev,
+            elevation: MESA,
+            roundDurationMult: 8,
+            callAsTimelock: timelock,
+            dryRun,
+        })
+        await elevationHelperMethod.setElevationRoundDurationMult({
+            dev,
+            elevation: SUMMIT,
+            roundDurationMult: 8,
             callAsTimelock: timelock,
             dryRun,
         })

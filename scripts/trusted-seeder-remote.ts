@@ -148,7 +148,7 @@ async function main() {
 
 */
 
-cron.schedule('2 58 1-23/2 * * *', () => {
+cron.schedule('2 58 1-23/4 * * *', () => {
   console.log('starting seeder');
   main()
      .catch(error => {

@@ -180,7 +180,7 @@ export const getTimelockTxEta = async (params: TimelockTxFunctionParams): Promis
     const signatureDelay = await getDelay(params.timelock!, signature)
     const currentTimestamp = await getTimestamp()
 
-    return currentTimestamp + signatureDelay + 60
+    return currentTimestamp + signatureDelay + 300
 }
 
 
@@ -239,7 +239,6 @@ const timelockTransaction = async (params: TimelockTxFunctionParams) => {
         const chainId = await getChainId()
         if (chainId !== hardhatChainId) {
             await timelockTx.wait(10)    
-            await delay(5000)
         }
     }
 

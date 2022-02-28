@@ -46,9 +46,6 @@ export const timelockMethod = {
             txSignature,
             txParams,
         )
-        console.log({
-            matchingTimelockTx
-        })
         if (matchingTimelockTx != null) {
             console.log('Matching Transaction already Queued')
             console.log(`Matching tx Matures in ${((matchingTimelockTx.eta - currentTimestamp) / 3600).toFixed(1)}hr on ${timestampToDate(matchingTimelockTx.eta)}`)
@@ -91,6 +88,7 @@ export const timelockMethod = {
 
         return {
             ...timelockTxParams,
+            note,
             txHash
         }
     },

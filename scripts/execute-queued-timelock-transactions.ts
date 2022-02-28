@@ -38,7 +38,6 @@ async function main() {
             } else {
                 console.log(`\t\tdone.\n`)
             }
-            await delay(5000)
         }
     )
 

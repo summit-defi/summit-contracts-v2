@@ -117,7 +117,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'FTM-BOO',
         token: '0xEc7178F4C41f346b2721907F5cF7628E388A7a58',
-        allocation: 100,
+        allocation: 50,
         elevations: {
             OASIS: {
                 exists: true,
@@ -136,7 +136,7 @@ export const ftmPools: PoolConfig[] = [
                 live: true,
             },
         },
-        taxBP: 700,
+        taxBP: 50,
         depositFeeBP: 0,
         native: false,
         passthroughStrategy: {
@@ -237,7 +237,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'BOO',
         token: '0x841fad6eae12c286d1fd18d1d525dffa75c7effe',
-        allocation: 300,
+        allocation: 50,
         elevations: {
             OASIS: {
                 exists: true,
@@ -256,7 +256,7 @@ export const ftmPools: PoolConfig[] = [
                 live: true,
             },
         },
-        taxBP: 700,
+        taxBP: 50,
         depositFeeBP: 0,
         native: false,
         passthroughStrategy: {
@@ -297,7 +297,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: '2SHARES-FTM',
         token: '0x6398ACBBAB2561553a9e458Ab67dCFbD58944e52',
-        allocation: 800,
+        allocation: 300,
         elevations: {
             OASIS: {
                 exists: true,
@@ -327,7 +327,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: '2OMB-FTM',
         token: '0xbdC7DFb7B88183e87f003ca6B5a2F81202343478',
-        allocation: 800,
+        allocation: 400,
         elevations: {
             OASIS: {
                 exists: true,
@@ -354,66 +354,66 @@ export const ftmPools: PoolConfig[] = [
             target: '0xf3A72885cB383543AEE60f44Ca51C760f0bC3b9b',
         },
     },
-    // {
-    //     name: 'PAE-FTM',
-    //     token: '0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0',
-    //     allocation: 800,
-    //     elevations: {
-    //         OASIS: {
-    //             exists: false,
-    //             live: false,
-    //         },
-    //         PLAINS: {
-    //             exists: false,
-    //             live: false,
-    //         },
-    //         MESA: {
-    //             exists: false,
-    //             live: false,
-    //         },
-    //         SUMMIT: {
-    //             exists: false,
-    //             live: false,
-    //         },
-    //     },
-    //     taxBP: 700,
-    //     depositFeeBP: 0,
-    //     native: false,
-    //     passthroughStrategy: {
-    //         type: PassthroughType.BeefyVaultV6,
-    //         target: '0x1f01078af0b8a4e7E2BA6211Bda7e92F89393284',
-    //     },
-    // },
-    // {
-    //     name: 'pFTM-FTM',
-    //     token: '0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE',
-    //     allocation: 800,
-    //     elevations: {
-    //         OASIS: {
-    //             exists: false,
-    //             live: false,
-    //         },
-    //         PLAINS: {
-    //             exists: false,
-    //             live: false,
-    //         },
-    //         MESA: {
-    //             exists: false,
-    //             live: false,
-    //         },
-    //         SUMMIT: {
-    //             exists: false,
-    //             live: false,
-    //         },
-    //     },
-    //     taxBP: 700,
-    //     depositFeeBP: 0,
-    //     native: false,
-    //     passthroughStrategy: {
-    //         type: PassthroughType.BeefyVaultV6,
-    //         target: '0xb97C963834319e1E07d4F241F1F42f6a41CAEB85',
-    //     },
-    // },
+    {
+        name: 'PAE-FTM',
+        token: '0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0',
+        allocation: 600,
+        elevations: {
+            OASIS: {
+                exists: true,
+                live: true,
+            },
+            PLAINS: {
+                exists: true,
+                live: true,
+            },
+            MESA: {
+                exists: true,
+                live: true,
+            },
+            SUMMIT: {
+                exists: true,
+                live: true,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.BeefyVaultV6,
+            target: '0x1f01078af0b8a4e7E2BA6211Bda7e92F89393284',
+        },
+    },
+    {
+        name: 'pFTM-FTM',
+        token: '0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE',
+        allocation: 600,
+        elevations: {
+            OASIS: {
+                exists: true,
+                live: true,
+            },
+            PLAINS: {
+                exists: true,
+                live: true,
+            },
+            MESA: {
+                exists: true,
+                live: true,
+            },
+            SUMMIT: {
+                exists: true,
+                live: true,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.BeefyVaultV6,
+            target: '0xb97C963834319e1E07d4F241F1F42f6a41CAEB85',
+        },
+    },
     {
         name: 'DANTE-SYMPHONY',
         token: '0xc042EF6cA08576BdFb57d3055A7654344fd153E4',
