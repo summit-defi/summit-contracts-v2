@@ -117,23 +117,23 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'FTM-BOO',
         token: '0xEc7178F4C41f346b2721907F5cF7628E388A7a58',
-        allocation: 50,
+        allocation: 100,
         elevations: {
             OASIS: {
                 exists: true,
-                live: true,
+                live: false,
             },
             PLAINS: {
                 exists: true,
-                live: true,
+                live: false,
             },
             MESA: {
                 exists: true,
-                live: true,
+                live: false,
             },
             SUMMIT: {
                 exists: true,
-                live: true,
+                live: false,
             },
         },
         taxBP: 50,
@@ -237,23 +237,23 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'BOO',
         token: '0x841fad6eae12c286d1fd18d1d525dffa75c7effe',
-        allocation: 50,
+        allocation: 300,
         elevations: {
             OASIS: {
                 exists: true,
-                live: true,
+                live: false,
             },
             PLAINS: {
                 exists: true,
-                live: true,
+                live: false,
             },
             MESA: {
                 exists: true,
-                live: true,
+                live: false,
             },
             SUMMIT: {
                 exists: true,
-                live: true,
+                live: false,
             },
         },
         taxBP: 50,
@@ -357,7 +357,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'PAE-FTM',
         token: '0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0',
-        allocation: 600,
+        allocation: 400,
         elevations: {
             OASIS: {
                 exists: true,
@@ -387,7 +387,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'pFTM-FTM',
         token: '0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE',
-        allocation: 600,
+        allocation: 400,
         elevations: {
             OASIS: {
                 exists: true,
@@ -414,9 +414,108 @@ export const ftmPools: PoolConfig[] = [
             target: '0xb97C963834319e1E07d4F241F1F42f6a41CAEB85',
         },
     },
+    // {
+    //     name: 'DANTE-SYMPHONY',
+    //     token: '0xc042EF6cA08576BdFb57d3055A7654344fd153E4',
+    //     allocation: 500,
+    //     elevations: {
+    //         OASIS: {
+    //             exists: false,
+    //             live: false,
+    //         },
+    //         PLAINS: {
+    //             exists: false,
+    //             live: false,
+    //         },
+    //         MESA: {
+    //             exists: false,
+    //             live: false,
+    //         },
+    //         SUMMIT: {
+    //             exists: false,
+    //             live: false,
+    //         },
+    //     },
+    //     taxBP: 700,
+    //     depositFeeBP: 0,
+    //     native: false,
+    //     passthroughStrategy: {
+    //         type: PassthroughType.BeefyVaultV6,
+    //         target: '0xDc1b4e4Ff41bC392f1BBCdcE699d5aB3E3de9E66',
+    //     },
+    // },
+
     {
-        name: 'DANTE-SYMPHONY',
-        token: '0xc042EF6cA08576BdFb57d3055A7654344fd153E4',
+        name: 'BOO-xBOO',
+        getUrl: 'https://solidly.exchange/liquidity/create',
+        passthroughUrl: 'https://yieldwolf.finance/fantom/solidexfinance/431',
+        token: '0x5804F6C40f44cF7593F73cf3aa16F7037213A623',
+        allocation: 500,
+        elevations: {
+            OASIS: {
+                exists: true,
+                live: true,
+            },
+            PLAINS: {
+                exists: true,
+                live: true,
+            },
+            MESA: {
+                exists: true,
+                live: true,
+            },
+            SUMMIT: {
+                exists: true,
+                live: true,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.YieldWolf,
+            target: '0x876F890135091381c23Be437fA1cec2251B7c117',
+            pid: 431,
+        },
+    },
+    {
+        name: 'USDC-MIM',
+        getUrl: 'https://solidly.exchange/liquidity/create',
+        passthroughUrl: 'https://yieldwolf.finance/fantom/solidexfinance/419',
+        token: '0xbcab7d083Cf6a01e0DdA9ed7F8a02b47d125e682',
+        allocation: 100,
+        elevations: {
+            OASIS: {
+                exists: true,
+                live: true,
+            },
+            PLAINS: {
+                exists: true,
+                live: true,
+            },
+            MESA: {
+                exists: true,
+                live: true,
+            },
+            SUMMIT: {
+                exists: true,
+                live: true,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.YieldWolf,
+            target: '0x876F890135091381c23Be437fA1cec2251B7c117',
+            pid: 419,
+        },
+    },
+    {
+        name: 'FTM-BSHARE',
+        getUrl: 'https://spookyswap.finance/add/0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83/0x49C290Ff692149A4E16611c694fdED42C954ab7a',
+        passthroughUrl: 'https://yieldwolf.finance/fantom/solidexfinance/359',
+        token: '0x6F607443DC307DCBe570D0ecFf79d65838630B56',
         allocation: 500,
         elevations: {
             OASIS: {
@@ -440,8 +539,108 @@ export const ftmPools: PoolConfig[] = [
         depositFeeBP: 0,
         native: false,
         passthroughStrategy: {
-            type: PassthroughType.BeefyVaultV6,
-            target: '0xDc1b4e4Ff41bC392f1BBCdcE699d5aB3E3de9E66',
+            type: PassthroughType.YieldWolf,
+            target: '0x876F890135091381c23Be437fA1cec2251B7c117',
+            pid: 359,
+        },
+    },
+    {
+        name: 'TOMB-BASED',
+        getUrl: 'https://spookyswap.finance/add/0x6c021Ae822BEa943b2E66552bDe1D2696a53fbB7/0x8D7d3409881b51466B483B11Ea1B8A03cdEd89ae',
+        passthroughUrl: 'https://yieldwolf.finance/fantom/solidexfinance/358',
+        token: '0xaB2ddCBB346327bBDF97120b0dD5eE172a9c8f9E',
+        allocation: 500,
+        elevations: {
+            OASIS: {
+                exists: false,
+                live: false,
+            },
+            PLAINS: {
+                exists: false,
+                live: false,
+            },
+            MESA: {
+                exists: false,
+                live: false,
+            },
+            SUMMIT: {
+                exists: false,
+                live: false,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.YieldWolf,
+            target: '0x876F890135091381c23Be437fA1cec2251B7c117',
+            pid: 358,
+        },
+    },
+    {
+        name: 'TOMB-FTM',
+        getUrl: 'https://solidly.exchange/liquidity/create',
+        passthroughUrl: 'https://yieldwolf.finance/fantom/solidexfinance/421',
+        token: '0x60a861Cd30778678E3d613db96139440Bd333143',
+        allocation: 500,
+        elevations: {
+            OASIS: {
+                exists: false,
+                live: false,
+            },
+            PLAINS: {
+                exists: false,
+                live: false,
+            },
+            MESA: {
+                exists: false,
+                live: false,
+            },
+            SUMMIT: {
+                exists: false,
+                live: false,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.YieldWolf,
+            target: '0x876F890135091381c23Be437fA1cec2251B7c117',
+            pid: 421,
+        },
+    },
+    {
+        name: 'LQDR-FTM',
+        getUrl: 'https://solidly.exchange/liquidity/create',
+        passthroughUrl: 'https://yieldwolf.finance/fantom/solidexfinance/425',
+        token: '0x9861B8a9Acc9B4f249981164bFe7f84202068bfE',
+        allocation: 500,
+        elevations: {
+            OASIS: {
+                exists: false,
+                live: false,
+            },
+            PLAINS: {
+                exists: false,
+                live: false,
+            },
+            MESA: {
+                exists: false,
+                live: false,
+            },
+            SUMMIT: {
+                exists: false,
+                live: false,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.YieldWolf,
+            target: '0x876F890135091381c23Be437fA1cec2251B7c117',
+            pid: 425,
         },
     },
 ]

@@ -772,14 +772,30 @@ export const cartographerSetParam = {
         dev,
         baseMinimumWithdrawalTax,
         revertErr,
+        callAsTimelock = false,
+        dryRun = false,
     }: {
         dev: SignerWithAddress
         baseMinimumWithdrawalTax: number,
         revertErr?: string,
+        callAsTimelock?: boolean,
+        dryRun?: boolean,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(dev).setBaseMinimumWithdrawalTax
         const txArgs = [baseMinimumWithdrawalTax]
+
+        if (callAsTimelock) {
+            const note = `Set Base Minimum Withdrawal Tax: ${baseMinimumWithdrawalTax}`
+            return await timelockMethod.queue({
+                dev,
+                targetContractName: Contracts.Cartographer,
+                txName: TimelockTxSig.Cartographer.SetBaseMinimumWithdrawalTax,
+                txParams: txArgs,
+                note,
+                dryRun,
+            })
+        }
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)

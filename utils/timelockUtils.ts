@@ -438,3 +438,29 @@ export const testableTimelockTransactionByHash = async (txType: TimelockTransact
     ]
 }
 
+
+
+
+
+
+
+// MARK CANCELLED / EXECUTED BY HASH
+export const markQueuedTimelockTransactionAsExecutedByHash = async (txHash: string) => await markTimelockTransactionByHash(TimelockTransactionType.Execute, txHash)
+export const markQueuedTimelockTransactionAsCancelledByHash = async (txHash: string) => await markTimelockTransactionByHash(TimelockTransactionType.Cancel, txHash)
+const markTimelockTransactionByHash = async (txType: TimelockTransactionType, txHash: string) => {
+    const chainId = await getChainId()
+    
+    const queuedTransactionByHash = getQueuedTimelockTransactionByHash(chainId, txHash)
+    if (queuedTransactionByHash == null) return `Queued Transaction By Hash Not Found: ${txHash}`
+    
+    const {
+        rawParams,
+        queueTimestamp,
+        ...timelockTxParams
+    }  = queuedTransactionByHash
+
+    // Write transaction to JSON file of timelock interactions
+    const timestamp = await getTimestamp()
+    writeTimelockTransaction(chainId, txHash, timestamp, txType, rawParams, timelockTxParams)
+}
+

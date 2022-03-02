@@ -11,6 +11,7 @@ export const syncPools = async (poolConfigs: PoolConfig[], callAsTimelock = fals
     await promiseSequenceMap(
         poolConfigs,
         async (poolConfig) => {
+            const txNotes = []
             const {
                 name: configName,
                 token: configToken,

@@ -1,8 +1,8 @@
 {
   "TOMB-FTM": {
-    "token": "0x2a651563c9d3af67ae0388a5c8f89b867038089e",
-    "passthroughContract": "0x3B4C96337f62EE0Bc70a30F523b15de15dBAEF9E",
-    "targetVaultContract": "0x27c77411074ba90cA35e6f92A79dAd577c05A746"
+    "token": "0x60a861Cd30778678E3d613db96139440Bd333143",
+    "passthroughContract": "0x9c312196dCBE127A90a92f286a582128595988d9",
+    "targetVaultContract": "0x876F890135091381c23Be437fA1cec2251B7c117"
   },
   "TSHARE-FTM": {
     "token": "0x4733bc45ef91cf7ccecaeedb794727075fb209f2",
@@ -63,5 +63,30 @@
     "token": "0xc042EF6cA08576BdFb57d3055A7654344fd153E4",
     "passthroughContract": "0x3E037e22A6D0f6B66b6e98F4Ba4F91FDfa63c828",
     "targetVaultContract": "0xDc1b4e4Ff41bC392f1BBCdcE699d5aB3E3de9E66"
+  },
+  "BOO-xBOO": {
+    "token": "0x5804F6C40f44cF7593F73cf3aa16F7037213A623",
+    "passthroughContract": "0xB800EBE740cD6976532b18bc7857F535011e662E",
+    "targetVaultContract": "0x876F890135091381c23Be437fA1cec2251B7c117"
+  },
+  "USDC-MIM": {
+    "token": "0xbcab7d083Cf6a01e0DdA9ed7F8a02b47d125e682",
+    "passthroughContract": "0x60FAf1e73f061ed353dA977F2A208281d9E50a3b",
+    "targetVaultContract": "0x876F890135091381c23Be437fA1cec2251B7c117"
+  },
+  "FTM-BSHARE": {
+    "token": "0x6F607443DC307DCBe570D0ecFf79d65838630B56",
+    "passthroughContract": "0xEfCdD0970B38884A59d0dd39588De9a59345683F",
+    "targetVaultContract": "0x876F890135091381c23Be437fA1cec2251B7c117"
+  },
+  "TOMB-BASED": {
+    "token": "0xaB2ddCBB346327bBDF97120b0dD5eE172a9c8f9E",
+    "passthroughContract": "0xBac6Bb764A63E5B8591eFC9d728114Bb1012e1d3",
+    "targetVaultContract": "0x876F890135091381c23Be437fA1cec2251B7c117"
+  },
+  "LQDR-FTM": {
+    "token": "0x9861B8a9Acc9B4f249981164bFe7f84202068bfE",
+    "passthroughContract": "0x4D0B2c08Ba7DcA0274b3E63159539558de9081C1",
+    "targetVaultContract": "0x876F890135091381c23Be437fA1cec2251B7c117"
   }
 }

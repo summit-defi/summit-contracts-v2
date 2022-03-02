@@ -11,9 +11,9 @@ export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress:
     // Early exit if no target passthrough strategy
     if (pool.passthroughStrategy == null) return
 
-    console.log(`\tCreate Passthrough Strategy: ${pool.name}`)
-
     const { type, target, pid, rewardToken } = pool.passthroughStrategy
+    
+    console.log(`\tCreate Passthrough Strategy: ${pool.name}, type: ${type}`)
 
     // // Early exit if passthrough strategy exists
     // const tokenPassthroughStrategy = await Cartographer.tokenPassthroughStrategy(tokenAddress)
@@ -34,6 +34,15 @@ export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress:
     let constructorArguments: any[] = []
     let passthroughContract
     switch (type) {
+        case PassthroughType.YieldWolf:
+            passthroughFactory = await ethers.getContractFactory('YieldWolfPassthrough')
+            constructorArguments = [
+                Cartographer.address,
+                target,
+                pid,
+                tokenAddress
+            ]
+        break
         case PassthroughType.MasterChef:
             passthroughFactory = await ethers.getContractFactory('MasterChefPassthrough')
             constructorArguments = [
@@ -41,7 +50,7 @@ export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress:
                 target,
                 pid,
                 tokenAddress,
-                rewardToken,
+                rewardToken
             ]
         break
         case PassthroughType.BeefyVaultV6:
@@ -49,7 +58,7 @@ export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress:
             constructorArguments = [
                 Cartographer.address,
                 target,
-                tokenAddress,
+                tokenAddress
             ]
             break
         case PassthroughType.BeefyVaultV6Native:
@@ -57,7 +66,7 @@ export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress:
             constructorArguments = [
                 Cartographer.address,
                 target,
-                tokenAddress,
+                tokenAddress
             ]
         break
         default: break

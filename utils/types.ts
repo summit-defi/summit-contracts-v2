@@ -16,6 +16,8 @@ interface ElevationExistsLive {
 export interface PoolConfig {
     name: string
     token: string
+    getUrl?: string
+    passthroughUrl?: string
     allocation: number
     taxBP: number
     depositFeeBP: number

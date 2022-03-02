@@ -73,6 +73,7 @@ export const PassthroughType = {
     BeefyVaultV2: 'BeefyVaultV2',
     BeefyVaultV6: 'BeefyVaultV6',
     BeefyVaultV6Native: 'BeefyVaultV6Native',
+    YieldWolf: 'YieldWolf',
 }
 
 export const SubCartographer = {

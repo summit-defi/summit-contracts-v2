@@ -1,7 +1,7 @@
 import inquirer from 'inquirer'
 import { ethers, getChainId } from "hardhat";
 import { getPoolConfigs } from "../data";
-import { elevationHelperMethod, expeditionMethod, MESA, PLAINS, SUMMIT } from "../utils";
+import { cartographerMethod, cartographerSetParam, elevationHelperMethod, expeditionMethod, MESA, PLAINS, SUMMIT } from "../utils";
 import { syncPools, syncTimelockFunctionSpecificDelays } from "./scriptUtils";
 
 enum MiscRunnable {
@@ -9,10 +9,11 @@ enum MiscRunnable {
     SyncPools = 'SyncPools',
     RecalculateExpeditionEmissions = 'RecalculateExpeditionEmissions',
     UpdateElevationRoundDurations = 'UpdateElevationRoundDurations',
+    SetBaseMinimumWithdrawalTax = 'SetBaseMinimumWithdrawalTax',
 }
 
 // CONFIGS
-const runnable: MiscRunnable = MiscRunnable.SyncPools
+const runnable: MiscRunnable = MiscRunnable.SetBaseMinimumWithdrawalTax
 const timelock = true
 const dryRun = false
 
@@ -71,6 +72,17 @@ async function main() {
             dev,
             elevation: SUMMIT,
             roundDurationMult: 8,
+            callAsTimelock: timelock,
+            dryRun,
+        })
+    }
+
+
+
+    if (runnable === MiscRunnable.SetBaseMinimumWithdrawalTax) {
+        await cartographerSetParam.setBaseMinimumWithdrawalTax({
+            dev,
+            baseMinimumWithdrawalTax: 50,
             callAsTimelock: timelock,
             dryRun,
         })
