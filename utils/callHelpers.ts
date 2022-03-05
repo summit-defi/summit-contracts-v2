@@ -4,11 +4,27 @@ import { getChainId } from "hardhat"
 import { chainIdIsMainnet, delay, EVENT, expect6FigBigNumberEquals, FORKED_MAINNET, hardhatChainId, notHardhat, sixFigBigNumberEquals, toDecimal, txWaitCount } from "."
 
 export const executeTx = async (tx: any, txArgs: any[]) => {
-    const transaction = await tx(...txArgs)
+    let transaction
+    let tries = 0
+    while (transaction == null) {
+        if (tries >= 5) {
+            throw new Error('Ran out of retries')
+        }
+        try {
+            transaction = await tx(...txArgs)
+        } catch (e: any) {
+            console.log('Err in tx', e.message)
+            tries++
+        }
+    }
     const waitCount = await txWaitCount()
     if ((await getChainId()) !== hardhatChainId){
-        await transaction.wait(waitCount)
-        await delay(5000)
+        try {
+            await transaction.wait(waitCount)
+            await delay(5000)
+        } catch (e: any) {
+            console.log('Err in wait', e.message)
+        }
     }
     return transaction
 }
@@ -21,10 +37,21 @@ export const executeTxExpectReversion = async (tx: any, txArgs: any[], revertErr
 
 export const executeTxExpectEvent = async (tx: any, txArgs: any[], contract: Contract, eventName: string, eventArgs: any[] | null, requireExactBigNumberMatch: boolean) => {
     let transaction
-    if (txArgs.length > 0) {
-        transaction = await tx(...txArgs)
-    } else {
-        transaction = await tx()
+    let tries = 0
+    while (transaction == null) {
+        if (tries >= 5) {
+            throw new Error('Ran out of retries')
+        }
+        try {
+            if (txArgs.length > 0) {
+                transaction = await tx(...txArgs)
+            } else {
+                transaction = await tx()
+            }
+        } catch (e: any) {
+            console.log('Err in tx', e.message)
+            tries++
+        }
     }
     const waitCount = await txWaitCount()
     const receipt = await transaction.wait(waitCount)

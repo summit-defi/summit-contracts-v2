@@ -594,6 +594,7 @@ export const cartographerMethod = {
         callAsTimelock = false,
         dryRun = false,
         tokenSymbol = '',
+        queueEvenIfMatchingExists = false,
     }: {
         dev: SignerWithAddress
         tokenAddress: string,
@@ -602,6 +603,7 @@ export const cartographerMethod = {
         callAsTimelock?: boolean,
         dryRun?: boolean,
         tokenSymbol?: string,
+        queueEvenIfMatchingExists?: boolean,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(dev).setTokenPassthroughStrategy
@@ -616,6 +618,7 @@ export const cartographerMethod = {
                 txParams: txArgs,
                 note,
                 dryRun,
+                queueEvenIfMatchingExists,
             })
         }
         
@@ -633,6 +636,7 @@ export const cartographerMethod = {
         callAsTimelock = false,
         dryRun = false,
         tokenSymbol = '',
+        queueEvenIfMatchingExists = false,
     }: {
         dev: SignerWithAddress,
         tokenAddress: string,
@@ -640,6 +644,7 @@ export const cartographerMethod = {
         callAsTimelock?: boolean,
         dryRun?: boolean,
         tokenSymbol?: string,
+        queueEvenIfMatchingExists?: boolean,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(dev).retireTokenPassthroughStrategy
@@ -654,6 +659,7 @@ export const cartographerMethod = {
                 txParams: txArgs,
                 note,
                 dryRun,
+                queueEvenIfMatchingExists,
             })
         }
         

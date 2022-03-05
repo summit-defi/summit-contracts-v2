@@ -15,6 +15,7 @@ export const timelockMethod = {
         txParams,
         note,
         dryRun = false,
+        queueEvenIfMatchingExists = false,
     }: {
         dev: SignerWithAddress,
         targetContractName: string,
@@ -22,6 +23,7 @@ export const timelockMethod = {
         txParams: any[],
         note: string,
         dryRun?: boolean,
+        queueEvenIfMatchingExists?: boolean,
     }) => {
         const chainId = await getChainId()
         const timelock = await getTimelock()
@@ -39,26 +41,24 @@ export const timelockMethod = {
             txParams,
         }
 
-        const txSignature = getTxSignatureBase({ targetContract, txName })
-        const matchingTimelockTx = checkForAlreadyQueuedMatchingTimelockTx(
-            chainId,
-            targetContract.address,
-            txSignature,
-            txParams,
-        )
-        if (matchingTimelockTx != null) {
-            console.log('Matching Transaction already Queued')
-            console.log(`Matching tx Matures in ${((matchingTimelockTx.eta - currentTimestamp) / 3600).toFixed(1)}hr on ${timestampToDate(matchingTimelockTx.eta)}`)
-            return
+        if (!queueEvenIfMatchingExists) {
+            const txSignature = getTxSignatureBase({ targetContract, txName })
+            const matchingTimelockTx = checkForAlreadyQueuedMatchingTimelockTx(
+                chainId,
+                targetContract.address,
+                txSignature,
+                txParams,
+            )
+            if (matchingTimelockTx != null) {
+                console.log('Matching Transaction already Queued')
+                console.log(`Matching tx Matures in ${((matchingTimelockTx.eta - currentTimestamp) / 3600).toFixed(1)}hr on ${timestampToDate(matchingTimelockTx.eta)}`)
+                return
+            }
         }
 
         const timelockTxParams = await getTimelockTxParams(params)
         const tx = timelock.connect(dev).queueTransaction
         const txHash = encodeQueuedTransactionHash(timelock, timelockTxParams)
-
-        console.log({
-            timelockTxParams
-        })
 
         // Execute Transaction
         if (!dryRun) {

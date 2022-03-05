@@ -86,7 +86,7 @@ const config: HardhatUserConfig = {
     ftm_mainnet: {
       url: "https://rpc.ftm.tools/",
       chainId: 250,
-      gasPrice: ethers.utils.parseUnits('1000', 'gwei').toNumber(),
+      gasPrice: ethers.utils.parseUnits('2000', 'gwei').toNumber(),
       gasMultiplier: 2,
       accounts: { mnemonic: mnemonics.ftm_testnet },
       tags: ['MAINNET'],
