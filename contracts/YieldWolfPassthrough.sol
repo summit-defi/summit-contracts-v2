@@ -137,6 +137,9 @@ contract YieldWolfPassthrough is IPassthrough, Ownable {
         onlyCartographer
         returns (uint256)
     {
+        // Return early if 0 depositing amount is 0, this will revert in Yield Wolf Vault
+        if (_amount == 0) return _amount;
+
         uint256 cartographerBalance = passthroughToken.balanceOf(cartographer);
         passthroughToken.safeTransferFrom(cartographer, address(this), cartographerBalance);
 
@@ -196,11 +199,7 @@ contract YieldWolfPassthrough is IPassthrough, Ownable {
         external override
         onlyCartographer
     {
-        // Withdraw all from the vault
-        uint256 totalStaked = vaultBalance();
-        if (totalStaked > 0) {
-            yieldWolf.withdraw(yieldWolfPid, totalStaked);
-        }
+        yieldWolf.withdraw(yieldWolfPid, type(uint256).max);
         
         uint256 tokenBalance = passthroughToken.balanceOf(address(this));
 
