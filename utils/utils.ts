@@ -55,6 +55,9 @@ export const e16 = (n: number) => {
 export const toDecimal = (n: BigNumber) => {
     return ethers.utils.formatUnits(n, 18)
 }
+export const toFixedDecimal = (n: BigNumber, dec = 2) => {
+    return parseFloat(toDecimal(n)).toFixed(dec)
+}
 export const e12 = (n: number) => {
     return ethers.utils.parseUnits(n.toString()).div(BigNumber.from(1000000))
 }

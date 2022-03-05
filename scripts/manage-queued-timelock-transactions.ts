@@ -12,7 +12,7 @@ enum TxAction {
 const allTxActions = [TxAction.Execute, TxAction.Cancel, TxAction.MarkAsExecuted, TxAction.MarkAsCancelled]
 
 async function main() {
-    console.log('\n\n== CANCEL QUEUED TIMELOCK TRANSACTIONS ==\n\n\n')
+    console.log('\n\n== MANAGE QUEUED TIMELOCK TRANSACTIONS ==\n\n\n')
 
     const chainId = await getChainId()
     const queuedTimelockTxs = getQueuedTimelockTxs(chainId)

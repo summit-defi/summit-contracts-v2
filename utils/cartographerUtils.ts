@@ -630,14 +630,32 @@ export const cartographerMethod = {
         dev,
         tokenAddress,
         revertErr,
+        callAsTimelock = false,
+        dryRun = false,
+        tokenSymbol = '',
     }: {
         dev: SignerWithAddress,
         tokenAddress: string,
         revertErr?: string,
+        callAsTimelock?: boolean,
+        dryRun?: boolean,
+        tokenSymbol?: string,
     }) => {
         const cartographer = await getCartographer()
         const tx = cartographer.connect(dev).retireTokenPassthroughStrategy
         const txArgs = [tokenAddress]
+
+        if (callAsTimelock) {
+            const note = `Retire Token Passthrough Strategy: ${tokenSymbol}`
+            return await timelockMethod.queue({
+                dev,
+                targetContractName: Contracts.Cartographer,
+                txName: TimelockTxSig.Cartographer.RetireTokenPassthroughStrategy,
+                txParams: txArgs,
+                note,
+                dryRun,
+            })
+        }
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)

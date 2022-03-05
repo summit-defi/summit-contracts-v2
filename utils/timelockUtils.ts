@@ -354,7 +354,7 @@ const timelockTransactionByHash = async (txType: TimelockTransactionType, txHash
 
     await availableTimelockTransactionsEstimateGas[txType](
         ...timelockTxParamsToCallableArray(timelockTxParams),
-        { gasLimit: 1200000 }
+        { gasLimit: 5000000 }
     ).catch((err) => {
         console.log('throwing error', err)
         return extractRevertMsg(err)
@@ -368,7 +368,7 @@ const timelockTransactionByHash = async (txType: TimelockTransactionType, txHash
     // })
     const timelockTx = await availableTimelockTransactions[txType](
         ...timelockTxParamsToCallableArray(timelockTxParams),
-        { gasLimit: 1200000 }
+        { gasLimit: 5000000 }
     )
     if (chainId !== hardhatChainId) {
         await timelockTx.wait(10) 

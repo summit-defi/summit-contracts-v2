@@ -1,6 +1,8 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { BigNumber, Contract } from "ethers"
+import { ethers } from "hardhat"
 import { getSummitToken, getEverestToken, getCakeToken, getBifiToken, promiseSequenceMap, getContract, EVENT, executeTxExpectEvent, executeTxExpectReversion, executeTx, getUSDCToken, INF_APPROVE } from "."
+import erc20 from '../artifacts/@openzeppelin/contracts/token/ERC20/ERC20.sol/ERC20.json'
 
 export const getTokenBalance = async (token: Contract, add: string) => {
     return await token.balanceOf(add)
@@ -22,6 +24,21 @@ export const tokenPromiseSequenceMap = async (transformer: (element: Contract, i
         [summitToken, cakeToken, bifiToken],
         async (user: Contract, index: number, array: Contract[]) => await transformer(user, index, array)
     )
+}
+
+export const erc20Get = {
+    balanceOf: async ({
+        token,
+        balanceOf,
+    }: {
+        token: string,
+        balanceOf: string,
+    }) => {
+        return await (await ethers.getContractAt(erc20.abi, token)).balanceOf(balanceOf)
+    },
+    tokenContract: async ({ token }: { token: string }) => {
+        return await ethers.getContractAt(erc20.abi, token)
+    }
 }
 
 export const erc20Method = {

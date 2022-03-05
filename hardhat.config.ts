@@ -52,6 +52,10 @@ const config: HardhatUserConfig = {
       throwOnCallFailures: true,
       throwOnTransactionFailures: true,
       allowUnlimitedContractSize: true,
+      forking: {
+        url: "https://ftm.getblock.io/mainnet/?api_key=c3622f26-f2cd-43e7-81ec-70537b9c7deb",
+        blockNumber: 32640290,
+      },
       // forking: {
       //   url: "https://bsc.getblock.io/?api_key=4c801b23-8ca3-45a4-a13a-426d8a0c7ac6",
       //   // blockNumber: 8401715,
@@ -82,7 +86,7 @@ const config: HardhatUserConfig = {
     ftm_mainnet: {
       url: "https://rpc.ftm.tools/",
       chainId: 250,
-      gasPrice: ethers.utils.parseUnits('10000', 'gwei').toNumber(),
+      gasPrice: ethers.utils.parseUnits('1000', 'gwei').toNumber(),
       gasMultiplier: 2,
       accounts: { mnemonic: mnemonics.ftm_testnet },
       tags: ['MAINNET'],
@@ -98,6 +102,7 @@ const config: HardhatUserConfig = {
   namedAccounts: {
     dev: {
       default: 0,
+      hardhat: namedAddresses.dev,
       bsc_testnet: namedAddresses.dev,
       bsc_mainnet: namedAddresses.dev,
       ftm_testnet: namedAddresses.dev,
@@ -105,6 +110,7 @@ const config: HardhatUserConfig = {
     },
     exped: {
       default: 1,
+      hardhat: namedAddresses.exped,
       bsc_testnet: namedAddresses.exped,
       bsc_mainnet: namedAddresses.exped,
       ftm_testnet: namedAddresses.exped,
@@ -112,6 +118,7 @@ const config: HardhatUserConfig = {
     },
     user1: {
       default: 2,
+      hardhat: namedAddresses.user1,
       bsc_testnet: namedAddresses.user1,
       bsc_mainnet: namedAddresses.user1,
       ftm_testnet: namedAddresses.user1,
@@ -119,6 +126,7 @@ const config: HardhatUserConfig = {
     },
     user2: {
       default: 3,
+      hardhat: namedAddresses.user2,
       bsc_testnet: namedAddresses.user2,
       bsc_mainnet: namedAddresses.user2,
       ftm_testnet: namedAddresses.user2,
@@ -126,6 +134,7 @@ const config: HardhatUserConfig = {
     },
     user3: {
       default: 4,
+      hardhat: namedAddresses.user3,
       bsc_testnet: namedAddresses.user3,
       bsc_mainnet: namedAddresses.user3,
       ftm_testnet: namedAddresses.user3,
@@ -133,6 +142,7 @@ const config: HardhatUserConfig = {
     },
     trustedSeeder: {
       default: 5,
+      hardhat: namedAddresses.trustedSeeder,
       bsc_testnet: namedAddresses.trustedSeeder,
       bsc_mainnet: namedAddresses.trustedSeeder,
       ftm_testnet: namedAddresses.trustedSeeder,

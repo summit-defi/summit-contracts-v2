@@ -121,22 +121,22 @@ export const ftmPools: PoolConfig[] = [
         elevations: {
             OASIS: {
                 exists: true,
-                live: false,
+                live: true,
             },
             PLAINS: {
                 exists: true,
-                live: false,
+                live: true,
             },
             MESA: {
                 exists: true,
-                live: false,
+                live: true,
             },
             SUMMIT: {
                 exists: true,
-                live: false,
+                live: true,
             },
         },
-        taxBP: 50,
+        taxBP: 700,
         depositFeeBP: 0,
         native: false,
         passthroughStrategy: {
@@ -237,7 +237,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'BOO',
         token: '0x841fad6eae12c286d1fd18d1d525dffa75c7effe',
-        allocation: 300,
+        allocation: 0,
         elevations: {
             OASIS: {
                 exists: true,
@@ -297,7 +297,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: '2SHARES-FTM',
         token: '0x6398ACBBAB2561553a9e458Ab67dCFbD58944e52',
-        allocation: 300,
+        allocation: 400,
         elevations: {
             OASIS: {
                 exists: true,
@@ -327,7 +327,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: '2OMB-FTM',
         token: '0xbdC7DFb7B88183e87f003ca6B5a2F81202343478',
-        allocation: 400,
+        allocation: 600,
         elevations: {
             OASIS: {
                 exists: true,
@@ -357,7 +357,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'PAE-FTM',
         token: '0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0',
-        allocation: 400,
+        allocation: 100,
         elevations: {
             OASIS: {
                 exists: true,
@@ -387,7 +387,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'pFTM-FTM',
         token: '0x9ce8e9b090e8AF873e793e0b78C484076F8CEECE',
-        allocation: 400,
+        allocation: 100,
         elevations: {
             OASIS: {
                 exists: true,
@@ -516,23 +516,23 @@ export const ftmPools: PoolConfig[] = [
         getUrl: 'https://spookyswap.finance/add/0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83/0x49C290Ff692149A4E16611c694fdED42C954ab7a',
         passthroughUrl: 'https://yieldwolf.finance/fantom/solidexfinance/359',
         token: '0x6F607443DC307DCBe570D0ecFf79d65838630B56',
-        allocation: 500,
+        allocation: 700,
         elevations: {
             OASIS: {
-                exists: false,
-                live: false,
+                exists: true,
+                live: true,
             },
             PLAINS: {
-                exists: false,
-                live: false,
+                exists: true,
+                live: true,
             },
             MESA: {
-                exists: false,
-                live: false,
+                exists: true,
+                live: true,
             },
             SUMMIT: {
-                exists: false,
-                live: false,
+                exists: true,
+                live: true,
             },
         },
         taxBP: 700,
@@ -549,23 +549,23 @@ export const ftmPools: PoolConfig[] = [
         getUrl: 'https://spookyswap.finance/add/0x6c021Ae822BEa943b2E66552bDe1D2696a53fbB7/0x8D7d3409881b51466B483B11Ea1B8A03cdEd89ae',
         passthroughUrl: 'https://yieldwolf.finance/fantom/solidexfinance/358',
         token: '0xaB2ddCBB346327bBDF97120b0dD5eE172a9c8f9E',
-        allocation: 500,
+        allocation: 700,
         elevations: {
             OASIS: {
-                exists: false,
-                live: false,
+                exists: true,
+                live: true,
             },
             PLAINS: {
-                exists: false,
-                live: false,
+                exists: true,
+                live: true,
             },
             MESA: {
-                exists: false,
-                live: false,
+                exists: true,
+                live: true,
             },
             SUMMIT: {
-                exists: false,
-                live: false,
+                exists: true,
+                live: true,
             },
         },
         taxBP: 700,

@@ -56,6 +56,10 @@ export const timelockMethod = {
         const tx = timelock.connect(dev).queueTransaction
         const txHash = encodeQueuedTransactionHash(timelock, timelockTxParams)
 
+        console.log({
+            timelockTxParams
+        })
+
         // Execute Transaction
         if (!dryRun) {
             await executeTx(

@@ -16,7 +16,8 @@
     "cancel-queued-timelock-txs": "npx hardhat run scripts/cancel-queued-timelock-transactions.ts --network ftm_mainnet",
     "manage-queued-timelock-txs": "npx hardhat run scripts/manage-queued-timelock-transactions.ts --network ftm_mainnet",
     "verify-elev-helper": "npx hardhat run scripts/verify-elev-helper.ts --network ftm_mainnet",
-    "test-yield-wolf-passthrough": "npx hardhat run scripts/deploy-test-yield-wolf-passthrough.ts --network ftm_mainnet"
+    "test-yield-wolf-passthrough": "npx hardhat run scripts/deploy-test-yield-wolf-passthrough.ts --network ftm_mainnet",
+    "yield-wolf-test-migrate": "npx hardhat run scripts/yield-wolf-passthrough-migrate-test.ts"
   },
   "devDependencies": {
     "@ethersproject/experimental": "^5.5.0",

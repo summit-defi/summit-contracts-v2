@@ -1,5 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
-import { getContract, executeTxExpectEvent, executeTxExpectReversion, ZEROADD } from "."
+import { getContract, executeTxExpectEvent, executeTxExpectReversion, ZEROADD, Contracts } from "."
+import { TimelockTxSig } from "./timelockConstants"
+import { timelockMethod } from "./timelockUtilsV2"
 
 export const ownableMethod = {
     transferOwnership: async ({
@@ -7,18 +9,32 @@ export const ownableMethod = {
         contractName,
         newOwnerAddress,
         revertErr,
+        callAsTimelock = false,
+        dryRun = false,
     }: {
         dev: SignerWithAddress
         contractName: string,
         newOwnerAddress: string,
         revertErr?: string,
+        callAsTimelock?: boolean,
+        dryRun?: boolean,
     }) => {
         const contract = await getContract(contractName)
         const currentOwnerAddress = await contract.owner()
         const tx = contract.connect(dev).transferOwnership
-        const txArgs = [newOwnerAddress, {
-            gasLimit: 1000000
-        }]
+        const txArgs = [newOwnerAddress]
+
+        if (callAsTimelock) {
+            const note = `Transfer Ownership: ${contractName} - NewOwner:${newOwnerAddress}`
+            return await timelockMethod.queue({
+                dev,
+                targetContractName: contractName,
+                txName: TimelockTxSig.Ownable.TransferOwnership,
+                txParams: txArgs,
+                note,
+                dryRun,
+            })
+        }
         
         if (revertErr != null) {
             await executeTxExpectReversion(tx, txArgs, revertErr)

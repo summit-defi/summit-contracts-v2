@@ -1,6 +1,8 @@
 export const FULL_TESTS = false
 
 export const FORCE_VERIFY = false
+export const FORKED_MAINNET = true
+
 
 
 export const Contracts = {

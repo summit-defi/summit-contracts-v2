@@ -66,6 +66,7 @@ export enum SummitTrustedSeederRNGModuleSigs {
 
 
 export const TimelockTxSig = {
+    Ownable: OwnedContractSigs,
     Timelock: TimelockSigs,
     Cartographer: CartographerSigs,
     ElevationHelper: ElevationHelperSigs,

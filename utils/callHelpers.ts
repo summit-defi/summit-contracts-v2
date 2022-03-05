@@ -1,13 +1,15 @@
 import { expect } from "chai"
 import { BigNumber, Contract } from "ethers"
 import { getChainId } from "hardhat"
-import { chainIdIsMainnet, delay, EVENT, expect6FigBigNumberEquals, hardhatChainId, notHardhat, sixFigBigNumberEquals, toDecimal, txWaitCount } from "."
+import { chainIdIsMainnet, delay, EVENT, expect6FigBigNumberEquals, FORKED_MAINNET, hardhatChainId, notHardhat, sixFigBigNumberEquals, toDecimal, txWaitCount } from "."
 
 export const executeTx = async (tx: any, txArgs: any[]) => {
     const transaction = await tx(...txArgs)
     const waitCount = await txWaitCount()
-    await transaction.wait(waitCount)
-    if ((await getChainId()) !== hardhatChainId) await delay(5000)
+    if ((await getChainId()) !== hardhatChainId){
+        await transaction.wait(waitCount)
+        await delay(5000)
+    }
     return transaction
 }
 
@@ -26,7 +28,9 @@ export const executeTxExpectEvent = async (tx: any, txArgs: any[], contract: Con
     }
     const waitCount = await txWaitCount()
     const receipt = await transaction.wait(waitCount)
-    if ((await getChainId()) !== hardhatChainId) await delay(5000)
+    if ((await getChainId()) !== hardhatChainId) {
+        await delay(5000)
+    }
 
     let emitted = false
     let emittedArgs = []

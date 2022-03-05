@@ -10,10 +10,11 @@ enum MiscRunnable {
     RecalculateExpeditionEmissions = 'RecalculateExpeditionEmissions',
     UpdateElevationRoundDurations = 'UpdateElevationRoundDurations',
     SetBaseMinimumWithdrawalTax = 'SetBaseMinimumWithdrawalTax',
+    RetireTokenPassthroughStrategies = 'RetireTokenPassthroughStrategies',
 }
 
 // CONFIGS
-const runnable: MiscRunnable = MiscRunnable.SetBaseMinimumWithdrawalTax
+const runnable: MiscRunnable = MiscRunnable.RetireTokenPassthroughStrategies
 const timelock = true
 const dryRun = false
 
@@ -42,7 +43,12 @@ async function main() {
     if (runnable === MiscRunnable.SyncPools) {
         const chainId = await getChainId()
         const mainnetPools = getPoolConfigs(chainId)
-        await syncPools(mainnetPools, timelock, dryRun)
+        await syncPools({
+            poolConfigs: mainnetPools,
+            callAsTimelock: timelock,
+            dryRun,
+            specificPools: ['BOO'],
+        })
     }
 
     if (runnable === MiscRunnable.RecalculateExpeditionEmissions) {
@@ -86,6 +92,38 @@ async function main() {
             callAsTimelock: timelock,
             dryRun,
         })
+    }
+
+
+    if (runnable === MiscRunnable.RetireTokenPassthroughStrategies) {
+        // await cartographerMethod.retireTokenPassthroughStrategy({
+        //     dev,
+        //     tokenAddress: '0x5804F6C40f44cF7593F73cf3aa16F7037213A623',
+        //     callAsTimelock: timelock,
+        //     dryRun,
+        //     tokenSymbol: 'BOO-xBOO'
+        // })
+        // await cartographerMethod.retireTokenPassthroughStrategy({
+        //     dev,
+        //     tokenAddress: '0xbcab7d083Cf6a01e0DdA9ed7F8a02b47d125e682',
+        //     callAsTimelock: timelock,
+        //     dryRun,
+        //     tokenSymbol: 'USDC-MIM'
+        // })
+        // await cartographerMethod.retireTokenPassthroughStrategy({
+        //     dev,
+        //     tokenAddress: '0x6F607443DC307DCBe570D0ecFf79d65838630B56',
+        //     callAsTimelock: timelock,
+        //     dryRun,
+        //     tokenSymbol: 'FTM-BSHARE'
+        // })
+        // await cartographerMethod.retireTokenPassthroughStrategy({
+        //     dev,
+        //     tokenAddress: '0xaB2ddCBB346327bBDF97120b0dD5eE172a9c8f9E',
+        //     callAsTimelock: timelock,
+        //     dryRun,
+        //     tokenSymbol: 'TOMB-BASED'
+        // })
     }
 
 

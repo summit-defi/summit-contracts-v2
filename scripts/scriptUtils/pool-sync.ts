@@ -2,7 +2,17 @@ import { ethers, getChainId } from "hardhat"
 import { PoolConfig, getElevationName, promiseSequenceMap, replaceSummitAddresses, subCartGet, cartographerGet, getSummitToken, cartographerMethod, cartographerSetParam, getEverestToken, ZEROADD, getPassthroughStrategy, getCartographer, allElevationPromiseSequenceMap, Contracts } from "../../utils"
 import { createPassthroughStrategy } from "./passthrough-strategy"
 
-export const syncPools = async (poolConfigs: PoolConfig[], callAsTimelock = false, dryRun = true) => {
+export const syncPools = async ({
+    poolConfigs,
+    callAsTimelock = false,
+    dryRun = true,
+    specificPools,
+}: {
+    poolConfigs: PoolConfig[],
+    callAsTimelock?: boolean,
+    dryRun?: boolean,
+    specificPools?: string[],
+}) => {
     const { dev } = await ethers.getNamedSigners()
     const summitToken = await getSummitToken()
     const everestToken = await getEverestToken()
@@ -11,7 +21,6 @@ export const syncPools = async (poolConfigs: PoolConfig[], callAsTimelock = fals
     await promiseSequenceMap(
         poolConfigs,
         async (poolConfig) => {
-            const txNotes = []
             const {
                 name: configName,
                 token: configToken,
@@ -22,6 +31,9 @@ export const syncPools = async (poolConfigs: PoolConfig[], callAsTimelock = fals
                 native: configNative,
                 passthroughStrategy: configPassthroughStrategy,
             } = poolConfig
+
+            // Early escape if not concerned with this pool
+            if (specificPools != null && !specificPools.includes(configName)) return
 
 
             
