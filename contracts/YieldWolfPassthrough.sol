@@ -10,44 +10,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 
-interface IYieldWolfStrategy {
-    function stakeToken() external view returns (address);
-
-    function sharesTotal() external view returns (uint256);
-
-    // function earn(address _bountyHunter) external returns (uint256);
-
-    // function deposit(uint256 _depositAmount) external returns (uint256);
-
-    // function withdraw(
-    //     uint256 _withdrawAmount,
-    //     address _withdrawTo,
-    //     address _bountyHunter,
-    //     uint256 _ruleFeeAmount
-    // ) external returns (uint256);
-
-    // function router() external view returns (address);
-
-    // function token0() external view returns (address);
-
-    // function token1() external view returns (address);
-
-    function totalStakeTokens() external view returns (uint256);
-
-    // function setSwapRouterEnabled(bool _enabled) external;
-
-    // function setSwapPath(
-    //     address _token0,
-    //     address _token1,
-    //     address[] calldata _path
-    // ) external;
-
-    // function setExtraEarnTokens(address[] calldata _extraEarnTokens) external;
-}
-
 struct PoolInfo {
     IERC20 stakeToken;          
-    IYieldWolfStrategy strategy;
 }
 
 struct UserInfo {
@@ -60,6 +24,7 @@ interface IYieldWolf {
     function withdraw(uint256 _pid, uint256 _amount) external;
     function poolInfo(uint256 _pid) external view returns (PoolInfo memory);
     function userInfo(uint256 _pid, address _user) external view returns (UserInfo memory);
+    function stakedTokens(uint256 _pid, address _user) external view returns (uint256);
 }
 
 
@@ -77,6 +42,10 @@ contract YieldWolfPassthrough is IPassthrough, Ownable {
 
     // 99% of the time this will be an empty array, In the rare case it isn't, the extra earn tokens will be distributed automatically
     EnumerableSet.AddressSet extraEarnTokens;
+
+
+    event ExtraEarnTokenAdded(address indexed _extraEarnToken);
+    event ExtraEarnTokenRemoved(address indexed _extraEarnToken);
 
     constructor(
         address _cartographer,
@@ -118,24 +87,17 @@ contract YieldWolfPassthrough is IPassthrough, Ownable {
     function addExtraEarnToken(address _extraEarnToken) public onlyOwner {
         require(_extraEarnToken != address(0), "Missing extra earn token");
         extraEarnTokens.add(_extraEarnToken);
+        emit ExtraEarnTokenAdded(_extraEarnToken);
     }
     function removeExtraEarnToken(address _extraEarnToken) public onlyOwner {
-        // require(extraEarnTokens.contains(_extraEarnToken), "Extra earn token not in list");
         extraEarnTokens.remove(_extraEarnToken);
-    }
-
-    /// @dev Gets the value of each share in the underlying passthrough token
-    function getPricePerFullShare() public view returns (uint256) {
-        uint256 vaultTotalShares = yieldWolf.poolInfo(yieldWolfPid).strategy.sharesTotal();
-        return vaultTotalShares == 0 ?
-            1e18 :
-            yieldWolf.poolInfo(yieldWolfPid).strategy.totalStakeTokens() * 1e18 / vaultTotalShares;
+        emit ExtraEarnTokenRemoved(_extraEarnToken);
     }
 
 
     /// @dev Getter of balance staked in yieldWolf
     function vaultBalance() public view returns (uint256) {
-        return yieldWolf.userInfo(yieldWolfPid, address(this)).shares * getPricePerFullShare() / 1e18;
+        return yieldWolf.stakedTokens(yieldWolfPid, address(this));
     }
 
 
@@ -209,12 +171,9 @@ contract YieldWolfPassthrough is IPassthrough, Ownable {
         // The amount of passthroughTokens available to be withdrawn
         uint256 tokensAvailableForWithdraw = vaultBalance() - balance;
 
-        // Use the price per full share to calculate the shares available to withdraw
-        uint256 sharesAvailableForWithdraw = (tokensAvailableForWithdraw * 1e18) / getPricePerFullShare();
-
-        // Withdraw users shares and additional rewards tokens and track true passthroughToken amount withdrawn during transaction
+        // Withdraw users tokens and additional rewards tokens and track true passthroughToken amount withdrawn during transaction
         uint256 passthroughTokenBalanceInit = passthroughToken.balanceOf(address(this));
-        yieldWolf.withdraw(yieldWolfPid, sharesAvailableForWithdraw);
+        yieldWolf.withdraw(yieldWolfPid, tokensAvailableForWithdraw);
         uint256 passthroughTokenBalanceFinal = passthroughToken.balanceOf(address(this));
         uint256 trueWithdrawnAmount = passthroughTokenBalanceFinal - passthroughTokenBalanceInit;
 
@@ -238,9 +197,9 @@ contract YieldWolfPassthrough is IPassthrough, Ownable {
         onlyCartographer
     {
         // Withdraw all from the vault
-        uint256 sharesBalance = yieldWolf.userInfo(yieldWolfPid, address(this)).shares;
-        if (sharesBalance > 0) {
-            yieldWolf.withdraw(yieldWolfPid, sharesBalance);
+        uint256 totalStaked = vaultBalance();
+        if (totalStaked > 0) {
+            yieldWolf.withdraw(yieldWolfPid, totalStaked);
         }
         
         uint256 tokenBalance = passthroughToken.balanceOf(address(this));
