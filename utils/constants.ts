@@ -330,12 +330,14 @@ export const networksOnWhichToVerify = [
     97,     // BSC TESTNET
     56,     // BSC MAINNET
     250,    // FTM MAINNET
+    137,    // POLYGON MAINNET
 ]
 
 export const networkExportsAddresses = [
     97,     // BSC TESTNET
     56,     // BSC MAINNET
     250,    // FTM MAINNET
+    137,    // POLYGON MAINNET
 ]
 
 export const networksWhichExpectUsersToHaveSummit = [
@@ -352,22 +354,39 @@ export const networksWhichRequireDummies = [
 export const mainnetNetworks = [
     250,    // FTM MAINNET
     56,     // BSC MAINNET
+    137,    // POLYGON MAINNET
 ]
 
 export const networkWrappedNativeTokens: { [key: string]: string } = {
     56: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',   // BSC MAINNET
     97: '0xae13d989dac2f0debff460ac112a837c89baa7cd',   // BSC TESTNET
     250: '0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83',  // FTM MAINNET
+    137: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270',  // POLYGON MAINNET
+}
+
+export const networkAMMFactory: { [key: string]: string } = {
+    137: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',  // POLYGON MAINNET - QUICKSWAP
+}
+export const networkAMMPairCodeHash: { [key: string]: string } = {
+    137: '0x5757371414417b8C6CAad45bAeF941aBc7d3Ab32',  // POLYGON MAINNET - QUICKSWAP
+}
+
+export const networkUsdcAddress: { [key: string]: string } = {
+    250: '0x04068da6c83afcfa0e13ba15a6696662335d5b75',  // FTM MAINNET
+    137: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',  // POLYGON MAINNET
 }
 
 export const chainTreasuryAddress: { [key: string]: string } = {
-    250: '0x474332025Dd20D5F09FFd766b317F98A872D71e0'
+    250: '0x474332025Dd20D5F09FFd766b317F98A872D71e0',
+    137: '0x474332025Dd20D5F09FFd766b317F98A872D71e0'
 }
 
 export const chainExpedTreasuryAddress: { [key: string]: string } = {
-    250: '0x00676eF184C36EBf73d0F3059D2a6909F02AA893'
+    250: '0x00676eF184C36EBf73d0F3059D2a6909F02AA893',
+    137: '0x00676eF184C36EBf73d0F3059D2a6909F02AA893'
 }
 
 export const chainLpGeneratorAddress: { [key: string]: string } = {
-    250: '0x50963e3c0899584a3EBD3226d976210aF0e42349'
+    250: '0x50963e3c0899584a3EBD3226d976210aF0e42349',
+    137: '0x50963e3c0899584a3EBD3226d976210aF0e42349'
 }

@@ -40,9 +40,9 @@ export const summitTrustedSeederMethod = {
         const txArgs = [trustedSeeder]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(dev, tx, txArgs, revertErr)
         } else {
-            await executeTx(tx, txArgs)
+            await executeTx(dev, tx, txArgs)
         }
     },
     receiveSealedSeed: async ({
@@ -59,9 +59,9 @@ export const summitTrustedSeederMethod = {
         const txArgs = [sealedSeed]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(trustedSeeder, tx, txArgs, revertErr)
         } else {
-            await executeTx(tx, txArgs)
+            await executeTx(trustedSeeder, tx, txArgs)
         }
     },
     receiveUnsealedSeed: async ({
@@ -78,9 +78,9 @@ export const summitTrustedSeederMethod = {
         const txArgs = [unsealedSeed]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(trustedSeeder, tx, txArgs, revertErr)
         } else {
-            await executeTx(tx, txArgs)
+            await executeTx(trustedSeeder, tx, txArgs)
         }
     },
 }

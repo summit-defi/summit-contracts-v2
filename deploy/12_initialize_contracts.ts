@@ -1,8 +1,8 @@
 import { ethers } from 'hardhat';
 import {DeployFunction} from 'hardhat-deploy/types'
-import { cartographerMethod, chainIdIsMainnet, consoleLog, Contracts, delay, everestMethod, expeditionMethod, getCartographer, getSubCartographers, MESA, OASIS, ownableMethod, PLAINS, SUMMIT, ZEROADD } from '../utils'
+import { createLpPair } from '../scripts/scriptUtils';
+import { cartographerMethod, chainIdIsMainnet, chainIdUsdcAddress, chainIdWrappedNativeToken, consoleLog, Contracts, delay, everestMethod, expeditionMethod, getCartographer, getSubCartographers, MESA, OASIS, ownableMethod, PLAINS, SUMMIT, ZEROADD } from '../utils'
 import { summitGlacierMethod } from '../utils/summitGlacierUtils';
-import { summitTokenMethod } from '../utils/summitTokenUtils';
 
 const initializeContracts: DeployFunction = async function ({
   deployments,
@@ -25,18 +25,18 @@ const initializeContracts: DeployFunction = async function ({
     const ExpeditionV2 = await deployments.get(Contracts.ExpeditionV2)
     const SummitGlacier = await deployments.get(Contracts.SummitGlacier)
 
-    let tokenSwapSummitAddress
+    // let tokenSwapSummitAddress
     let expeditionUSDCAddress
     
     if (isMainnet) {
-      const mainnetSummitToken = '0x8F9bCCB6Dd999148Da1808aC290F2274b13D7994'
-      const mainnetUSDCAddress = '0x04068da6c83afcfa0e13ba15a6696662335d5b75'
-      tokenSwapSummitAddress = mainnetSummitToken
-      expeditionUSDCAddress = mainnetUSDCAddress
+      // const mainnetSummitToken = '0x8F9bCCB6Dd999148Da1808aC290F2274b13D7994'
+      const mainnetUSDCAddress = chainIdUsdcAddress(chainId)
+      // tokenSwapSummitAddress = mainnetSummitToken
+      expeditionUSDCAddress = mainnetUSDCAddress!
     } else {
       const CakeToken = await deployments.get(Contracts.DummyCAKE)
       const USDCToken = await deployments.get(Contracts.DummyUSDC)
-      tokenSwapSummitAddress = CakeToken.address
+      // tokenSwapSummitAddress = CakeToken.address
       expeditionUSDCAddress = USDCToken.address
     }
 
@@ -58,11 +58,11 @@ const initializeContracts: DeployFunction = async function ({
 
 
     // Initialize Summit Token Swap
-    await summitTokenMethod.initialize({
-      dev,
-      oldSummitAddress: tokenSwapSummitAddress
-    })
-    consoleLog('Summit Token V1-->V2 Swap initialized')
+    // await summitTokenMethod.initialize({
+    //   dev,
+    //   oldSummitAddress: tokenSwapSummitAddress
+    // })
+    // consoleLog('Summit Token V1-->V2 Swap initialized')
     
     // Transfer summit token ownership to cartographer
     await ownableMethod.transferOwnership({

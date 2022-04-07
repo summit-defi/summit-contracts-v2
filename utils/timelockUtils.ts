@@ -341,28 +341,28 @@ const timelockTransactionByHash = async (txType: TimelockTransactionType, txHash
     if (withMine) await mineBlockWithTimestamp(timelockTxParams.eta)
 
     // Object of available transactions to be run on the Timelock
-    const availableTimelockTransactionsEstimateGas = {
-        [TimelockTransactionType.Queue]: timelock.connect(dev).estimateGas.queueTransaction,
-        [TimelockTransactionType.Cancel]: timelock.connect(dev).estimateGas.cancelTransaction,
-        [TimelockTransactionType.Execute]: timelock.connect(dev).estimateGas.executeTransaction,
-    }
+    // const availableTimelockTransactionsEstimateGas = {
+    //     [TimelockTransactionType.Queue]: timelock.connect(dev).estimateGas.queueTransaction,
+    //     [TimelockTransactionType.Cancel]: timelock.connect(dev).estimateGas.cancelTransaction,
+    //     [TimelockTransactionType.Execute]: timelock.connect(dev).estimateGas.executeTransaction,
+    // }
     const availableTimelockTransactions = {
         [TimelockTransactionType.Queue]: timelock.connect(dev).queueTransaction,
         [TimelockTransactionType.Cancel]: timelock.connect(dev).cancelTransaction,
         [TimelockTransactionType.Execute]: timelock.connect(dev).executeTransaction,
     }
 
-    await availableTimelockTransactionsEstimateGas[txType](
-        ...timelockTxParamsToCallableArray(timelockTxParams),
-        { gasLimit: 5000000 }
-    ).catch((err) => {
-        console.log('throwing error', err)
-        return extractRevertMsg(err)
-    })
+    // await availableTimelockTransactionsEstimateGas[txType](
+    //     ...timelockTxParamsToCallableArray(timelockTxParams),
+    //     { gasLimit: 5000000 }
+    // ).catch((err) => {
+    //     console.log('throwing error', err)
+    //     return extractRevertMsg(err)
+    // })
     
 
     // Execute Timelock Transaction
-    // const nonce = dev.getTransactionCount('pending')
+    // const nonce = await dev.getTransactionCount('pending')
     // console.log({
     //     nonce
     // })

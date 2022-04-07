@@ -9,7 +9,6 @@ const exportAddresses: DeployFunction = async function ({
 
     const cartographer = await getCartographer()
     const SummitToken = await getSummitToken()
-    const oldSummitToken = await SummitToken.oldSummit()
     const EverestToken = await getEverestToken()
     const subCartographers = await getSubCartographers()
     const elevationHelper = await getElevationHelper()
@@ -37,7 +36,6 @@ const exportAddresses: DeployFunction = async function ({
 
     writeContractAddresses(chainId, [
         ['summitToken', SummitToken.address],
-        ['oldSummitToken', oldSummitToken],
         ['everestToken', EverestToken.address],
         ['cartographer', cartographer.address],
         ['cartographerOasis', subCartographers[0].address],

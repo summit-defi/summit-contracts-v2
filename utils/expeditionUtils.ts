@@ -1,6 +1,7 @@
 import { BigNumber } from "@ethersproject/bignumber"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import { expect } from "chai"
+import { ethers } from "hardhat"
 import { string } from "hardhat/internal/core/params/argumentTypes"
 import { consoleLog, Contracts, e0, e18, elevationHelperGet, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, EXPEDITION, getElevationHelper, getExpedition, getSummitBalance, getUsdcBalance, mineBlockWithTimestamp, toDecimal, usersExpeditionInfos } from "."
 import { everestGet } from "./everestUtils"
@@ -176,9 +177,9 @@ export const expeditionMethod = {
         ]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(dev, tx, txArgs, revertErr)
         } else {
-            await executeTx(tx, txArgs)
+            await executeTx(dev, tx, txArgs, { gasLimit: 1000000 })
         }
     },
     addExpeditionFunds: async ({
@@ -197,10 +198,10 @@ export const expeditionMethod = {
         const txArgs = [tokenAddress, amount]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(user, tx, txArgs, revertErr)
         } else {
             const eventArgs = [tokenAddress, amount]
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.ExpeditionFundsAdded, eventArgs, true)
+            await executeTxExpectEvent(user, tx, txArgs, expedition, EVENT.Expedition.ExpeditionFundsAdded, eventArgs, true)
         }
     },
     recalculateExpeditionEmissions: async ({
@@ -231,9 +232,9 @@ export const expeditionMethod = {
         }
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(dev, tx, txArgs, revertErr)
         } else {
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.ExpeditionEmissionsRecalculated, null, true)
+            await executeTxExpectEvent(dev, tx, txArgs, expedition, EVENT.Expedition.ExpeditionEmissionsRecalculated, null, true)
         }
     },
     disableExpedition: async ({
@@ -248,9 +249,9 @@ export const expeditionMethod = {
         const txArgs = [] as any[]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(user, tx, txArgs, revertErr)
         } else {
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.ExpeditionDisabled, null, true)
+            await executeTxExpectEvent(user, tx, txArgs, expedition, EVENT.Expedition.ExpeditionDisabled, null, true)
         }
     },
     enableExpedition: async ({
@@ -265,9 +266,9 @@ export const expeditionMethod = {
         const txArgs = [] as any[]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(user, tx, txArgs, revertErr)
         } else {
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.ExpeditionEnabled, null, true)
+            await executeTxExpectEvent(user, tx, txArgs, expedition, EVENT.Expedition.ExpeditionEnabled, null, true)
         }
     },
     rollover: async ({
@@ -277,14 +278,15 @@ export const expeditionMethod = {
         user?: SignerWithAddress,
         revertErr?: string,
     }) => {
+        const { dev } = await ethers.getNamedSigners()
         const expedition = await getExpedition()
         const tx = user != null ? expedition.connect(user).rollover : expedition.rollover
         const txArgs = [] as any[]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(user || dev, tx, txArgs, revertErr)
         } else {
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.Rollover, null, false)
+            await executeTxExpectEvent(user || dev, tx, txArgs, expedition, EVENT.Expedition.Rollover, null, false)
         }
     },
     syncEverestAmount: async ({
@@ -299,9 +301,9 @@ export const expeditionMethod = {
         const txArgs = [] as any[]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(user, tx, txArgs, revertErr)
         } else {
-            await executeTx(tx, txArgs)
+            await executeTx(user, tx, txArgs)
         }
     },
     selectDeity: async ({
@@ -318,11 +320,11 @@ export const expeditionMethod = {
         const txArgs = [deity]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(user, tx, txArgs, revertErr)
         } else {
             const expeditionRound = await elevationHelperGet.roundNumber(EXPEDITION)
             const eventArgs = [user.address, deity, expeditionRound]
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.DeitySelected, eventArgs, true)
+            await executeTxExpectEvent(user, tx, txArgs, expedition, EVENT.Expedition.DeitySelected, eventArgs, true)
         }
     },
     selectSafetyFactor: async ({
@@ -339,10 +341,10 @@ export const expeditionMethod = {
         const txArgs = [safetyFactor]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(user, tx, txArgs, revertErr)
         } else {
             const eventArgs = [user.address, safetyFactor]
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.SafetyFactorSelected, eventArgs, true)
+            await executeTxExpectEvent(user, tx, txArgs, expedition, EVENT.Expedition.SafetyFactorSelected, eventArgs, true)
         }
     },
     selectDeityAndSafetyFactor: async ({
@@ -361,10 +363,10 @@ export const expeditionMethod = {
         const txArgs = [deity, safetyFactor]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(user, tx, txArgs, revertErr)
         } else {
             const eventArgs = [user.address, safetyFactor]
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.SafetyFactorSelected, eventArgs, true)
+            await executeTxExpectEvent(user, tx, txArgs, expedition, EVENT.Expedition.SafetyFactorSelected, eventArgs, true)
         }
     },
     joinExpedition: async ({
@@ -379,11 +381,11 @@ export const expeditionMethod = {
         const txArgs = [] as any[]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(user, tx, txArgs, revertErr)
         } else {
             const userExpeditionInfo = await expeditionGet.userExpeditionInfo(user.address)
             const eventArgs = [user.address, userExpeditionInfo.deity, userExpeditionInfo.safetyFactor, userExpeditionInfo.everestOwned]
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.UserJoinedExpedition, eventArgs, true)
+            await executeTxExpectEvent(user, tx, txArgs, expedition, EVENT.Expedition.UserJoinedExpedition, eventArgs, true)
         }
     },
     harvestExpedition: async ({
@@ -398,11 +400,11 @@ export const expeditionMethod = {
         const txArgs = [] as any[]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(user, tx, txArgs, revertErr)
         } else {
             const expectedRewards = await expeditionGet.rewards(user.address)
             const eventArgs = [user.address, expectedRewards.summit, expectedRewards.usdc]
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.UserHarvestedExpedition, eventArgs, true)
+            await executeTxExpectEvent(user, tx, txArgs, expedition, EVENT.Expedition.UserHarvestedExpedition, eventArgs, true)
         }
     },
 }
@@ -499,10 +501,10 @@ export const expeditionSetParams = {
         const txArgs = [expeditionDeityWinningsMult]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(dev, tx, txArgs, revertErr)
         } else {
             const eventArgs = [expeditionDeityWinningsMult]
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.SetExpeditionDeityWinningsMult, eventArgs, true)
+            await executeTxExpectEvent(dev, tx, txArgs, expedition, EVENT.Expedition.SetExpeditionDeityWinningsMult, eventArgs, true)
         }
     },
     setExpeditionRunwayRounds: async ({
@@ -519,10 +521,10 @@ export const expeditionSetParams = {
         const txArgs = [expeditionRunwayRounds]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(dev, tx, txArgs, revertErr)
         } else {
             const eventArgs = [expeditionRunwayRounds]
-            await executeTxExpectEvent(tx, txArgs, expedition, EVENT.Expedition.SetExpeditionRunwayRounds, eventArgs, true)
+            await executeTxExpectEvent(dev, tx, txArgs, expedition, EVENT.Expedition.SetExpeditionRunwayRounds, eventArgs, true)
         }
     },
 }

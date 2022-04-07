@@ -1,0 +1,42 @@
+{
+  "MAI-USDC": {
+    "token": "0x160532d2536175d65c03b97b0630a9802c274dad",
+    "passthroughContract": "0xdB96b1E669eA2d4F53C73725A176deC34Ea33E0e",
+    "targetVaultContract": "0xBF65023BcF48Ad0ab5537Ea39C9242de499386c9"
+  },
+  "QI-MATIC": {
+    "token": "0x9a8b2601760814019b7e6ee0052e25f1c623d1e6",
+    "passthroughContract": "0xFE89e7CF5CCBD46f47E83de119054F3D57B7C085",
+    "targetVaultContract": "0x944A5C12cD4399ABC6883fF1ba40A14c23B2Fd37"
+  },
+  "BIFI MAXI": {
+    "token": "0xFbdd194376de19a88118e84E279b977f165d01b8",
+    "passthroughContract": "0x26a58511Ec75b157827eaa91BA3003D9b5de49Cf",
+    "targetVaultContract": "0xfEcf784F48125ccb7d8855cdda7C5ED6b5024Cb3"
+  },
+  "QUICK": {
+    "token": "0x831753DD7087CaC61aB5644b308642cc1c33Dc13",
+    "passthroughContract": "0x97521b4EA7b053b705bDfB70C3FCcBE799fFad96",
+    "targetVaultContract": "0x659418cc3cf755f5367a51adb586a7f770da6d29"
+  },
+  "MATIC-USDC": {
+    "token": "0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827",
+    "passthroughContract": "0x12b90A81228c692C64aAE2C6B53cA80c412f1ae9",
+    "targetVaultContract": "0xC1A2e8274D390b67A7136708203D71BF3877f158"
+  },
+  "ETH-MATIC": {
+    "token": "0xadbf1854e5883eb8aa7baf50705338739e558e5b",
+    "passthroughContract": "0x3F551837465817c2Aae7238538cA57A38f96FE5C",
+    "targetVaultContract": "0xBF65023BcF48Ad0ab5537Ea39C9242de499386c9"
+  },
+  "aTriCrypto": {
+    "token": "0xdad97f7713ae9437fa9249920ec8507e5fbb23d3",
+    "passthroughContract": "0x1d8500d7A6E438A84Fa400Ec4ca9b331af18A954",
+    "targetVaultContract": "0x5A0801BAd20B6c62d86C566ca90688A6b9ea1d3f"
+  },
+  "EURt-DAI-USDC-USDT": {
+    "token": "0x600743B1d8A96438bD46836fD34977a00293f6Aa",
+    "passthroughContract": "0xF88Be46c17EA66713D73E8A0d59f9c688ab6Cd99",
+    "targetVaultContract": "0x108c7a293162Adff86DA216AB5F91e56723125dc"
+  }
+}

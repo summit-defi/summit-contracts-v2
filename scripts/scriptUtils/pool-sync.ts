@@ -1,5 +1,5 @@
 import { ethers, getChainId } from "hardhat"
-import { PoolConfig, getElevationName, promiseSequenceMap, replaceSummitAddresses, subCartGet, cartographerGet, getSummitToken, cartographerMethod, cartographerSetParam, getEverestToken, ZEROADD, getPassthroughStrategy, getCartographer, allElevationPromiseSequenceMap, Contracts } from "../../utils"
+import { PoolConfig, getElevationName, promiseSequenceMap, replaceSummitAddresses, subCartGet, cartographerGet, getSummitToken, cartographerMethod, cartographerSetParam, getEverestToken, ZEROADD, getPassthroughStrategy, getCartographer, allElevationPromiseSequenceMap, Contracts, getWrittenContractAddress } from "../../utils"
 import { createPassthroughStrategy } from "./passthrough-strategy"
 
 export const syncPools = async ({
@@ -15,8 +15,9 @@ export const syncPools = async ({
 }) => {
     const { dev } = await ethers.getNamedSigners()
     const summitToken = await getSummitToken()
-    const everestToken = await getEverestToken()
     const chainId = await getChainId()
+    const summitLpAddress = getWrittenContractAddress(chainId, 'summitLpToken')
+    const everestToken = await getEverestToken()
 
     await promiseSequenceMap(
         poolConfigs,
@@ -38,7 +39,7 @@ export const syncPools = async ({
 
             
             // Pool Token / LP Address
-            const tokenAddress = replaceSummitAddresses(configToken, summitToken.address, everestToken.address)
+            const tokenAddress = replaceSummitAddresses(configToken, summitToken.address, summitLpAddress, everestToken.address)
             console.log(`\n\n\n== POOL: ${configName} - ${tokenAddress} ==`)
 
 
@@ -138,7 +139,6 @@ export const syncPools = async ({
 
 
 
-            // const dryRun = true
             // Passthrough Strategy, create it if need be
             console.log('\n-- Passthrough Strategy --')
             const {
@@ -153,10 +153,13 @@ export const syncPools = async ({
                 target: ZEROADD
             }
 
-            const cartPassthroughStrategy = await cartographerGet.tokenPassthroughStrategy(tokenAddress)
-            const cartPassthroughStrategyVault = cartPassthroughStrategy === ZEROADD ?
+            const cartPassthroughStrategy = ZEROADD // await cartographerGet.tokenPassthroughStrategy(tokenAddress)
+            let cartPassthroughStrategyVault = null
+            try {
+                cartPassthroughStrategyVault = cartPassthroughStrategy === ZEROADD ?
                 ZEROADD :
                 await (await ethers.getContractAt(Contracts.BeefyVaultPassthrough, cartPassthroughStrategy)).vault()
+            } catch (e) {}
                 
             console.log({
                 configTargetVaultContract,
@@ -169,7 +172,7 @@ export const syncPools = async ({
                 let passthroughStrategyContractAddress: string | undefined | null
                 if (existingTargetVaultContract !== configTargetVaultContract) {
                     console.log(`\t\tCreate passthrough strategy`)
-                    passthroughStrategyContractAddress = await createPassthroughStrategy(poolConfig, summitToken.address, everestToken.address)
+                    passthroughStrategyContractAddress = await createPassthroughStrategy(poolConfig, summitToken.address, summitLpAddress, everestToken.address)
                 } else {
                     console.log(`\t\tPassthrough strategy already created: ${existingPassthroughContract}`)
                     passthroughStrategyContractAddress = existingPassthroughContract

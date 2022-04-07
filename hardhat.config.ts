@@ -90,6 +90,14 @@ const config: HardhatUserConfig = {
       gasMultiplier: 2,
       accounts: { mnemonic: mnemonics.ftm_testnet },
       tags: ['MAINNET'],
+    },
+    polygon_mainnet: {
+      url: "https://polygon-rpc.com/",
+      chainId: 137,
+      gasPrice: ethers.utils.parseUnits('100', 'gwei').toNumber(),
+      gasMultiplier: 2,
+      accounts: { mnemonic: mnemonics.ftm_testnet },
+      tags: ['MAINNET'],
     }
   },
   paths: {
@@ -157,7 +165,7 @@ const config: HardhatUserConfig = {
     }
   },
   etherscan: {
-    apiKey: apiKey.ftmscan
+    apiKey: apiKey.polygon
     // bsc: apiKey.bscscan,
     // bscTestnet: apiKey.bscscan,
     // opera: apiKey.ftmscan,

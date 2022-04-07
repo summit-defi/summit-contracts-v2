@@ -60,9 +60,9 @@ export const erc20Method = {
         const txArgs = [recipientAddress, amount]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(user, tx, txArgs, revertErr)
         } else {
-            await executeTxExpectEvent(tx, txArgs, token, 'Transfer', [user.address, recipientAddress, amount], true)
+            await executeTxExpectEvent(user, tx, txArgs, token, 'Transfer', [user.address, recipientAddress, amount], true)
         }
     },
     approve: async ({
@@ -78,7 +78,7 @@ export const erc20Method = {
         const tx = token.connect(user).approve
         const txArgs = [approvalAddress, INF_APPROVE]
         
-        await executeTx(tx, txArgs)
+        await executeTx(user, tx, txArgs)
     },
     dummyMint: async ({
         user,
@@ -93,6 +93,6 @@ export const erc20Method = {
         const tx = token.connect(user).mint
         const txArgs = [user.address, amount]
         
-        await executeTx(tx, txArgs)
+        await executeTx(user, tx, txArgs)
     },
 }

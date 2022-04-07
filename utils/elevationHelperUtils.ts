@@ -63,10 +63,10 @@ export const elevationHelperMethod = {
         const txArgs = [rngModule]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(dev, tx, txArgs, revertErr)
         } else {
             const eventArgs = [rngModule]
-            await executeTxExpectEvent(tx, txArgs, elevationHelper, EVENT.ElevationHelper.UpgradeSummitRNGModule, eventArgs, false)
+            await executeTxExpectEvent(dev, tx, txArgs, elevationHelper, EVENT.ElevationHelper.UpgradeSummitRNGModule, eventArgs, false)
         }
     },
     setElevationRoundDurationMult: async ({
@@ -102,10 +102,10 @@ export const elevationHelperMethod = {
         }
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(dev, tx, txArgs, revertErr)
         } else {
             const eventArgs = [elevation, roundDurationMult]
-            await executeTxExpectEvent(tx, txArgs, elevationHelper, EVENT.ElevationHelper.SetElevationRoundDurationMult, eventArgs, false)
+            await executeTxExpectEvent(dev, tx, txArgs, elevationHelper, EVENT.ElevationHelper.SetElevationRoundDurationMult, eventArgs, false)
         }
     },
     setElevationAllocMultiplier: async ({
@@ -124,10 +124,10 @@ export const elevationHelperMethod = {
         const txArgs = [elevation, allocMultiplier]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(dev, tx, txArgs, revertErr)
         } else {
             const eventArgs = [elevation, allocMultiplier]
-            await executeTxExpectEvent(tx, txArgs, elevationHelper, EVENT.ElevationHelper.SetElevationAllocMultiplier, eventArgs, false)
+            await executeTxExpectEvent(dev, tx, txArgs, elevationHelper, EVENT.ElevationHelper.SetElevationAllocMultiplier, eventArgs, false)
         }
     },
 }

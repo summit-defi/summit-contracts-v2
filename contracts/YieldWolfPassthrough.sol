@@ -79,6 +79,9 @@ contract YieldWolfPassthrough is IPassthrough, Ownable {
     function token() external view override returns (IERC20) {
         return passthroughToken;
     }
+    function vault() public view returns (address) {
+        return address(yieldWolf);
+    }
 
     /// @dev Management of extra earn tokens
     function getExtraEarnTokens() public view returns (address[] memory) {
@@ -126,7 +129,11 @@ contract YieldWolfPassthrough is IPassthrough, Ownable {
     {
         uint256 cartographerBalance = passthroughToken.balanceOf(cartographer);
         passthroughToken.safeTransferFrom(cartographer, address(this), cartographerBalance);
-        yieldWolf.deposit(yieldWolfPid, cartographerBalance);
+
+        if (cartographerBalance > 0) {
+            yieldWolf.deposit(yieldWolfPid, cartographerBalance);
+        }
+
         balance = cartographerBalance;
     }
 
@@ -199,7 +206,9 @@ contract YieldWolfPassthrough is IPassthrough, Ownable {
         external override
         onlyCartographer
     {
-        yieldWolf.withdraw(yieldWolfPid, type(uint256).max);
+        if (vaultBalance() > 0) {
+            yieldWolf.withdraw(yieldWolfPid, type(uint256).max);
+        }
         
         uint256 tokenBalance = passthroughToken.balanceOf(address(this));
 

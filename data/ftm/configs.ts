@@ -87,7 +87,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'TSHARE-FTM',
         token: '0x4733bc45ef91cf7ccecaeedb794727075fb209f2',
-        allocation: 600,
+        allocation: 400,
         elevations: {
             OASIS: {
                 exists: true,
@@ -147,7 +147,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'Fidelio Duetto',
         token: '0xcde5a11a4acb4ee4c805352cec57e236bdbc3837',
-        allocation: 200,
+        allocation: 300,
         elevations: {
             OASIS: {
                 exists: true,
@@ -177,7 +177,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'The Grand Orchestra',
         token: '0xd47d2791d3b46f9452709fa41855a045304d6f9d',
-        allocation: 200,
+        allocation: 300,
         elevations: {
             OASIS: {
                 exists: true,
@@ -297,7 +297,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: '2SHARES-FTM',
         token: '0x6398ACBBAB2561553a9e458Ab67dCFbD58944e52',
-        allocation: 400,
+        allocation: 300,
         elevations: {
             OASIS: {
                 exists: true,
@@ -327,7 +327,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: '2OMB-FTM',
         token: '0xbdC7DFb7B88183e87f003ca6B5a2F81202343478',
-        allocation: 600,
+        allocation: 400,
         elevations: {
             OASIS: {
                 exists: true,
@@ -357,7 +357,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'PAE-FTM',
         token: '0x2DC234DbfC085DdbC36a6EACC061D7333Cd397b0',
-        allocation: 100,
+        allocation: 250,
         elevations: {
             OASIS: {
                 exists: true,
@@ -414,43 +414,13 @@ export const ftmPools: PoolConfig[] = [
             target: '0xb97C963834319e1E07d4F241F1F42f6a41CAEB85',
         },
     },
-    // {
-    //     name: 'DANTE-SYMPHONY',
-    //     token: '0xc042EF6cA08576BdFb57d3055A7654344fd153E4',
-    //     allocation: 500,
-    //     elevations: {
-    //         OASIS: {
-    //             exists: false,
-    //             live: false,
-    //         },
-    //         PLAINS: {
-    //             exists: false,
-    //             live: false,
-    //         },
-    //         MESA: {
-    //             exists: false,
-    //             live: false,
-    //         },
-    //         SUMMIT: {
-    //             exists: false,
-    //             live: false,
-    //         },
-    //     },
-    //     taxBP: 700,
-    //     depositFeeBP: 0,
-    //     native: false,
-    //     passthroughStrategy: {
-    //         type: PassthroughType.BeefyVaultV6,
-    //         target: '0xDc1b4e4Ff41bC392f1BBCdcE699d5aB3E3de9E66',
-    //     },
-    // },
 
     {
         name: 'BOO-xBOO',
         getUrl: 'https://solidly.exchange/liquidity/create',
         passthroughUrl: 'https://yieldwolf.finance/fantom/solidexfinance/431',
         token: '0x5804F6C40f44cF7593F73cf3aa16F7037213A623',
-        allocation: 500,
+        allocation: 200,
         elevations: {
             OASIS: {
                 exists: true,
@@ -483,7 +453,7 @@ export const ftmPools: PoolConfig[] = [
         getUrl: 'https://solidly.exchange/liquidity/create',
         passthroughUrl: 'https://yieldwolf.finance/fantom/solidexfinance/419',
         token: '0xbcab7d083Cf6a01e0DdA9ed7F8a02b47d125e682',
-        allocation: 100,
+        allocation: 50,
         elevations: {
             OASIS: {
                 exists: true,
@@ -578,60 +548,27 @@ export const ftmPools: PoolConfig[] = [
         },
     },
     {
-        name: 'TOMB-FTM',
-        getUrl: 'https://solidly.exchange/liquidity/create',
-        passthroughUrl: 'https://yieldwolf.finance/fantom/solidexfinance/421',
-        token: '0x60a861Cd30778678E3d613db96139440Bd333143',
-        allocation: 500,
-        elevations: {
-            OASIS: {
-                exists: false,
-                live: false,
-            },
-            PLAINS: {
-                exists: false,
-                live: false,
-            },
-            MESA: {
-                exists: false,
-                live: false,
-            },
-            SUMMIT: {
-                exists: false,
-                live: false,
-            },
-        },
-        taxBP: 700,
-        depositFeeBP: 0,
-        native: false,
-        passthroughStrategy: {
-            type: PassthroughType.YieldWolf,
-            target: '0x876F890135091381c23Be437fA1cec2251B7c117',
-            pid: 421,
-        },
-    },
-    {
         name: 'LQDR-FTM',
-        getUrl: 'https://solidly.exchange/liquidity/create',
-        passthroughUrl: 'https://yieldwolf.finance/fantom/solidexfinance/425',
-        token: '0x9861B8a9Acc9B4f249981164bFe7f84202068bfE',
-        allocation: 500,
+        getUrl: 'https://swap.spiritswap.finance/#/add/0x10b620b2dbAC4Faa7D7FFD71Da486f5D44cd86f9/0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83',
+        passthroughUrl: 'https://yieldwolf.finance/fantom/liquiddriver/205',
+        token: '0x4Fe6f19031239F105F753D1DF8A0d24857D0cAA2',
+        allocation: 300,
         elevations: {
             OASIS: {
-                exists: false,
-                live: false,
+                exists: true,
+                live: true,
             },
             PLAINS: {
-                exists: false,
-                live: false,
+                exists: true,
+                live: true,
             },
             MESA: {
-                exists: false,
-                live: false,
+                exists: true,
+                live: true,
             },
             SUMMIT: {
-                exists: false,
-                live: false,
+                exists: true,
+                live: true,
             },
         },
         taxBP: 700,
@@ -640,7 +577,7 @@ export const ftmPools: PoolConfig[] = [
         passthroughStrategy: {
             type: PassthroughType.YieldWolf,
             target: '0x876F890135091381c23Be437fA1cec2251B7c117',
-            pid: 425,
+            pid: 205,
         },
     },
 ]

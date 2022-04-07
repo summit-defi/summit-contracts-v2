@@ -35,7 +35,7 @@ export const pausableMethod = {
             ).to.be.reverted
         } else {
             const eventArgs = [pauserRole, pauserAddress, admin.address]
-            await executeTxExpectEvent(tx, txArgs, contract, 'RoleGranted', eventArgs, false)
+            await executeTxExpectEvent(admin, tx, txArgs, contract, 'RoleGranted', eventArgs, false)
         }
     },
     pause: async ({
@@ -52,10 +52,10 @@ export const pausableMethod = {
         const txArgs = [] as any[]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(admin, tx, txArgs, revertErr)
         } else {
             const eventArgs = [admin.address]
-            await executeTxExpectEvent(tx, txArgs, contract, 'Paused', eventArgs, false)
+            await executeTxExpectEvent(admin, tx, txArgs, contract, 'Paused', eventArgs, false)
         }
     },
     unpause: async ({
@@ -72,10 +72,10 @@ export const pausableMethod = {
         const txArgs = [] as any[]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(admin, tx, txArgs, revertErr)
         } else {
             const eventArgs = [admin.address]
-            await executeTxExpectEvent(tx, txArgs, contract, 'Unpaused', eventArgs, false)
+            await executeTxExpectEvent(admin, tx, txArgs, contract, 'Unpaused', eventArgs, false)
         }
     },
 }

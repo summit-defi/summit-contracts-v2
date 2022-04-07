@@ -148,13 +148,14 @@ async function main() {
 
 */
 
-cron.schedule('2 58 1-23/4 * * *', () => {
+cron.schedule('58 1,3,5,7,9,11,13,15,17,19,21,23 * * *', () => {
   console.log('starting seeder');
+  console.log('EVEN HOUR')
   main()
      .catch(error => {
          console.error(error);
      });
-}).start();
+})
 
 // main()
 //     .catch(err => {

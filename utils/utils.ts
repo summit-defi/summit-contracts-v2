@@ -5,7 +5,7 @@ import { chainTreasuryAddress, EVM, getElevationName, hardhatChainId } from "."
 import { getCreate2Address } from '@ethersproject/address';
 import { pack, keccak256 } from '@ethersproject/solidity';
 import fs from 'fs'
-import { chainExpedTreasuryAddress, chainLpGeneratorAddress, mainnetNetworks, NamedElevations, networkExportsAddresses, networksOnWhichToVerify, networksWhichExpectUsersToHaveSummit, networksWhichRequireDummies, networkWrappedNativeTokens } from "./constants"
+import { chainExpedTreasuryAddress, chainLpGeneratorAddress, mainnetNetworks, NamedElevations, networkAMMFactory, networkAMMPairCodeHash, networkExportsAddresses, networksOnWhichToVerify, networksWhichExpectUsersToHaveSummit, networksWhichRequireDummies, networkUsdcAddress, networkWrappedNativeTokens } from "./constants"
 import { JSONQueuedTransaction, TimelockTransactionType, TimelockTxParams, TimelockTxTypeName } from "./timelockUtils";
 
 // ETHERS
@@ -187,6 +187,12 @@ export const chainIdExpectsUserToHaveSummit = (chainId: string) => {
 export const chainIdRequiresDummies = (chainId: string): boolean => {
     return networksWhichRequireDummies.includes(parseInt(chainId))
 }
+export const chainIdAMMFactory = (chainId: string): string | null => {
+    return networkAMMFactory[chainId] || null
+}
+export const chainIdAMMPairCodeHash = (chainId: string): string | null => {
+    return networkAMMPairCodeHash[chainId] || null
+}
 export const chainIdWrappedNativeToken = (chainId: string): string | null => {
     return networkWrappedNativeTokens[chainId] || null
 }
@@ -195,6 +201,9 @@ export const chainIdExportsAddresses = (chainId: string) => {
 }
 export const chainIdIsMainnet = (chainId: string) => {
     return mainnetNetworks.includes(parseInt(chainId))
+}
+export const chainIdUsdcAddress = (chainId: string) => {
+    return networkUsdcAddress[chainId] || null
 }
 export const getChainTreasuryAddress = (chainId: string) => {
     return chainTreasuryAddress[chainId]
@@ -230,12 +239,18 @@ export const writeContractAddresses = (chainId: string, addresses: Array<[string
     const output = JSON.stringify(contracts, null, 2)
     fs.writeFileSync('./data/contracts.json', output)
 }
+export const getWrittenContractAddress = (chainId: string, contractName: string) => {
+    const contractsJSON = fs.readFileSync('./data/contracts.json')
+    const contracts = JSON.parse(contractsJSON.toString())
+    return contracts[contractName][chainId]
+}
 
 // SEEDING
 
 // TOKEN ADDRESS
-export const replaceSummitAddresses = (address: string, summitAddress: string, everestAddress: string): string => {
+export const replaceSummitAddresses = (address: string, summitAddress: string, summitLpAddress: string, everestAddress: string): string => {
     if (address === '0xSUMMIT') return summitAddress
+    if (address === '0xSUMMITLP') return summitLpAddress
     if (address === '0xEVEREST') return everestAddress
     return address
 }
@@ -247,6 +262,7 @@ export const getChainName = (chainId: string) => {
         case '56': return 'bsc'
         case '97': return 'bsc_testnet'
         case '31337': return 'hardhat'
+        case '137': return 'polygon'
         default: return 'error'
     }
 }

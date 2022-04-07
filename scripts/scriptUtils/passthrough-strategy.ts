@@ -2,12 +2,12 @@ import { ContractFactory } from '@ethersproject/contracts'
 import hre, { ethers, getChainId, run } from 'hardhat'
 import { delay, failableVerify, getCartographer, notHardhat, PassthroughType, PoolConfig, replaceSummitAddresses, writePassthroughStrategy, ZEROADD } from '../../utils'
 
-export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress: string, everestAddress: string): Promise<string | undefined> => {
+export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress: string, summitLpAddress: string, everestAddress: string): Promise<string | undefined> => {
     const chainId = await getChainId()
     const { dev } = await ethers.getNamedSigners()
     const Cartographer = await getCartographer()
-    const tokenAddress = replaceSummitAddresses(pool.token, summitAddress, everestAddress)
-        
+    const tokenAddress = replaceSummitAddresses(pool.token, summitAddress, summitLpAddress, everestAddress)
+
     // Early exit if no target passthrough strategy
     if (pool.passthroughStrategy == null) return
 
@@ -15,19 +15,20 @@ export const createPassthroughStrategy = async (pool: PoolConfig, summitAddress:
     
     console.log(`\tCreate Passthrough Strategy: ${pool.name}, type: ${type}`)
 
-    // // Early exit if passthrough strategy exists
-    // const tokenPassthroughStrategy = await Cartographer.tokenPassthroughStrategy(tokenAddress)
-    // if (tokenPassthroughStrategy != ZEROADD) {
-    //     console.log(`\t\talready exists.\n`)
-    //     const tokenPassthroughStrategy = await Cartographer.tokenPassthroughStrategy(tokenAddress)
-    //     writePassthroughStrategy(
-    //         chainId,
-    //         pool.name,
-    //         tokenAddress,
-    //         tokenPassthroughStrategy,
-    //     )
-    //     return
-    // }
+    // Early exit if passthrough strategy exists
+    const tokenPassthroughStrategy = await Cartographer.tokenPassthroughStrategy(tokenAddress)
+    if (tokenPassthroughStrategy != ZEROADD) {
+        console.log(`\t\talready exists.\n`)
+        const tokenPassthroughStrategy = await Cartographer.tokenPassthroughStrategy(tokenAddress)
+        writePassthroughStrategy(
+            chainId,
+            pool.name,
+            tokenAddress,
+            tokenPassthroughStrategy,
+            target
+        )
+        return
+    }
 
     // Set passthrough creation variables
     let passthroughFactory: ContractFactory | null = null

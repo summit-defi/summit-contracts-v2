@@ -98,9 +98,9 @@ export const summitGlacierMethod = {
         ]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(dev, tx, txArgs, revertErr)
         } else {
-            await executeTx(tx, txArgs)
+            await executeTx(dev, tx, txArgs)
         }
     },
     harvestWinnings: async ({
@@ -121,10 +121,10 @@ export const summitGlacierMethod = {
         const txArgs = [epoch, amount, lockForEverest]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(user, tx, txArgs, revertErr)
         } else {
             const eventArgs = [user.address, epoch, amount, lockForEverest]
-            await executeTxExpectEvent(tx, txArgs, summitGlacier, EVENT.SummitGlacier.WinningsHarvested, eventArgs, true)
+            await executeTxExpectEvent(user, tx, txArgs, summitGlacier, EVENT.SummitGlacier.WinningsHarvested, eventArgs, true)
         }
     },
     setYieldLockEpochCount: async ({
@@ -141,10 +141,10 @@ export const summitGlacierMethod = {
         const txArgs = [yieldLockEpochCount]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(dev, tx, txArgs, revertErr)
         } else {
             const eventArgs = [yieldLockEpochCount]
-            await executeTxExpectEvent(tx, txArgs, summitGlacier, EVENT.SummitGlacier.SetYieldLockEpochCount, eventArgs, true)
+            await executeTxExpectEvent(dev, tx, txArgs, summitGlacier, EVENT.SummitGlacier.SetYieldLockEpochCount, eventArgs, true)
         }
     },
     setPanic: async ({
@@ -161,10 +161,10 @@ export const summitGlacierMethod = {
         const txArgs = [panic]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(dev, tx, txArgs, revertErr)
         } else {
             const eventArgs = [panic]
-            await executeTxExpectEvent(tx, txArgs, summitGlacier, EVENT.SummitGlacier.SetPanic, eventArgs, true)
+            await executeTxExpectEvent(dev, tx, txArgs, summitGlacier, EVENT.SummitGlacier.SetPanic, eventArgs, true)
         }
     },
 }

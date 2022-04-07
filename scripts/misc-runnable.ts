@@ -1,10 +1,11 @@
 import inquirer from 'inquirer'
-import { ethers, getChainId } from "hardhat";
+import { ethers, getChainId, run } from "hardhat";
 import { getPoolConfigs } from "../data";
-import { cartographerMethod, cartographerSetParam, elevationHelperMethod, expeditionMethod, MESA, PLAINS, SUMMIT } from "../utils";
+import { cartographerMethod, cartographerSetParam, elevationHelperMethod, expeditionMethod, failableVerify, MESA, PLAINS, SUMMIT, writeContractAddresses } from "../utils";
 import { syncPools, syncTimelockFunctionSpecificDelays } from "./scriptUtils";
 
 enum MiscRunnable {
+    OneOff = 'OneOff',
     SyncTimelockFunctionSpecificDelays = 'SyncTimelockFunctionSpecificDelays',
     SyncPools = 'SyncPools',
     RecalculateExpeditionEmissions = 'RecalculateExpeditionEmissions',
@@ -14,7 +15,7 @@ enum MiscRunnable {
 }
 
 // CONFIGS
-const runnable: MiscRunnable = MiscRunnable.RetireTokenPassthroughStrategies
+const runnable: MiscRunnable = MiscRunnable.OneOff
 const timelock = true
 const dryRun = false
 
@@ -24,6 +25,7 @@ async function main() {
 
     // CONFIRM ACTION
     const runnableConfirmed = (await inquirer.prompt([
+
         {
             type: 'confirm',
             message: `${runnable}${timelock ? ` - Call as ${dryRun ? 'DRY RUN ' : ''}Timelock` : ''}`,
@@ -34,6 +36,24 @@ async function main() {
     if (!runnableConfirmed) {
         console.log('Tx Not Confirmed, Exiting')
         return
+    }
+
+    if (runnable === MiscRunnable.OneOff) {
+
+        // DEPLOY MULTICALL
+        await run("compile")
+        const chainId = await getChainId()
+        const multicallFactory = await ethers.getContractFactory('Multicall')
+        const multicallContract = await multicallFactory.connect(dev).deploy()
+        await multicallContract.deployTransaction.wait(10)
+        await failableVerify({
+            address: multicallContract.address,
+            constructorArguments: [],
+        })
+        writeContractAddresses(chainId, [
+            ['multicall', multicallContract.address]
+        ])
+
     }
 
     if (runnable === MiscRunnable.SyncTimelockFunctionSpecificDelays) {
@@ -47,7 +67,7 @@ async function main() {
             poolConfigs: mainnetPools,
             callAsTimelock: timelock,
             dryRun,
-            specificPools: ['BOO'],
+            specificPools: ['LQDR-FTM'],
         })
     }
 
@@ -63,21 +83,21 @@ async function main() {
         await elevationHelperMethod.setElevationRoundDurationMult({
             dev,
             elevation: PLAINS,
-            roundDurationMult: 4,
+            roundDurationMult: 2,
             callAsTimelock: timelock,
             dryRun,
         })
         await elevationHelperMethod.setElevationRoundDurationMult({
             dev,
             elevation: MESA,
-            roundDurationMult: 8,
+            roundDurationMult: 2,
             callAsTimelock: timelock,
             dryRun,
         })
         await elevationHelperMethod.setElevationRoundDurationMult({
             dev,
             elevation: SUMMIT,
-            roundDurationMult: 8,
+            roundDurationMult: 2,
             callAsTimelock: timelock,
             dryRun,
         })

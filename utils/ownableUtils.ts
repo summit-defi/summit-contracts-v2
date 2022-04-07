@@ -37,9 +37,9 @@ export const ownableMethod = {
         }
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(dev, tx, txArgs, revertErr)
         } else {
-            await executeTxExpectEvent(tx, txArgs, contract, 'OwnershipTransferred', [currentOwnerAddress, newOwnerAddress], true)
+            await executeTxExpectEvent(dev, tx, txArgs, contract, 'OwnershipTransferred', [currentOwnerAddress, newOwnerAddress], true)
         }
     },
     renounceOwnership: async ({
@@ -56,9 +56,9 @@ export const ownableMethod = {
         const tx = contract.connect(dev).renounceOwnership
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, [], revertErr)
+            await executeTxExpectReversion(dev, tx, [], revertErr)
         } else {
-            await executeTxExpectEvent(tx, [], contract, 'OwnershipTransferred', [currentOwnerAddress, ZEROADD], true)
+            await executeTxExpectEvent(dev, tx, [], contract, 'OwnershipTransferred', [currentOwnerAddress, ZEROADD], true)
         }
     },
 }

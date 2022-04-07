@@ -85,8 +85,8 @@
     "targetVaultContract": "0x876F890135091381c23Be437fA1cec2251B7c117"
   },
   "LQDR-FTM": {
-    "token": "0x9861B8a9Acc9B4f249981164bFe7f84202068bfE",
-    "passthroughContract": "0x4D0B2c08Ba7DcA0274b3E63159539558de9081C1",
+    "token": "0x4Fe6f19031239F105F753D1DF8A0d24857D0cAA2",
+    "passthroughContract": "0xB267C40183af6804ca9C5BdceB2B0C338A0b6eB8",
     "targetVaultContract": "0x876F890135091381c23Be437fA1cec2251B7c117"
   }
 }

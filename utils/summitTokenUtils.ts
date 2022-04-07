@@ -26,9 +26,9 @@ export const summitTokenMethod = {
         const txArgs = [oldSummitAddress]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(dev, tx, txArgs, revertErr)
         } else {
-            await executeTx(tx, txArgs)
+            await executeTx(dev, tx, txArgs)
         }
     },
     tokenSwap: async ({
@@ -45,10 +45,10 @@ export const summitTokenMethod = {
         const txArgs = [oldSummitAmount]
         
         if (revertErr != null) {
-            await executeTxExpectReversion(tx, txArgs, revertErr)
+            await executeTxExpectReversion(user, tx, txArgs, revertErr)
         } else {
             const eventArgs = [user.address, oldSummitAmount, oldSummitAmount.div(10)]
-            await executeTxExpectEvent(tx, txArgs, summitToken, 'SummitTokenSwap', eventArgs, true)
+            await executeTxExpectEvent(user, tx, txArgs, summitToken, 'SummitTokenSwap', eventArgs, true)
         }
     },
 }
