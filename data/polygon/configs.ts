@@ -4,7 +4,7 @@ export const polygonPools: PoolConfig[] = [
     {
         name: 'SUMMIT',
         token: '0xSUMMIT',
-        allocation: 500,
+        allocation: 600,
         elevations: {
             OASIS: {
                 exists: true,
@@ -56,7 +56,7 @@ export const polygonPools: PoolConfig[] = [
     {
         name: 'EVEREST',
         token: '0xEVEREST',
-        allocation: 500,
+        allocation: 700,
         elevations: {
             OASIS: {
                 exists: true,

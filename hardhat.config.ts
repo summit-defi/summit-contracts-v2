@@ -165,7 +165,7 @@ const config: HardhatUserConfig = {
     }
   },
   etherscan: {
-    apiKey: apiKey.polygon
+    apiKey: apiKey.ftmscan
     // bsc: apiKey.bscscan,
     // bscTestnet: apiKey.bscscan,
     // opera: apiKey.ftmscan,

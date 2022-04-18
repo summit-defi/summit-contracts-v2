@@ -22,7 +22,10 @@
     
     "run-misc-runnable:polygon": "npx hardhat run scripts/misc-runnable.ts --network polygon_mainnet && yarn beep || yarn beep",
     "deploy-ecosystem:polygon": "npx hardhat run scripts/deploy-polygon.ts --network polygon_mainnet && yarn beep || yarn beep",
-    "export-addresses:polygon": "npx hardhat run scripts/export-addresses.ts --network polygon_mainnet && yarn beep || yarn beep"
+    "export-addresses:polygon": "npx hardhat run scripts/export-addresses.ts --network polygon_mainnet && yarn beep || yarn beep",
+    "execute-queued-timelock-txs:polygon": "npx hardhat run scripts/execute-queued-timelock-transactions.ts --network polygon_mainnet",
+    "cancel-queued-timelock-txs:polygon": "npx hardhat run scripts/cancel-queued-timelock-transactions.ts --network polygon_mainnet",
+    "manage-queued-timelock-txs:polygon": "npx hardhat run scripts/manage-queued-timelock-transactions.ts --network polygon_mainnet"
   },
   "devDependencies": {
     "@ethersproject/experimental": "^5.5.0",

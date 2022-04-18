@@ -1,6 +1,8 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signers"
 import web3 from "web3"
-import { EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getSummitTrustedSeeder } from "."
+import { Contracts, EVENT, executeTx, executeTxExpectEvent, executeTxExpectReversion, getSummitTrustedSeeder } from "."
+import { TimelockTxSig } from "./timelockConstants"
+import { timelockMethod } from "./timelockUtilsV2"
 
 
 export const getSeeds = (input: string, seeder: string): { unsealedSeed: string, sealedSeed: string } => {
@@ -30,14 +32,30 @@ export const summitTrustedSeederMethod = {
         dev,
         trustedSeeder,
         revertErr,
+        callAsTimelock = false,
+        dryRun = false,
     }: {
         dev: SignerWithAddress,
         trustedSeeder: string,
         revertErr?: string,
+        callAsTimelock?: boolean,
+        dryRun?: boolean,
     }) => {
         const summitTrustedSeeder = await getSummitTrustedSeeder()
         const tx = summitTrustedSeeder.connect(dev).setTrustedSeederAdd
         const txArgs = [trustedSeeder]
+
+        if (callAsTimelock) {
+            const note = `Set Trusted Seeder: ${trustedSeeder}`
+            return await timelockMethod.queue({
+                dev,
+                targetContractName: Contracts.SummitTrustedSeederRNGModule,
+                txName: TimelockTxSig.SummitTrustedSeederRNGModule.SetTrustedSeederAdd,
+                txParams: txArgs,
+                note,
+                dryRun,
+            })
+        }
         
         if (revertErr != null) {
             await executeTxExpectReversion(dev, tx, txArgs, revertErr)

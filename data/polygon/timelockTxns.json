@@ -1,18 +1,46 @@
 {
   "queued": {
+    "0x38a54061e07b3a6952bbe261be239d8ab215ca7216ee540e747ade314923a5d2": {
+      "targetContract": "0x8733820E0097e9289c30764018B9eE5d47E8332B",
+      "value": 0,
+      "signature": "setTokenPassthroughStrategy(address,address)",
+      "data": "0x000000000000000000000000831753dd7087cac61ab5644b308642cc1c33dc1300000000000000000000000097521b4ea7b053b705bdfb70c3fccbe799ffad96",
+      "eta": 1649708977,
+      "rawParams": [
+        "0x831753DD7087CaC61aB5644b308642cc1c33Dc13",
+        "0x97521b4EA7b053b705bDfB70C3FCcBE799fFad96"
+      ],
+      "txHash": "0x38a54061e07b3a6952bbe261be239d8ab215ca7216ee540e747ade314923a5d2",
+      "queueTimestamp": 1649449513,
+      "note": "Set Token Passthrough Strategy: QUICK - 0x97521b4EA7b053b705bDfB70C3FCcBE799fFad96"
+    },
+    "0x37f57307d32d2a30aeea2ed594e8e01fd8afffc279eb4217f37ffc8b0886c469": {
+      "targetContract": "0x3F6dd853A2ac34294Bf10047ed12F795ab8Aee06",
+      "value": 0,
+      "signature": "recalculateExpeditionEmissions()",
+      "data": "0x",
+      "eta": 1650035709,
+      "rawParams": [],
+      "txHash": "0x37f57307d32d2a30aeea2ed594e8e01fd8afffc279eb4217f37ffc8b0886c469",
+      "queueTimestamp": 1650013869,
+      "note": "Recalculate Expedition Emissions"
+    }
+  },
+  "executed": {
     "0x055e9387a201c02554174d252509530eac3418f2020d07572f550eec464ffcbc": {
       "targetContract": "0xAC82350881bCE8C478661A874d0B9164461b52Ec",
       "value": 0,
       "signature": "setFunctionSpecificDelay(string,uint256)",
       "data": "0x00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000093a80000000000000000000000000000000000000000000000000000000000000001873657450656e64696e6741646d696e2861646472657373290000000000000000",
       "eta": 1648714417,
+      "txHash": "0x055e9387a201c02554174d252509530eac3418f2020d07572f550eec464ffcbc",
+      "note": "Set Function Specific Delay: Timelock:setPendingAdmin - 7D",
       "rawParams": [
         "setPendingAdmin(address)",
         604800
       ],
-      "txHash": "0x055e9387a201c02554174d252509530eac3418f2020d07572f550eec464ffcbc",
       "queueTimestamp": 1648692549,
-      "note": "Set Function Specific Delay: Timelock:setPendingAdmin - 7D"
+      "executeTimestamp": 1649407032
     },
     "0xd4f7007bfd4f6e25646fc2d138ca5b45168557c6f155fe46d14656e7177b6e6e": {
       "targetContract": "0xAC82350881bCE8C478661A874d0B9164461b52Ec",
@@ -20,13 +48,14 @@
       "signature": "setFunctionSpecificDelay(string,uint256)",
       "data": "0x00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000093a80000000000000000000000000000000000000000000000000000000000000001a7472616e736665724f776e657273686970286164647265737329000000000000",
       "eta": 1648714449,
+      "txHash": "0xd4f7007bfd4f6e25646fc2d138ca5b45168557c6f155fe46d14656e7177b6e6e",
+      "note": "Set Function Specific Delay: Cartographer:transferOwnership - 7D",
       "rawParams": [
         "transferOwnership(address)",
         604800
       ],
-      "txHash": "0xd4f7007bfd4f6e25646fc2d138ca5b45168557c6f155fe46d14656e7177b6e6e",
       "queueTimestamp": 1648692583,
-      "note": "Set Function Specific Delay: Cartographer:transferOwnership - 7D"
+      "executeTimestamp": 1649407070
     },
     "0x39348bc45177cee474968fa42b4ee9ca83f260a29359a72ddf9534288e3696a7": {
       "targetContract": "0xAC82350881bCE8C478661A874d0B9164461b52Ec",
@@ -34,13 +63,14 @@
       "signature": "setFunctionSpecificDelay(string,uint256)",
       "data": "0x00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000093a80000000000000000000000000000000000000000000000000000000000000001372656e6f756e63654f776e657273686970282900000000000000000000000000",
       "eta": 1648714483,
+      "txHash": "0x39348bc45177cee474968fa42b4ee9ca83f260a29359a72ddf9534288e3696a7",
+      "note": "Set Function Specific Delay: Cartographer:renounceOwnership - 7D",
       "rawParams": [
         "renounceOwnership()",
         604800
       ],
-      "txHash": "0x39348bc45177cee474968fa42b4ee9ca83f260a29359a72ddf9534288e3696a7",
       "queueTimestamp": 1648692619,
-      "note": "Set Function Specific Delay: Cartographer:renounceOwnership - 7D"
+      "executeTimestamp": 1649407106
     },
     "0xaf96930f09dea3d185e517e252cc6dd5a64c8685d9c235e9e9ac0aabfbbab125": {
       "targetContract": "0xAC82350881bCE8C478661A874d0B9164461b52Ec",
@@ -48,13 +78,14 @@
       "signature": "setFunctionSpecificDelay(string,uint256)",
       "data": "0x00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000093a80000000000000000000000000000000000000000000000000000000000000001f6d69677261746553756d6d69744f776e65727368697028616464726573732900",
       "eta": 1648714519,
+      "txHash": "0xaf96930f09dea3d185e517e252cc6dd5a64c8685d9c235e9e9ac0aabfbbab125",
+      "note": "Set Function Specific Delay: Cartographer:migrateSummitOwnership - 7D",
       "rawParams": [
         "migrateSummitOwnership(address)",
         604800
       ],
-      "txHash": "0xaf96930f09dea3d185e517e252cc6dd5a64c8685d9c235e9e9ac0aabfbbab125",
       "queueTimestamp": 1648692657,
-      "note": "Set Function Specific Delay: Cartographer:migrateSummitOwnership - 7D"
+      "executeTimestamp": 1649407146
     },
     "0xac3f71c62f9ba3c222e44c5a12a6dffd341729ac2bb6ee3984c460cd5a5cfdf4": {
       "targetContract": "0xAC82350881bCE8C478661A874d0B9164461b52Ec",
@@ -62,13 +93,14 @@
       "signature": "setFunctionSpecificDelay(string,uint256)",
       "data": "0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000003f480000000000000000000000000000000000000000000000000000000000000002173657445787065646974696f6e547265617375727941646428616464726573732900000000000000000000000000000000000000000000000000000000000000",
       "eta": 1648714557,
+      "txHash": "0xac3f71c62f9ba3c222e44c5a12a6dffd341729ac2bb6ee3984c460cd5a5cfdf4",
+      "note": "Set Function Specific Delay: Cartographer:setExpeditionTreasuryAdd - 3D",
       "rawParams": [
         "setExpeditionTreasuryAdd(address)",
         259200
       ],
-      "txHash": "0xac3f71c62f9ba3c222e44c5a12a6dffd341729ac2bb6ee3984c460cd5a5cfdf4",
       "queueTimestamp": 1648692693,
-      "note": "Set Function Specific Delay: Cartographer:setExpeditionTreasuryAdd - 3D"
+      "executeTimestamp": 1649407188
     },
     "0xd2367e2c04e3b6672f945f44c23be54bc84002219b5a5f4c06b49d875a36ef70": {
       "targetContract": "0xAC82350881bCE8C478661A874d0B9164461b52Ec",
@@ -76,13 +108,14 @@
       "signature": "setFunctionSpecificDelay(string,uint256)",
       "data": "0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000003f480000000000000000000000000000000000000000000000000000000000000001a7365744c7047656e657261746f72416464286164647265737329000000000000",
       "eta": 1648714593,
+      "txHash": "0xd2367e2c04e3b6672f945f44c23be54bc84002219b5a5f4c06b49d875a36ef70",
+      "note": "Set Function Specific Delay: Cartographer:setLpGeneratorAdd - 3D",
       "rawParams": [
         "setLpGeneratorAdd(address)",
         259200
       ],
-      "txHash": "0xd2367e2c04e3b6672f945f44c23be54bc84002219b5a5f4c06b49d875a36ef70",
       "queueTimestamp": 1648692729,
-      "note": "Set Function Specific Delay: Cartographer:setLpGeneratorAdd - 3D"
+      "executeTimestamp": 1649407226
     },
     "0xd4d6d8b6654f4f3227413cbe733e81fe55de2b305e4a12ee138751c111f344a9": {
       "targetContract": "0xAC82350881bCE8C478661A874d0B9164461b52Ec",
@@ -90,13 +123,14 @@
       "signature": "setFunctionSpecificDelay(string,uint256)",
       "data": "0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000003f4800000000000000000000000000000000000000000000000000000000000000020736574546f74616c53756d6d69745065725365636f6e642875696e7432353629",
       "eta": 1648714629,
+      "txHash": "0xd4d6d8b6654f4f3227413cbe733e81fe55de2b305e4a12ee138751c111f344a9",
+      "note": "Set Function Specific Delay: Cartographer:setTotalSummitPerSecond - 3D",
       "rawParams": [
         "setTotalSummitPerSecond(uint256)",
         259200
       ],
-      "txHash": "0xd4d6d8b6654f4f3227413cbe733e81fe55de2b305e4a12ee138751c111f344a9",
       "queueTimestamp": 1648692763,
-      "note": "Set Function Specific Delay: Cartographer:setTotalSummitPerSecond - 3D"
+      "executeTimestamp": 1649407260
     },
     "0x7d84af702c4cf745cc0efc0e975d12df9cff955e93f7207a6e6b9fff11d6d282": {
       "targetContract": "0xAC82350881bCE8C478661A874d0B9164461b52Ec",
@@ -104,13 +138,14 @@
       "signature": "setFunctionSpecificDelay(string,uint256)",
       "data": "0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000003f480000000000000000000000000000000000000000000000000000000000000002c736574546f6b656e506173737468726f756768537472617465677928616464726573732c61646472657373290000000000000000000000000000000000000000",
       "eta": 1648714663,
+      "txHash": "0x7d84af702c4cf745cc0efc0e975d12df9cff955e93f7207a6e6b9fff11d6d282",
+      "note": "Set Function Specific Delay: Cartographer:setTokenPassthroughStrategy - 3D",
       "rawParams": [
         "setTokenPassthroughStrategy(address,address)",
         259200
       ],
-      "txHash": "0x7d84af702c4cf745cc0efc0e975d12df9cff955e93f7207a6e6b9fff11d6d282",
       "queueTimestamp": 1648692803,
-      "note": "Set Function Specific Delay: Cartographer:setTokenPassthroughStrategy - 3D"
+      "executeTimestamp": 1649407294
     },
     "0x0aa9813bc11da8bca1609bf85596b7ea32b2ae5f8d1917c9a5dd59b0499f3aab": {
       "targetContract": "0xAC82350881bCE8C478661A874d0B9164461b52Ec",
@@ -118,13 +153,14 @@
       "signature": "setFunctionSpecificDelay(string,uint256)",
       "data": "0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000003f4800000000000000000000000000000000000000000000000000000000000000027726574697265546f6b656e506173737468726f756768537472617465677928616464726573732900000000000000000000000000000000000000000000000000",
       "eta": 1648714703,
+      "txHash": "0x0aa9813bc11da8bca1609bf85596b7ea32b2ae5f8d1917c9a5dd59b0499f3aab",
+      "note": "Set Function Specific Delay: Cartographer:retireTokenPassthroughStrategy - 3D",
       "rawParams": [
         "retireTokenPassthroughStrategy(address)",
         259200
       ],
-      "txHash": "0x0aa9813bc11da8bca1609bf85596b7ea32b2ae5f8d1917c9a5dd59b0499f3aab",
       "queueTimestamp": 1648692837,
-      "note": "Set Function Specific Delay: Cartographer:retireTokenPassthroughStrategy - 3D"
+      "executeTimestamp": 1649407330
     },
     "0x108774bb363847a2a84b6a6ec2c624da2c27da0d559b1678dc8aeb11fde9366f": {
       "targetContract": "0xAC82350881bCE8C478661A874d0B9164461b52Ec",
@@ -132,13 +168,14 @@
       "signature": "setFunctionSpecificDelay(string,uint256)",
       "data": "0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000003f480000000000000000000000000000000000000000000000000000000000000001f7570677261646553756d6d6974524e474d6f64756c6528616464726573732900",
       "eta": 1648714737,
+      "txHash": "0x108774bb363847a2a84b6a6ec2c624da2c27da0d559b1678dc8aeb11fde9366f",
+      "note": "Set Function Specific Delay: ElevationHelper:upgradeSummitRNGModule - 3D",
       "rawParams": [
         "upgradeSummitRNGModule(address)",
         259200
       ],
-      "txHash": "0x108774bb363847a2a84b6a6ec2c624da2c27da0d559b1678dc8aeb11fde9366f",
       "queueTimestamp": 1648692875,
-      "note": "Set Function Specific Delay: ElevationHelper:upgradeSummitRNGModule - 3D"
+      "executeTimestamp": 1649407364
     },
     "0x55d71d9c24899faf45c008c4d71bf1ff6155496a35783e8cecaa9df356261283": {
       "targetContract": "0xAC82350881bCE8C478661A874d0B9164461b52Ec",
@@ -146,13 +183,14 @@
       "signature": "setFunctionSpecificDelay(string,uint256)",
       "data": "0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000003f480000000000000000000000000000000000000000000000000000000000000001d7365745969656c644c6f636b45706f6368436f756e742875696e743829000000",
       "eta": 1648714775,
+      "txHash": "0x55d71d9c24899faf45c008c4d71bf1ff6155496a35783e8cecaa9df356261283",
+      "note": "Set Function Specific Delay: SummitGlacier:setYieldLockEpochCount - 3D",
       "rawParams": [
         "setYieldLockEpochCount(uint8)",
         259200
       ],
-      "txHash": "0x55d71d9c24899faf45c008c4d71bf1ff6155496a35783e8cecaa9df356261283",
       "queueTimestamp": 1648692915,
-      "note": "Set Function Specific Delay: SummitGlacier:setYieldLockEpochCount - 3D"
+      "executeTimestamp": 1649407398
     },
     "0xe05a7c1f0d916b0631a743b7860b2a276ece97d3a8b899696290c546bbdf94be": {
       "targetContract": "0xAC82350881bCE8C478661A874d0B9164461b52Ec",
@@ -160,13 +198,14 @@
       "signature": "setFunctionSpecificDelay(string,uint256)",
       "data": "0x0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000003f480000000000000000000000000000000000000000000000000000000000000001b736574456c65766174696f6e48656c7065722861646472657373290000000000",
       "eta": 1648714815,
+      "txHash": "0xe05a7c1f0d916b0631a743b7860b2a276ece97d3a8b899696290c546bbdf94be",
+      "note": "Set Function Specific Delay: SummitTrustedSeederRNGModule:setElevationHelper - 3D",
       "rawParams": [
         "setElevationHelper(address)",
         259200
       ],
-      "txHash": "0xe05a7c1f0d916b0631a743b7860b2a276ece97d3a8b899696290c546bbdf94be",
       "queueTimestamp": 1648692951,
-      "note": "Set Function Specific Delay: SummitTrustedSeederRNGModule:setElevationHelper - 3D"
+      "executeTimestamp": 1649407432
     },
     "0xa0d242a34c6529dfab539bead188504dba202de33d5abb29abdec6a75491431b": {
       "targetContract": "0x8733820E0097e9289c30764018B9eE5d47E8332B",
@@ -174,12 +213,42 @@
       "signature": "enable()",
       "data": "0x",
       "eta": 1648749561,
-      "rawParams": [],
       "txHash": "0xa0d242a34c6529dfab539bead188504dba202de33d5abb29abdec6a75491431b",
+      "note": "Enable Summit Ecosystem",
+      "rawParams": [],
       "queueTimestamp": 1648727687,
-      "note": "Enable Summit Ecosystem"
+      "executeTimestamp": 1649417452
+    },
+    "0xdf3e60d87a814e467a23182a89b0d1484b497892b12ffaa740d4ba74810f08a7": {
+      "targetContract": "0x8733820E0097e9289c30764018B9eE5d47E8332B",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x00000000000000000000000016ababe2c69e29a847a7cb9dca01866c9cefb9bf0000000000000000000000000000000000000000000000000000000000000258",
+      "eta": 1649471271,
+      "txHash": "0xdf3e60d87a814e467a23182a89b0d1484b497892b12ffaa740d4ba74810f08a7",
+      "note": "Set Token Allocation: SUMMIT - 600",
+      "rawParams": [
+        "0x16abABE2C69e29a847A7Cb9DcA01866c9ceFB9bf",
+        600
+      ],
+      "queueTimestamp": 1649449397,
+      "executeTimestamp": 1649489618
+    },
+    "0x064d381246e1f57aea8be11754a77aa8fa09e16526084d2b1af24e5e0e3cf79e": {
+      "targetContract": "0x8733820E0097e9289c30764018B9eE5d47E8332B",
+      "value": 0,
+      "signature": "setTokenAllocation(address,uint256)",
+      "data": "0x0000000000000000000000001243f859d73ccdcf0e81c8421ae94f3e9f777b6c00000000000000000000000000000000000000000000000000000000000002bc",
+      "eta": 1649471309,
+      "txHash": "0x064d381246e1f57aea8be11754a77aa8fa09e16526084d2b1af24e5e0e3cf79e",
+      "note": "Set Token Allocation: EVEREST - 700",
+      "rawParams": [
+        "0x1243f859D73CCDcF0E81C8421Ae94F3e9F777B6C",
+        700
+      ],
+      "queueTimestamp": 1649449439,
+      "executeTimestamp": 1649489802
     }
   },
-  "executed": {},
   "cancelled": {}
 }

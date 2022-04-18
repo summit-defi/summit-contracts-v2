@@ -1,8 +1,8 @@
 {
   "TOMB-FTM": {
-    "token": "0x60a861Cd30778678E3d613db96139440Bd333143",
-    "passthroughContract": "0x9c312196dCBE127A90a92f286a582128595988d9",
-    "targetVaultContract": "0x876F890135091381c23Be437fA1cec2251B7c117"
+    "token": "0x2a651563c9d3af67ae0388a5c8f89b867038089e",
+    "passthroughContract": "0x3B4C96337f62EE0Bc70a30F523b15de15dBAEF9E",
+    "targetVaultContract": "0x27c77411074ba90cA35e6f92A79dAd577c05A746"
   },
   "TSHARE-FTM": {
     "token": "0x4733bc45ef91cf7ccecaeedb794727075fb209f2",
@@ -66,17 +66,17 @@
   },
   "BOO-xBOO": {
     "token": "0x5804F6C40f44cF7593F73cf3aa16F7037213A623",
-    "passthroughContract": "0xB800EBE740cD6976532b18bc7857F535011e662E",
+    "passthroughContract": "0x77bF5EBc3912a091E1cDceF9041Dffe7b8639BC8",
     "targetVaultContract": "0x876F890135091381c23Be437fA1cec2251B7c117"
   },
   "USDC-MIM": {
     "token": "0xbcab7d083Cf6a01e0DdA9ed7F8a02b47d125e682",
-    "passthroughContract": "0x60FAf1e73f061ed353dA977F2A208281d9E50a3b",
+    "passthroughContract": "0x940a44Fe2b1c6BB0b21170995Fd9BD57b45a7CfA",
     "targetVaultContract": "0x876F890135091381c23Be437fA1cec2251B7c117"
   },
   "FTM-BSHARE": {
     "token": "0x6F607443DC307DCBe570D0ecFf79d65838630B56",
-    "passthroughContract": "0xEfCdD0970B38884A59d0dd39588De9a59345683F",
+    "passthroughContract": "0xbA74A5C08Ee6B8D63Cd51A80D236602637feBB71",
     "targetVaultContract": "0x876F890135091381c23Be437fA1cec2251B7c117"
   },
   "TOMB-BASED": {
@@ -88,5 +88,15 @@
     "token": "0x4Fe6f19031239F105F753D1DF8A0d24857D0cAA2",
     "passthroughContract": "0xB267C40183af6804ca9C5BdceB2B0C338A0b6eB8",
     "targetVaultContract": "0x876F890135091381c23Be437fA1cec2251B7c117"
+  },
+  "TOMB-MAI": {
+    "token": "0x45f4682b560d4e3b8ff1f1b3a38fdbe775c7177b",
+    "passthroughContract": "0x66c8F365f4149c20D978E63d7a424E13D36f8803",
+    "targetVaultContract": "0xb2be5Cd33DBFf412Bce9587E44b5647a4BdA6a66"
+  },
+  "BASED-MAI": {
+    "token": "0x7b5b3751550be4ff87ac6bda89533f7a0c9825b3",
+    "passthroughContract": "0xde54eDFf0310496D818fB5EbCF30e346C372A510",
+    "targetVaultContract": "0x5Ddb9a342672ecEe80a028CE40500F16ba1Bca44"
   }
 }

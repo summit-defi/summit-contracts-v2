@@ -4,7 +4,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'SUMMIT',
         token: '0xSUMMIT',
-        allocation: 500,
+        allocation: 400,
         elevations: {
             OASIS: {
                 exists: true,
@@ -30,7 +30,7 @@ export const ftmPools: PoolConfig[] = [
     {
         name: 'EVEREST',
         token: '0xEVEREST',
-        allocation: 1000,
+        allocation: 1200,
         elevations: {
             OASIS: {
                 exists: true,
@@ -297,26 +297,26 @@ export const ftmPools: PoolConfig[] = [
     {
         name: '2SHARES-FTM',
         token: '0x6398ACBBAB2561553a9e458Ab67dCFbD58944e52',
-        allocation: 300,
+        allocation: 0,
         elevations: {
             OASIS: {
                 exists: true,
-                live: true,
+                live: false,
             },
             PLAINS: {
                 exists: true,
-                live: true,
+                live: false,
             },
             MESA: {
                 exists: true,
-                live: true,
+                live: false,
             },
             SUMMIT: {
                 exists: true,
-                live: true,
+                live: false,
             },
         },
-        taxBP: 700,
+        taxBP: 50,
         depositFeeBP: 0,
         native: false,
         passthroughStrategy: {
@@ -327,26 +327,26 @@ export const ftmPools: PoolConfig[] = [
     {
         name: '2OMB-FTM',
         token: '0xbdC7DFb7B88183e87f003ca6B5a2F81202343478',
-        allocation: 400,
+        allocation: 0,
         elevations: {
             OASIS: {
                 exists: true,
-                live: true,
+                live: false,
             },
             PLAINS: {
                 exists: true,
-                live: true,
+                live: false,
             },
             MESA: {
                 exists: true,
-                live: true,
+                live: false,
             },
             SUMMIT: {
                 exists: true,
-                live: true,
+                live: false,
             },
         },
-        taxBP: 700,
+        taxBP: 50,
         depositFeeBP: 0,
         native: false,
         passthroughStrategy: {
@@ -578,6 +578,169 @@ export const ftmPools: PoolConfig[] = [
             type: PassthroughType.YieldWolf,
             target: '0x876F890135091381c23Be437fA1cec2251B7c117',
             pid: 205,
+        },
+    },
+    {
+        name: 'TOMB-MAI',
+        getUrl: 'https://swap.tomb.com/#/add/0x6c021Ae822BEa943b2E66552bDe1D2696a53fbB7/0xfB98B335551a418cD0737375a2ea0ded62Ea213b',
+        passthroughUrl: 'https://app.beefy.com/#/fantom/vault/tomb-tomb-mai',
+        token: '0x45f4682b560d4e3b8ff1f1b3a38fdbe775c7177b',
+        allocation: 200,
+        elevations: {
+            OASIS: {
+                exists: true,
+                live: true,
+            },
+            PLAINS: {
+                exists: true,
+                live: true,
+            },
+            MESA: {
+                exists: true,
+                live: true,
+            },
+            SUMMIT: {
+                exists: true,
+                live: true,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.BeefyVaultV6,
+            target: '0xb2be5Cd33DBFf412Bce9587E44b5647a4BdA6a66',
+        },
+    },
+    {
+        name: 'BASED-MAI',
+        getUrl: 'https://swap.tomb.com/#/add/0xfB98B335551a418cD0737375a2ea0ded62Ea213b/0x8D7d3409881b51466B483B11Ea1B8A03cdEd89ae',
+        passthroughUrl: 'https://app.beefy.com/#/fantom/vault/based-based-mai',
+        token: '0x7b5b3751550be4ff87ac6bda89533f7a0c9825b3',
+        allocation: 300,
+        elevations: {
+            OASIS: {
+                exists: true,
+                live: true,
+            },
+            PLAINS: {
+                exists: true,
+                live: true,
+            },
+            MESA: {
+                exists: true,
+                live: true,
+            },
+            SUMMIT: {
+                exists: true,
+                live: true,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.BeefyVaultV6,
+            target: '0x5Ddb9a342672ecEe80a028CE40500F16ba1Bca44',
+        },
+    },
+    {
+        name: 'TOMB-BAEP',
+        getUrl: 'https://spookyswap.finance/add/0x6c021Ae822BEa943b2E66552bDe1D2696a53fbB7/0x8E11FF9a74Ae97b295e14f8D9d48E3A3d72CE890',
+        passthroughUrl: 'https://yieldwolf.finance/fantom/baefinance/517',
+        token: '0xbA1891E4Bc2B80B40f317BAe059C04be1D76eF72',
+        allocation: 300,
+        elevations: {
+            OASIS: {
+                exists: true,
+                live: true,
+            },
+            PLAINS: {
+                exists: true,
+                live: true,
+            },
+            MESA: {
+                exists: true,
+                live: true,
+            },
+            SUMMIT: {
+                exists: true,
+                live: true,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.YieldWolf,
+            target: '0x876F890135091381c23Be437fA1cec2251B7c117',
+            pid: 517,
+        },
+    },
+    {
+        name: 'FTM-BAE',
+        getUrl: 'https://spookyswap.finance/add/0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83/0xEc2Bf1C23188e78B8E187146d14c823679Df01fd',
+        passthroughUrl: 'https://yieldwolf.finance/fantom/baefinance/518',
+        token: '0x5847a16cdc8A9FfEdA9F7d27Ab50B212e6F0D9B2',
+        allocation: 300,
+        elevations: {
+            OASIS: {
+                exists: true,
+                live: true,
+            },
+            PLAINS: {
+                exists: true,
+                live: true,
+            },
+            MESA: {
+                exists: true,
+                live: true,
+            },
+            SUMMIT: {
+                exists: true,
+                live: true,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.YieldWolf,
+            target: '0x876F890135091381c23Be437fA1cec2251B7c117',
+            pid: 518,
+        },
+    },
+    {
+        name: 'BAEP-MAI',
+        getUrl: 'https://swap.tomb.com/#/add/0x8E11FF9a74Ae97b295e14f8D9d48E3A3d72CE890/0xfB98B335551a418cD0737375a2ea0ded62Ea213b',
+        passthroughUrl: 'https://yieldwolf.finance/fantom/baefinance/520',
+        token: '0x5dE7D8ceBA0203a807DB53F2B78368F826355F1c',
+        allocation: 300,
+        elevations: {
+            OASIS: {
+                exists: true,
+                live: true,
+            },
+            PLAINS: {
+                exists: true,
+                live: true,
+            },
+            MESA: {
+                exists: true,
+                live: true,
+            },
+            SUMMIT: {
+                exists: true,
+                live: true,
+            },
+        },
+        taxBP: 700,
+        depositFeeBP: 0,
+        native: false,
+        passthroughStrategy: {
+            type: PassthroughType.YieldWolf,
+            target: '0x876F890135091381c23Be437fA1cec2251B7c117',
+            pid: 520,
         },
     },
 ]

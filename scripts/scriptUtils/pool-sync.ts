@@ -140,62 +140,62 @@ export const syncPools = async ({
 
 
             // Passthrough Strategy, create it if need be
-            console.log('\n-- Passthrough Strategy --')
-            const {
-                targetVaultContract: existingTargetVaultContract,
-                passthroughContract: existingPassthroughContract,
-            } = getPassthroughStrategy(chainId, configName) || {
-                targetVaultContract: ZEROADD
-            }
-            const {
-                target: configTargetVaultContract,
-            } = configPassthroughStrategy || {
-                target: ZEROADD
-            }
+            // console.log('\n-- Passthrough Strategy --')
+            // const {
+            //     targetVaultContract: existingTargetVaultContract,
+            //     passthroughContract: existingPassthroughContract,
+            // } = getPassthroughStrategy(chainId, configName) || {
+            //     targetVaultContract: ZEROADD
+            // }
+            // const {
+            //     target: configTargetVaultContract,
+            // } = configPassthroughStrategy || {
+            //     target: ZEROADD
+            // }
 
-            const cartPassthroughStrategy = ZEROADD // await cartographerGet.tokenPassthroughStrategy(tokenAddress)
-            let cartPassthroughStrategyVault = null
-            try {
-                cartPassthroughStrategyVault = cartPassthroughStrategy === ZEROADD ?
-                ZEROADD :
-                await (await ethers.getContractAt(Contracts.BeefyVaultPassthrough, cartPassthroughStrategy)).vault()
-            } catch (e) {}
+            // const cartPassthroughStrategy = await cartographerGet.tokenPassthroughStrategy(tokenAddress)
+            // let cartPassthroughStrategyVault = null
+            // try {
+            //     cartPassthroughStrategyVault = cartPassthroughStrategy === ZEROADD ?
+            //     ZEROADD :
+            //     await (await ethers.getContractAt(Contracts.BeefyVaultPassthrough, cartPassthroughStrategy)).vault()
+            // } catch (e) {}
                 
-            console.log({
-                configTargetVaultContract,
-                existingTargetVaultContract,
-                cartPassthroughStrategy,
-                cartPassthroughStrategyVault,
-            })
-            if (cartPassthroughStrategyVault !== configTargetVaultContract) {
-                // Create a passthrough strategy if it doesnt exist
-                let passthroughStrategyContractAddress: string | undefined | null
-                if (existingTargetVaultContract !== configTargetVaultContract) {
-                    console.log(`\t\tCreate passthrough strategy`)
-                    passthroughStrategyContractAddress = await createPassthroughStrategy(poolConfig, summitToken.address, summitLpAddress, everestToken.address)
-                } else {
-                    console.log(`\t\tPassthrough strategy already created: ${existingPassthroughContract}`)
-                    passthroughStrategyContractAddress = existingPassthroughContract
-                }
+            // console.log({
+            //     configTargetVaultContract,
+            //     existingTargetVaultContract,
+            //     cartPassthroughStrategy,
+            //     cartPassthroughStrategyVault,
+            // })
+            // if (cartPassthroughStrategyVault !== configTargetVaultContract) {
+            //     // Create a passthrough strategy if it doesnt exist
+            //     let passthroughStrategyContractAddress: string | undefined | null
+            //     if (existingTargetVaultContract !== configTargetVaultContract) {
+            //         console.log(`\t\tCreate passthrough strategy`)
+            //         passthroughStrategyContractAddress = await createPassthroughStrategy(poolConfig, summitToken.address, summitLpAddress, everestToken.address)
+            //     } else {
+            //         console.log(`\t\tPassthrough strategy already created: ${existingPassthroughContract}`)
+            //         passthroughStrategyContractAddress = existingPassthroughContract
+            //     }
                 
-                console.log(`\t\tSetting passthrough strategy: Contract<${passthroughStrategyContractAddress}> Target<${poolConfig.passthroughStrategy?.target}>`)
+            //     console.log(`\t\tSetting passthrough strategy: Contract<${passthroughStrategyContractAddress}> Target<${poolConfig.passthroughStrategy?.target}>`)
 
-                // QUEUE TX
-                if (passthroughStrategyContractAddress != null) {
-                    await cartographerMethod.setTokenPassthroughStrategy({
-                        dev,
-                        tokenAddress: configToken,
-                        passthroughTargetAddress: passthroughStrategyContractAddress,
-                        callAsTimelock,
-                        dryRun,
-                        tokenSymbol: configName,
-                    })
-                }
+            //     // QUEUE TX
+            //     if (passthroughStrategyContractAddress != null) {
+            //         await cartographerMethod.setTokenPassthroughStrategy({
+            //             dev,
+            //             tokenAddress: configToken,
+            //             passthroughTargetAddress: passthroughStrategyContractAddress,
+            //             callAsTimelock,
+            //             dryRun,
+            //             tokenSymbol: configName,
+            //         })
+            //     }
 
-                console.log('\t\tdone.')
-            } else {
-                console.log(`\tpassed.`)
-            }
+            //     console.log('\t\tdone.')
+            // } else {
+            //     console.log(`\tpassed.`)
+            // }
 
 
 
